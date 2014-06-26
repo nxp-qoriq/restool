@@ -61,11 +61,18 @@ error:
 void mc_portal_wrapper_cleanup(
 	struct mc_portal_wrapper *mc_portal)
 {
+	int error;
+
 	assert(mc_portal->fd != -1);
 	assert(mc_portal->mmio_regs != NULL);
 
-	munmap((void *)mc_portal->mmio_regs, EXEC_PAGESIZE);
-	close(mc_portal->fd);
+	error = munmap((void *)mc_portal->mmio_regs, EXEC_PAGESIZE);
+	if (error == -1)
+		perror("munmap failed");
+
+	error = close(mc_portal->fd);
+	if (error == -1)
+		perror("close failed");
 }
 
 /**

@@ -18,11 +18,19 @@
 #define RESMAN_GET_ROOT_DPRC_INFO \
 	_IOR(RESMAN_IOCTL_TYPE, 0x1, struct ioctl_dprc_info)
 
-#define RESMAN_SEND_MC_COMMAND \
-	_IOWR(RESMAN_IOCTL_TYPE, 0x2, struct mc_portal)
+#define RESMAN_ALLOCATE_MC_PORTAL \
+	_IOR(RESMAN_IOCTL_TYPE, 0x2, uint32_t)
+
+#define RESMAN_FREE_MC_PORTAL \
+	_IOW(RESMAN_IOCTL_TYPE, 0x3, uint32_t)
 
 #define RESMAN_RESCAN_ROOT_DPRC \
-	_IO(RESMAN_IOCTL_TYPE, 0x3)
+	_IO(RESMAN_IOCTL_TYPE, 0x4)
+
+#if 0 /* TODO: check if we really need this */
+#define RESMAN_SEND_MC_COMMAND \
+	_IOWR(RESMAN_IOCTL_TYPE, 0x5, struct mc_portal)
+#endif
 
 struct ioctl_dprc_info {
 	uint32_t dprc_id;

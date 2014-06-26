@@ -22,6 +22,12 @@
  * allocated by the DPRC from the pool of ICIDs.
  */
 #define DPRC_GET_ICID_FROM_POOL		(uint16_t)(~(0))
+/*!
+ * Set this value as the portal_id value in dprc_cfg structure when creating a
+ * container, in case the portal id is not specifically selected by the
+ * user and should be allocated by the DPRC from the pool of portal ids.
+ */
+#define DPRC_GET_PORTAL_ID_FROM_POOL	(int)(~(0))
 
 /**
  * Resource types defines
@@ -293,14 +299,19 @@ struct dprc_res_ids_range_desc {
  * @brief	Container attributes, returned by dprc_get_attributes()
  */
 struct dprc_attributes {
-	uint16_t container_id;
+	int container_id;
 	/*!< Container's ID */
 	uint16_t icid;
 	/*!< Container's ICID */
-	uint16_t portal_id;
+	int portal_id;
 	/*!< Container's portal ID */
 	uint64_t options;
 	/*!< Container's options as set at container's creation */
+	struct {
+		uint32_t major; /*!< DPRC major version*/
+		uint32_t minor; /*!< DPRC minor version*/
+	} version;
+	/*!< DPRC version */
 };
 
 /**
@@ -309,6 +320,9 @@ struct dprc_attributes {
 struct dprc_cfg {
 	uint16_t icid;
 	/*!< Container's ICID; if set to DPRC_GET_ICID_FROM_POOL, a free ICID
+	 * will be allocated by the DPRC */
+	int portal_id;
+	/*!< portal id; if set to DPRC_GET_PORTAL_ID_FROM_POOL, a free portal id
 	 * will be allocated by the DPRC */
 	uint64_t options;
 	/*!< Combination of DPRC_CFG_OPT_ options */
@@ -407,6 +421,7 @@ static inline void build_cmd_dprc_create_container(
 	memset(&cmd->data, 0, sizeof(cmd->data));
 	cmd->data.params[0] = (uint64_t)cfg->icid << 32;
 	cmd->data.params[0] |= lower_32_bits(cfg->options);
+	cmd->data.params[1] = (uint64_t)cfg->portal_id << 32;
 }
 
 static inline void parse_resp_dprc_create_container(
@@ -742,6 +757,8 @@ static inline void parse_resp_dprc_get_attributes(
 	attributes->icid = (cmd->data.params[0] >> 32) & 0xffff;
 	attributes->portal_id = (cmd->data.params[0] >> 48) & 0xffff;
 	attributes->options = lower_32_bits(cmd->data.params[1]);
+	attributes->version.major = lower_32_bits(cmd->data.params[2]);
+	attributes->version.major = upper_32_bits(cmd->data.params[2]);
 }
 
 /**

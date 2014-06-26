@@ -26,4 +26,8 @@
 #define DEBUG_PRINTF(_fmt, ...)	\
 	fprintf(stderr, "DBG: %s: " _fmt, __func__, ##__VA_ARGS__)
 
+#define STRINGIFY(_x)	__STRINGIFY_EXPANDED(_x)
+
+#define __STRINGIFY_EXPANDED(_expanded_x)   #_expanded_x
+
 #endif /* _UTILS_H */

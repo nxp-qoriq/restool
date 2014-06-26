@@ -36,6 +36,22 @@
 #define MAX_DPRC_NESTING	    16
 
 /**
+ * MC object type string max length (without including the null terminator)
+ */
+#define OBJ_TYPE_MAX_LENGTH	4
+
+/*
+ * TODO: Obtain the following constants from the fsl-mc bus driver via an ioctl
+ */
+#define MC_PORTALS_BASE_PADDR	((phys_addr_t)0x00080C000000ULL)
+#define MC_PORTAL_STRIDE	0x10000
+#define MC_PORTAL_SIZE		64
+#define MAX_MC_PORTALS		512
+
+#define MC_PORTAL_PADDR_TO_PORTAL_ID(_portal_paddr) \
+	(((_portal_paddr) - MC_PORTALS_BASE_PADDR) / MC_PORTAL_STRIDE)
+
+/**
  * Command line option indices for getopt_long()
  */
 enum cmd_line_options {
@@ -185,6 +201,27 @@ static void print_unexpected_options_error(uint32_t options_mask)
 #	undef PRINT_OPTION
 }
 
+static int parse_object_name(const char *obj_name, char *expected_obj_type,
+			     uint32_t *obj_id, char *obj_type)
+{
+	int n;
+
+	n = sscanf(obj_name, "%u.%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "s",
+		   obj_id, obj_type);
+	if (n != 2) {
+		ERROR_PRINTF("Invalid MC object name: %s\n", obj_name);
+		return -EINVAL;
+	}
+
+	if (expected_obj_type != NULL && strcmp(obj_type, expected_obj_type) != 0) {
+		ERROR_PRINTF("Expected \'%s\' object type\n", expected_obj_type);
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+
 static void print_usage(void)
 {
 	static const char usage_msg[] =
@@ -235,6 +272,34 @@ static void print_version(void)
 	resman.cmd_line_options_mask &= ~OPT_VERSION_MASK;
 	if (resman.cmd_line_options_mask != 0)
 		ERROR_PRINTF("Extra options ignored\n");
+}
+
+static int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
+{
+	int error;
+
+	error = dprc_open(&resman.mc_portal,
+			  dprc_id,
+			  dprc_handle);
+	if (error < 0) {
+		ERROR_PRINTF(
+			"dprc_open() failed for %u.dprc with error %d\n",
+			dprc_id, error);
+		goto out;
+	}
+
+	if (*dprc_handle == 0) {
+		ERROR_PRINTF("dprc_open() returned invalid handle (auth 0) for "
+			     "%u.dprc\n", dprc_id);
+
+		(void)dprc_close(&resman.mc_portal, *dprc_handle);
+		error = -ENOENT;
+		goto out;
+	}
+
+	error = 0;
+out:
+	return error;
 }
 
 /**
@@ -290,15 +355,9 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 			continue;
 		}
 
-		error = dprc_open(&resman.mc_portal,
-				  dev_desc.id,
-				  &child_dprc_handle);
-		if (error < 0) {
-			ERROR_PRINTF(
-				"dprc_open() failed for %u.dprc with error %d\n",
-				dev_desc.id, error);
+		error = open_dprc(dev_desc.id, &child_dprc_handle);
+		if (error < 0)
 			goto out;
-		}
 
 		error = list_dprc(dev_desc.id, child_dprc_handle,
 				  nesting_level + 1, show_non_dprc_objects);
@@ -340,12 +399,56 @@ out:
 	return error;
 }
 
+static int cmd_list_one_resource_type(uint16_t dprc_handle,
+				      const char *mc_res_type)
+{
+	uint32_t res_count;
+	uint32_t res_discovered_count;
+	struct dprc_res_ids_range_desc range_desc;
+	int error = 0;
+
+	error = dprc_get_res_count(&resman.mc_portal, dprc_handle,
+				   (char *)mc_res_type, &res_count);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_get_res_count() failed: %d\n", error);
+		goto out;
+	}
+
+	if (res_count == 0)
+		goto out;
+
+	memset(&range_desc, 0, sizeof(struct dprc_res_ids_range_desc));
+	res_discovered_count = 0;
+	do {
+		int id;
+
+		error = dprc_get_res_ids(&resman.mc_portal, dprc_handle,
+					 (char *)mc_res_type, &range_desc);
+		if (error < 0) {
+			ERROR_PRINTF("dprc_get_res_ids() failed: %d\n", error);
+			goto out;
+		}
+
+		for (id = range_desc.base_id; id <= range_desc.last_id; id++) {
+			printf("%d.%s\n", id, mc_res_type);
+			res_discovered_count++;
+		}
+	} while (res_discovered_count < res_count &&
+		 range_desc.iter_status != DPRC_ITER_STATUS_LAST);
+out:
+	return error;
+}
+
 /**
  * List resources of all types found in the container specified by dprc_handle
  */
 static int list_mc_resources(uint16_t dprc_handle)
 {
-	static const char *res_names[] = {
+	/*
+	 * TODO: Remove this and use dprc_get_pool_count()/dprc_get_pool() to discover
+	 * the resource types at run time
+	 */
+	static const char *mc_res_types[] = {
 		"mcp",
 		"swp",
 		"bp",
@@ -390,25 +493,26 @@ static int list_mc_resources(uint16_t dprc_handle)
 		goto out;
 	}
 
-	for (unsigned int i = 0; i < ARRAY_SIZE(res_names); i++) {
+	for (unsigned int i = 0; i < ARRAY_SIZE(mc_res_types); i++) {
+		error = cmd_list_one_resource_type(dprc_handle, mc_res_types[i]);
+		if (error < 0)
+			goto out;
 	}
 
-	/*TODO: implement this: */
-	DEBUG_PRINTF("%s not implemented yet %d\n", __func__, dprc_handle);
-	error = ENOTSUP;
+	error = 0;
 out:
 	return error;
 }
 
 static int cmd_show_container(void)
 {
-	int n;
 	uint32_t num_child_devices;
 	uint32_t dprc_id;
 	uint16_t dprc_handle;
-	const char *dprc_name;
+	char *dprc_name;
 	int error = 0;
 	bool dprc_opened = false;
+	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
 
 	if (resman.num_cmd_args == 0) {
 		ERROR_PRINTF("<container> argument missing\n");
@@ -424,24 +528,14 @@ static int cmd_show_container(void)
 	}
 
 	dprc_name = resman.cmd_args[0];
-	n = sscanf(dprc_name, "%u.dprc", &dprc_id);
-	if (n != 1) {
-		ERROR_PRINTF("Invalid DPRC object name: %s\n",
-			     resman.cmd_args[0]);
-		error = -EINVAL;
+	error = parse_object_name(dprc_name, "dprc", &dprc_id, obj_type);
+	if (error < 0)
 		goto out;
-	}
 
 	if (dprc_id != resman.root_dprc_id) {
-		error = dprc_open(&resman.mc_portal,
-				  dprc_id,
-				  &dprc_handle);
-		if (error < 0) {
-			ERROR_PRINTF(
-				"dprc_open() failed for %u.dprc with error %d\n",
-				dprc_id, error);
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error < 0)
 			goto out;
-		}
 
 		dprc_opened = true;
 	} else {
@@ -507,16 +601,249 @@ out:
 	return error;
 }
 
+static int show_dprc_info(uint32_t dprc_id)
+{
+	uint16_t dprc_handle;
+	int error;
+	struct dprc_attributes dprc_attr;
+	bool dprc_opened = false;
+
+	if (dprc_id != resman.root_dprc_id) {
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error < 0)
+			goto out;
+
+		dprc_opened = true;
+	} else {
+		dprc_handle = resman.root_dprc_handle;
+	}
+
+	memset(&dprc_attr, 0, sizeof(dprc_attr));
+	error = dprc_get_attributes(&resman.mc_portal, dprc_handle, &dprc_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_get_attributes() failed: %d\n", error);
+		goto out;
+	}
+
+	assert(dprc_id == (uint32_t)dprc_attr.container_id);
+	printf(
+		"container id: %d\n"
+		"icid: %u\n"
+		"portal id: %d\n"
+		"options: %#llx\n"
+		"version: %u.%u\n",
+		dprc_attr.container_id,
+		dprc_attr.icid,
+		dprc_attr.portal_id,
+		(unsigned long long)dprc_attr.options,
+		dprc_attr.version.major,
+		dprc_attr.version.minor);
+
+	error = 0;
+out:
+	if (dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_portal, dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int cmd_info_object(void)
 {
-	ERROR_PRINTF("command '\%s\' not implemented yet\n", resman.cmd_name);
-	return ENOTSUP;
+	int error;
+	char *obj_name;
+	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
+	uint32_t dprc_id;
+
+	if (resman.num_cmd_args == 0) {
+		ERROR_PRINTF("<object> argument missing\n");
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (resman.num_cmd_args > 1) {
+		ERROR_PRINTF("Invalid number of arguments: %d\n",
+			     resman.num_cmd_args);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (resman.cmd_line_options_mask != 0) {
+		print_unexpected_options_error(resman.cmd_line_options_mask);
+		error = -EINVAL;
+		goto out;
+	}
+
+	obj_name = resman.cmd_args[0];
+	error = parse_object_name(obj_name, NULL, &dprc_id, obj_type);
+	if (error < 0)
+		goto out;
+
+	if (strcmp(obj_type, "dprc") == 0) {
+		error = show_dprc_info(dprc_id);
+	} else {
+		ERROR_PRINTF("Unexpected object type '\%s\'\n", obj_type);
+		error = -EINVAL;
+	}
+out:
+	return error;
+}
+
+/**
+ * Create a DPRC object in the MC, as a child of the container
+ * referred by 'dprc_handle'.
+ */
+static int create_dprc(uint16_t dprc_handle)
+{
+	int error;
+	int error2;
+	struct dprc_cfg cfg;
+	uint32_t child_container_id;
+	uint64_t mc_portal_phys_addr;
+	uint32_t portal_id;
+	bool portal_allocated = false;
+	bool child_dprc_created = false;
+
+	error = ioctl(resman.mc_portal.fd, RESMAN_ALLOCATE_MC_PORTAL,
+		      &portal_id);
+	if (error == -1) {
+		error = -errno;
+		ERROR_PRINTF("ioctl(RESMAN_ALLOCATE_MC_PORTAL) failed\n");
+		goto error;
+	}
+
+	portal_allocated = true;
+	DEBUG_PRINTF("ioctl returned portal_id: %u\n", portal_id);
+
+	cfg.icid = DPRC_GET_ICID_FROM_POOL;
+	cfg.portal_id = portal_id;
+	cfg.options =
+		(DPRC_CFG_OPT_SPAWN_ALLOWED | DPRC_CFG_OPT_ALLOC_ALLOWED);
+	error = dprc_create_container(
+			&resman.mc_portal,
+			dprc_handle,
+			&cfg,
+			&child_container_id,
+			&mc_portal_phys_addr);
+	if (error < 0) {
+		ERROR_PRINTF(
+			"dprc_create_container() failed: %d\n", error);
+		goto error;
+	}
+
+	child_dprc_created = true;
+	printf("%u.dprc object created (MC portal %#llx consumed in the MC)\n",
+	       child_container_id, (unsigned long long)mc_portal_phys_addr);
+
+	error = ioctl(resman.mc_portal.fd, RESMAN_RESCAN_ROOT_DPRC, NULL);
+	if (error == -1) {
+		error = -errno;
+		ERROR_PRINTF("ioctl(RESMAN_RESCAN_ROOT_DPRC) failed\n");
+		goto error;
+	}
+
+	return 0;
+error:
+	if (child_dprc_created) {
+		error2 = dprc_destroy_container(&resman.mc_portal, dprc_handle,
+						child_container_id);
+		if (error2 == -1) {
+			ERROR_PRINTF(
+			    "dprc_destroy_container() failed with error %d\n",
+			    error);
+		}
+	}
+
+	if (portal_allocated) {
+		error2 = ioctl(resman.mc_portal.fd, RESMAN_FREE_MC_PORTAL,
+			       portal_id);
+		if (error2 == -1)
+			ERROR_PRINTF("ioctl(RESMAN_FREE_MC_PORTAL) failed\n");
+	}
+
+	return error;
 }
 
 static int cmd_create_object(void)
 {
-	ERROR_PRINTF("command '\%s\' not implemented yet\n", resman.cmd_name);
-	return ENOTSUP;
+	uint16_t dprc_handle;
+	int error;
+	char *target_obj_type;
+	bool dprc_opened = false;
+
+	if (resman.num_cmd_args == 0) {
+		ERROR_PRINTF("<object type> argument missing\n");
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (resman.num_cmd_args > 1) {
+		ERROR_PRINTF("Invalid number of arguments: %d\n",
+			     resman.num_cmd_args);
+		error = -EINVAL;
+		goto out;
+	}
+
+	target_obj_type = resman.cmd_args[0];
+	if (resman.cmd_line_options_mask & OPT_CONTAINER_MASK) {
+		char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
+		uint32_t dprc_id;
+
+		assert(resman.cmd_line_option_arg[OPT_CONTAINER] != NULL);
+		error = parse_object_name(resman.cmd_line_option_arg[OPT_CONTAINER],
+					  "dprc", &dprc_id, obj_type);
+		if (error < 0)
+			goto out;
+
+		if (dprc_id != resman.root_dprc_id) {
+			error = open_dprc(dprc_id, &dprc_handle);
+			if (error < 0)
+				goto out;
+
+			dprc_opened = true;
+		} else {
+			dprc_handle = resman.root_dprc_handle;
+		}
+
+		resman.cmd_line_options_mask &= ~OPT_CONTAINER_MASK;
+	} else {
+		dprc_handle = resman.root_dprc_handle;
+	}
+
+	if (resman.cmd_line_options_mask != 0) {
+		print_unexpected_options_error(resman.cmd_line_options_mask);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (strcmp(target_obj_type, "dprc") == 0) {
+		error = create_dprc(dprc_handle);
+	} else {
+		ERROR_PRINTF("Unexpected object type '\%s\'\n", target_obj_type);
+		error = -EINVAL;
+	}
+out:
+	if (dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_portal, dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
 }
 
 static int cmd_destroy_object(void)
@@ -644,6 +971,7 @@ int main(int argc, char *argv[])
 {
 	int error;
 	bool mc_portal_initialized = false;
+	bool root_dprc_opened = false;
 	struct ioctl_dprc_info root_dprc_info = { 0 };
 
 	DEBUG_PRINTF("resman built on " __DATE__ " " __TIME__ "\n");
@@ -666,10 +994,31 @@ int main(int argc, char *argv[])
 		     root_dprc_info.dprc_handle);
 
 	resman.root_dprc_id = root_dprc_info.dprc_id;
+#if 1 /*TODO: Use separate portal */
+	error = open_dprc(resman.root_dprc_id, &resman.root_dprc_handle);
+	if (error < 0)
+		goto out;
+
+	DEBUG_PRINTF("root dprc handle returned by dprc_open(): %#x\n", resman.root_dprc_handle);
+	root_dprc_opened = true;
+#else
 	resman.root_dprc_handle = root_dprc_info.dprc_handle;
+#endif
 
 	error = parse_cmd_line(argc, argv);
 out:
+	if (root_dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_portal, resman.root_dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
 	if (mc_portal_initialized)
 		mc_portal_wrapper_cleanup(&resman.mc_portal);
 
