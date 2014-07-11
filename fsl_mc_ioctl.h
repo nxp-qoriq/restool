@@ -27,11 +27,6 @@
 #define RESMAN_RESCAN_ROOT_DPRC \
 	_IO(RESMAN_IOCTL_TYPE, 0x4)
 
-#if 0 /* TODO: check if we really need this */
-#define RESMAN_SEND_MC_COMMAND \
-	_IOWR(RESMAN_IOCTL_TYPE, 0x5, struct mc_portal)
-#endif
-
 struct ioctl_dprc_info {
 	uint32_t dprc_id;
 	uint16_t dprc_handle;

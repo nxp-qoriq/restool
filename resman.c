@@ -10,13 +10,15 @@
  */
 
 #include <stdio.h>
+#include <string.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
+#include "fsl_dprc.h"
 #include "fsl_mc_io_wrapper.h"
-#include "fsl_mc_cmd_wrappers.h"
 #include "fsl_mc_ioctl.h"
 #include "utils.h"
 
@@ -308,7 +310,7 @@ out:
 static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 		     int nesting_level, bool show_non_dprc_objects)
 {
-	uint32_t num_child_devices;
+	int num_child_devices;
 	int error = 0;
 
 	assert(nesting_level <= MAX_DPRC_NESTING);
@@ -318,48 +320,48 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 
 	printf("%u.dprc\n", dprc_id);
 
-	error = dprc_get_device_count(&resman.mc_portal,
-				      dprc_handle,
-				      &num_child_devices);
+	error = dprc_get_obj_count(&resman.mc_portal,
+				   dprc_handle,
+				   &num_child_devices);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_device_count() failed with error %d\n",
+		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
 			     error);
 		goto out;
 	}
 
-	for (uint32_t i = 0; i < num_child_devices; i++) {
-		struct dprc_dev_desc dev_desc;
+	for (int i = 0; i < num_child_devices; i++) {
+		struct dprc_obj_desc obj_desc;
 		uint16_t child_dprc_handle;
 		int error2;
 
-		error = dprc_get_device(
+		error = dprc_get_obj(
 				&resman.mc_portal,
 				dprc_handle,
 				i,
-				&dev_desc);
+				&obj_desc);
 		if (error < 0) {
 			ERROR_PRINTF(
-				"dprc_get_device(%u) failed with error %d\n",
+				"dprc_get_object(%u) failed with error %d\n",
 				i, error);
 			goto out;
 		}
 
-		if (strcmp(dev_desc.type, "dprc") != 0) {
+		if (strcmp(obj_desc.type, "dprc") != 0) {
 			if (show_non_dprc_objects) {
 				for (int i = 0; i < nesting_level + 1; i++)
 					printf("  ");
 
-				printf("%u.%s\n", dev_desc.id, dev_desc.type);
+				printf("%u.%s\n", obj_desc.id, obj_desc.type);
 			}
 
 			continue;
 		}
 
-		error = open_dprc(dev_desc.id, &child_dprc_handle);
+		error = open_dprc(obj_desc.id, &child_dprc_handle);
 		if (error < 0)
 			goto out;
 
-		error = list_dprc(dev_desc.id, child_dprc_handle,
+		error = list_dprc(obj_desc.id, child_dprc_handle,
 				  nesting_level + 1, show_non_dprc_objects);
 
 		error2 = dprc_close(&resman.mc_portal, child_dprc_handle);
@@ -402,8 +404,8 @@ out:
 static int cmd_list_one_resource_type(uint16_t dprc_handle,
 				      const char *mc_res_type)
 {
-	uint32_t res_count;
-	uint32_t res_discovered_count;
+	int res_count;
+	int res_discovered_count;
 	struct dprc_res_ids_range_desc range_desc;
 	int error = 0;
 
@@ -504,9 +506,47 @@ out:
 	return error;
 }
 
+static int list_mc_objects(uint16_t dprc_handle, char *dprc_name)
+{
+	int num_child_devices;
+	int error;
+
+	error = dprc_get_obj_count(&resman.mc_portal,
+				   dprc_handle,
+				   &num_child_devices);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
+			     error);
+		goto out;
+	}
+
+	printf("%s contains %u objects%c\n", dprc_name, num_child_devices,
+	       num_child_devices == 0 ? '.' : ':');
+
+	for (int i = 0; i < num_child_devices; i++) {
+		struct dprc_obj_desc obj_desc;
+
+		error = dprc_get_obj(&resman.mc_portal,
+				     dprc_handle,
+				     i,
+				     &obj_desc);
+		if (error < 0) {
+			ERROR_PRINTF(
+				"dprc_get_object(%u) failed with error %d\n",
+				i, error);
+			goto out;
+		}
+
+		printf("%u.%s\n", obj_desc.id, obj_desc.type);
+	}
+
+	error = 0;
+out:
+	return error;
+}
+
 static int cmd_show_container(void)
 {
-	uint32_t num_child_devices;
 	uint32_t dprc_id;
 	uint16_t dprc_handle;
 	char *dprc_name;
@@ -544,7 +584,7 @@ static int cmd_show_container(void)
 
 	if (resman.cmd_line_options_mask & OPT_RESOURCES_MASK) {
 		resman.cmd_line_options_mask &= ~OPT_RESOURCES_MASK;
-		return list_mc_resources(dprc_handle);
+		error = list_mc_resources(dprc_handle);
 	} else {
 		if (resman.cmd_line_options_mask != 0) {
 			print_unexpected_options_error(
@@ -552,39 +592,10 @@ static int cmd_show_container(void)
 			error = -EINVAL;
 			goto out;
 		}
+
+		error = list_mc_objects(dprc_handle, dprc_name);
 	}
 
-	error = dprc_get_device_count(&resman.mc_portal,
-				      dprc_handle,
-				      &num_child_devices);
-	if (error < 0) {
-		ERROR_PRINTF("dprc_get_device_count() failed with error %d\n",
-			     error);
-		goto out;
-	}
-
-	printf("%s contains %u objects%c\n", dprc_name, num_child_devices,
-	       num_child_devices == 0 ? '.' : ':');
-
-	for (uint32_t i = 0; i < num_child_devices; i++) {
-		struct dprc_dev_desc dev_desc;
-
-		error = dprc_get_device(
-				&resman.mc_portal,
-				dprc_handle,
-				i,
-				&dev_desc);
-		if (error < 0) {
-			ERROR_PRINTF(
-				"dprc_get_device(%u) failed with error %d\n",
-				i, error);
-			goto out;
-		}
-
-		printf("%u.%s\n", dev_desc.id, dev_desc.type);
-	}
-
-	error = 0;
 out:
 	if (dprc_opened) {
 		int error2;
@@ -706,7 +717,7 @@ static int create_dprc(uint16_t dprc_handle)
 	int error;
 	int error2;
 	struct dprc_cfg cfg;
-	uint32_t child_container_id;
+	int child_container_id;
 	uint64_t mc_portal_phys_addr;
 	uint32_t portal_id;
 	bool portal_allocated = false;
@@ -937,12 +948,6 @@ static int parse_cmd_line(int argc, char *argv[])
 	if (resman.num_cmd_args != 0)
 		resman.cmd_args = &argv[optind + 1];
 
-	//???
-	DEBUG_PRINTF("cmd: %s\n", resman.cmd_name);
-	for (int i = 0; i < resman.num_cmd_args; i++)
-		DEBUG_PRINTF("cmd arg[%d]: %s\n", i, resman.cmd_args[i]);
-	//???
-
 	/*
 	 * Lookup command:
 	 */
@@ -994,17 +999,11 @@ int main(int argc, char *argv[])
 		     root_dprc_info.dprc_handle);
 
 	resman.root_dprc_id = root_dprc_info.dprc_id;
-#if 1 /*TODO: Use separate portal */
 	error = open_dprc(resman.root_dprc_id, &resman.root_dprc_handle);
 	if (error < 0)
 		goto out;
 
-	DEBUG_PRINTF("root dprc handle returned by dprc_open(): %#x\n", resman.root_dprc_handle);
 	root_dprc_opened = true;
-#else
-	resman.root_dprc_handle = root_dprc_info.dprc_handle;
-#endif
-
 	error = parse_cmd_line(argc, argv);
 out:
 	if (root_dprc_opened) {

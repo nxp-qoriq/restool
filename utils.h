@@ -11,6 +11,8 @@
 #define _UTILS_H
 
 #include <stdio.h>
+#include <stdint.h>
+#include <time.h>
 
 #define C_ASSERT(_cond) \
         extern const char c_assert_dummy_decl[(_cond) ? 1 : -1]
@@ -23,11 +25,18 @@
 #define ERROR_PRINTF(_fmt, ...)	\
 	fprintf(stderr, "%s: " _fmt, __func__, ##__VA_ARGS__)
 
+#ifdef DEBUG
 #define DEBUG_PRINTF(_fmt, ...)	\
 	fprintf(stderr, "DBG: %s: " _fmt, __func__, ##__VA_ARGS__)
+#else
+#define DEBUG_PRINTF(_fmt, ...)
+#endif
 
 #define STRINGIFY(_x)	__STRINGIFY_EXPANDED(_x)
 
 #define __STRINGIFY_EXPANDED(_expanded_x)   #_expanded_x
+
+#define CLOCK_DELTA(_start_clock, _end_clock) \
+        ((clock_t)((int64_t)(_end_clock) - (int64_t)(_start_clock)))
 
 #endif /* _UTILS_H */

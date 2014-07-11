@@ -3,11 +3,13 @@ CROSS_COMPILE ?=
 CC = $(CROSS_COMPILE)gcc
 
 OBJS = resman.o \
-       fsl_mc_dpmng_cmd_wrappers.o \
-       fsl_mc_dprc_cmd_wrappers.o \
+       dprc.o \
+       dpmng.o \
+       mc_sys.o \
        fsl_mc_io_wrapper.o
 
-CFLAGS  = -Wall \
+CFLAGS = ${EXTRA_CFLAGS} \
+	  -Wall \
           -Wstrict-prototypes \
           -Wextra -Wformat \
           -std=gnu99 \
@@ -15,8 +17,7 @@ CFLAGS  = -Wall \
           -Wpointer-arith \
           -Winline \
           -Werror \
-          -Wundef \
-	  -I./mc_hardware
+          -Wundef
 
 LDFLAGS = -static -Wl,--hash-style=gnu
 
@@ -29,7 +30,9 @@ resman: $(OBJS)
 	file $@
 
 clean:
-	rm -f *.[od] resman
+	rm -f $(OBJS) \
+	      $(HEADER_DEPENDENCIES) \
+	      resman
 
 %.d: %.c
 	@($(CC) $(CFLAGS) -M $< | \

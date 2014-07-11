@@ -10,10 +10,6 @@
 #ifndef _FSL_MC_IO_WRAPPER_H
 #define _FSL_MC_IO_WRAPPER_H
 
-#include <stdint.h>
-
-struct mc_command *cmd;
-
 /**
  * struct mc_portal_wrapper - MC command portal wrapper object
  */
@@ -27,10 +23,6 @@ int mc_portal_wrapper_init(
 
 void mc_portal_wrapper_cleanup(
 	struct mc_portal_wrapper *mc_portal);
-
-int mc_portal_wrapper_send_command(
-	struct mc_portal_wrapper *mc_portal,
-	struct mc_command *cmd);
 
 #endif /* _FSL_MC_IO_WRAPPER_H */
 
