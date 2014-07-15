@@ -17,10 +17,11 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "fsl_dprc.h"
+#include "utils.h"
 #include "fsl_mc_io_wrapper.h"
 #include "fsl_mc_ioctl.h"
-#include "utils.h"
+#include "fsl_dprc.h"
+#include "fsl_dpmng.h"
 
 /**
  * Bit masks for command-line options:
@@ -41,6 +42,11 @@
  * MC object type string max length (without including the null terminator)
  */
 #define OBJ_TYPE_MAX_LENGTH	4
+
+/**
+ * MC resource type string max length (without including the null terminator)
+ */
+#define RES_TYPE_MAX_LENGTH	15
 
 /*
  * TODO: Obtain the following constants from the fsl-mc bus driver via an ioctl
@@ -106,6 +112,11 @@ struct resman {
 	 * MC I/O portal
 	 */
 	struct mc_portal_wrapper mc_portal;
+
+	/**
+	 * MC firmware version
+	 */
+	struct mc_version mc_fw_version;
 
 	/**
 	 * Id for the root DPRC in the system
@@ -270,6 +281,10 @@ static void print_usage(void)
 static void print_version(void)
 {
 	printf("Freescale MC resman tool version %s\n", resman_version);
+	printf("MC firmware version: %u.%u.%u\n",
+	       resman.mc_fw_version.major,
+	       resman.mc_fw_version.minor,
+	       resman.mc_fw_version.revision);
 
 	resman.cmd_line_options_mask &= ~OPT_VERSION_MASK;
 	if (resman.cmd_line_options_mask != 0)
@@ -407,7 +422,7 @@ static int cmd_list_one_resource_type(uint16_t dprc_handle,
 	int res_count;
 	int res_discovered_count;
 	struct dprc_res_ids_range_desc range_desc;
-	int error = 0;
+	int error;
 
 	error = dprc_get_res_count(&resman.mc_portal, dprc_handle,
 				   (char *)mc_res_type, &res_count);
@@ -446,47 +461,8 @@ out:
  */
 static int list_mc_resources(uint16_t dprc_handle)
 {
-	/*
-	 * TODO: Remove this and use dprc_get_pool_count()/dprc_get_pool() to discover
-	 * the resource types at run time
-	 */
-	static const char *mc_res_types[] = {
-		"mcp",
-		"swp",
-		"bp",
-		"swpch",
-		"fq",
-		"qpr",
-		"qd",
-		"cg",
-		"cqch",
-		"rplr",
-		"ifp.wr0",
-		/*"port.dpsw0",*/
-		"kp.wr0.ctlue",
-		"kp.wr0.ctlui",
-		"kp.aiop0.ctlu",
-		"kp.aiop0.mflu",
-		/*"plp",*/
-		"prp.wr0.ctlue",
-		"prp.wr0.ctlui",
-		"prp.aiop0.ctlu",
-		"prp.aiop0.mflu",
-		/*"pp",*/
-		"plcy.wr0.ctlui",
-		"plcye.wr0.ctlui",
-		"dpni",
-		"dpcon",
-		"dpci",
-		"dpseci",
-		"dpio",
-		"dpbp",
-		"dpsw",
-		"dpdmux",
-		"dpmac",
-		"dprc",
-	};
-
+	int pool_count;
+	char res_type[RES_TYPE_MAX_LENGTH + 1];
 	int error;
 
 	if (resman.cmd_line_options_mask != 0) {
@@ -495,13 +471,24 @@ static int list_mc_resources(uint16_t dprc_handle)
 		goto out;
 	}
 
-	for (unsigned int i = 0; i < ARRAY_SIZE(mc_res_types); i++) {
-		error = cmd_list_one_resource_type(dprc_handle, mc_res_types[i]);
+	error = dprc_get_pool_count(&resman.mc_portal, dprc_handle,
+				    &pool_count);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_get_pool_count() failed: %d\n", error);
+		goto out;
+	}
+
+	assert(pool_count > 0);
+	for (int i = 0; i < pool_count; i++) {
+		res_type[sizeof(res_type) - 1] = '\0';
+		error = dprc_get_pool(&resman.mc_portal, dprc_handle,
+				      i, res_type);
+
+		assert(res_type[sizeof(res_type) - 1] == '\0');
+		error = cmd_list_one_resource_type(dprc_handle, res_type);
 		if (error < 0)
 			goto out;
 	}
-
-	error = 0;
 out:
 	return error;
 }
@@ -672,7 +659,7 @@ static int cmd_info_object(void)
 	int error;
 	char *obj_name;
 	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
-	uint32_t dprc_id;
+	uint32_t obj_id;
 
 	if (resman.num_cmd_args == 0) {
 		ERROR_PRINTF("<object> argument missing\n");
@@ -694,12 +681,12 @@ static int cmd_info_object(void)
 	}
 
 	obj_name = resman.cmd_args[0];
-	error = parse_object_name(obj_name, NULL, &dprc_id, obj_type);
+	error = parse_object_name(obj_name, NULL, &obj_id, obj_type);
 	if (error < 0)
 		goto out;
 
 	if (strcmp(obj_type, "dprc") == 0) {
-		error = show_dprc_info(dprc_id);
+		error = show_dprc_info(obj_id);
 	} else {
 		ERROR_PRINTF("Unexpected object type '\%s\'\n", obj_type);
 		error = -EINVAL;
@@ -723,6 +710,7 @@ static int create_dprc(uint16_t dprc_handle)
 	bool portal_allocated = false;
 	bool child_dprc_created = false;
 
+	assert(dprc_handle != 0);
 	error = ioctl(resman.mc_portal.fd, RESMAN_ALLOCATE_MC_PORTAL,
 		      &portal_id);
 	if (error == -1) {
@@ -751,8 +739,8 @@ static int create_dprc(uint16_t dprc_handle)
 	}
 
 	child_dprc_created = true;
-	printf("%u.dprc object created (MC portal %#llx consumed in the MC)\n",
-	       child_container_id, (unsigned long long)mc_portal_phys_addr);
+	printf("%u.dprc object created (using MC portal id %u, portal addr %#llx)\n",
+	       child_container_id, portal_id, (unsigned long long)mc_portal_phys_addr);
 
 	error = ioctl(resman.mc_portal.fd, RESMAN_RESCAN_ROOT_DPRC, NULL);
 	if (error == -1) {
@@ -766,10 +754,10 @@ error:
 	if (child_dprc_created) {
 		error2 = dprc_destroy_container(&resman.mc_portal, dprc_handle,
 						child_container_id);
-		if (error2 == -1) {
+		if (error2 < 0) {
 			ERROR_PRINTF(
 			    "dprc_destroy_container() failed with error %d\n",
-			    error);
+			    error2);
 		}
 	}
 
@@ -781,6 +769,13 @@ error:
 	}
 
 	return error;
+}
+
+static int create_dpni(uint16_t dprc_handle)
+{
+	assert(dprc_handle != 0);
+	ERROR_PRINTF("Creation of DPNI objects not implemented yet\n");
+	return ENOTSUP;
 }
 
 static int cmd_create_object(void)
@@ -837,6 +832,8 @@ static int cmd_create_object(void)
 
 	if (strcmp(target_obj_type, "dprc") == 0) {
 		error = create_dprc(dprc_handle);
+	} else if (strcmp(target_obj_type, "dpni") == 0) {
+		error = create_dpni(dprc_handle);
 	} else {
 		ERROR_PRINTF("Unexpected object type '\%s\'\n", target_obj_type);
 		error = -EINVAL;
@@ -857,10 +854,65 @@ out:
 	return error;
 }
 
+static int destroy_dprc(uint16_t parent_dprc_handle, int child_container_id)
+{
+	int error;
+
+	assert(parent_dprc_handle != 0);
+	error = dprc_destroy_container(&resman.mc_portal, parent_dprc_handle,
+					child_container_id);
+	if (error < 0) {
+		ERROR_PRINTF(
+		    "dprc_destroy_container() failed with error %d\n",
+		    error);
+
+		goto out;
+	}
+
+	return 0;
+out:
+	return error;
+}
+
 static int cmd_destroy_object(void)
 {
-	ERROR_PRINTF("command '\%s\' not implemented yet\n", resman.cmd_name);
-	return ENOTSUP;
+	int error;
+	char *obj_name;
+	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
+	uint32_t obj_id;
+
+	if (resman.num_cmd_args == 0) {
+		ERROR_PRINTF("<object> argument missing\n");
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (resman.num_cmd_args > 1) {
+		ERROR_PRINTF("Invalid number of arguments: %d\n",
+			     resman.num_cmd_args);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (resman.cmd_line_options_mask != 0) {
+		print_unexpected_options_error(resman.cmd_line_options_mask);
+		error = -EINVAL;
+		goto out;
+	}
+
+	obj_name = resman.cmd_args[0];
+	error = parse_object_name(obj_name, NULL, &obj_id, obj_type);
+	if (error < 0)
+		goto out;
+
+	if (strcmp(obj_type, "dprc") == 0) {
+		error = destroy_dprc(resman.root_dprc_handle, obj_id);
+	} else {
+		ERROR_PRINTF("Unexpected object type '\%s\'\n", obj_type);
+		error = -EINVAL;
+	}
+out:
+	return error;
 }
 
 static int cmd_move_object(void)
@@ -986,7 +1038,20 @@ int main(int argc, char *argv[])
 
 	mc_portal_initialized = true;
 	DEBUG_PRINTF("mc_portal regs: %p\n", resman.mc_portal.mmio_regs);
-	DEBUG_PRINTF("calling ioctl\n");
+
+	error = mc_get_version(&resman.mc_portal, &resman.mc_fw_version);
+	if (error != 0) {
+		ERROR_PRINTF("mc_get_version() failed with error %d\n",
+			     error);
+		goto out;
+	}
+
+	DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
+		     resman.mc_fw_version.major,
+		     resman.mc_fw_version.minor,
+		     resman.mc_fw_version.revision);
+
+	DEBUG_PRINTF("calling ioctl(RESMAN_GET_ROOT_DPRC_INFO)\n");
 	error = ioctl(resman.mc_portal.fd, RESMAN_GET_ROOT_DPRC_INFO,
 		      &root_dprc_info);
 	if (error == -1) {

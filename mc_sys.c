@@ -19,7 +19,7 @@
 /**
  * Timeout in clock ticks to wait for the completion of an MC command
  */
-#define MC_CMD_COMPLETION_TIMEOUT   (CLOCKS_PER_SEC / 100)
+#define MC_CMD_COMPLETION_TIMEOUT   (CLOCKS_PER_SEC / 10)
 
 /**
  * Delay in microseconds between polling iterations while
@@ -87,6 +87,12 @@ int mc_send_command(void *mc_io, struct mc_command *cmd)
 		clock_t end_clock = clock();
 		if (CLOCK_DELTA(start_clock, end_clock) >=
 			MC_CMD_COMPLETION_TIMEOUT) {
+			ERROR_PRINTF(
+				"MC timeout: start_clock %llu, end_clock %llu, timeout %llu\n",
+				(unsigned long long)start_clock,
+				(unsigned long long)end_clock,
+				(unsigned long long)MC_CMD_COMPLETION_TIMEOUT);
+
 			error = -ETIMEDOUT;
 			goto out;
 		}
