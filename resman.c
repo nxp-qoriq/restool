@@ -704,9 +704,9 @@ static int create_dprc(uint16_t dprc_handle)
 	int error;
 	int error2;
 	struct dprc_cfg cfg;
-	int child_container_id;
+	int child_dprc_id;
 	uint64_t mc_portal_phys_addr;
-	uint32_t portal_id;
+	int32_t portal_id;
 	bool portal_allocated = false;
 	bool child_dprc_created = false;
 
@@ -715,7 +715,9 @@ static int create_dprc(uint16_t dprc_handle)
 		      &portal_id);
 	if (error == -1) {
 		error = -errno;
-		ERROR_PRINTF("ioctl(RESMAN_ALLOCATE_MC_PORTAL) failed\n");
+		ERROR_PRINTF(
+			"ioctl(RESMAN_ALLOCATE_MC_PORTAL) failed with error %d\n",
+			error);
 		goto error;
 	}
 
@@ -726,11 +728,12 @@ static int create_dprc(uint16_t dprc_handle)
 	cfg.portal_id = portal_id;
 	cfg.options =
 		(DPRC_CFG_OPT_SPAWN_ALLOWED | DPRC_CFG_OPT_ALLOC_ALLOWED);
+
 	error = dprc_create_container(
 			&resman.mc_portal,
 			dprc_handle,
 			&cfg,
-			&child_container_id,
+			&child_dprc_id,
 			&mc_portal_phys_addr);
 	if (error < 0) {
 		ERROR_PRINTF(
@@ -740,12 +743,17 @@ static int create_dprc(uint16_t dprc_handle)
 
 	child_dprc_created = true;
 	printf("%u.dprc object created (using MC portal id %u, portal addr %#llx)\n",
-	       child_container_id, portal_id, (unsigned long long)mc_portal_phys_addr);
+	       child_dprc_id, portal_id, (unsigned long long)mc_portal_phys_addr);
 
+	/*
+	 * Update the kernel list of child MC objects for the parent container:
+	 */
 	error = ioctl(resman.mc_portal.fd, RESMAN_RESCAN_ROOT_DPRC, NULL);
 	if (error == -1) {
 		error = -errno;
-		ERROR_PRINTF("ioctl(RESMAN_RESCAN_ROOT_DPRC) failed\n");
+		ERROR_PRINTF(
+			"ioctl(RESMAN_RESCAN_ROOT_DPRC) failed with error %d\n",
+			error);
 		goto error;
 	}
 
@@ -753,7 +761,7 @@ static int create_dprc(uint16_t dprc_handle)
 error:
 	if (child_dprc_created) {
 		error2 = dprc_destroy_container(&resman.mc_portal, dprc_handle,
-						child_container_id);
+						child_dprc_id);
 		if (error2 < 0) {
 			ERROR_PRINTF(
 			    "dprc_destroy_container() failed with error %d\n",
@@ -764,8 +772,12 @@ error:
 	if (portal_allocated) {
 		error2 = ioctl(resman.mc_portal.fd, RESMAN_FREE_MC_PORTAL,
 			       portal_id);
-		if (error2 == -1)
-			ERROR_PRINTF("ioctl(RESMAN_FREE_MC_PORTAL) failed\n");
+		if (error2 == -1) {
+			error2 = -errno;
+			ERROR_PRINTF(
+				"ioctl(RESMAN_FREE_MC_PORTAL) failed with error %d\n",
+				error2);
+		}
 	}
 
 	return error;
@@ -854,23 +866,96 @@ out:
 	return error;
 }
 
-static int destroy_dprc(uint16_t parent_dprc_handle, int child_container_id)
+static int destroy_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 {
 	int error;
+	uint16_t child_dprc_handle;
+	struct dprc_attributes dprc_attr;
+	bool dprc_opened = false;
 
 	assert(parent_dprc_handle != 0);
+
+	/*
+	 * Before destroying the child container, get its MC portal id.
+	 * We need to notify the fsl_mc_resman kernel driver that this
+	 * MC portal has become available for reallocation, once we destroy it:
+	 */
+
+	error = open_dprc(child_dprc_id, &child_dprc_handle);
+	if (error < 0)
+		goto error;
+
+	dprc_opened = true;
+	memset(&dprc_attr, 0, sizeof(dprc_attr));
+	error = dprc_get_attributes(&resman.mc_portal, child_dprc_handle, &dprc_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_get_attributes() failed: %d\n", error);
+		goto error;
+	}
+
+	assert(child_dprc_id == dprc_attr.container_id);
+	dprc_opened = false;
+	error = dprc_close(&resman.mc_portal, child_dprc_handle);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_close() failed with error %d\n", error);
+		goto error;
+	}
+
+	/*
+	 * Destroy child container in the MC:
+	 */
 	error = dprc_destroy_container(&resman.mc_portal, parent_dprc_handle,
-					child_container_id);
+					child_dprc_id);
 	if (error < 0) {
 		ERROR_PRINTF(
 		    "dprc_destroy_container() failed with error %d\n",
 		    error);
 
-		goto out;
+		goto error;
 	}
 
+	printf("%u.dprc object destroyed\n", child_dprc_id);
+
+	/*
+	 * Update the kernel list of child MC objects for the parent container:
+	 */
+	error = ioctl(resman.mc_portal.fd, RESMAN_RESCAN_ROOT_DPRC, NULL);
+	if (error == -1) {
+		error = -errno;
+		ERROR_PRINTF(
+			"ioctl(RESMAN_RESCAN_ROOT_DPRC) failed with error %d\n",
+			error);
+		goto error;
+	}
+
+	/*
+	 * Tell the fsl_mc_resman kernel driver that the
+	 * MC portal that was allocated for the destroyed child
+	 * container can now be freed.
+	 */
+	error = ioctl(resman.mc_portal.fd, RESMAN_FREE_MC_PORTAL,
+		       dprc_attr.portal_id);
+	if (error == -1) {
+		error = -errno;
+		ERROR_PRINTF(
+			"ioctl(RESMAN_FREE_MC_PORTAL) failed with error %d\n",
+			error);
+		goto error;
+	}
+
+	DEBUG_PRINTF("Freed MC portal id %u\n", dprc_attr.portal_id);
 	return 0;
-out:
+error:
+	if (dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_portal, child_dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF(
+				"dprc_close() failed with error %d\n", error2);
+		}
+	}
+
 	return error;
 }
 
@@ -917,8 +1002,130 @@ out:
 
 static int cmd_move_object(void)
 {
-	ERROR_PRINTF("command '\%s\' not implemented yet\n", resman.cmd_name);
-	return ENOTSUP;
+	uint32_t obj_id;
+	uint32_t src_dprc_id;
+	uint32_t dest_dprc_id;
+	char *obj_name;
+	struct dprc_res_req res_req;
+	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
+	int error;
+
+	if (resman.num_cmd_args == 0) {
+		ERROR_PRINTF("<object> argument missing\n");
+		error = -EINVAL;
+		goto error;
+	}
+
+	if (resman.num_cmd_args > 1) {
+		ERROR_PRINTF("Invalid number of arguments: %d\n",
+			     resman.num_cmd_args);
+		error = -EINVAL;
+		goto error;
+	}
+
+	obj_name = resman.cmd_args[0];
+	error = parse_object_name(obj_name, NULL, &obj_id, obj_type);
+	if (error < 0)
+		goto error;
+
+	if (strcmp(obj_type, "dprc") == 0) {
+		ERROR_PRINTF("Objects of type \'dprc\' cannot be moved\n");
+		error = -EINVAL;
+		goto error;
+	}
+
+	if (resman.cmd_line_options_mask !=
+	    (OPT_SOURCE_CONTAINER_MASK | OPT_DEST_CONTAINER)) {
+		print_unexpected_options_error(
+			resman.cmd_line_options_mask);
+		error = -EINVAL;
+		goto error;
+	}
+
+	resman.cmd_line_options_mask &=
+		~(OPT_SOURCE_CONTAINER_MASK | OPT_DEST_CONTAINER);
+
+	assert(resman.cmd_line_option_arg[OPT_SOURCE_CONTAINER] != NULL);
+	assert(resman.cmd_line_option_arg[OPT_DEST_CONTAINER] != NULL);
+
+	error = parse_object_name(
+			resman.cmd_line_option_arg[OPT_SOURCE_CONTAINER],
+			"dprc", &src_dprc_id, obj_type);
+	if (error < 0)
+		goto error;
+
+	error = parse_object_name(
+			resman.cmd_line_option_arg[OPT_DEST_CONTAINER],
+			"dprc", &dest_dprc_id, obj_type);
+	if (error < 0)
+		goto error;
+
+	if (dest_dprc_id == src_dprc_id) {
+		ERROR_PRINTF("Source and destination containers must be different\n");
+		error = -EINVAL;
+		goto error;
+	}
+
+	strcpy(res_req.type, obj_type);
+	res_req.num = 1;
+	res_req.options = DPRC_RES_REQ_OPT_EXPLICIT;
+	res_req.id_base_align = obj_id;
+
+	if (src_dprc_id == resman.root_dprc_id) {
+		/*
+		 * Move object from root container to child container:
+		 */
+		error = dprc_assign(&resman.mc_portal,
+ 				    resman.root_dprc_handle,
+ 				    dest_dprc_id,
+				    &res_req);
+		if (error < 0) {
+			ERROR_PRINTF(
+				"dprc_assign() failed: %d\n", error);
+			goto error;
+		}
+	} else if (dest_dprc_id == resman.root_dprc_id) {
+		/*
+		 * Move object from child container to root container:
+		 */
+		error = dprc_unassign(&resman.mc_portal,
+ 				      resman.root_dprc_handle,
+				      src_dprc_id,
+				      &res_req);
+		if (error < 0) {
+			ERROR_PRINTF(
+				"dprc_unassign() failed: %d\n", error);
+			goto error;
+		}
+	} else {
+		/*
+		 * TODO: The limitation below should be relaxed to require only that
+		 * there must be a parent-child relationship between the source and
+		 * destination containers.
+		 */
+		ERROR_PRINTF("Either the source or the destination container must be root container\n");
+		error = -EINVAL;
+		goto error;
+	}
+
+	printf("%u.%s moved from %u.dprc to %u.dprc\n",
+	       obj_id, obj_type, src_dprc_id, dest_dprc_id);
+
+	/*
+	 * Update the kernel list of child MC objects for the root container:
+	 */
+	error = ioctl(resman.mc_portal.fd, RESMAN_RESCAN_ROOT_DPRC, NULL);
+	if (error == -1) {
+		error = -errno;
+		ERROR_PRINTF(
+			"ioctl(RESMAN_RESCAN_ROOT_DPRC) failed with error %d\n",
+			error);
+		goto error;
+	}
+
+	return 0;
+error:
+	return error;
 }
 
 static const struct resman_command resman_commands[] = {
