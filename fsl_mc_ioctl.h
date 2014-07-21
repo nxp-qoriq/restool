@@ -12,6 +12,7 @@
 #define _FSL_MC_IOCTL_H_
 
 #include <linux/ioctl.h>
+#include "fsl_mc_cmd.h"
 
 #define RESMAN_IOCTL_TYPE   'R'
 
@@ -24,8 +25,8 @@
 #define RESMAN_FREE_MC_PORTAL \
 	_IOW(RESMAN_IOCTL_TYPE, 0x3, uint32_t)
 
-#define RESMAN_RESCAN_ROOT_DPRC \
-	_IO(RESMAN_IOCTL_TYPE, 0x4)
+#define RESMAN_SEND_MC_COMMAND \
+	_IOWR(RESMAN_IOCTL_TYPE, 0x4, struct mc_command)
 
 struct ioctl_dprc_info {
 	uint32_t dprc_id;

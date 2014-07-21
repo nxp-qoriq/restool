@@ -5,8 +5,7 @@ CC = $(CROSS_COMPILE)gcc
 OBJS = resman.o \
        dprc.o \
        dpmng.o \
-       mc_sys.o \
-       fsl_mc_io_wrapper.o
+       fsl_mc_io.o
 
 CFLAGS = ${EXTRA_CFLAGS} \
 	  -Wall \

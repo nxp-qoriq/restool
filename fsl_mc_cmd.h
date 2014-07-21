@@ -1,8 +1,6 @@
 #ifndef __FSL_MC_CMD_H
 #define __FSL_MC_CMD_H
 
-#include "fsl_mc_sys.h"
-
 #define MAKE_UMASK64(_width) \
 	((_width) < 64 ? ((uint64_t)1 << (_width)) - 1 : (uint64_t)-1)
 
@@ -74,54 +72,6 @@ static inline uint64_t mc_encode_cmd_header(uint16_t cmd_id,
 		       MC_CMD_STATUS_READY);
 
 	return hdr;
-}
-
-/**
- * mc_write_command - writes a command to a Management Complex (MC) portal
- *
- * @portal: pointer to an MC portal
- * @cmd: pointer to a filled command
- */
-static inline void mc_write_command(struct mc_command __iomem *portal,
-				    struct mc_command *cmd)
-{
-	int i;
-
-	/* copy command parameters into the portal */
-	for (i = 0; i < MC_CMD_NUM_OF_PARAMS; i++)
-		iowrite64(cmd->params[i], &portal->params[i]);
-
-	/* submit the command by writing the header */
-	iowrite64(cmd->header, &portal->header);
-}
-
-/**
- * mc_read_response - reads the response for the last MC command from a
- * Management Complex (MC) portal
- *
- * @portal: pointer to an MC portal
- * @resp: pointer to command response buffer
- *
- * Returns MC_CMD_STATUS_OK on Success; Error code otherwise.
- */
-static inline enum mc_cmd_status mc_read_response(
-					struct mc_command __iomem *portal,
-					struct mc_command *resp)
-{
-	int i;
-	enum mc_cmd_status status;
-
-	/* Copy command response header from MC portal: */
-	resp->header = ioread64(&portal->header);
-	status = MC_CMD_HDR_READ_STATUS(resp->header);
-	if (status != MC_CMD_STATUS_OK)
-		return status;
-
-	/* Copy command response data from MC portal: */
-	for (i = 0; i < MC_CMD_NUM_OF_PARAMS; i++)
-		resp->params[i] = ioread64(&portal->params[i]);
-
-	return status;
 }
 
 #endif /* __FSL_MC_CMD_H */

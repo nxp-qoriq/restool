@@ -18,7 +18,8 @@
 #include <getopt.h>
 #include <sys/ioctl.h>
 #include "utils.h"
-#include "fsl_mc_io_wrapper.h"
+#include "fsl_mc_io.h"
+#include "fsl_mc_cmd.h"
 #include "fsl_mc_ioctl.h"
 #include "fsl_dprc.h"
 #include "fsl_dpmng.h"
@@ -111,7 +112,7 @@ struct resman {
 	/**
 	 * MC I/O portal
 	 */
-	struct mc_portal_wrapper mc_portal;
+	struct mc_io mc_io;
 
 	/**
 	 * MC firmware version
@@ -295,7 +296,7 @@ static int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 {
 	int error;
 
-	error = dprc_open(&resman.mc_portal,
+	error = dprc_open(&resman.mc_io,
 			  dprc_id,
 			  dprc_handle);
 	if (error < 0) {
@@ -309,7 +310,7 @@ static int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 		ERROR_PRINTF("dprc_open() returned invalid handle (auth 0) for "
 			     "%u.dprc\n", dprc_id);
 
-		(void)dprc_close(&resman.mc_portal, *dprc_handle);
+		(void)dprc_close(&resman.mc_io, *dprc_handle);
 		error = -ENOENT;
 		goto out;
 	}
@@ -335,7 +336,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 
 	printf("%u.dprc\n", dprc_id);
 
-	error = dprc_get_obj_count(&resman.mc_portal,
+	error = dprc_get_obj_count(&resman.mc_io,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -350,7 +351,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 		int error2;
 
 		error = dprc_get_obj(
-				&resman.mc_portal,
+				&resman.mc_io,
 				dprc_handle,
 				i,
 				&obj_desc);
@@ -379,7 +380,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 		error = list_dprc(obj_desc.id, child_dprc_handle,
 				  nesting_level + 1, show_non_dprc_objects);
 
-		error2 = dprc_close(&resman.mc_portal, child_dprc_handle);
+		error2 = dprc_close(&resman.mc_io, child_dprc_handle);
 		if (error2 < 0) {
 			ERROR_PRINTF("dprc_close() failed with error %d\n",
 				     error2);
@@ -424,7 +425,7 @@ static int cmd_list_one_resource_type(uint16_t dprc_handle,
 	struct dprc_res_ids_range_desc range_desc;
 	int error;
 
-	error = dprc_get_res_count(&resman.mc_portal, dprc_handle,
+	error = dprc_get_res_count(&resman.mc_io, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
 		ERROR_PRINTF("dprc_get_res_count() failed: %d\n", error);
@@ -439,7 +440,7 @@ static int cmd_list_one_resource_type(uint16_t dprc_handle,
 	do {
 		int id;
 
-		error = dprc_get_res_ids(&resman.mc_portal, dprc_handle,
+		error = dprc_get_res_ids(&resman.mc_io, dprc_handle,
 					 (char *)mc_res_type, &range_desc);
 		if (error < 0) {
 			ERROR_PRINTF("dprc_get_res_ids() failed: %d\n", error);
@@ -471,7 +472,7 @@ static int list_mc_resources(uint16_t dprc_handle)
 		goto out;
 	}
 
-	error = dprc_get_pool_count(&resman.mc_portal, dprc_handle,
+	error = dprc_get_pool_count(&resman.mc_io, dprc_handle,
 				    &pool_count);
 	if (error < 0) {
 		ERROR_PRINTF("dprc_get_pool_count() failed: %d\n", error);
@@ -481,7 +482,7 @@ static int list_mc_resources(uint16_t dprc_handle)
 	assert(pool_count > 0);
 	for (int i = 0; i < pool_count; i++) {
 		res_type[sizeof(res_type) - 1] = '\0';
-		error = dprc_get_pool(&resman.mc_portal, dprc_handle,
+		error = dprc_get_pool(&resman.mc_io, dprc_handle,
 				      i, res_type);
 
 		assert(res_type[sizeof(res_type) - 1] == '\0');
@@ -498,7 +499,7 @@ static int list_mc_objects(uint16_t dprc_handle, char *dprc_name)
 	int num_child_devices;
 	int error;
 
-	error = dprc_get_obj_count(&resman.mc_portal,
+	error = dprc_get_obj_count(&resman.mc_io,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -513,7 +514,7 @@ static int list_mc_objects(uint16_t dprc_handle, char *dprc_name)
 	for (int i = 0; i < num_child_devices; i++) {
 		struct dprc_obj_desc obj_desc;
 
-		error = dprc_get_obj(&resman.mc_portal,
+		error = dprc_get_obj(&resman.mc_io,
 				     dprc_handle,
 				     i,
 				     &obj_desc);
@@ -587,7 +588,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_portal, dprc_handle);
+		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
 			ERROR_PRINTF("dprc_close() failed with error %d\n",
 				     error2);
@@ -617,7 +618,7 @@ static int show_dprc_info(uint32_t dprc_id)
 	}
 
 	memset(&dprc_attr, 0, sizeof(dprc_attr));
-	error = dprc_get_attributes(&resman.mc_portal, dprc_handle, &dprc_attr);
+	error = dprc_get_attributes(&resman.mc_io, dprc_handle, &dprc_attr);
 	if (error < 0) {
 		ERROR_PRINTF("dprc_get_attributes() failed: %d\n", error);
 		goto out;
@@ -642,7 +643,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_portal, dprc_handle);
+		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
 			ERROR_PRINTF("dprc_close() failed with error %d\n",
 				     error2);
@@ -711,7 +712,7 @@ static int create_dprc(uint16_t dprc_handle)
 	bool child_dprc_created = false;
 
 	assert(dprc_handle != 0);
-	error = ioctl(resman.mc_portal.fd, RESMAN_ALLOCATE_MC_PORTAL,
+	error = ioctl(resman.mc_io.fd, RESMAN_ALLOCATE_MC_PORTAL,
 		      &portal_id);
 	if (error == -1) {
 		error = -errno;
@@ -730,7 +731,7 @@ static int create_dprc(uint16_t dprc_handle)
 		(DPRC_CFG_OPT_SPAWN_ALLOWED | DPRC_CFG_OPT_ALLOC_ALLOWED);
 
 	error = dprc_create_container(
-			&resman.mc_portal,
+			&resman.mc_io,
 			dprc_handle,
 			&cfg,
 			&child_dprc_id,
@@ -745,22 +746,10 @@ static int create_dprc(uint16_t dprc_handle)
 	printf("%u.dprc object created (using MC portal id %u, portal addr %#llx)\n",
 	       child_dprc_id, portal_id, (unsigned long long)mc_portal_phys_addr);
 
-	/*
-	 * Update the kernel list of child MC objects for the parent container:
-	 */
-	error = ioctl(resman.mc_portal.fd, RESMAN_RESCAN_ROOT_DPRC, NULL);
-	if (error == -1) {
-		error = -errno;
-		ERROR_PRINTF(
-			"ioctl(RESMAN_RESCAN_ROOT_DPRC) failed with error %d\n",
-			error);
-		goto error;
-	}
-
 	return 0;
 error:
 	if (child_dprc_created) {
-		error2 = dprc_destroy_container(&resman.mc_portal, dprc_handle,
+		error2 = dprc_destroy_container(&resman.mc_io, dprc_handle,
 						child_dprc_id);
 		if (error2 < 0) {
 			ERROR_PRINTF(
@@ -770,7 +759,7 @@ error:
 	}
 
 	if (portal_allocated) {
-		error2 = ioctl(resman.mc_portal.fd, RESMAN_FREE_MC_PORTAL,
+		error2 = ioctl(resman.mc_io.fd, RESMAN_FREE_MC_PORTAL,
 			       portal_id);
 		if (error2 == -1) {
 			error2 = -errno;
@@ -854,7 +843,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_portal, dprc_handle);
+		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
 			ERROR_PRINTF("dprc_close() failed with error %d\n",
 				     error2);
@@ -887,7 +876,7 @@ static int destroy_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 
 	dprc_opened = true;
 	memset(&dprc_attr, 0, sizeof(dprc_attr));
-	error = dprc_get_attributes(&resman.mc_portal, child_dprc_handle, &dprc_attr);
+	error = dprc_get_attributes(&resman.mc_io, child_dprc_handle, &dprc_attr);
 	if (error < 0) {
 		ERROR_PRINTF("dprc_get_attributes() failed: %d\n", error);
 		goto error;
@@ -895,7 +884,7 @@ static int destroy_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 
 	assert(child_dprc_id == dprc_attr.container_id);
 	dprc_opened = false;
-	error = dprc_close(&resman.mc_portal, child_dprc_handle);
+	error = dprc_close(&resman.mc_io, child_dprc_handle);
 	if (error < 0) {
 		ERROR_PRINTF("dprc_close() failed with error %d\n", error);
 		goto error;
@@ -904,7 +893,7 @@ static int destroy_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 	/*
 	 * Destroy child container in the MC:
 	 */
-	error = dprc_destroy_container(&resman.mc_portal, parent_dprc_handle,
+	error = dprc_destroy_container(&resman.mc_io, parent_dprc_handle,
 					child_dprc_id);
 	if (error < 0) {
 		ERROR_PRINTF(
@@ -917,23 +906,11 @@ static int destroy_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 	printf("%u.dprc object destroyed\n", child_dprc_id);
 
 	/*
-	 * Update the kernel list of child MC objects for the parent container:
-	 */
-	error = ioctl(resman.mc_portal.fd, RESMAN_RESCAN_ROOT_DPRC, NULL);
-	if (error == -1) {
-		error = -errno;
-		ERROR_PRINTF(
-			"ioctl(RESMAN_RESCAN_ROOT_DPRC) failed with error %d\n",
-			error);
-		goto error;
-	}
-
-	/*
 	 * Tell the fsl_mc_resman kernel driver that the
 	 * MC portal that was allocated for the destroyed child
 	 * container can now be freed.
 	 */
-	error = ioctl(resman.mc_portal.fd, RESMAN_FREE_MC_PORTAL,
+	error = ioctl(resman.mc_io.fd, RESMAN_FREE_MC_PORTAL,
 		       dprc_attr.portal_id);
 	if (error == -1) {
 		error = -errno;
@@ -949,7 +926,7 @@ error:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_portal, child_dprc_handle);
+		error2 = dprc_close(&resman.mc_io, child_dprc_handle);
 		if (error2 < 0) {
 			ERROR_PRINTF(
 				"dprc_close() failed with error %d\n", error2);
@@ -1075,7 +1052,7 @@ static int cmd_move_object(void)
 		/*
 		 * Move object from root container to child container:
 		 */
-		error = dprc_assign(&resman.mc_portal,
+		error = dprc_assign(&resman.mc_io,
  				    resman.root_dprc_handle,
  				    dest_dprc_id,
 				    &res_req);
@@ -1088,7 +1065,7 @@ static int cmd_move_object(void)
 		/*
 		 * Move object from child container to root container:
 		 */
-		error = dprc_unassign(&resman.mc_portal,
+		error = dprc_unassign(&resman.mc_io,
  				      resman.root_dprc_handle,
 				      src_dprc_id,
 				      &res_req);
@@ -1110,18 +1087,6 @@ static int cmd_move_object(void)
 
 	printf("%u.%s moved from %u.dprc to %u.dprc\n",
 	       obj_id, obj_type, src_dprc_id, dest_dprc_id);
-
-	/*
-	 * Update the kernel list of child MC objects for the root container:
-	 */
-	error = ioctl(resman.mc_portal.fd, RESMAN_RESCAN_ROOT_DPRC, NULL);
-	if (error == -1) {
-		error = -errno;
-		ERROR_PRINTF(
-			"ioctl(RESMAN_RESCAN_ROOT_DPRC) failed with error %d\n",
-			error);
-		goto error;
-	}
 
 	return 0;
 error:
@@ -1234,19 +1199,19 @@ out:
 int main(int argc, char *argv[])
 {
 	int error;
-	bool mc_portal_initialized = false;
+	bool mc_io_initialized = false;
 	bool root_dprc_opened = false;
 	struct ioctl_dprc_info root_dprc_info = { 0 };
 
 	DEBUG_PRINTF("resman built on " __DATE__ " " __TIME__ "\n");
-	error = mc_portal_wrapper_init(&resman.mc_portal);
+	error = mc_io_init(&resman.mc_io);
 	if (error != 0)
 		goto out;
 
-	mc_portal_initialized = true;
-	DEBUG_PRINTF("mc_portal regs: %p\n", resman.mc_portal.mmio_regs);
+	mc_io_initialized = true;
+	DEBUG_PRINTF("resman.mc_io.porta_id: %u\n", resman.mc_io.portal_id);
 
-	error = mc_get_version(&resman.mc_portal, &resman.mc_fw_version);
+	error = mc_get_version(&resman.mc_io, &resman.mc_fw_version);
 	if (error != 0) {
 		ERROR_PRINTF("mc_get_version() failed with error %d\n",
 			     error);
@@ -1259,7 +1224,7 @@ int main(int argc, char *argv[])
 		     resman.mc_fw_version.revision);
 
 	DEBUG_PRINTF("calling ioctl(RESMAN_GET_ROOT_DPRC_INFO)\n");
-	error = ioctl(resman.mc_portal.fd, RESMAN_GET_ROOT_DPRC_INFO,
+	error = ioctl(resman.mc_io.fd, RESMAN_GET_ROOT_DPRC_INFO,
 		      &root_dprc_info);
 	if (error == -1) {
 		error = -errno;
@@ -1281,7 +1246,7 @@ out:
 	if (root_dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_portal, resman.root_dprc_handle);
+		error2 = dprc_close(&resman.mc_io, resman.root_dprc_handle);
 		if (error2 < 0) {
 			ERROR_PRINTF("dprc_close() failed with error %d\n",
 				     error2);
@@ -1290,8 +1255,8 @@ out:
 		}
 	}
 
-	if (mc_portal_initialized)
-		mc_portal_wrapper_cleanup(&resman.mc_portal);
+	if (mc_io_initialized)
+		mc_io_cleanup(&resman.mc_io);
 
 	return error;
 }
