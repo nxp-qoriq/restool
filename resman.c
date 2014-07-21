@@ -216,12 +216,12 @@ static void print_unexpected_options_error(uint32_t options_mask)
 }
 
 static int parse_object_name(const char *obj_name, char *expected_obj_type,
-			     uint32_t *obj_id, char *obj_type)
+			     char *obj_type, uint32_t *obj_id)
 {
 	int n;
 
-	n = sscanf(obj_name, "%u.%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "s",
-		   obj_id, obj_type);
+	n = sscanf(obj_name, "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "s.%u",
+		   obj_type, obj_id);
 	if (n != 2) {
 		ERROR_PRINTF("Invalid MC object name: %s\n", obj_name);
 		return -EINVAL;
@@ -301,14 +301,14 @@ static int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 			  dprc_handle);
 	if (error < 0) {
 		ERROR_PRINTF(
-			"dprc_open() failed for %u.dprc with error %d\n",
+			"dprc_open() failed for dprc.%u with error %d\n",
 			dprc_id, error);
 		goto out;
 	}
 
 	if (*dprc_handle == 0) {
 		ERROR_PRINTF("dprc_open() returned invalid handle (auth 0) for "
-			     "%u.dprc\n", dprc_id);
+			     "dprc.%u\n", dprc_id);
 
 		(void)dprc_close(&resman.mc_io, *dprc_handle);
 		error = -ENOENT;
@@ -334,7 +334,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 	for (int i = 0; i < nesting_level; i++)
 		printf("  ");
 
-	printf("%u.dprc\n", dprc_id);
+	printf("dprc.%u\n", dprc_id);
 
 	error = dprc_get_obj_count(&resman.mc_io,
 				   dprc_handle,
@@ -367,7 +367,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 				for (int i = 0; i < nesting_level + 1; i++)
 					printf("  ");
 
-				printf("%u.%s\n", obj_desc.id, obj_desc.type);
+				printf("%s.%u\n", obj_desc.type, obj_desc.id);
 			}
 
 			continue;
@@ -448,7 +448,7 @@ static int cmd_list_one_resource_type(uint16_t dprc_handle,
 		}
 
 		for (id = range_desc.base_id; id <= range_desc.last_id; id++) {
-			printf("%d.%s\n", id, mc_res_type);
+			printf("%s.%d\n", mc_res_type, id);
 			res_discovered_count++;
 		}
 	} while (res_discovered_count < res_count &&
@@ -525,7 +525,7 @@ static int list_mc_objects(uint16_t dprc_handle, char *dprc_name)
 			goto out;
 		}
 
-		printf("%u.%s\n", obj_desc.id, obj_desc.type);
+		printf("%s.%u\n", obj_desc.type, obj_desc.id);
 	}
 
 	error = 0;
@@ -556,7 +556,7 @@ static int cmd_show_container(void)
 	}
 
 	dprc_name = resman.cmd_args[0];
-	error = parse_object_name(dprc_name, "dprc", &dprc_id, obj_type);
+	error = parse_object_name(dprc_name, "dprc", obj_type, &dprc_id);
 	if (error < 0)
 		goto out;
 
@@ -682,14 +682,14 @@ static int cmd_info_object(void)
 	}
 
 	obj_name = resman.cmd_args[0];
-	error = parse_object_name(obj_name, NULL, &obj_id, obj_type);
+	error = parse_object_name(obj_name, NULL, obj_type, &obj_id);
 	if (error < 0)
 		goto out;
 
 	if (strcmp(obj_type, "dprc") == 0) {
 		error = show_dprc_info(obj_id);
 	} else {
-		ERROR_PRINTF("Unexpected object type '\%s\'\n", obj_type);
+		ERROR_PRINTF("Unexpected object type \'%s\'\n", obj_type);
 		error = -EINVAL;
 	}
 out:
@@ -743,7 +743,7 @@ static int create_dprc(uint16_t dprc_handle)
 	}
 
 	child_dprc_created = true;
-	printf("%u.dprc object created (using MC portal id %u, portal addr %#llx)\n",
+	printf("dprc.%u object created (using MC portal id %u, portal addr %#llx)\n",
 	       child_dprc_id, portal_id, (unsigned long long)mc_portal_phys_addr);
 
 	return 0;
@@ -806,7 +806,7 @@ static int cmd_create_object(void)
 
 		assert(resman.cmd_line_option_arg[OPT_CONTAINER] != NULL);
 		error = parse_object_name(resman.cmd_line_option_arg[OPT_CONTAINER],
-					  "dprc", &dprc_id, obj_type);
+					  "dprc", obj_type, &dprc_id);
 		if (error < 0)
 			goto out;
 
@@ -836,7 +836,7 @@ static int cmd_create_object(void)
 	} else if (strcmp(target_obj_type, "dpni") == 0) {
 		error = create_dpni(dprc_handle);
 	} else {
-		ERROR_PRINTF("Unexpected object type '\%s\'\n", target_obj_type);
+		ERROR_PRINTF("Unexpected object type \'%s\'\n", target_obj_type);
 		error = -EINVAL;
 	}
 out:
@@ -903,7 +903,7 @@ static int destroy_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 		goto error;
 	}
 
-	printf("%u.dprc object destroyed\n", child_dprc_id);
+	printf("dprc.%u object destroyed\n", child_dprc_id);
 
 	/*
 	 * Tell the fsl_mc_resman kernel driver that the
@@ -963,14 +963,14 @@ static int cmd_destroy_object(void)
 	}
 
 	obj_name = resman.cmd_args[0];
-	error = parse_object_name(obj_name, NULL, &obj_id, obj_type);
+	error = parse_object_name(obj_name, NULL, obj_type, &obj_id);
 	if (error < 0)
 		goto out;
 
 	if (strcmp(obj_type, "dprc") == 0) {
 		error = destroy_dprc(resman.root_dprc_handle, obj_id);
 	} else {
-		ERROR_PRINTF("Unexpected object type '\%s\'\n", obj_type);
+		ERROR_PRINTF("Unexpected object type \'%s\'\n", obj_type);
 		error = -EINVAL;
 	}
 out:
@@ -1001,7 +1001,7 @@ static int cmd_move_object(void)
 	}
 
 	obj_name = resman.cmd_args[0];
-	error = parse_object_name(obj_name, NULL, &obj_id, obj_type);
+	error = parse_object_name(obj_name, NULL, obj_type, &obj_id);
 	if (error < 0)
 		goto error;
 
@@ -1027,13 +1027,13 @@ static int cmd_move_object(void)
 
 	error = parse_object_name(
 			resman.cmd_line_option_arg[OPT_SOURCE_CONTAINER],
-			"dprc", &src_dprc_id, obj_type);
+			"dprc", obj_type, &src_dprc_id);
 	if (error < 0)
 		goto error;
 
 	error = parse_object_name(
 			resman.cmd_line_option_arg[OPT_DEST_CONTAINER],
-			"dprc", &dest_dprc_id, obj_type);
+			"dprc", obj_type, &dest_dprc_id);
 	if (error < 0)
 		goto error;
 
@@ -1085,8 +1085,8 @@ static int cmd_move_object(void)
 		goto error;
 	}
 
-	printf("%u.%s moved from %u.dprc to %u.dprc\n",
-	       obj_id, obj_type, src_dprc_id, dest_dprc_id);
+	printf("%s.%u moved from dprc.%u to dprc.%u\n",
+	       obj_type, obj_id, src_dprc_id, dest_dprc_id);
 
 	return 0;
 error:
