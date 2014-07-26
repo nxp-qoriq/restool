@@ -30,6 +30,7 @@
 #define OPT_HELP_MASK		    ONE_BIT_MASK(OPT_HELP)
 #define OPT_VERSION_MASK	    ONE_BIT_MASK(OPT_VERSION)
 #define OPT_RESOURCES_MASK	    ONE_BIT_MASK(OPT_RESOURCES)
+#define OPT_TYPE_MASK		    ONE_BIT_MASK(OPT_TYPE)
 #define OPT_CONTAINER_MASK	    ONE_BIT_MASK(OPT_CONTAINER)
 #define OPT_SOURCE_CONTAINER_MASK   ONE_BIT_MASK(OPT_SOURCE_CONTAINER)
 #define OPT_DEST_CONTAINER_MASK	    ONE_BIT_MASK(OPT_DEST_CONTAINER)
@@ -67,6 +68,7 @@ enum cmd_line_options {
 	OPT_HELP = 0,
 	OPT_VERSION,
 	OPT_RESOURCES,
+	OPT_TYPE,
 	OPT_CONTAINER,
 	OPT_SOURCE_CONTAINER,
 	OPT_DEST_CONTAINER,
@@ -167,6 +169,13 @@ static struct option getopt_long_options[] = {
 		.val = 'r',
 	},
 
+	[OPT_TYPE] = {
+		.name = "type",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 't',
+	},
+
 	[OPT_CONTAINER] = {
 		.name = "container",
 		.has_arg = 1,
@@ -239,30 +248,38 @@ static int parse_object_name(const char *obj_name, char *expected_obj_type,
 static void print_usage(void)
 {
 	static const char usage_msg[] =
-		"resman [OPTION]... <command> [ARG]...\n"
+		"usage: resman <command> [OPTION] [ARG]\n"
 		"\n"
 		"General options:\n"
-		"-h, --help\tPrint this message\n"
-		"-v, --version\tPrint version of the resman tool\n"
+		"  -h, --help\tPrint this message\n"
+		"\te.g. resman --help\n"
+		"  -v, --version\tPrint version of the resman tool\n"
+		"\te.g. resman --version\n"
 		"\n"
 		"Commands:\n"
-		"list\tList all containers (DPRC objects) in the system.\n"
-		"show [-r] <container>\n"
+		"  list\tList all containers (DPRC objects) in the system.\n"
+		"  show <container> [-r] [-t] <resouce-type>\n"
 		"\tDisplay the contents of a DPRC/container\n"
+		"\tnon-option: display the objects of DPRC/container\n"
+		"\t\te.g. show dprc.2\n"
 		"\tOptions:\n"
 		"\t-r, --resources\n"
-		"\t\tDisplay resources instead of objects\n"
-		"\tNOTE: Use 0.dprc for the global container.\n"
-		"info <object>\n"
+		"\t\tDisplay general count of each resource\n"
+		"\t\te.g. show dprc.2 -r\n"
+		"\t-t, --type\n"
+		"\t\tDisplay detailed resource of the specified type\n"
+		"\t\te.g. show dprc.2 -t mcp\n"
+		"\tNOTE: Use dprc.0 for the global container.\n"
+		"  info <object>\n"
 		"\tShow general info about an MC object.\n"
-		"create <object type> [-c]\n"
+		"  create <object type> [-c]\n"
 		"\tCreate a new MC object of the given type.\n"
 		"\tOptions:\n"
 		"\t-c <container>, --container=<container>\n"
 		"\t\tContainer in which the object is to be created\n"
-		"destroy <object>\n"
+		"  destroy <object>\n"
 		"\tDestroy an MC object.\n"
-		"move <object> -s <source container> -d <destination container>\n"
+		"  move <object> -s <source container> -d <destination container>\n"
 		"\tMove a non-DPRC MC object from one container to another.\n"
 		"\tOptions:\n"
 		"\t-s <container>, --source=<container>\n"
@@ -417,7 +434,8 @@ out:
 	return error;
 }
 
-static int cmd_list_one_resource_type(uint16_t dprc_handle,
+
+static int show_one_resource_type(uint16_t dprc_handle,
 				      const char *mc_res_type)
 {
 	int res_count;
@@ -432,8 +450,10 @@ static int cmd_list_one_resource_type(uint16_t dprc_handle,
 		goto out;
 	}
 
-	if (res_count == 0)
+	if (res_count == 0) {
+		printf("Don't have any %s resource\n", mc_res_type);
 		goto out;
+	}
 
 	memset(&range_desc, 0, sizeof(struct dprc_res_ids_range_desc));
 	res_discovered_count = 0;
@@ -457,20 +477,36 @@ out:
 	return error;
 }
 
+static int show_one_resource_type_count(uint16_t dprc_handle,
+				      const char *mc_res_type)
+{
+	int res_count;
+	int error;
+
+	error = dprc_get_res_count(&resman.mc_io, dprc_handle,
+				   (char *)mc_res_type, &res_count);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_get_res_count() failed: %d\n", error);
+		goto out;
+	}
+
+	if (res_count == 0)
+		goto out;
+
+	printf("%s: %d\n",mc_res_type, res_count);
+
+out:
+	return error;
+}
+
 /**
  * List resources of all types found in the container specified by dprc_handle
  */
-static int list_mc_resources(uint16_t dprc_handle)
+static int show_mc_resources(uint16_t dprc_handle)
 {
 	int pool_count;
 	char res_type[RES_TYPE_MAX_LENGTH + 1];
 	int error;
-
-	if (resman.cmd_line_options_mask != 0) {
-		print_unexpected_options_error(resman.cmd_line_options_mask);
-		error = -EINVAL;
-		goto out;
-	}
 
 	error = dprc_get_pool_count(&resman.mc_io, dprc_handle,
 				    &pool_count);
@@ -486,7 +522,7 @@ static int list_mc_resources(uint16_t dprc_handle)
 				      i, res_type);
 
 		assert(res_type[sizeof(res_type) - 1] == '\0');
-		error = cmd_list_one_resource_type(dprc_handle, res_type);
+		error = show_one_resource_type_count(dprc_handle, res_type);
 		if (error < 0)
 			goto out;
 	}
@@ -494,7 +530,7 @@ out:
 	return error;
 }
 
-static int list_mc_objects(uint16_t dprc_handle, char *dprc_name)
+static int show_mc_objects(uint16_t dprc_handle, char *dprc_name)
 {
 	int num_child_devices;
 	int error;
@@ -541,6 +577,7 @@ static int cmd_show_container(void)
 	int error = 0;
 	bool dprc_opened = false;
 	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
+	const char *res_type;
 
 	if (resman.num_cmd_args == 0) {
 		ERROR_PRINTF("<container> argument missing\n");
@@ -570,18 +607,32 @@ static int cmd_show_container(void)
 		dprc_handle = resman.root_dprc_handle;
 	}
 
+	if (resman.cmd_line_options_mask == 0) {
+		error = show_mc_objects(dprc_handle, dprc_name);
+		goto out;
+	}
+
 	if (resman.cmd_line_options_mask & OPT_RESOURCES_MASK) {
 		resman.cmd_line_options_mask &= ~OPT_RESOURCES_MASK;
-		error = list_mc_resources(dprc_handle);
-	} else {
-		if (resman.cmd_line_options_mask != 0) {
-			print_unexpected_options_error(
-				resman.cmd_line_options_mask);
-			error = -EINVAL;
+		error = show_mc_resources(dprc_handle);
+		if (error < 0)
 			goto out;
-		}
+	}
 
-		error = list_mc_objects(dprc_handle, dprc_name);
+	if (resman.cmd_line_options_mask & OPT_TYPE_MASK) {
+		assert(resman.cmd_line_option_arg[OPT_TYPE] != NULL);
+		res_type = resman.cmd_line_option_arg[OPT_TYPE];
+		resman.cmd_line_options_mask &= ~OPT_TYPE_MASK;
+		error = show_one_resource_type(dprc_handle, res_type);
+		if (error < 0)
+			goto out;
+	}
+
+	if (resman.cmd_line_options_mask != 0) {
+		print_unexpected_options_error(
+			resman.cmd_line_options_mask);
+		error = -EINVAL;
+		goto out;
 	}
 
 out:
@@ -1109,7 +1160,7 @@ static int parse_cmd_line(int argc, char *argv[])
 	resman_cmd_func_t *cmd_func = NULL;
 
 	for (;;) {
-		c = getopt_long(argc, argv, "hvrc:s:d:", getopt_long_options, NULL);
+		c = getopt_long(argc, argv, "hvrt:c:s:d:", getopt_long_options, NULL);
 		if (c == -1)
 			break;
 
@@ -1124,6 +1175,11 @@ static int parse_cmd_line(int argc, char *argv[])
 
 		case 'r':
 			resman.cmd_line_options_mask |= OPT_RESOURCES_MASK;
+			break;
+
+		case 't':
+			resman.cmd_line_options_mask |= OPT_TYPE_MASK;
+			resman.cmd_line_option_arg[OPT_TYPE] = optarg;
 			break;
 
 		case 'c':
