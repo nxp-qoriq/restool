@@ -1209,7 +1209,7 @@ int main(int argc, char *argv[])
 		goto out;
 
 	mc_io_initialized = true;
-	DEBUG_PRINTF("resman.mc_io.porta_id: %u\n", resman.mc_io.portal_id);
+	DEBUG_PRINTF("resman.mc_io.fd: %d\n", resman.mc_io.fd);
 
 	error = mc_get_version(&resman.mc_io, &resman.mc_fw_version);
 	if (error != 0) {
