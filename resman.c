@@ -87,13 +87,13 @@ struct resman {
 	/**
 	 * Bit mask of command-line options not consumed yet
 	 */
-	uint32_t cmd_line_options_mask;
+	uint32_t option_mask;
 
 	/**
 	 * Array of option arguments for options found in the command line,
 	 * that have arguments. One entry per option.
 	 */
-	const char *cmd_line_option_arg[NUM_CMD_LINE_OPTIONS];
+	const char *option_arg[NUM_CMD_LINE_OPTIONS];
 
 	/**
 	 * resman command found in the command line
@@ -101,15 +101,14 @@ struct resman {
 	const char *cmd_name;
 
 	/**
-	 * Number of arguments specified for the command found in the command
-	 * line
+	 * Number of non-option arguments found in the command line
 	 */
-	int num_cmd_args;
+	int num_non_option_arg;
 
 	/**
-	 * Array of arguments for the resman command found in the command line
+	 * Array of non-option arguments found in the command line
 	 */
-	char *const *cmd_args;
+	char *const *non_option_arg;
 
 	/**
 	 * MC I/O portal
@@ -140,9 +139,9 @@ struct resman_command {
 };
 
 static struct resman resman = {
-	.cmd_line_options_mask = 0x0,
+	.option_mask = 0x0,
 	.cmd_name = NULL,
-	.num_cmd_args = 0,
+	.num_non_option_arg = 0,
 };
 
 static const char resman_version[] = "0.1";
@@ -202,11 +201,11 @@ static struct option getopt_long_options[] = {
 
 C_ASSERT(ARRAY_SIZE(getopt_long_options) == NUM_CMD_LINE_OPTIONS + 1);
 
-static void print_unexpected_options_error(uint32_t options_mask)
+static void print_unexpected_options_error(uint32_t option_mask)
 {
 #	define PRINT_OPTION(_opt_mask, _opt_index) \
 	do {								\
-		if (options_mask & (_opt_mask)) {			\
+		if (option_mask & (_opt_mask)) {			\
 			fprintf(stderr, "\t%c, %s\n",			\
 				getopt_long_options[_opt_index].val,	\
 				getopt_long_options[_opt_index].name);  \
@@ -291,8 +290,8 @@ static void print_usage(void)
 
 	printf(usage_msg);
 
-	resman.cmd_line_options_mask &= ~OPT_HELP_MASK;
-	if (resman.cmd_line_options_mask != 0)
+	resman.option_mask &= ~OPT_HELP_MASK;
+	if (resman.option_mask != 0)
 		ERROR_PRINTF("Extra options ignored\n");
 }
 
@@ -304,8 +303,8 @@ static void print_version(void)
 	       resman.mc_fw_version.minor,
 	       resman.mc_fw_version.revision);
 
-	resman.cmd_line_options_mask &= ~OPT_VERSION_MASK;
-	if (resman.cmd_line_options_mask != 0)
+	resman.option_mask &= ~OPT_VERSION_MASK;
+	if (resman.option_mask != 0)
 		ERROR_PRINTF("Extra options ignored\n");
 }
 
@@ -416,15 +415,15 @@ static int cmd_list_containers(void)
 {
 	int error;
 
-	if (resman.num_cmd_args != 0) {
+	if (resman.num_non_option_arg != 0) {
 		ERROR_PRINTF("Unexpected arguments\n");
 		error = -EINVAL;
 		goto out;
 	}
 
-	if (resman.cmd_line_options_mask != 0) {
+	if (resman.option_mask != 0) {
 		print_unexpected_options_error(
-			resman.cmd_line_options_mask);
+			resman.option_mask);
 		error = -EINVAL;
 		goto out;
 	}
@@ -579,20 +578,20 @@ static int cmd_show_container(void)
 	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
 	const char *res_type;
 
-	if (resman.num_cmd_args == 0) {
+	if (resman.num_non_option_arg == 0) {
 		ERROR_PRINTF("<container> argument missing\n");
 		error = -EINVAL;
 		goto out;
 	}
 
-	if (resman.num_cmd_args > 1) {
-		ERROR_PRINTF("Invalid number of arguments: %d\n",
-			     resman.num_cmd_args);
+	if (resman.num_non_option_arg > 1) {
+		ERROR_PRINTF("Invalid number of non-option arguments: %d\n",
+			     resman.num_non_option_arg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	dprc_name = resman.cmd_args[0];
+	dprc_name = resman.non_option_arg[0];
 	error = parse_object_name(dprc_name, "dprc", obj_type, &dprc_id);
 	if (error < 0)
 		goto out;
@@ -607,30 +606,30 @@ static int cmd_show_container(void)
 		dprc_handle = resman.root_dprc_handle;
 	}
 
-	if (resman.cmd_line_options_mask == 0) {
+	if (resman.option_mask == 0) {
 		error = show_mc_objects(dprc_handle, dprc_name);
 		goto out;
 	}
 
-	if (resman.cmd_line_options_mask & OPT_RESOURCES_MASK) {
-		resman.cmd_line_options_mask &= ~OPT_RESOURCES_MASK;
+	if (resman.option_mask & OPT_RESOURCES_MASK) {
+		resman.option_mask &= ~OPT_RESOURCES_MASK;
 		error = show_mc_resources(dprc_handle);
 		if (error < 0)
 			goto out;
 	}
 
-	if (resman.cmd_line_options_mask & OPT_TYPE_MASK) {
-		assert(resman.cmd_line_option_arg[OPT_TYPE] != NULL);
-		res_type = resman.cmd_line_option_arg[OPT_TYPE];
-		resman.cmd_line_options_mask &= ~OPT_TYPE_MASK;
+	if (resman.option_mask & OPT_TYPE_MASK) {
+		assert(resman.option_arg[OPT_TYPE] != NULL);
+		res_type = resman.option_arg[OPT_TYPE];
+		resman.option_mask &= ~OPT_TYPE_MASK;
 		error = show_one_resource_type(dprc_handle, res_type);
 		if (error < 0)
 			goto out;
 	}
 
-	if (resman.cmd_line_options_mask != 0) {
+	if (resman.option_mask != 0) {
 		print_unexpected_options_error(
-			resman.cmd_line_options_mask);
+			resman.option_mask);
 		error = -EINVAL;
 		goto out;
 	}
@@ -713,26 +712,26 @@ static int cmd_info_object(void)
 	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
 	uint32_t obj_id;
 
-	if (resman.num_cmd_args == 0) {
+	if (resman.num_non_option_arg == 0) {
 		ERROR_PRINTF("<object> argument missing\n");
 		error = -EINVAL;
 		goto out;
 	}
 
-	if (resman.num_cmd_args > 1) {
-		ERROR_PRINTF("Invalid number of arguments: %d\n",
-			     resman.num_cmd_args);
+	if (resman.num_non_option_arg > 1) {
+		ERROR_PRINTF("Invalid number of non-option arguments: %d\n",
+			     resman.num_non_option_arg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	if (resman.cmd_line_options_mask != 0) {
-		print_unexpected_options_error(resman.cmd_line_options_mask);
+	if (resman.option_mask != 0) {
+		print_unexpected_options_error(resman.option_mask);
 		error = -EINVAL;
 		goto out;
 	}
 
-	obj_name = resman.cmd_args[0];
+	obj_name = resman.non_option_arg[0];
 	error = parse_object_name(obj_name, NULL, obj_type, &obj_id);
 	if (error < 0)
 		goto out;
@@ -837,26 +836,26 @@ static int cmd_create_object(void)
 	char *target_obj_type;
 	bool dprc_opened = false;
 
-	if (resman.num_cmd_args == 0) {
+	if (resman.num_non_option_arg == 0) {
 		ERROR_PRINTF("<object type> argument missing\n");
 		error = -EINVAL;
 		goto out;
 	}
 
-	if (resman.num_cmd_args > 1) {
-		ERROR_PRINTF("Invalid number of arguments: %d\n",
-			     resman.num_cmd_args);
+	if (resman.num_non_option_arg > 1) {
+		ERROR_PRINTF("Invalid number of non-option arguments: %d\n",
+			     resman.num_non_option_arg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	target_obj_type = resman.cmd_args[0];
-	if (resman.cmd_line_options_mask & OPT_CONTAINER_MASK) {
+	target_obj_type = resman.non_option_arg[0];
+	if (resman.option_mask & OPT_CONTAINER_MASK) {
 		char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
 		uint32_t dprc_id;
 
-		assert(resman.cmd_line_option_arg[OPT_CONTAINER] != NULL);
-		error = parse_object_name(resman.cmd_line_option_arg[OPT_CONTAINER],
+		assert(resman.option_arg[OPT_CONTAINER] != NULL);
+		error = parse_object_name(resman.option_arg[OPT_CONTAINER],
 					  "dprc", obj_type, &dprc_id);
 		if (error < 0)
 			goto out;
@@ -871,13 +870,13 @@ static int cmd_create_object(void)
 			dprc_handle = resman.root_dprc_handle;
 		}
 
-		resman.cmd_line_options_mask &= ~OPT_CONTAINER_MASK;
+		resman.option_mask &= ~OPT_CONTAINER_MASK;
 	} else {
 		dprc_handle = resman.root_dprc_handle;
 	}
 
-	if (resman.cmd_line_options_mask != 0) {
-		print_unexpected_options_error(resman.cmd_line_options_mask);
+	if (resman.option_mask != 0) {
+		print_unexpected_options_error(resman.option_mask);
 		error = -EINVAL;
 		goto out;
 	}
@@ -994,26 +993,26 @@ static int cmd_destroy_object(void)
 	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
 	uint32_t obj_id;
 
-	if (resman.num_cmd_args == 0) {
+	if (resman.num_non_option_arg == 0) {
 		ERROR_PRINTF("<object> argument missing\n");
 		error = -EINVAL;
 		goto out;
 	}
 
-	if (resman.num_cmd_args > 1) {
-		ERROR_PRINTF("Invalid number of arguments: %d\n",
-			     resman.num_cmd_args);
+	if (resman.num_non_option_arg > 1) {
+		ERROR_PRINTF("Invalid number of non-option arguments: %d\n",
+			     resman.num_non_option_arg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	if (resman.cmd_line_options_mask != 0) {
-		print_unexpected_options_error(resman.cmd_line_options_mask);
+	if (resman.option_mask != 0) {
+		print_unexpected_options_error(resman.option_mask);
 		error = -EINVAL;
 		goto out;
 	}
 
-	obj_name = resman.cmd_args[0];
+	obj_name = resman.non_option_arg[0];
 	error = parse_object_name(obj_name, NULL, obj_type, &obj_id);
 	if (error < 0)
 		goto out;
@@ -1038,20 +1037,20 @@ static int cmd_move_object(void)
 	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
 	int error;
 
-	if (resman.num_cmd_args == 0) {
+	if (resman.num_non_option_arg == 0) {
 		ERROR_PRINTF("<object> argument missing\n");
 		error = -EINVAL;
 		goto error;
 	}
 
-	if (resman.num_cmd_args > 1) {
-		ERROR_PRINTF("Invalid number of arguments: %d\n",
-			     resman.num_cmd_args);
+	if (resman.num_non_option_arg > 1) {
+		ERROR_PRINTF("Invalid number of non-option arguments: %d\n",
+			     resman.num_non_option_arg);
 		error = -EINVAL;
 		goto error;
 	}
 
-	obj_name = resman.cmd_args[0];
+	obj_name = resman.non_option_arg[0];
 	error = parse_object_name(obj_name, NULL, obj_type, &obj_id);
 	if (error < 0)
 		goto error;
@@ -1062,28 +1061,28 @@ static int cmd_move_object(void)
 		goto error;
 	}
 
-	if (resman.cmd_line_options_mask !=
+	if (resman.option_mask !=
 	    (OPT_SOURCE_CONTAINER_MASK | OPT_DEST_CONTAINER)) {
 		print_unexpected_options_error(
-			resman.cmd_line_options_mask);
+			resman.option_mask);
 		error = -EINVAL;
 		goto error;
 	}
 
-	resman.cmd_line_options_mask &=
+	resman.option_mask &=
 		~(OPT_SOURCE_CONTAINER_MASK | OPT_DEST_CONTAINER);
 
-	assert(resman.cmd_line_option_arg[OPT_SOURCE_CONTAINER] != NULL);
-	assert(resman.cmd_line_option_arg[OPT_DEST_CONTAINER] != NULL);
+	assert(resman.option_arg[OPT_SOURCE_CONTAINER] != NULL);
+	assert(resman.option_arg[OPT_DEST_CONTAINER] != NULL);
 
 	error = parse_object_name(
-			resman.cmd_line_option_arg[OPT_SOURCE_CONTAINER],
+			resman.option_arg[OPT_SOURCE_CONTAINER],
 			"dprc", obj_type, &src_dprc_id);
 	if (error < 0)
 		goto error;
 
 	error = parse_object_name(
-			resman.cmd_line_option_arg[OPT_DEST_CONTAINER],
+			resman.option_arg[OPT_DEST_CONTAINER],
 			"dprc", obj_type, &dest_dprc_id);
 	if (error < 0)
 		goto error;
@@ -1166,35 +1165,35 @@ static int parse_cmd_line(int argc, char *argv[])
 
 		switch (c) {
 		case 'h':
-			resman.cmd_line_options_mask |= OPT_HELP_MASK;
+			resman.option_mask |= OPT_HELP_MASK;
 			break;
 
 		case 'v':
-			resman.cmd_line_options_mask |= OPT_VERSION_MASK;
+			resman.option_mask |= OPT_VERSION_MASK;
 			break;
 
 		case 'r':
-			resman.cmd_line_options_mask |= OPT_RESOURCES_MASK;
+			resman.option_mask |= OPT_RESOURCES_MASK;
 			break;
 
 		case 't':
-			resman.cmd_line_options_mask |= OPT_TYPE_MASK;
-			resman.cmd_line_option_arg[OPT_TYPE] = optarg;
+			resman.option_mask |= OPT_TYPE_MASK;
+			resman.option_arg[OPT_TYPE] = optarg;
 			break;
 
 		case 'c':
-			resman.cmd_line_options_mask |= OPT_CONTAINER_MASK;
-			resman.cmd_line_option_arg[OPT_CONTAINER] = optarg;
+			resman.option_mask |= OPT_CONTAINER_MASK;
+			resman.option_arg[OPT_CONTAINER] = optarg;
 			break;
 
 		case 's':
-			resman.cmd_line_options_mask |= OPT_SOURCE_CONTAINER_MASK;
-			resman.cmd_line_option_arg[OPT_SOURCE_CONTAINER] = optarg;
+			resman.option_mask |= OPT_SOURCE_CONTAINER_MASK;
+			resman.option_arg[OPT_SOURCE_CONTAINER] = optarg;
 			break;
 
 		case 'd':
-			resman.cmd_line_options_mask |= OPT_DEST_CONTAINER_MASK;
-			resman.cmd_line_option_arg[OPT_DEST_CONTAINER] = optarg;
+			resman.option_mask |= OPT_DEST_CONTAINER_MASK;
+			resman.option_arg[OPT_DEST_CONTAINER] = optarg;
 			break;
 
 		case '?':
@@ -1205,12 +1204,12 @@ static int parse_cmd_line(int argc, char *argv[])
 		}
 	}
 
-	if (resman.cmd_line_options_mask & OPT_HELP_MASK) {
+	if (resman.option_mask & OPT_HELP_MASK) {
 		print_usage();
 		goto out;
 	}
 
-	if (resman.cmd_line_options_mask & OPT_VERSION_MASK) {
+	if (resman.option_mask & OPT_VERSION_MASK) {
 		print_version();
 		goto out;
 	}
@@ -1224,9 +1223,9 @@ static int parse_cmd_line(int argc, char *argv[])
 
 	assert(optind < argc);
 	resman.cmd_name = argv[optind];
-	resman.num_cmd_args = argc - (optind + 1);
-	if (resman.num_cmd_args != 0)
-		resman.cmd_args = &argv[optind + 1];
+	resman.num_non_option_arg = argc - (optind + 1);
+	if (resman.num_non_option_arg != 0)
+		resman.non_option_arg = &argv[optind + 1];
 
 	/*
 	 * Lookup command:
