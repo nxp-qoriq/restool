@@ -30,10 +30,19 @@
 #define OPT_HELP_MASK		    ONE_BIT_MASK(OPT_HELP)
 #define OPT_VERSION_MASK	    ONE_BIT_MASK(OPT_VERSION)
 #define OPT_RESOURCES_MASK	    ONE_BIT_MASK(OPT_RESOURCES)
+#define OPT_VERBOSE_MASK	    ONE_BIT_MASK(OPT_VERBOSE)
 #define OPT_TYPE_MASK		    ONE_BIT_MASK(OPT_TYPE)
 #define OPT_CONTAINER_MASK	    ONE_BIT_MASK(OPT_CONTAINER)
 #define OPT_SOURCE_CONTAINER_MASK   ONE_BIT_MASK(OPT_SOURCE_CONTAINER)
 #define OPT_DEST_CONTAINER_MASK	    ONE_BIT_MASK(OPT_DEST_CONTAINER)
+
+#define ALL_DPRC_OPTS (			\
+	DPRC_CFG_OPT_SPAWN_ALLOWED |		\
+	DPRC_CFG_OPT_ALLOC_ALLOWED |		\
+	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED |	\
+	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED |	\
+	DPRC_CFG_OPT_IOMMU_BYPASS |		\
+	DPRC_CFG_OPT_AIOP)
 
 /**
  * Maximum level of nesting of DPRCs
@@ -68,6 +77,7 @@ enum cmd_line_options {
 	OPT_HELP = 0,
 	OPT_VERSION,
 	OPT_RESOURCES,
+	OPT_VERBOSE,
 	OPT_TYPE,
 	OPT_CONTAINER,
 	OPT_SOURCE_CONTAINER,
@@ -170,6 +180,13 @@ static struct option getopt_long_options[] = {
 		.val = 'r',
 	},
 
+	[OPT_VERBOSE] = {
+		.name = "verbose",
+		.has_arg = 0,
+		.flag = NULL,
+		.val = 'x',
+	},
+
 	[OPT_TYPE] = {
 		.name = "type",
 		.has_arg = 1,
@@ -208,7 +225,7 @@ static void print_unexpected_options_error(uint32_t option_mask)
 #	define PRINT_OPTION(_opt_mask, _opt_index) \
 	do {								\
 		if (option_mask & (_opt_mask)) {			\
-			fprintf(stderr, "\t%c, %s\n",			\
+			fprintf(stderr, "\t-%c, --%s\n",		\
 				getopt_long_options[_opt_index].val,	\
 				getopt_long_options[_opt_index].name);  \
 		}							\
@@ -218,6 +235,8 @@ static void print_unexpected_options_error(uint32_t option_mask)
 	PRINT_OPTION(OPT_HELP_MASK, OPT_HELP);
 	PRINT_OPTION(OPT_VERSION_MASK, OPT_VERSION);
 	PRINT_OPTION(OPT_RESOURCES_MASK, OPT_RESOURCES);
+	PRINT_OPTION(OPT_VERBOSE_MASK, OPT_VERBOSE);
+	PRINT_OPTION(OPT_TYPE_MASK, OPT_TYPE);
 	PRINT_OPTION(OPT_CONTAINER_MASK, OPT_CONTAINER);
 	PRINT_OPTION(OPT_SOURCE_CONTAINER_MASK, OPT_SOURCE_CONTAINER);
 	PRINT_OPTION(OPT_DEST_CONTAINER_MASK, OPT_DEST_CONTAINER);
@@ -271,10 +290,14 @@ static void print_usage(void)
 		"\t\tDisplay detailed resource of the specified type\n"
 		"\t\te.g. show dprc.2 -t mcp\n"
 		"\tNOTE: Use dprc.0 for the global container.\n"
-		"  info <object>\n"
-		"\tShow general info about an MC object.\n"
-		"\te.g. info dprc.2\n"
-		"\te.g. info dpni.7\n"
+		"  info <object> [--verbose]\n"
+		"\tnon-option: show general info about an MC object.\n"
+		"\t\te.g. info dprc.2\n"
+		"\t\te.g. info dpni.7\n"
+		"\tOption: -x, --verbose\n"
+		"\tShow general and verbose info about an MC object.\n"
+		"\t\te.g. info dprc.2 --verbose\n"
+		"\t\te.g. info dpni.7 --verbose\n"
 		/*"  create <object type> [-c]\n"
 		"\tCreate a new MC object of the given type.\n"
 		"\tOptions:\n"
@@ -654,7 +677,33 @@ out:
 	return error;
 }
 
-static int show_dprc_info(uint32_t dprc_id)
+static void print_dprc_options(uint64_t options)
+{
+	if (options & ~ALL_DPRC_OPTS) {
+		printf("\tUnrecognized options found...\n");
+		return;
+	}
+
+	if (options & DPRC_CFG_OPT_SPAWN_ALLOWED)
+		printf("\tDPRC_CFG_OPT_SPAWN_ALLOWED\n");
+
+	if (options & DPRC_CFG_OPT_ALLOC_ALLOWED)
+		printf("\tDPRC_CFG_OPT_ALLOC_ALLOWED\n");
+
+	if (options & DPRC_CFG_OPT_OBJ_CREATE_ALLOWED)
+		printf("\tDPRC_CFG_OPT_OBJ_CREATE_ALLOWED\n");
+
+	if (options & DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED)
+		printf("\tDPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED\n");
+
+	if (options & DPRC_CFG_OPT_IOMMU_BYPASS)
+		printf("\tDPRC_CFG_OPT_IOMMU_BYPASS\n");
+
+	if (options & DPRC_CFG_OPT_AIOP)
+		printf("\tDPRC_CFG_OPT_AIOP\n");
+}
+
+static int print_dprc_attr(uint32_t dprc_id)
 {
 	uint16_t dprc_handle;
 	int error;
@@ -683,14 +732,15 @@ static int show_dprc_info(uint32_t dprc_id)
 		"container id: %d\n"
 		"icid: %u\n"
 		"portal id: %d\n"
-		"options: %#llx\n"
-		"version: %u.%u\n",
+		"version: %u.%u\n"
+		"dprc options: %#llx\n",
 		dprc_attr.container_id,
 		dprc_attr.icid,
 		dprc_attr.portal_id,
-		(unsigned long long)dprc_attr.options,
 		dprc_attr.version.major,
-		dprc_attr.version.minor);
+		dprc_attr.version.minor,
+		(unsigned long long)dprc_attr.options);
+	print_dprc_options(dprc_attr.options);
 
 	error = 0;
 out:
@@ -707,6 +757,128 @@ out:
 	}
 
 	return error;
+}
+
+static int print_dprc_verbose(uint16_t dprc_handle,
+			     int nesting_level, uint32_t target_id)
+{
+	int num_child_devices;
+	int error = 0;
+	uint32_t irq_mask;
+	uint32_t irq_status;
+
+	assert(nesting_level <= MAX_DPRC_NESTING);
+
+	error = dprc_get_obj_count(&resman.mc_io,
+				   dprc_handle,
+				   &num_child_devices);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
+			     error);
+		goto out;
+	}
+
+	for (int i = 0; i < num_child_devices; i++) {
+		struct dprc_obj_desc obj_desc;
+		uint16_t child_dprc_handle;
+		int error2;
+
+		error = dprc_get_obj(
+				&resman.mc_io,
+				dprc_handle,
+				i,
+				&obj_desc);
+		if (error < 0) {
+			ERROR_PRINTF(
+				"dprc_get_object(%u) failed with error %d\n",
+				i, error);
+			goto out;
+		}
+
+		if (strcmp(obj_desc.type, "dprc") != 0)
+			continue;
+
+		if (target_id == (uint32_t)obj_desc.id) {
+			printf("number of mappable regions: %u\n",obj_desc.region_count);
+			printf("number of interrupts: %u\n", obj_desc.irq_count);
+
+			error = open_dprc(obj_desc.id, &child_dprc_handle);
+			if (error < 0)
+				goto out;
+
+			for (int j = 0; j < obj_desc.irq_count; j++) {
+				dprc_get_irq_mask(&resman.mc_io, child_dprc_handle, j, &irq_mask);
+				printf("interrupt %d's mask: %#x\n", j, irq_mask);
+				dprc_get_irq_status(&resman.mc_io, child_dprc_handle, j, &irq_status);
+				(irq_status == 0) ?
+				printf("interrupt %d's status: %#x - no interrupt pending.\n", j, irq_status) :
+				(irq_status == 1) ?
+				printf("interrupt %d's status: %#x - interrupt pending.\n", j, irq_status) :
+				printf("interrupt %d's status: %#x - error status.\n", j, irq_status);
+			}
+
+			error2 = dprc_close(&resman.mc_io, child_dprc_handle);
+			if (error2 < 0) {
+				ERROR_PRINTF("dprc_close() failed with error %d\n",
+					     error2);
+				if (error == 0)
+					error = error2;
+			}
+			goto out;
+		}
+
+		error = open_dprc(obj_desc.id, &child_dprc_handle);
+		if (error < 0)
+			goto out;
+
+		error = print_dprc_verbose(child_dprc_handle,
+					  nesting_level + 1, target_id);
+
+		error2 = dprc_close(&resman.mc_io, child_dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+
+			goto out;
+		}
+	}
+
+out:
+	return error;
+}
+
+static int print_dprc_info(uint32_t dprc_id)
+{
+	int error;
+
+	error = print_dprc_attr(dprc_id);
+	if (error < 0)
+		goto out;
+
+	if ((resman.option_mask & OPT_VERBOSE_MASK) &&
+		dprc_id == resman.root_dprc_id) {
+		resman.option_mask &= ~OPT_VERBOSE_MASK;
+		printf("root dprc doesn't have verbose info to display\n");
+		goto out;
+	}
+
+	if ((resman.option_mask & OPT_VERBOSE_MASK) &&
+		dprc_id != resman.root_dprc_id) {
+		resman.option_mask &= ~OPT_VERBOSE_MASK;
+		error = print_dprc_verbose(resman.root_dprc_handle, 0, dprc_id);
+		goto out;
+	}
+out:
+	return error;
+}
+
+static int print_dpni_info(uint32_t dpni_id)
+{
+	printf("coming soon...\n");
+	printf("dpni's id is: %u", dpni_id);
+	return 0;
 }
 
 static int cmd_info_object(void)
@@ -729,22 +901,27 @@ static int cmd_info_object(void)
 		goto out;
 	}
 
-	if (resman.option_mask != 0) {
-		print_unexpected_options_error(resman.option_mask);
-		error = -EINVAL;
-		goto out;
-	}
-
 	obj_name = resman.non_option_arg[0];
 	error = parse_object_name(obj_name, NULL, obj_type, &obj_id);
 	if (error < 0)
 		goto out;
 
 	if (strcmp(obj_type, "dprc") == 0) {
-		error = show_dprc_info(obj_id);
+		error = print_dprc_info(obj_id);
+	} else if (strcmp(obj_type, "dpni") == 0) {
+		error = print_dpni_info(obj_id);
 	} else {
 		ERROR_PRINTF("Unexpected object type \'%s\'\n", obj_type);
 		error = -EINVAL;
+	}
+
+	if (error < 0)
+		goto out;
+
+	if (resman.option_mask != 0) {
+		print_unexpected_options_error(resman.option_mask);
+		error = -EINVAL;
+		goto out;
 	}
 out:
 	return error;
@@ -1163,7 +1340,7 @@ static int parse_cmd_line(int argc, char *argv[])
 	resman_cmd_func_t *cmd_func = NULL;
 
 	for (;;) {
-		c = getopt_long(argc, argv, "hvrt:c:s:d:", getopt_long_options, NULL);
+		c = getopt_long(argc, argv, "hvrxt:c:s:d:", getopt_long_options, NULL);
 		if (c == -1)
 			break;
 
@@ -1178,6 +1355,10 @@ static int parse_cmd_line(int argc, char *argv[])
 
 		case 'r':
 			resman.option_mask |= OPT_RESOURCES_MASK;
+			break;
+
+		case 'x':
+			resman.option_mask |= OPT_VERBOSE_MASK;
 			break;
 
 		case 't':
@@ -1208,16 +1389,18 @@ static int parse_cmd_line(int argc, char *argv[])
 		}
 	}
 
-	if (resman.option_mask & OPT_HELP_MASK) {
+	DEBUG_PRINTF("value of optind is: %d\n", optind);
+	DEBUG_PRINTF("number of variables are: %d\n", argc);
+
+	if (optind == argc && resman.option_mask & OPT_HELP_MASK) {
 		print_usage();
 		goto out;
 	}
 
-	if (resman.option_mask & OPT_VERSION_MASK) {
+	if (optind == argc && resman.option_mask & OPT_VERSION_MASK) {
 		print_version();
 		goto out;
 	}
-
 
 	if (optind == argc) {
 		ERROR_PRINTF("warning: resman command missing.\n");
