@@ -22,8 +22,13 @@
 
 #define ONE_BIT_MASK(_bit_index)     (UINT32_C(0x1) << (_bit_index))
 
+#ifdef ERROR_PRINT
 #define ERROR_PRINTF(_fmt, ...)	\
 	fprintf(stderr, "%s: " _fmt, __func__, ##__VA_ARGS__)
+#else
+#define ERROR_PRINTF(_fmt, ...) \
+	printf(_fmt, ##__VA_ARGS__)
+#endif
 
 #ifdef DEBUG
 #define DEBUG_PRINTF(_fmt, ...)	\

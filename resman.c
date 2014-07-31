@@ -101,12 +101,14 @@ struct resman {
 	const char *cmd_name;
 
 	/**
-	 * Number of non-option arguments found in the command line
+	 * Number of non-option arguments found in the command line,
+	 * excluding the command (e.g. list, show, info) itself.
 	 */
 	int num_non_option_arg;
 
 	/**
-	 * Array of non-option arguments found in the command line
+	 * Array of non-option arguments found in the command line,
+	 * excluding the command (e.g. list, show, info) itself.
 	 */
 	char *const *non_option_arg;
 
@@ -271,7 +273,9 @@ static void print_usage(void)
 		"\tNOTE: Use dprc.0 for the global container.\n"
 		"  info <object>\n"
 		"\tShow general info about an MC object.\n"
-		"  create <object type> [-c]\n"
+		"\te.g. info dprc.2\n"
+		"\te.g. info dpni.7\n"
+		/*"  create <object type> [-c]\n"
 		"\tCreate a new MC object of the given type.\n"
 		"\tOptions:\n"
 		"\t-c <container>, --container=<container>\n"
@@ -285,7 +289,7 @@ static void print_usage(void)
 		"\t\tContainer in which the object currently exists (source)\n"
 		"\t-d <container>, --dest=<container>\n"
 		"\t\tContainer to which object is to be moved (destination)\n"
-		"\tNOTE: source and destination containers must have parent-child relationship.\n"
+		"\tNOTE: source and destination containers must have parent-child relationship.\n"*/
 		"\n";
 
 	printf(usage_msg);
@@ -1216,7 +1220,8 @@ static int parse_cmd_line(int argc, char *argv[])
 
 
 	if (optind == argc) {
-		ERROR_PRINTF("resman command missing\n");
+		ERROR_PRINTF("warning: resman command missing.\n");
+		print_usage();
 		error = -EINVAL;
 		goto out;
 	}
@@ -1238,7 +1243,9 @@ static int parse_cmd_line(int argc, char *argv[])
 	}
 
 	if (cmd_func == NULL) {
-		ERROR_PRINTF("Invalid command \'%s\'\n", resman.cmd_name);
+		ERROR_PRINTF("error: invalid command \'%s\'\n.",
+			     resman.cmd_name);
+		print_usage();
 		error = -EINVAL;
 		goto out;
 	}
