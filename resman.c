@@ -42,6 +42,7 @@
 #include "fsl_mc_ioctl.h"
 #include "fsl_dprc.h"
 #include "fsl_dpmng.h"
+#include "fsl_dpni.h"
 
 /**
  * Bit masks for command-line options:
@@ -55,13 +56,32 @@
 #define OPT_SOURCE_CONTAINER_MASK   ONE_BIT_MASK(OPT_SOURCE_CONTAINER)
 #define OPT_DEST_CONTAINER_MASK	    ONE_BIT_MASK(OPT_DEST_CONTAINER)
 
-#define ALL_DPRC_OPTS (			\
+#define ALL_DPRC_OPTS (				\
 	DPRC_CFG_OPT_SPAWN_ALLOWED |		\
 	DPRC_CFG_OPT_ALLOC_ALLOWED |		\
 	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED |	\
 	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED |	\
 	DPRC_CFG_OPT_IOMMU_BYPASS |		\
 	DPRC_CFG_OPT_AIOP)
+
+#define ALL_DPNI_OPTS (				\
+	DPNI_OPT_ALLOW_DIST_KEY_PER_TC |	\
+	DPNI_OPT_TX_CONF_DISABLED |		\
+	DPNI_OPT_PRIVATE_TX_CONF_ERR_DISABLED |	\
+	DPNI_OPT_QOS |				\
+	DPNI_OPT_DIST_HASH |			\
+	DPNI_OPT_DIST_FS |			\
+	DPNI_OPT_POLICING |			\
+	DPNI_OPT_UNICAST_FILTER	|		\
+	DPNI_OPT_MULTICAST_FILTER |		\
+	DPNI_OPT_VLAN_FILTER |			\
+	DPNI_OPT_MACSEC	|			\
+	DPNI_OPT_IPR |				\
+	DPNI_OPT_IPF |				\
+	DPNI_OPT_RSC |				\
+	DPNI_OPT_GSO |				\
+	DPNI_OPT_IPSEC |			\
+	DPNI_OPT_VLAN_MANIPULATION)
 
 /**
  * Maximum level of nesting of DPRCs
@@ -308,7 +328,6 @@ static void print_usage(void)
 		"\t-t, --type\n"
 		"\t\tDisplay detailed resource of the specified type\n"
 		"\t\te.g. show dprc.2 -t mcp\n"
-		/*"\tNOTE: Use dprc.0 for the global container.\n"
 		"  info <object> [--verbose]\n"
 		"\tnon-option: show general info about an MC object.\n"
 		"\t\te.g. info dprc.2\n"
@@ -317,7 +336,7 @@ static void print_usage(void)
 		"\tShow general and verbose info about an MC object.\n"
 		"\t\te.g. info dprc.2 --verbose\n"
 		"\t\te.g. info dpni.7 --verbose\n"
-		"  create <object type> [-c]\n"
+		/* "  create <object type> [-c]\n"
 		"\tCreate a new MC object of the given type.\n"
 		"\tOptions:\n"
 		"\t-c <container>, --container=<container>\n"
@@ -702,7 +721,7 @@ out:
 
 static void print_dprc_options(uint64_t options)
 {
-	if (options & ~ALL_DPRC_OPTS) {
+	if (options == 0 || (options & ~ALL_DPRC_OPTS) != 0) {
 		printf("\tUnrecognized options found...\n");
 		return;
 	}
@@ -897,11 +916,170 @@ out:
 	return error;
 }
 
+static void print_dpni_options(uint64_t options)
+{
+	if (options == 0 || (options & ~ALL_DPNI_OPTS) != 0) {
+		printf("\tUnrecognized options found...\n");
+		return;
+	}
+
+	if (options & DPNI_OPT_ALLOW_DIST_KEY_PER_TC)
+		printf("\tDPNI_OPT_ALLOW_DIST_KEY_PER_TC\n");
+
+	if (options & DPNI_OPT_TX_CONF_DISABLED)
+		printf("\tDPNI_OPT_TX_CONF_DISABLED\n");
+
+	if (options & DPNI_OPT_PRIVATE_TX_CONF_ERR_DISABLED)
+		printf("\tDPNI_OPT_PRIVATE_TX_CONF_ERR_DISABLED\n");
+
+	if (options & DPNI_OPT_QOS)
+		printf("\tDPNI_OPT_QOS\n");
+
+	if (options & DPNI_OPT_DIST_HASH)
+		printf("\tDPNI_OPT_DIST_HASH\n");
+
+	if (options & DPNI_OPT_DIST_FS)
+		printf("\tDPNI_OPT_DIST_FS\n");
+
+	if (options & DPNI_OPT_POLICING)
+		printf("\tDPNI_OPT_POLICING\n");
+
+	if (options & DPNI_OPT_UNICAST_FILTER)
+		printf("\tDPNI_OPT_UNICAST_FILTER\n");
+
+	if (options & DPNI_OPT_MULTICAST_FILTER)
+		printf("\tDPNI_OPT_MULTICAST_FILTER\n");
+
+	if (options & DPNI_OPT_VLAN_FILTER)
+		printf("\tDPNI_OPT_VLAN_FILTER\n");
+
+	if (options & DPNI_OPT_MACSEC)
+		printf("\tDPNI_OPT_MACSEC\n");
+
+	if (options & DPNI_OPT_IPR)
+		printf("\tDPNI_OPT_IPR\n");
+
+	if (options & DPNI_OPT_IPF)
+		printf("\tDPNI_OPT_IPF\n");
+
+	if (options & DPNI_OPT_RSC)
+		printf("\tDPNI_OPT_RSC\n");
+
+	if (options & DPNI_OPT_GSO)
+		printf("\tDPNI_OPT_GSOC\n");
+
+	if (options & DPNI_OPT_IPSEC)
+		printf("\tDPNI_OPT_IPSEC\n");
+
+	if (options & DPNI_OPT_VLAN_MANIPULATION)
+		printf("\tDPNI_OPT_VLAN_MANIPULATION\n");
+}
+
+static int print_dpni_attr(uint32_t dpni_id)
+{
+	uint16_t dpni_handle;
+	int error;
+	struct dpni_attr dpni_attr;
+	uint8_t mac_addr[6];
+	bool dpni_opened = false;
+	int link_state;
+
+	error = dpni_open(&resman.mc_io, dpni_id, &dpni_handle);
+	if (error < 0) {
+		ERROR_PRINTF("dpni_open() failed for dpni.%u with error %d\n", dpni_id, error);
+		goto out;
+	}
+	dpni_opened = true;
+	if(0 == dpni_handle) {
+		ERROR_PRINTF("dpni_open() returned invalid handle (auth 0) for dpni.%u\n", dpni_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpni_attr, 0, sizeof(dpni_attr));
+	error = dpni_get_attributes(&resman.mc_io, dpni_handle, &dpni_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dpni_get_attributes() failed with error: %d\n", error);
+		goto out;
+	}
+	assert(dpni_id == (uint32_t)dpni_attr.id);
+	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
+
+	error = dpni_get_primary_mac_addr(&resman.mc_io, dpni_handle, mac_addr);
+	if (error < 0) {
+		ERROR_PRINTF("dpni_get_primary_mac_addr() failed with error: %d\n", error);
+		goto out;
+	}
+
+	error = dpni_get_link_state(&resman.mc_io, dpni_handle, &link_state);
+	if (error < 0) {
+		ERROR_PRINTF("dpni_get_link_state() failed with error: %d\n", error);
+		goto out;
+	}
+
+	printf("dpni version: %u.%u\n", dpni_attr.version.major, dpni_attr.version.minor);
+	printf("dpni id: %d\n", dpni_attr.id);
+	printf("link status: %d - ", link_state);
+	link_state == 0 ? printf("down\n") :
+	link_state == 1 ? printf("up\n") : printf("error state\n");
+	printf("mac address: ");
+	for (int j = 0; j < 5; ++j){
+		printf("%02x:", mac_addr[j]);
+	}
+	printf("%02x\n", mac_addr[5]);
+	printf("dpni_attr.options value is: %#llx\n", (unsigned long long)dpni_attr.options);
+	print_dpni_options(dpni_attr.options);
+	printf("max senders: %u\n", (uint32_t)dpni_attr.max_senders);
+	printf("max traffic classes: %u\n", (uint32_t)dpni_attr.max_tcs);
+	printf("max distribution's size per RX traffic class:\n");
+	for(int k = 0; k < dpni_attr.max_tcs; ++k)
+		printf("\tclass %d's size: %u\n", k, (uint32_t)dpni_attr.max_dist_per_tc[k]);
+	printf("max unicast filters: %u\n", (uint32_t)dpni_attr.max_unicast_filters);
+	printf("max multicast filters: %u\n", (uint32_t)dpni_attr.max_multicast_filters);
+	printf("max vlan filters: %u\n", (uint32_t)dpni_attr.max_vlan_filters);
+	printf("max QoS entries: %u\n", (uint32_t)dpni_attr.max_qos_entries);
+	printf("max QoS key size: %u\n", (uint32_t)dpni_attr.max_qos_key_size);
+	printf("max distribution key size: %u\n", (uint32_t)dpni_attr.max_dist_key_size);
+
+	error = 0;
+
+out:
+	if (dpni_opened) {
+		int error2;
+
+		error2 = dpni_close(&resman.mc_io, dpni_handle);
+		if(error2 < 0) {
+			ERROR_PRINTF("dpni_close() failed with error %d\n", error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int print_dpni_verbose(void)
+{
+	printf("dpni verbose info coming out soon\n");
+	return 0;
+}
+
 static int print_dpni_info(uint32_t dpni_id)
 {
-	printf("coming soon...\n");
-	printf("dpni's id is: %u", dpni_id);
-	return 0;
+	int error;
+
+	error = print_dpni_attr(dpni_id);
+	if (error < 0)
+		goto out;
+
+	if (resman.option_mask & OPT_VERBOSE_MASK) {
+		resman.option_mask &= ~OPT_VERBOSE_MASK;
+		error = print_dpni_verbose();
+		goto out;
+	}
+
+out:
+	return error;
 }
 
 static int cmd_info_object(void)
