@@ -48,7 +48,7 @@
  */
 #define OPT_HELP_MASK		    ONE_BIT_MASK(OPT_HELP)
 #define OPT_VERSION_MASK	    ONE_BIT_MASK(OPT_VERSION)
-#define OPT_RESOURCES_MASK	    ONE_BIT_MASK(OPT_RESOURCES)
+#define OPT_RESOURCE_MASK	    ONE_BIT_MASK(OPT_RESOURCE)
 #define OPT_VERBOSE_MASK	    ONE_BIT_MASK(OPT_VERBOSE)
 #define OPT_TYPE_MASK		    ONE_BIT_MASK(OPT_TYPE)
 #define OPT_CONTAINER_MASK	    ONE_BIT_MASK(OPT_CONTAINER)
@@ -95,7 +95,7 @@
 enum cmd_line_options {
 	OPT_HELP = 0,
 	OPT_VERSION,
-	OPT_RESOURCES,
+	OPT_RESOURCE,
 	OPT_VERBOSE,
 	OPT_TYPE,
 	OPT_CONTAINER,
@@ -192,7 +192,7 @@ static struct option getopt_long_options[] = {
 		.val = 'v',
 	},
 
-	[OPT_RESOURCES] = {
+	[OPT_RESOURCE] = {
 		.name = "resources",
 		.has_arg = 0,
 		.flag = NULL,
@@ -253,7 +253,7 @@ static void print_unexpected_options_error(uint32_t option_mask)
 	ERROR_PRINTF("Invalid options:\n");
 	PRINT_OPTION(OPT_HELP_MASK, OPT_HELP);
 	PRINT_OPTION(OPT_VERSION_MASK, OPT_VERSION);
-	PRINT_OPTION(OPT_RESOURCES_MASK, OPT_RESOURCES);
+	PRINT_OPTION(OPT_RESOURCE_MASK, OPT_RESOURCE);
 	PRINT_OPTION(OPT_VERBOSE_MASK, OPT_VERBOSE);
 	PRINT_OPTION(OPT_TYPE_MASK, OPT_TYPE);
 	PRINT_OPTION(OPT_CONTAINER_MASK, OPT_CONTAINER);
@@ -463,6 +463,7 @@ static int cmd_list_containers(void)
 
 	if (resman.num_non_option_arg != 0) {
 		ERROR_PRINTF("Unexpected arguments\n");
+		print_usage();
 		error = -EINVAL;
 		goto out;
 	}
@@ -470,6 +471,7 @@ static int cmd_list_containers(void)
 	if (resman.option_mask != 0) {
 		print_unexpected_options_error(
 			resman.option_mask);
+		print_usage();
 		error = -EINVAL;
 		goto out;
 	}
@@ -626,6 +628,7 @@ static int cmd_show_container(void)
 
 	if (resman.num_non_option_arg == 0) {
 		ERROR_PRINTF("<container> argument missing\n");
+		print_usage();
 		error = -EINVAL;
 		goto out;
 	}
@@ -633,6 +636,14 @@ static int cmd_show_container(void)
 	if (resman.num_non_option_arg > 1) {
 		ERROR_PRINTF("Invalid number of non-option arguments: %d\n",
 			     resman.num_non_option_arg);
+		print_usage();
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (resman.option_mask & ~(OPT_RESOURCE_MASK | OPT_TYPE_MASK)) {
+		printf("wrong options...\n");
+		print_usage();
 		error = -EINVAL;
 		goto out;
 	}
@@ -657,8 +668,8 @@ static int cmd_show_container(void)
 		goto out;
 	}
 
-	if (resman.option_mask & OPT_RESOURCES_MASK) {
-		resman.option_mask &= ~OPT_RESOURCES_MASK;
+	if (resman.option_mask & OPT_RESOURCE_MASK) {
+		resman.option_mask &= ~OPT_RESOURCE_MASK;
 		error = show_mc_resources(dprc_handle);
 		if (error < 0)
 			goto out;
@@ -671,13 +682,6 @@ static int cmd_show_container(void)
 		error = show_one_resource_type(dprc_handle, res_type);
 		if (error < 0)
 			goto out;
-	}
-
-	if (resman.option_mask != 0) {
-		print_unexpected_options_error(
-			resman.option_mask);
-		error = -EINVAL;
-		goto out;
 	}
 
 out:
@@ -909,6 +913,7 @@ static int cmd_info_object(void)
 
 	if (resman.num_non_option_arg == 0) {
 		ERROR_PRINTF("<object> argument missing\n");
+		print_usage();
 		error = -EINVAL;
 		goto out;
 	}
@@ -916,6 +921,14 @@ static int cmd_info_object(void)
 	if (resman.num_non_option_arg > 1) {
 		ERROR_PRINTF("Invalid number of non-option arguments: %d\n",
 			     resman.num_non_option_arg);
+		print_usage();
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (resman.option_mask & ~OPT_VERBOSE_MASK) {
+		printf("wrong options...\n");
+		print_usage();
 		error = -EINVAL;
 		goto out;
 	}
@@ -934,14 +947,6 @@ static int cmd_info_object(void)
 		error = -EINVAL;
 	}
 
-	if (error < 0)
-		goto out;
-
-	if (resman.option_mask != 0) {
-		print_unexpected_options_error(resman.option_mask);
-		error = -EINVAL;
-		goto out;
-	}
 out:
 	return error;
 }
@@ -1373,7 +1378,7 @@ static int parse_cmd_line(int argc, char *argv[])
 			break;
 
 		case 'r':
-			resman.option_mask |= OPT_RESOURCES_MASK;
+			resman.option_mask |= OPT_RESOURCE_MASK;
 			break;
 
 		case 'x':
