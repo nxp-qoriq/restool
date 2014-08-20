@@ -28,41 +28,61 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UTILS_H
-#define _UTILS_H
+#include <errno.h>
+#include <assert.h>
+#include <fcntl.h>		/* open() */
+#include <unistd.h>		/* close() */
+#include <sys/ioctl.h>
+#include "fsl_mc_sys.h"
+#include "fsl_mc_cmd.h"
+#include "fsl_mc_ioctl.h"
+#include "utils.h"
 
-#include <stdio.h>
-#include <stdint.h>
-#include <time.h>
+#define RESMAN_DEVICE_FILE  "/dev/mc_resman"
 
-#define C_ASSERT(_cond) \
-        extern const char c_assert_dummy_decl[(_cond) ? 1 : -1]
+int mc_io_init(struct fsl_mc_io *mc_io)
+{
+	int fd = -1;
+	int error;
 
-#define ARRAY_SIZE(_array) \
-        (sizeof(_array) / sizeof((_array)[0]))
+	fd = open(RESMAN_DEVICE_FILE, O_RDWR | O_SYNC);
+	if (fd < 0) {
+		error = -errno;
+		perror("open() failed for " RESMAN_DEVICE_FILE);
+		goto error;
+	}
 
-#define ONE_BIT_MASK(_bit_index)     (UINT32_C(0x1) << (_bit_index))
+	mc_io->fd = fd;
+	return 0;
+error:
+	if (fd != -1)
+		(void)close(fd);
 
-#ifdef ERROR_PRINT
-#define ERROR_PRINTF(_fmt, ...)	\
-	fprintf(stderr, "%s: " _fmt, __func__, ##__VA_ARGS__)
-#else
-#define ERROR_PRINTF(_fmt, ...) \
-	printf(_fmt, ##__VA_ARGS__)
-#endif
+	return error;
+}
 
-#ifdef DEBUG
-#define DEBUG_PRINTF(_fmt, ...)	\
-	fprintf(stderr, "DBG: %s: " _fmt, __func__, ##__VA_ARGS__)
-#else
-#define DEBUG_PRINTF(_fmt, ...)
-#endif
+void mc_io_cleanup(struct fsl_mc_io *mc_io)
+{
+	int error;
 
-#define STRINGIFY(_x)	__STRINGIFY_EXPANDED(_x)
+	assert(mc_io->fd != -1);
 
-#define __STRINGIFY_EXPANDED(_expanded_x)   #_expanded_x
+	error = close(mc_io->fd);
+	if (error == -1)
+		perror("close failed");
+}
 
-#define CLOCK_DELTA(_start_clock, _end_clock) \
-        ((clock_t)((int64_t)(_end_clock) - (int64_t)(_start_clock)))
+int mc_send_command(struct fsl_mc_io *mc_io, struct mc_command *cmd)
+{
+	int error;
 
-#endif /* _UTILS_H */
+	error = ioctl(mc_io->fd, RESMAN_SEND_MC_COMMAND, cmd);
+	if (error == -1) {
+		error = -errno;
+		ERROR_PRINTF(
+			"ioctl(RESMAN_SEND_MC_COMMAND) failed with error %d\n",
+			error);
+	}
+
+	return error;
+}

@@ -1,14 +1,35 @@
-/*
- * Freescale resman MC I/O layer
+/* Copyright 2013-2014 Freescale Semiconductor Inc.
  *
- * Copyright (C) 2014 Freescale Semiconductor, Inc.
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of Freescale Semiconductor nor the
+ *       names of its contributors may be used to endorse or promote products
+ *       derived from this software without specific prior written permission.
  *
- * This file is licensed under the terms of the GNU General Public
- * License version 2. This program is licensed "as is" without any
- * warranty of any kind, whether express or implied.
+ *
+ * ALTERNATIVELY, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") as published by the Free Software
+ * Foundation, either version 2 of that License or (at your option) any
+ * later version.
+ *
+ * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor "AS IS" AND ANY
+ * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+ * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+ * DISCLAIMED. IN NO EVENT SHALL Freescale Semiconductor BE LIABLE FOR ANY
+ * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+ * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
+ * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
+ * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+ * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "fsl_mc_io.h"
+#include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dprc.h"
 #include "fsl_dprc_cmd.h"
@@ -22,7 +43,7 @@
 #define RSP_READ_STRUCT(_param, _offset, _width, _type, _arg) \
 	(_arg = (_type)u64_dec(cmd.params[_param], (_offset), (_width)))
 
-int dprc_get_container_id(void *mc_io, int *container_id)
+int dprc_get_container_id(struct fsl_mc_io *mc_io, int *container_id)
 {
 	struct mc_command cmd = { 0 };
 	int err;
@@ -38,7 +59,8 @@ int dprc_get_container_id(void *mc_io, int *container_id)
 	return err;
 }
 
-int dprc_open(void *mc_io, int container_id, uint16_t *dprc_handle)
+int dprc_open(struct fsl_mc_io *mc_io, int container_id,
+	      uint16_t *dprc_handle)
 {
 	int err;
 	struct mc_command cmd = { 0 };
@@ -56,7 +78,7 @@ int dprc_open(void *mc_io, int container_id, uint16_t *dprc_handle)
 	return err;
 }
 
-int dprc_close(void *mc_io, uint16_t dprc_handle)
+int dprc_close(struct fsl_mc_io *mc_io, uint16_t dprc_handle)
 {
 	struct mc_command cmd = { 0 };
 
@@ -68,7 +90,7 @@ int dprc_close(void *mc_io, uint16_t dprc_handle)
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_create_container(void *mc_io, uint16_t dprc_handle,
+int dprc_create_container(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			  struct dprc_cfg *cfg,
 			  int *child_container_id,
 			  uint64_t *child_portal_paddr)
@@ -90,7 +112,7 @@ int dprc_create_container(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_destroy_container(void *mc_io, uint16_t dprc_handle,
+int dprc_destroy_container(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			   int child_container_id)
 {
 	struct mc_command cmd = { 0 };
@@ -104,7 +126,7 @@ int dprc_destroy_container(void *mc_io, uint16_t dprc_handle,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_reset_container(void *mc_io, uint16_t dprc_handle,
+int dprc_reset_container(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			 int child_container_id)
 {
 	struct mc_command cmd = { 0 };
@@ -118,10 +140,10 @@ int dprc_reset_container(void *mc_io, uint16_t dprc_handle,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_set_res_quota(void *mc_io, uint16_t dprc_handle,
+int dprc_set_res_quota(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		       int child_container_id,
-	char *type,
-	uint16_t quota)
+		       char *type,
+		       uint16_t quota)
 {
 	struct mc_command cmd = { 0 };
 
@@ -133,7 +155,7 @@ int dprc_set_res_quota(void *mc_io, uint16_t dprc_handle,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_get_res_quota(void *mc_io, uint16_t dprc_handle,
+int dprc_get_res_quota(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		       int child_container_id,
 		       char *type,
 		       uint16_t *quota)
@@ -154,7 +176,7 @@ int dprc_get_res_quota(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_assign(void *mc_io, uint16_t dprc_handle,
+int dprc_assign(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		int container_id,
 		struct dprc_res_req *res_req)
 {
@@ -169,7 +191,8 @@ int dprc_assign(void *mc_io, uint16_t dprc_handle,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_unassign(void *mc_io, uint16_t dprc_handle, int child_container_id,
+int dprc_unassign(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
+		  int child_container_id,
 		  struct dprc_res_req *res_req)
 {
 	struct mc_command cmd = { 0 };
@@ -183,7 +206,8 @@ int dprc_unassign(void *mc_io, uint16_t dprc_handle, int child_container_id,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_get_obj_count(void *mc_io, uint16_t dprc_handle, int *obj_count)
+int dprc_get_obj_count(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
+		       int *obj_count)
 {
 	int err;
 	struct mc_command cmd = { 0 };
@@ -200,7 +224,7 @@ int dprc_get_obj_count(void *mc_io, uint16_t dprc_handle, int *obj_count)
 	return err;
 }
 
-int dprc_get_obj(void *mc_io, uint16_t dprc_handle,
+int dprc_get_obj(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		 int obj_index,
 		 struct dprc_obj_desc *obj_desc)
 {
@@ -220,8 +244,8 @@ int dprc_get_obj(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_get_res_count(void *mc_io, uint16_t dprc_handle, char *type,
-		       int *res_count)
+int dprc_get_res_count(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
+		char *type, int *res_count)
 {
 	struct mc_command cmd = { 0 };
 	int err;
@@ -241,7 +265,7 @@ int dprc_get_res_count(void *mc_io, uint16_t dprc_handle, char *type,
 	return err;
 }
 
-int dprc_get_res_ids(void *mc_io, uint16_t dprc_handle,
+int dprc_get_res_ids(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		     char *type,
 		     struct dprc_res_ids_range_desc *range_desc)
 {
@@ -261,7 +285,7 @@ int dprc_get_res_ids(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_get_attributes(void *mc_io, uint16_t dprc_handle,
+int dprc_get_attributes(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			struct dprc_attributes *attr)
 {
 	struct mc_command cmd = { 0 };
@@ -279,7 +303,7 @@ int dprc_get_attributes(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_get_obj_region(void *mc_io, uint16_t dprc_handle,
+int dprc_get_obj_region(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			char *obj_type,
 			int obj_id,
 			uint8_t region_index,
@@ -301,7 +325,7 @@ int dprc_get_obj_region(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_get_irq(void *mc_io, uint16_t dprc_handle,
+int dprc_get_irq(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		 uint8_t irq_index,
 		 int *type,
 		 uint64_t *irq_paddr,
@@ -324,7 +348,7 @@ int dprc_get_irq(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_set_irq(void *mc_io, uint16_t dprc_handle,
+int dprc_set_irq(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		 uint8_t irq_index,
 		 uint64_t irq_paddr,
 		 uint32_t irq_val,
@@ -341,7 +365,7 @@ int dprc_set_irq(void *mc_io, uint16_t dprc_handle,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_get_irq_enable(void *mc_io, uint16_t dprc_handle,
+int dprc_get_irq_enable(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			uint8_t irq_index,
 			uint8_t *enable_state)
 {
@@ -361,7 +385,7 @@ int dprc_get_irq_enable(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_set_irq_enable(void *mc_io, uint16_t dprc_handle,
+int dprc_set_irq_enable(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			uint8_t irq_index,
 			uint8_t enable_state)
 {
@@ -376,8 +400,8 @@ int dprc_set_irq_enable(void *mc_io, uint16_t dprc_handle,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_get_irq_mask(void *mc_io, uint16_t dprc_handle, uint8_t irq_index,
-		      uint32_t *mask)
+int dprc_get_irq_mask(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
+		      uint8_t irq_index, uint32_t *mask)
 {
 	struct mc_command cmd = { 0 };
 	int err;
@@ -395,8 +419,8 @@ int dprc_get_irq_mask(void *mc_io, uint16_t dprc_handle, uint8_t irq_index,
 	return err;
 }
 
-int dprc_set_irq_mask(void *mc_io, uint16_t dprc_handle, uint8_t irq_index,
-		      uint32_t mask)
+int dprc_set_irq_mask(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
+		      uint8_t irq_index, uint32_t mask)
 {
 	struct mc_command cmd = { 0 };
 
@@ -409,8 +433,8 @@ int dprc_set_irq_mask(void *mc_io, uint16_t dprc_handle, uint8_t irq_index,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_get_irq_status(void *mc_io, uint16_t dprc_handle, uint8_t irq_index,
-			uint32_t *status)
+int dprc_get_irq_status(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
+			uint8_t irq_index, uint32_t *status)
 {
 	struct mc_command cmd = { 0 };
 	int err;
@@ -428,7 +452,7 @@ int dprc_get_irq_status(void *mc_io, uint16_t dprc_handle, uint8_t irq_index,
 	return err;
 }
 
-int dprc_clear_irq_status(void *mc_io, uint16_t dprc_handle,
+int dprc_clear_irq_status(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			  uint8_t irq_index, uint32_t status)
 {
 	struct mc_command cmd = { 0 };
@@ -442,7 +466,8 @@ int dprc_clear_irq_status(void *mc_io, uint16_t dprc_handle,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_get_pool_count(void *mc_io, uint16_t dprc_handle, int *pool_count)
+int dprc_get_pool_count(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
+			int *pool_count)
 {
 	struct mc_command cmd = { 0 };
 	int err;
@@ -459,8 +484,8 @@ int dprc_get_pool_count(void *mc_io, uint16_t dprc_handle, int *pool_count)
 	return err;
 }
 
-int dprc_get_pool(void *mc_io, uint16_t dprc_handle, int pool_index,
-		  char *type)
+int dprc_get_pool(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
+		  int pool_index, char *type)
 {
 	struct mc_command cmd = { 0 };
 	int err;
@@ -479,7 +504,7 @@ int dprc_get_pool(void *mc_io, uint16_t dprc_handle, int pool_index,
 	return err;
 }
 
-int dprc_get_portal_paddr(void *mc_io, uint16_t dprc_handle,
+int dprc_get_portal_paddr(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 			  int portal_id, uint64_t *portal_addr)
 {
 	struct mc_command cmd = { 0 };
@@ -498,7 +523,7 @@ int dprc_get_portal_paddr(void *mc_io, uint16_t dprc_handle,
 	return err;
 }
 
-int dprc_connect(void *mc_io, uint16_t dprc_handle,
+int dprc_connect(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		 struct dprc_endpoint *endpoint1,
 		 struct dprc_endpoint *endpoint2)
 {
@@ -513,7 +538,7 @@ int dprc_connect(void *mc_io, uint16_t dprc_handle,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprc_disconnect(void *mc_io, uint16_t dprc_handle,
+int dprc_disconnect(struct fsl_mc_io *mc_io, uint16_t dprc_handle,
 		    struct dprc_endpoint *endpoint)
 {
 	struct mc_command cmd = { 0 };
