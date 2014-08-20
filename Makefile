@@ -6,6 +6,8 @@ OBJS = resman.o \
        dprc.o \
        dpmng.o \
        dpni.o \
+       dpbp.o \
+       dpio.o \
        fsl_mc_sys.o
 
 CFLAGS = ${EXTRA_CFLAGS} \

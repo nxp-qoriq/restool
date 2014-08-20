@@ -43,6 +43,8 @@
 #include "fsl_dprc.h"
 #include "fsl_dpmng.h"
 #include "fsl_dpni.h"
+#include "fsl_dpbp.h"
+#include "fsl_dpio.h"
 
 /**
  * Bit masks for command-line options:
@@ -332,11 +334,15 @@ static void print_usage(void)
 		"\tnon-option: show general info about an MC object.\n"
 		"\t\te.g. info dprc.2\n"
 		"\t\te.g. info dpni.7\n"
+		"\t\te.g. info dpbp.2\n"
+		"\t\te.g. info dpio.3\n"
 		"\tOption: -x, --verbose\n"
 		"\tShow general and verbose info about an MC object.\n"
 		"\t\te.g. info dprc.2 --verbose\n"
 		"\t\te.g. info dpni.7 --verbose\n"
-		/* "  create <object type> [-c]\n"
+		"\t\te.g. info dpbp.2 --verbose\n"
+		"\t\te.g. info dpio.3 --verbose\n"
+		/*"  create <object type> [-c]\n"
 		"\tCreate a new MC object of the given type.\n"
 		"\tOptions:\n"
 		"\t-c <container>, --container=<container>\n"
@@ -1082,6 +1088,157 @@ out:
 	return error;
 }
 
+static int print_dpbp_attr(uint32_t dpbp_id)
+{
+	uint16_t dpbp_handle;
+	int error;
+	struct dpbp_attr dpbp_attr;
+	bool dpbp_opened = false;
+
+	error = dpbp_open(&resman.mc_io, dpbp_id, &dpbp_handle);
+	if (error < 0) {
+		ERROR_PRINTF("dpbp_open() failed for dpbp.%u with error %d\n", dpbp_id, error);
+		goto out;
+	}
+	dpbp_opened = true;
+	if(0 == dpbp_handle) {
+		ERROR_PRINTF("dpbp_open() returned invalid handle (auth 0) for dpbp.%u\n", dpbp_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpbp_attr, 0, sizeof(dpbp_attr));
+	error = dpbp_get_attributes(&resman.mc_io, dpbp_handle, &dpbp_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dpbp_get_attributes() failed with error: %d\n", error);
+		goto out;
+	}
+	assert(dpbp_id == (uint32_t)dpbp_attr.id);
+
+	printf("dpbp version: %u.%u\n", dpbp_attr.version.major, dpbp_attr.version.minor);
+	printf("dpbp id: %d\n", dpbp_attr.id);
+	printf("buffer pool id: %u\n", (unsigned int)dpbp_attr.bpid);
+
+	error = 0;
+
+out:
+	if (dpbp_opened) {
+		int error2;
+
+		error2 = dpbp_close(&resman.mc_io, dpbp_handle);
+		if(error2 < 0) {
+			ERROR_PRINTF("dpbp_close() failed with error %d\n", error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int print_dpbp_verbose(void)
+{
+	printf("dpbp verbose info coming out soon\n");
+	return 0;
+}
+
+static int print_dpbp_info(uint32_t dpbp_id)
+{
+	int error;
+
+	error = print_dpbp_attr(dpbp_id);
+	if (error < 0)
+		goto out;
+
+	if (resman.option_mask & OPT_VERBOSE_MASK) {
+		resman.option_mask &= ~OPT_VERBOSE_MASK;
+		error = print_dpbp_verbose();
+		goto out;
+	}
+
+out:
+	return error;
+}
+
+static int print_dpio_attr(uint32_t dpio_id)
+{
+	uint16_t dpio_handle;
+	int error;
+	struct dpio_attr dpio_attr;
+	bool dpio_opened = false;
+
+	error = dpio_open(&resman.mc_io, dpio_id, &dpio_handle);
+	if (error < 0) {
+		ERROR_PRINTF("dpio_open() failed for dpio.%u with error %d\n", dpio_id, error);
+		goto out;
+	}
+	dpio_opened = true;
+	if(0 == dpio_handle) {
+		ERROR_PRINTF("dpio_open() returned invalid handle (auth 0) for dpio.%u\n", dpio_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpio_attr, 0, sizeof(dpio_attr));
+	error = dpio_get_attributes(&resman.mc_io, dpio_handle, &dpio_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dpio_get_attributes() failed with error: %d\n", error);
+		goto out;
+	}
+	assert(dpio_id == (uint32_t)dpio_attr.id);
+
+	printf("dpio version: %u.%u\n", dpio_attr.version.major, dpio_attr.version.minor);
+	printf("dpio id: %d\n", dpio_attr.id);
+	printf("physical address of qbman software portal cache-enabled area: %#llx\n", (long long unsigned int)dpio_attr.qbman_portal_ce_paddr);
+	printf("physical address of qbman software portal cache-inhibited area: %#llx\n", (long long unsigned int)dpio_attr.qbman_portal_ci_paddr);
+	printf("qbman software portal id: %#x\n", (unsigned int)dpio_attr.qbman_portal_id);
+	printf("dpio channel mode is: ");
+	dpio_attr.channel_mode == 0 ? printf("DPIO_NO_CHANNEL\n") :
+	dpio_attr.channel_mode == 1 ? printf("DPIO_LOCAL_CHANNEL\n") :
+	printf("wrong mode\n");
+	printf("number of priorities is: %#x\n", (unsigned int)dpio_attr.num_priorities);
+
+	error = 0;
+
+out:
+	if (dpio_opened) {
+		int error2;
+
+		error2 = dpio_close(&resman.mc_io, dpio_handle);
+		if(error2 < 0) {
+			ERROR_PRINTF("dpio_close() failed with error %d\n", error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int print_dpio_verbose(void)
+{
+	printf("dpio verbose info coming out soon\n");
+	return 0;
+}
+
+static int print_dpio_info(uint32_t dpio_id)
+{
+	int error;
+
+	error = print_dpio_attr(dpio_id);
+	if (error < 0)
+		goto out;
+
+	if (resman.option_mask & OPT_VERBOSE_MASK) {
+		resman.option_mask &= ~OPT_VERBOSE_MASK;
+		error = print_dpio_verbose();
+		goto out;
+	}
+
+out:
+	return error;
+}
+
 static int cmd_info_object(void)
 {
 	int error;
@@ -1120,6 +1277,10 @@ static int cmd_info_object(void)
 		error = print_dprc_info(obj_id);
 	} else if (strcmp(obj_type, "dpni") == 0) {
 		error = print_dpni_info(obj_id);
+	} else if (strcmp(obj_type, "dpbp") == 0) {
+		error = print_dpbp_info(obj_id);
+	} else if (strcmp(obj_type, "dpio") == 0) {
+		error = print_dpio_info(obj_id);
 	} else {
 		ERROR_PRINTF("Unexpected object type \'%s\'\n", obj_type);
 		error = -EINVAL;
