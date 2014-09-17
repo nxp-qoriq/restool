@@ -539,8 +539,12 @@ static int show_one_resource_type(uint16_t dprc_handle,
 			goto out;
 		}
 
+		if (range_desc.base_id == range_desc.last_id)
+			printf("%d\n", range_desc.base_id);
+		else
+			printf("%d - %d\n", range_desc.base_id, range_desc.last_id);
+
 		for (id = range_desc.base_id; id <= range_desc.last_id; id++) {
-			printf("%s.%d\n", mc_res_type, id);
 			res_discovered_count++;
 		}
 	} while (res_discovered_count < res_count &&
