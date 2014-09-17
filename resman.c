@@ -342,6 +342,8 @@ static void print_usage(void)
 		"\t\te.g. info dpni.7 --verbose\n"
 		"\t\te.g. info dpbp.2 --verbose\n"
 		"\t\te.g. info dpio.3 --verbose\n"
+		"\tNOTE: Use mc.global, instead of dprc.0, as the global container.\n"
+		"\t\te.g. show mc.global -r\n"
 		/*"  create <object type> [-c]\n"
 		"\tCreate a new MC object of the given type.\n"
 		"\tOptions:\n"
@@ -678,6 +680,8 @@ static int cmd_show_container(void)
 	}
 
 	dprc_name = resman.non_option_arg[0];
+	if (strcmp(dprc_name, "mc.global") == 0)
+		dprc_name = "dprc.0";
 	error = parse_object_name(dprc_name, "dprc", obj_type, &dprc_id);
 	if (error < 0)
 		goto out;
