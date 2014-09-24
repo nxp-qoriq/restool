@@ -3,6 +3,10 @@ CROSS_COMPILE ?=
 CC = $(CROSS_COMPILE)gcc
 
 OBJS = resman.o \
+       dprc_commands.o \
+       dpni_commands.o \
+       dpio_commands.o \
+       dpbp_commands.o \
        dprc.o \
        dpmng.o \
        dpni.o \
