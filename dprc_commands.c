@@ -390,21 +390,19 @@ out:
 static int show_one_resource_type_count(uint16_t dprc_handle,
 				      const char *mc_res_type)
 {
-	int res_count;
+	int res_count = -1;
 	int error;
 
 	error = dprc_get_res_count(&resman.mc_io, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_res_count() failed: %d\n", error);
+		ERROR_PRINTF("dprc_get_res_count() failed for resource type \'%s\' (error: %d)\n",
+			     mc_res_type, error);
 		goto out;
 	}
 
-	if (res_count == 0)
-		goto out;
-
-	printf("%s: %d\n",mc_res_type, res_count);
-
+	assert(res_count >= 0);
+	printf("%s: %d\n" ,mc_res_type, res_count);
 out:
 	return error;
 }
@@ -417,6 +415,7 @@ static int show_mc_resources(uint16_t dprc_handle)
 	int pool_count;
 	char res_type[RES_TYPE_MAX_LENGTH + 1];
 	int error;
+	int ret_error = 0;
 
 	error = dprc_get_pool_count(&resman.mc_io, dprc_handle,
 				    &pool_count);
@@ -427,17 +426,33 @@ static int show_mc_resources(uint16_t dprc_handle)
 
 	assert(pool_count > 0);
 	for (int i = 0; i < pool_count; i++) {
-		res_type[sizeof(res_type) - 1] = '\0';
+		memset(res_type, 0, sizeof(res_type));
 		error = dprc_get_pool(&resman.mc_io, dprc_handle,
 				      i, res_type);
 
+		/* check for buffer overrun: */
 		assert(res_type[sizeof(res_type) - 1] == '\0');
+
+		if (error < 0) {
+			ERROR_PRINTF("dprc_get_pool() failed for pool index %d (error: %d)\n",
+				     i, error);
+			if (ret_error == 0)
+				ret_error = error;
+
+			continue;
+		}
+
+		DEBUG_PRINTF("pool index %d: ", i);
 		error = show_one_resource_type_count(dprc_handle, res_type);
-		if (error < 0)
-			goto out;
+		if (error < 0) {
+			if (ret_error == 0)
+				ret_error = error;
+
+			continue;
+		}
 	}
 out:
-	return error;
+	return ret_error;
 }
 
 static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
