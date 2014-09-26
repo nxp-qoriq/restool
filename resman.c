@@ -94,9 +94,10 @@ void print_unexpected_options_error(uint32_t option_mask,
 static void print_usage(void)
 {
 	static const char usage_msg[] =
-		"\nUsage: resman [OPTIONS] <object-type> <command> <object-name> [ARGS...]\n"
 		"\n"
-		"Valid OPTIONS are:\n"
+		"Usage: resman [<global-options>] <object-type> <command> <object-name> [ARGS...]\n"
+		"\n"
+		"Valid <global-options> are:\n"
 		"   -v,--version   Displays tool version info\n"
 		"   -h,-?,--help   Displays general help info\n"
 		"\n"
@@ -113,7 +114,7 @@ static void print_usage(void)
 		"The <object-name> arg is a string containing object type\n"
 		"and ID (e.g. dpni.7).\n"
 		"\n"
-		"For valid [ARGS] values, see the 'help' command for the object type.\n"
+		"For valid [ARGS] values, see the \'help\' command for the object type.\n"
 		"\n";
 
 	printf(usage_msg);
@@ -186,7 +187,7 @@ static int parse_global_options(int argc, char *argv[],
 {
 	int c;
 	int opt_index;
-	int error = 0;
+	int error;
 
 	/*
 	 * Initialize getopt global variables:
@@ -204,12 +205,10 @@ static int parse_global_options(int argc, char *argv[],
 		switch (c) {
 		case 'h':
 		case '?':
-			resman.global_option_mask |= ONE_BIT_MASK(GLOBAL_OPT_HELP);
 			opt_index = GLOBAL_OPT_HELP;
 			break;
 
 		case 'v':
-			resman.global_option_mask |= ONE_BIT_MASK(GLOBAL_OPT_VERSION);
 			opt_index = GLOBAL_OPT_VERSION;
 			break;
 
@@ -217,6 +216,14 @@ static int parse_global_options(int argc, char *argv[],
 			assert(false);
 		}
 
+		assert((unsigned int)opt_index < MAX_NUM_CMD_LINE_OPTIONS);
+		if (resman.global_option_mask & ONE_BIT_MASK(opt_index)) {
+			ERROR_PRINTF("Duplicated option: %s\n", global_options[opt_index].name);
+			error = -EINVAL;
+			goto error;
+		}
+
+		resman.global_option_mask |= ONE_BIT_MASK(opt_index);
 		if (global_options[opt_index].has_arg)
 			resman.global_option_args[opt_index] = optarg;
 		else
@@ -225,6 +232,8 @@ static int parse_global_options(int argc, char *argv[],
 
 	DEBUG_PRINTF("optind: %d, argc: %d\n", optind, argc);
 	*next_argv_index = optind;
+	return 0;
+error:
 	return error;
 }
 
@@ -234,7 +243,7 @@ static int parse_cmd_options(int argc, char *argv[],
 {
 	int c;
 	int opt_index;
-	int error = 0;
+	int error;
 
 	/*
 	 * Initialize getopt global variables:
@@ -252,10 +261,16 @@ static int parse_cmd_options(int argc, char *argv[],
 
 		if (c != 0) {
 			error = -EINVAL;
-			goto out;
+			goto error;
 		}
 
 		assert((unsigned int)opt_index < MAX_NUM_CMD_LINE_OPTIONS);
+		if (resman.cmd_option_mask & ONE_BIT_MASK(opt_index)) {
+			ERROR_PRINTF("Duplicated option: %s\n", options[opt_index].name);
+			error = -EINVAL;
+			goto error;
+		}
+
 		resman.cmd_option_mask |= ONE_BIT_MASK(opt_index);
 		if (options[opt_index].has_arg)
 			resman.cmd_option_args[opt_index] = optarg;
@@ -263,9 +278,10 @@ static int parse_cmd_options(int argc, char *argv[],
 			resman.cmd_option_args[opt_index] = NULL;
 	}
 
-out:
 	DEBUG_PRINTF("optind: %d, argc: %d\n", optind, argc);
 	*next_argv_index = optind;
+	return 0;
+error:
 	return error;
 }
 
@@ -360,6 +376,11 @@ static int parse_obj_command(const char *obj_type,
 	 * Execute object-level command:
 	 */
 	error = obj_cmd->cmd_func();
+
+	if (resman.cmd_option_mask != 0) {
+		print_unexpected_options_error(resman.cmd_option_mask,
+					        obj_cmd->options);
+	}
 out:
 	return error;
 }
