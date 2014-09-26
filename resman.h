@@ -121,7 +121,7 @@ struct resman {
 	 * Array of option arguments for options found in the command line,
 	 * that have arguments. One entry per option.
 	 */
-	const char *cmd_option_args[MAX_NUM_CMD_LINE_OPTIONS];
+	char *cmd_option_args[MAX_NUM_CMD_LINE_OPTIONS];
 
 	/**
 	 * MC I/O portal

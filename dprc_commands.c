@@ -83,16 +83,11 @@ static struct option dprc_show_options[] = {
 
 	[SHOW_OPT_RESOURCES] = {
 		.name = "resources",
-		.has_arg = 0,
-		.flag = NULL,
-		.val = 0,
 	},
 
 	[SHOW_OPT_RES_TYPE] = {
 		.name = "resource-type",
 		.has_arg = 1,
-		.flag = NULL,
-		.val = 0,
 	},
 
 	{ 0 },
@@ -124,9 +119,6 @@ C_ASSERT(ARRAY_SIZE(dprc_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 /**
  * dprc create command options
- *
- * TODO: Would it be better to have a separate command-line option
- * for each MC command option?
  */
 enum dprc_create_child_options {
 	CREATE_OPT_HELP = 0,
@@ -141,8 +133,6 @@ static struct option dprc_create_child_options[] = {
 	[CREATE_OPT_OPTIONS] = {
 		.name = "options",
 		.has_arg = 1,
-		.flag = NULL,
-		.val = 0,
 	},
 
 	{ 0 },
@@ -207,19 +197,91 @@ static struct option dprc_assign_options[] = {
 C_ASSERT(ARRAY_SIZE(dprc_assign_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 /**
- * dprc unassign command options
+ * dprc set-quota command options
  */
-enum dprc_unassign_options {
-	UNASSIGN_OPT_HELP = 0,
+enum dprc_set_quota_options {
+	SET_QUOTA_OPT_HELP = 0,
+	SET_QUOTA_OPT_RES_TYPE,
+	SET_QUOTA_OPT_COUNT,
+	SET_QUOTA_OPT_CHILD,
 };
 
-static struct option dprc_unassign_options[] = {
-	[UNASSIGN_OPT_HELP] = {
+static struct option dprc_set_quota_options[] = {
+	[SET_QUOTA_OPT_HELP] = {
 		.name = "help",
 	},
+
+	[SET_QUOTA_OPT_RES_TYPE] = {
+		.name = "resource-type",
+		.has_arg = 1,
+	},
+
+	[SET_QUOTA_OPT_COUNT] = {
+		.name = "count",
+		.has_arg = 1,
+	},
+
+	[SET_QUOTA_OPT_CHILD] = {
+		.name = "child-container",
+		.has_arg = 1,
+	},
+
+	{ 0 },
 };
 
-C_ASSERT(ARRAY_SIZE(dprc_unassign_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+C_ASSERT(ARRAY_SIZE(dprc_set_quota_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+/**
+ * dprc connect command options
+ */
+enum dprc_connect_options {
+	CONNECT_OPT_HELP = 0,
+	CONNECT_OPT_ENDPOINT1,
+	CONNECT_OPT_ENDPOINT2,
+};
+
+static struct option dprc_connect_options[] = {
+	[CONNECT_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[CONNECT_OPT_ENDPOINT1] = {
+		.name = "endpoint1",
+		.has_arg = 1,
+	},
+
+	[CONNECT_OPT_ENDPOINT2] = {
+		.name = "endpoint2",
+		.has_arg = 1,
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dprc_connect_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+/**
+ * dprc disconnect command options
+ */
+enum dprc_disconnect_options {
+	DISCONNECT_OPT_HELP = 0,
+	DISCONNECT_OPT_ENDPOINT,
+};
+
+static struct option dprc_disconnect_options[] = {
+	[DISCONNECT_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[DISCONNECT_OPT_ENDPOINT] = {
+		.name = "endpoint",
+		.has_arg = 1,
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dprc_disconnect_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 static int cmd_dprc_help(void)
 {
@@ -234,6 +296,11 @@ static int cmd_dprc_help(void)
 		"   destroy - destroys a child DPRC under the specified parent.\n"
 		"   assign - moves an object or resource from a parent container to a target container.\n"
 		"   unassign - moves an object or resource from a target container to a parent container.\n"
+		"   set-quota - sets quota policies for a child container, specifying the number of\n"
+		"		resources a child may allocate from its parent container\n"
+		"   connect - connects 2 objects, creating a link between them.\n"
+		"   disconnect - removes the link between two objects. Either endpoint can be specified\n"
+		"		 as the target of the operation.\n"
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
 		"\n";
@@ -822,7 +889,7 @@ out:
  * Create a DPRC object in the MC, as a child of the container
  * referred by 'dprc_handle'.
  */
-static int create_child_dprc(uint16_t dprc_handle)
+static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 {
 	int error;
 	int error2;
@@ -849,9 +916,7 @@ static int create_child_dprc(uint16_t dprc_handle)
 
 	cfg.icid = DPRC_GET_ICID_FROM_POOL;
 	cfg.portal_id = portal_id;
-	cfg.options =
-		(DPRC_CFG_OPT_SPAWN_ALLOWED | DPRC_CFG_OPT_ALLOC_ALLOWED);
-
+	cfg.options = options;
 	error = dprc_create_container(
 			&resman.mc_io,
 			dprc_handle,
@@ -859,8 +924,7 @@ static int create_child_dprc(uint16_t dprc_handle)
 			&child_dprc_id,
 			&mc_portal_phys_addr);
 	if (error < 0) {
-		ERROR_PRINTF(
-			"dprc_create_container() failed: %d\n", error);
+		ERROR_PRINTF("dprc_create_container() failed: %d\n", error);
 		goto error;
 	}
 
@@ -894,6 +958,47 @@ error:
 	return error;
 }
 
+#define OPTION_MAP_ENTRY(_option)   { #_option, _option }
+
+static int parse_create_options(char *options_str, uint64_t *options)
+{
+	static const struct {
+		const char *str;
+		uint64_t value;
+	} options_map[] = {
+		OPTION_MAP_ENTRY(DPRC_CFG_OPT_SPAWN_ALLOWED),
+		OPTION_MAP_ENTRY(DPRC_CFG_OPT_ALLOC_ALLOWED),
+		OPTION_MAP_ENTRY(DPRC_CFG_OPT_OBJ_CREATE_ALLOWED),
+		OPTION_MAP_ENTRY(DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED),
+		OPTION_MAP_ENTRY(DPRC_CFG_OPT_AIOP),
+	};
+
+	char *cursor = NULL;
+	char *opt_str = strtok_r(options_str, ",", &cursor);
+	uint64_t options_mask = 0;
+
+	while (opt_str != NULL) {
+		unsigned int i;
+
+		for (i = 0; i < ARRAY_SIZE(options_map); i++) {
+			if (strcmp(opt_str, options_map[i].str) == 0) {
+				options_mask |= options_map[i].value;
+				break;
+			}
+		}
+
+		if (i == ARRAY_SIZE(options_map)) {
+			ERROR_PRINTF("Invalid option: \'%s\'\n", opt_str);
+			return -EINVAL;
+		}
+
+		opt_str = strtok_r(NULL, ",", &cursor);
+	}
+
+	*options = options_mask;
+	return 0;
+}
+
 static int cmd_dprc_create_child(void)
 {
 	static const char usage_msg[] =
@@ -913,6 +1018,7 @@ static int cmd_dprc_create_child(void)
 	int error;
 	bool dprc_opened = false;
 	uint32_t dprc_id;
+	uint64_t options;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
@@ -945,12 +1051,15 @@ static int cmd_dprc_create_child(void)
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		ERROR_PRINTF("Create options not implemented yet\n");
-		error = -ENOTSUP;
-		goto out;
+		error = parse_create_options(resman.cmd_option_args[CREATE_OPT_OPTIONS],
+					     &options);
+		if (error < 0)
+			goto out;
+	} else {
+		options = DPRC_CFG_OPT_SPAWN_ALLOWED | DPRC_CFG_OPT_ALLOC_ALLOWED;
 	}
 
-	error = create_child_dprc(dprc_handle);
+	error = create_child_dprc(dprc_handle, options);
 out:
 	if (dprc_opened) {
 		int error2;
@@ -1103,6 +1212,135 @@ out:
 	return error;
 }
 
+static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
+{
+	uint16_t dprc_handle;
+	int error;
+	bool dprc_opened = false;
+	uint32_t parent_dprc_id;
+	uint32_t target_dprc_id;
+	struct dprc_res_req res_req;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
+	if (resman.obj_name == NULL) {
+		ERROR_PRINTF("<parent-container> argument missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	memset(&res_req, 0, sizeof(res_req));
+	error = parse_object_name(resman.obj_name,
+				  "dprc", &parent_dprc_id);
+	if (error < 0)
+		goto out;
+
+	if (parent_dprc_id != resman.root_dprc_id) {
+		error = open_dprc(parent_dprc_id, &dprc_handle);
+		if (error < 0)
+			goto out;
+
+		dprc_opened = true;
+	} else {
+		dprc_handle = resman.root_dprc_handle;
+	}
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_TARGET)) {
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_TARGET);
+		assert(resman.cmd_option_args[ASSIGN_OPT_TARGET] != NULL);
+		error = parse_object_name(resman.cmd_option_args[ASSIGN_OPT_TARGET],
+					  "dprc", &target_dprc_id);
+		if (error < 0)
+			goto out;
+	} else {
+		target_dprc_id = parent_dprc_id;
+	}
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE)) {
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE);
+		assert(resman.cmd_option_args[ASSIGN_OPT_RES_TYPE] != NULL);
+		strcpy(res_req.type, resman.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
+		if (!(resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_COUNT))) {
+			ERROR_PRINTF("--count option missing\n");
+			printf(usage_msg);
+			error = -EINVAL;
+			goto out;
+		}
+
+		assert(resman.cmd_option_args[ASSIGN_OPT_COUNT] != NULL);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_COUNT);
+		res_req.num = atoi(resman.cmd_option_args[ASSIGN_OPT_COUNT]);
+		if (res_req.num <= 0) {
+			ERROR_PRINTF("Invalid --count arg: %s\n",
+				     resman.cmd_option_args[ASSIGN_OPT_COUNT]);
+			error = -EINVAL;
+			goto out;
+		}
+
+		res_req.options = 0;
+		res_req.id_base_align = 0;
+	} else if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_OBJECT)) {
+		int n;
+
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_OBJECT);
+		assert(resman.cmd_option_args[ASSIGN_OPT_OBJECT] != NULL);
+
+		n = sscanf(resman.cmd_option_args[ASSIGN_OPT_OBJECT],
+			   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "s.%d",
+			   res_req.type, &res_req.id_base_align);
+		if (n != 2) {
+			ERROR_PRINTF("Invalid --object arg: \'%s\'\n",
+				     resman.cmd_option_args[ASSIGN_OPT_OBJECT]);
+
+			error = -EINVAL;
+			goto out;
+		}
+
+		res_req.options = DPRC_RES_REQ_OPT_EXPLICIT;
+	} else {
+		ERROR_PRINTF("Invalid command line\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (do_assign) {
+		error = dprc_assign(&resman.mc_io,
+				    dprc_handle,
+				    target_dprc_id,
+				    &res_req);
+		if (error < 0)
+			ERROR_PRINTF("dprc_assign() failed: %d\n", error);
+	} else {
+		error = dprc_unassign(&resman.mc_io,
+				      dprc_handle,
+				      target_dprc_id,
+				      &res_req);
+		if (error < 0)
+			ERROR_PRINTF("dprc_unassign() failed: %d\n", error);
+	}
+out:
+	if (dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int cmd_dprc_assign(void)
 {
 	static const char usage_msg[] =
@@ -1111,8 +1349,7 @@ static int cmd_dprc_assign(void)
 		"	resman dprc assign <parent-container> --resource-type=<type> --count=<number> [--target=<container>]\n"
 		"\n"
 		"--object=<object>\n"
-		"   Specifies the object to assign to the target container, taken from the\n"
-		"   parent container\n"
+		"   Specifies the object to assign to the target container\n"
 		"--target=<container>\n"
 		"   Specifies the destination container for the operation.\n"
 		"   Valid values are any child container. The target container\n"
@@ -1122,37 +1359,362 @@ static int cmd_dprc_assign(void)
 		"--plugged=<state>\n"
 		"   Specifies the plugged state of the object (valid values are 0 or 1)\n"
 		"--resource-type=<type>\n"
-		"   String specifying the resource type to assign (e.g ?mcp?, ?fq?, ?cg?, etc)\n"
+		"   String specifying the resource type to assign (e.g, \'mcp\', \'fq\', \'cg\', etc)\n"
 		"--count=<number>\n"
 		"   Number of resources to assign.\n"
 		"\n";
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
-		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
-	}
-
-	ERROR_PRINTF("Not implemented yet\n");
-	return -ENOTSUP;
+	return do_dprc_assign_or_unassign(usage_msg, true);
 }
 
 static int cmd_dprc_unassign(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc unassign <container> --object=<object> --target=<container> [--plugged=<state>]\n"
+		"Usage: resman dprc unassign <container> --object=<object> [--target=<container>] [--plugged=<state>]\n"
 		"	resman dprc unassign <container> --resource-type <type> --count <number> --target <container>\n"
 		"\n"
-		"TODO: complete text\n"
+		"--object=<object>\n"
+		"   Specifies the object to unassign from the target container\n"
+		"--target=<container>\n"
+		"   Specifies the destination container for the operation.\n"
+		"   Valid values are any child container. The target container\n"
+		"   may be the same as the parent container, allowing unassign to self.\n"
+		"   Indeed, if this option is not specified, the default target is\n"
+		"   <parent-container> itself.\n"
+		"--plugged=<state>\n"
+		"   Specifies the plugged state of the object (valid values are 0 or 1)\n"
+		"--resource-type=<type>\n"
+		"   String specifying the resource type to unassign (e.g, \'mcp\', \'fq\', \'cg\', etc)\n"
+		"--count=<number>\n"
+		"   Number of resources to unassign.\n"
 		"\n";
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(UNASSIGN_OPT_HELP)) {
+	return do_dprc_assign_or_unassign(usage_msg, false);
+}
+
+static int cmd_dprc_set_quota(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc set-quota <parent-container> --resource-type=<type> --count=<number>\n"
+		"						 --child-container=<container>\n"
+		"\n"
+		"--resource-type=<type>\n"
+		"   String specifying the resource type to set the quota for (e.g 'mcp', 'fq', 'cg', etc)\n"
+		"--count=<number>\n"
+		"   Max number of resources the child is able to allocate\n"
+		"--child-container=<container>\n"
+		"   Child container for which the quota is being set\n"
+		"\n";
+
+	uint16_t dprc_handle;
+	int error;
+	bool dprc_opened = false;
+	uint32_t parent_dprc_id;
+	uint32_t child_dprc_id;
+	char *res_type;
+	int quota;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(UNASSIGN_OPT_HELP);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
+		error = 0;
+		goto out;
 	}
 
-	ERROR_PRINTF("Not implemented yet\n");
-	return -ENOTSUP;
+	if (resman.obj_name == NULL) {
+		ERROR_PRINTF("<parent-container> argument missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	error = parse_object_name(resman.obj_name,
+				  "dprc", &parent_dprc_id);
+	if (error < 0)
+		goto out;
+
+	if (parent_dprc_id != resman.root_dprc_id) {
+		error = open_dprc(parent_dprc_id, &dprc_handle);
+		if (error < 0)
+			goto out;
+
+		dprc_opened = true;
+	} else {
+		dprc_handle = resman.root_dprc_handle;
+	}
+
+	if (!(resman.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_RES_TYPE))) {
+		ERROR_PRINTF("--resource-type option missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	resman.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_RES_TYPE);
+	assert(resman.cmd_option_args[SET_QUOTA_OPT_RES_TYPE] != NULL);
+	res_type = resman.cmd_option_args[SET_QUOTA_OPT_RES_TYPE];
+
+	if (!(resman.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_COUNT))) {
+		ERROR_PRINTF("--count option missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	assert(resman.cmd_option_args[SET_QUOTA_OPT_COUNT] != NULL);
+	resman.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_COUNT);
+	quota = atoi(resman.cmd_option_args[SET_QUOTA_OPT_COUNT]);
+	if (quota <= 0 || quota > UINT16_MAX) {
+		ERROR_PRINTF("Invalid --count arg: %s\n",
+			     resman.cmd_option_args[SET_QUOTA_OPT_COUNT]);
+		error = -ERANGE;
+		goto out;
+	}
+
+	if (!(resman.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_CHILD))) {
+		ERROR_PRINTF("--child-container option missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	resman.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_CHILD);
+	assert(resman.cmd_option_args[SET_QUOTA_OPT_CHILD] != NULL);
+	error = parse_object_name(resman.cmd_option_args[SET_QUOTA_OPT_CHILD],
+				  "dprc", &child_dprc_id);
+	if (error < 0)
+		goto out;
+
+	error = dprc_set_res_quota(&resman.mc_io,
+				   dprc_handle,
+				   child_dprc_id,
+				   res_type,
+				   quota);
+
+	if (error < 0)
+		ERROR_PRINTF("dprc_set_res_quota() failed: %d\n", error);
+out:
+	if (dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int parse_endpoint(char *endpoint_str, struct dprc_endpoint *endpoint)
+{
+	int n;
+
+	memset(endpoint, 0, sizeof(*endpoint));
+
+	n = sscanf(endpoint_str,
+		   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "s.%d.%d",
+		   endpoint->type, &endpoint->id, &endpoint->interface_id);
+
+	if (n < 2)
+		return -EINVAL;
+
+	if (n == 2)
+		assert(endpoint->interface_id == 0);
+
+	return 0;
+}
+
+
+static int cmd_dprc_connect(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc connect <container> --endpoint1=<object> --endpoint2=<object>\n"
+		"\n"
+		"--endpoint1=<object>\n"
+		"   Specifies the first endpoint object.\n"
+		"--endpoint2=<object>\n"
+		"   Specifies the second endpoint object.\n"
+		"\n";
+
+	uint16_t dprc_handle;
+	int error;
+	bool dprc_opened = false;
+	uint32_t parent_dprc_id;
+	struct dprc_endpoint endpoint1;
+	struct dprc_endpoint endpoint2;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
+	if (resman.obj_name == NULL) {
+		ERROR_PRINTF("<parent-container> argument missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	error = parse_object_name(resman.obj_name,
+				  "dprc", &parent_dprc_id);
+	if (error < 0)
+		goto out;
+
+	if (parent_dprc_id != resman.root_dprc_id) {
+		error = open_dprc(parent_dprc_id, &dprc_handle);
+		if (error < 0)
+			goto out;
+
+		dprc_opened = true;
+	} else {
+		dprc_handle = resman.root_dprc_handle;
+	}
+
+	if (!(resman.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_ENDPOINT1))) {
+		ERROR_PRINTF("--endpoint1 option missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	resman.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_ENDPOINT1);
+	assert(resman.cmd_option_args[CONNECT_OPT_ENDPOINT1] != NULL);
+	error = parse_endpoint(resman.cmd_option_args[CONNECT_OPT_ENDPOINT1], &endpoint1);
+	if (error < 0) {
+		ERROR_PRINTF("Invalid --endpoint1 arg: '%s'\n",
+			     resman.cmd_option_args[CONNECT_OPT_ENDPOINT1]);
+		goto out;
+	}
+
+	if (!(resman.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_ENDPOINT2))) {
+		ERROR_PRINTF("--endpoint2 option missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	resman.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_ENDPOINT2);
+	assert(resman.cmd_option_args[CONNECT_OPT_ENDPOINT2] != NULL);
+	error = parse_endpoint(resman.cmd_option_args[CONNECT_OPT_ENDPOINT2], &endpoint2);
+	if (error < 0) {
+		ERROR_PRINTF("Invalid --endpoint2 arg: '%s'\n",
+			     resman.cmd_option_args[CONNECT_OPT_ENDPOINT1]);
+		goto out;
+	}
+
+	error = dprc_connect(&resman.mc_io,
+			     dprc_handle,
+			     &endpoint1,
+			     &endpoint2);
+
+	if (error < 0)
+		ERROR_PRINTF("dprc_connect() failed: %d\n", error);
+out:
+	if (dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int cmd_dprc_disconnect(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc disconnect <container> --endpoint=<object>\n"
+		"\n"
+		"--endpoint=<object>\n"
+		"   Specifies either endpoint of a connection.\n"
+		"\n";
+
+	uint16_t dprc_handle;
+	int error;
+	bool dprc_opened = false;
+	uint32_t parent_dprc_id;
+	struct dprc_endpoint endpoint;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(DISCONNECT_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(DISCONNECT_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
+	if (resman.obj_name == NULL) {
+		ERROR_PRINTF("<parent-container> argument missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	error = parse_object_name(resman.obj_name,
+				  "dprc", &parent_dprc_id);
+	if (error < 0)
+		goto out;
+
+	if (parent_dprc_id != resman.root_dprc_id) {
+		error = open_dprc(parent_dprc_id, &dprc_handle);
+		if (error < 0)
+			goto out;
+
+		dprc_opened = true;
+	} else {
+		dprc_handle = resman.root_dprc_handle;
+	}
+
+	if (!(resman.cmd_option_mask & ONE_BIT_MASK(DISCONNECT_OPT_ENDPOINT))) {
+		ERROR_PRINTF("--endpoint option missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	resman.cmd_option_mask &= ~ONE_BIT_MASK(DISCONNECT_OPT_ENDPOINT);
+	assert(resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT] != NULL);
+	error = parse_endpoint(resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT], &endpoint);
+	if (error < 0) {
+		ERROR_PRINTF("Invalid --endpoint arg: '%s'\n",
+			     resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT]);
+		goto out;
+	}
+
+	error = dprc_disconnect(&resman.mc_io,
+				dprc_handle,
+				&endpoint);
+
+	if (error < 0)
+		ERROR_PRINTF("dprc_disconnect() failed: %d\n", error);
+out:
+	if (dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
 }
 
 /**
@@ -1188,8 +1750,20 @@ struct object_command dprc_commands[] = {
 	  .cmd_func = cmd_dprc_assign },
 
 	{ .cmd_name = "unassign",
-	  .options = dprc_unassign_options,
+	  .options = dprc_assign_options,
 	  .cmd_func = cmd_dprc_unassign },
+
+	{ .cmd_name = "set-quota",
+	  .options = dprc_set_quota_options,
+	  .cmd_func = cmd_dprc_set_quota },
+
+	{ .cmd_name = "connect",
+	  .options = dprc_connect_options,
+	  .cmd_func = cmd_dprc_connect },
+
+	{ .cmd_name = "disconnect",
+	  .options = dprc_disconnect_options,
+	  .cmd_func = cmd_dprc_disconnect },
 
 	{ .cmd_name = NULL },
 };
