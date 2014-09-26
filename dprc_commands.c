@@ -29,6 +29,7 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -54,23 +55,41 @@
 #define MAX_DPRC_NESTING	    16
 
 /**
+ * dprc list command options
+ */
+enum dprc_list_options {
+	LIST_OPT_HELP = 0,
+};
+
+static struct option dprc_list_options[] = {
+	[LIST_OPT_HELP] = {
+		.name = "help",
+	},
+};
+
+/**
  * dprc show command options
  */
 enum dprc_show_options {
-	OPT_RESOURCES = 0,
-	OPT_RES_TYPE,
+	SHOW_OPT_HELP = 0,
+	SHOW_OPT_RESOURCES,
+	SHOW_OPT_RES_TYPE,
 };
 
 static struct option dprc_show_options[] = {
-	[OPT_RESOURCES] = {
+	[SHOW_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[SHOW_OPT_RESOURCES] = {
 		.name = "resources",
 		.has_arg = 0,
 		.flag = NULL,
 		.val = 0,
 	},
 
-	[OPT_RES_TYPE] = {
-		.name = "res-type",
+	[SHOW_OPT_RES_TYPE] = {
+		.name = "resource-type",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -85,11 +104,16 @@ C_ASSERT(ARRAY_SIZE(dprc_show_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  * dpio show command options
  */
 enum dprc_info_options {
-	OPT_VERBOSE = 0,
+	INFO_OPT_HELP = 0,
+	INFO_OPT_VERBOSE,
 };
 
 static struct option dprc_info_options[] = {
-	[OPT_VERBOSE] = {
+	[INFO_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[INFO_OPT_VERBOSE] = {
 		.name = "verbose",
 	},
 
@@ -99,17 +123,22 @@ static struct option dprc_info_options[] = {
 C_ASSERT(ARRAY_SIZE(dprc_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 /**
- * dprc create-child command options
+ * dprc create command options
  *
  * TODO: Would it be better to have a separate command-line option
  * for each MC command option?
  */
 enum dprc_create_child_options {
-	OPT_CREATE_OPTIONS = 0,
+	CREATE_OPT_HELP = 0,
+	CREATE_OPT_OPTIONS,
 };
 
 static struct option dprc_create_child_options[] = {
-	[OPT_RESOURCES] = {
+	[CREATE_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[CREATE_OPT_OPTIONS] = {
 		.name = "options",
 		.has_arg = 1,
 		.flag = NULL,
@@ -121,10 +150,96 @@ static struct option dprc_create_child_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dprc_create_child_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+/**
+ * dprc destroy command options
+ */
+enum dprc_destroy_options {
+	DESTROY_OPT_HELP = 0,
+};
+
+static struct option dprc_destroy_options[] = {
+	[DESTROY_OPT_HELP] = {
+		.name = "help",
+	},
+};
+
+C_ASSERT(ARRAY_SIZE(dprc_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+/**
+ * dprc assign command options
+ */
+enum dprc_assign_options {
+	ASSIGN_OPT_HELP = 0,
+	ASSIGN_OPT_OBJECT,
+	ASSIGN_OPT_TARGET,
+	ASSIGN_OPT_RES_TYPE,
+	ASSIGN_OPT_COUNT,
+};
+
+static struct option dprc_assign_options[] = {
+	[ASSIGN_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[ASSIGN_OPT_OBJECT] = {
+		.name = "object",
+		.has_arg = 1,
+	},
+
+	[ASSIGN_OPT_TARGET] = {
+		.name = "target",
+		.has_arg = 1,
+	},
+
+	[ASSIGN_OPT_RES_TYPE] = {
+		.name = "resource-type",
+		.has_arg = 1,
+	},
+
+	[ASSIGN_OPT_COUNT] = {
+		.name = "count",
+		.has_arg = 1,
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dprc_assign_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+/**
+ * dprc unassign command options
+ */
+enum dprc_unassign_options {
+	UNASSIGN_OPT_HELP = 0,
+};
+
+static struct option dprc_unassign_options[] = {
+	[UNASSIGN_OPT_HELP] = {
+		.name = "help",
+	},
+};
+
+C_ASSERT(ARRAY_SIZE(dprc_unassign_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
 static int cmd_dprc_help(void)
 {
-	ERROR_PRINTF("Not implemented yet\n");
-	return -ENOTSUP;
+	static const char help_msg[] =
+		"\n"
+		"resman dprc <command>\n"
+		"Where <command> can be:\n"
+		"   list - lists all containers (DPRC objects) in the system.\n"
+		"   show - displays the contents (objects and resources) of a DPRC object.\n"
+		"   info - displays detailed information about a DPRC object.\n"
+		"   create - creates a new child DPRC under the specified parent.\n"
+		"   destroy - destroys a child DPRC under the specified parent.\n"
+		"   assign - moves an object or resource from a parent container to a target container.\n"
+		"   unassign - moves an object or resource from a target container to a parent container.\n"
+		"\n"
+		"For command-specific help, use the --help option of each command.\n"
+		"\n";
+
+	printf(help_msg);
+	return 0;
 }
 
 /**
@@ -204,10 +319,20 @@ out:
 
 static int cmd_dprc_list(void)
 {
-	assert(resman.cmd_option_mask == 0);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc list\n"
+		"\n";
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(LIST_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(LIST_OPT_HELP);
+		return 0;
+	}
 
 	if (resman.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n", resman.obj_name);
+		printf(usage_msg);
 		return -EINVAL;
 	}
 
@@ -247,9 +372,11 @@ static int show_one_resource_type(uint16_t dprc_handle,
 		}
 
 		if (range_desc.base_id == range_desc.last_id)
-			printf("%d\n", range_desc.base_id);
+			printf("%s.%d\n", mc_res_type, range_desc.base_id);
 		else
-			printf("%d - %d\n", range_desc.base_id, range_desc.last_id);
+			printf("%s.%d - %s.%d\n",
+			       mc_res_type, range_desc.base_id,
+			       mc_res_type, range_desc.last_id);
 
 		for (id = range_desc.base_id; id <= range_desc.last_id; id++) {
 			res_discovered_count++;
@@ -354,15 +481,31 @@ out:
 
 static int cmd_dprc_show(void)
 {
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc show <container>\n"
+		"	resman dprc show <container> --resources\n"
+		"	resman dprc show <container> --type=<resource-type>\n"
+		"\n"
+		"\n";
+
 	uint32_t dprc_id;
 	uint16_t dprc_handle;
 	const char *dprc_name;
-	int error = 0;
+	int error;
 	bool dprc_opened = false;
 	const char *res_type;
 
+	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
 	if (resman.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
+		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -390,17 +533,17 @@ static int cmd_dprc_show(void)
 		goto out;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(OPT_RESOURCES)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(OPT_RESOURCES);
+	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RESOURCES)) {
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RESOURCES);
 		error = show_mc_resources(dprc_handle);
 		if (error < 0)
 			goto out;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(OPT_RES_TYPE)) {
-		assert(resman.cmd_option_args[OPT_RES_TYPE] != NULL);
-		res_type = resman.cmd_option_args[OPT_RES_TYPE];
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(OPT_RES_TYPE);
+	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RES_TYPE)) {
+		assert(resman.cmd_option_args[SHOW_OPT_RES_TYPE] != NULL);
+		res_type = resman.cmd_option_args[SHOW_OPT_RES_TYPE];
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RES_TYPE);
 		error = show_one_resource_type(dprc_handle, res_type);
 		if (error < 0)
 			goto out;
@@ -602,16 +745,16 @@ static int print_dprc_info(uint32_t dprc_id)
 	if (error < 0)
 		goto out;
 
-	if ((resman.cmd_option_mask & ONE_BIT_MASK(OPT_VERBOSE)) &&
+	if ((resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) &&
 	    dprc_id == resman.root_dprc_id) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(OPT_VERBOSE);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		printf("root dprc doesn't have verbose info to display\n");
 		goto out;
 	}
 
-	if ((resman.cmd_option_mask & ONE_BIT_MASK(OPT_VERBOSE)) &&
+	if ((resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) &&
 	    dprc_id != resman.root_dprc_id) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(OPT_VERBOSE);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_dprc_verbose(resman.root_dprc_handle, 0, dprc_id);
 		goto out;
 	}
@@ -621,12 +764,28 @@ out:
 
 static int cmd_dprc_info(void)
 {
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc info <dprc-object> [--verbose]\n"
+		"\n"
+		"--verbose\n"
+		"   Shows extended/verbose information about the object \n"
+		"\n";
+
 	uint32_t dprc_id;
 	const char *dprc_name;
 	int error;
 
+	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
 	if (resman.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
+		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -722,13 +881,34 @@ error:
 
 static int cmd_dprc_create_child(void)
 {
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc create <parent-container> [--options=<options-mask>]\n"
+		"\n"
+		"--options=<options-mask>\n"
+		"   Where <options-mask> is a comma separated list of DPRC options:\n"
+		"	DPRC_CFG_OPT_SPAWN_ALLOWED\n"
+		"	DPRC_CFG_OPT_ALLOC_ALLOWED\n"
+		"	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED\n"
+		"	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED\n"
+		"	DPRC_CFG_OPT_AIOP\n"
+		"\n";
+
 	uint16_t dprc_handle;
 	int error;
 	bool dprc_opened = false;
 	uint32_t dprc_id;
 
+	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
 	if (resman.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
+		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -748,7 +928,8 @@ static int cmd_dprc_create_child(void)
 		dprc_handle = resman.root_dprc_handle;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(OPT_CREATE_OPTIONS)) {
+	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 		ERROR_PRINTF("Create options not implemented yet\n");
 		error = -ENOTSUP;
 		goto out;
@@ -854,8 +1035,22 @@ error:
 
 static int cmd_dprc_destroy_child(void)
 {
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc destroy <container>\n"
+		"\n"
+		"NOTE: <container> cannot be the root container (dprc.1)\n"
+		"\n";
+
 	int error;
 	uint32_t dprc_id;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		error = 0;
+		goto out;
+	}
 
 	if (resman.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
@@ -895,12 +1090,52 @@ out:
 
 static int cmd_dprc_assign(void)
 {
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc assign <parent-container> --object=<object> [--target=<container>] [--plugged=<state>]\n"
+		"	resman dprc assign <parent-container> --resource-type=<type> --count=<number> [--target=<container>]\n"
+		"\n"
+		"--object=<object>\n"
+		"   Specifies the object to assign to the target container, taken from the\n"
+		"   parent container\n"
+		"--target=<container>\n"
+		"   Specifies the destination container for the operation.\n"
+		"   Valid values are any child container. The target container\n"
+		"   may be the same as the parent container, allowing assign to self.\n"
+		"   Indeed, if this option is not specified, the default target is\n"
+		"   <parent-container> itself.\n"
+		"--plugged=<state>\n"
+		"   Specifies the plugged state of the object (valid values are 0 or 1)\n"
+		"--resource-type=<type>\n"
+		"   String specifying the resource type to assign (e.g ?mcp?, ?fq?, ?cg?, etc)\n"
+		"--count=<number>\n"
+		"   Number of resources to assign.\n"
+		"\n";
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
+	}
+
 	ERROR_PRINTF("Not implemented yet\n");
 	return -ENOTSUP;
 }
 
 static int cmd_dprc_unassign(void)
 {
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dprc unassign <container> --object=<object> --target=<container> [--plugged=<state>]\n"
+		"	resman dprc unassign <container> --resource-type <type> --count <number> --target <container>\n"
+		"\n"
+		"TODO: complete text\n"
+		"\n";
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(UNASSIGN_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(UNASSIGN_OPT_HELP);
+	}
+
 	ERROR_PRINTF("Not implemented yet\n");
 	return -ENOTSUP;
 }
@@ -914,7 +1149,7 @@ struct object_command dprc_commands[] = {
 	  .cmd_func = cmd_dprc_help },
 
 	{ .cmd_name = "list",
-	  .options = NULL,
+	  .options = dprc_list_options,
 	  .cmd_func = cmd_dprc_list },
 
 	{ .cmd_name = "show",
@@ -930,15 +1165,15 @@ struct object_command dprc_commands[] = {
 	  .cmd_func = cmd_dprc_create_child },
 
 	{ .cmd_name = "destroy",
-	  .options = NULL,
+	  .options = dprc_destroy_options,
 	  .cmd_func = cmd_dprc_destroy_child },
 
 	{ .cmd_name = "assign",
-	  .options = NULL,
+	  .options = dprc_assign_options,
 	  .cmd_func = cmd_dprc_assign },
 
 	{ .cmd_name = "unassign",
-	  .options = NULL,
+	  .options = dprc_unassign_options,
 	  .cmd_func = cmd_dprc_unassign },
 
 	{ .cmd_name = NULL },
