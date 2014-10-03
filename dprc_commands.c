@@ -74,6 +74,7 @@ enum dprc_show_options {
 	SHOW_OPT_HELP = 0,
 	SHOW_OPT_RESOURCES,
 	SHOW_OPT_RES_TYPE,
+	SHOW_OPT_VERBOSE,
 };
 
 static struct option dprc_show_options[] = {
@@ -88,6 +89,10 @@ static struct option dprc_show_options[] = {
 	[SHOW_OPT_RES_TYPE] = {
 		.name = "resource-type",
 		.has_arg = 1,
+	},
+
+	[SHOW_OPT_VERBOSE] = {
+		.name = "verbose",
 	},
 
 	{ 0 },
@@ -164,6 +169,7 @@ enum dprc_assign_options {
 	ASSIGN_OPT_TARGET,
 	ASSIGN_OPT_RES_TYPE,
 	ASSIGN_OPT_COUNT,
+	ASSIGN_OPT_PLUGGED,
 };
 
 static struct option dprc_assign_options[] = {
@@ -188,6 +194,11 @@ static struct option dprc_assign_options[] = {
 
 	[ASSIGN_OPT_COUNT] = {
 		.name = "count",
+		.has_arg = 1,
+	},
+
+	[ASSIGN_OPT_PLUGGED] = {
+		.name = "plugged",
 		.has_arg = 1,
 	},
 
@@ -526,6 +537,12 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 {
 	int num_child_devices;
 	int error;
+	bool verbose = false;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_VERBOSE)) {
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_VERBOSE);
+		verbose = true;
+	}
 
 	error = dprc_get_obj_count(&resman.mc_io,
 				   dprc_handle,
@@ -553,7 +570,14 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 			goto out;
 		}
 
-		printf("%s.%u\n", obj_desc.type, obj_desc.id);
+		if (strcmp(obj_desc.type, "dprc") == 0 || !verbose) {
+			printf("%s.%u\n", obj_desc.type, obj_desc.id);
+		} else {
+			printf("%s.%u\t(%splugged)\n", obj_desc.type,
+			       obj_desc.id,
+			       (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) ?
+					"" : "un");
+		}
 	}
 
 	error = 0;
@@ -610,27 +634,17 @@ static int cmd_dprc_show(void)
 		dprc_handle = resman.root_dprc_handle;
 	}
 
-	if (resman.cmd_option_mask == 0) {
-		error = show_mc_objects(dprc_handle, dprc_name);
-		goto out;
-	}
-
 	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RESOURCES)) {
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RESOURCES);
 		error = show_mc_resources(dprc_handle);
-		if (error < 0)
-			goto out;
-	}
-
-	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RES_TYPE)) {
+	} else if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RES_TYPE)) {
 		assert(resman.cmd_option_args[SHOW_OPT_RES_TYPE] != NULL);
 		res_type = resman.cmd_option_args[SHOW_OPT_RES_TYPE];
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RES_TYPE);
 		error = show_one_resource_type(dprc_handle, res_type);
-		if (error < 0)
-			goto out;
+	} else {
+		error = show_mc_objects(dprc_handle, dprc_name);
 	}
-
 out:
 	if (dprc_opened) {
 		int error2;
@@ -1287,6 +1301,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		res_req.id_base_align = 0;
 	} else if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_OBJECT)) {
 		int n;
+		int state;
 
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_OBJECT);
 		assert(resman.cmd_option_args[ASSIGN_OPT_OBJECT] != NULL);
@@ -1303,6 +1318,25 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		}
 
 		res_req.options = DPRC_RES_REQ_OPT_EXPLICIT;
+		if (!(resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_PLUGGED))) {
+			ERROR_PRINTF("--plugged option missing\n");
+			printf(usage_msg);
+			error = -EINVAL;
+			goto out;
+		}
+
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_PLUGGED);
+		assert(resman.cmd_option_args[ASSIGN_OPT_PLUGGED] != NULL);
+		state = atoi(resman.cmd_option_args[ASSIGN_OPT_PLUGGED]);
+		if (state < 0 || state > 1) {
+			ERROR_PRINTF("Invalid --plugged arg: \'%s\'\n",
+			     resman.cmd_option_args[ASSIGN_OPT_PLUGGED]);
+			error = -EINVAL;
+			goto out;
+		}
+
+		if (state == 1)
+			res_req.options |= DPRC_RES_REQ_OPT_PLUGGED;
 	} else {
 		ERROR_PRINTF("Invalid command line\n");
 		printf(usage_msg);
@@ -1345,7 +1379,7 @@ static int cmd_dprc_assign(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc assign <parent-container> --object=<object> [--target=<container>] [--plugged=<state>]\n"
+		"Usage: resman dprc assign <parent-container> --object=<object> [--target=<container>] --plugged=<state>\n"
 		"	resman dprc assign <parent-container> --resource-type=<type> --count=<number> [--target=<container>]\n"
 		"\n"
 		"--object=<object>\n"
@@ -1371,7 +1405,7 @@ static int cmd_dprc_unassign(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc unassign <container> --object=<object> [--target=<container>] [--plugged=<state>]\n"
+		"Usage: resman dprc unassign <container> --object=<object> [--target=<container>] --plugged=<state>\n"
 		"	resman dprc unassign <container> --resource-type <type> --count <number> --target <container>\n"
 		"\n"
 		"--object=<object>\n"
