@@ -755,6 +755,7 @@ int dpni_add_mac_addr(struct fsl_mc_io *mc_io, uint16_t dpni_handle,
 		      const uint8_t addr[6])
 {
 	struct mc_command cmd = { 0 };
+
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_ADD_MAC_ADDR,
 					  DPNI_CMDSZ_ADD_MAC_ADDR,
 					  MC_CMD_PRI_LOW,

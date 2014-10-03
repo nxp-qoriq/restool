@@ -65,4 +65,10 @@
 #define CLOCK_DELTA(_start_clock, _end_clock) \
 	((clock_t)((int64_t)(_end_clock) - (int64_t)(_start_clock)))
 
+#define STRTOL_ERROR(_str, _endptr, _val, _errno) \
+	(((_errno) == ERANGE && ((_val) == LONG_MAX || (_val) == LONG_MIN)) \
+	|| ((_errno) != 0 && (_val) == 0) \
+	|| ((_endptr) == (_str)) \
+	|| (*(_endptr) != '\0'))
+
 #endif /* _UTILS_H */
