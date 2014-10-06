@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2014 Freescale Semiconductor, Inc.
  * Author: German Rivera <German.Rivera@freescale.com>
- * 	   Lijun Pan <Lijun.Pan@freescale.com>
+ *	   Lijun Pan <Lijun.Pan@freescale.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -147,7 +147,8 @@ int parse_object_name(const char *obj_name, char *expected_obj_type,
 	}
 
 	if (strcmp(obj_type, expected_obj_type) != 0) {
-		ERROR_PRINTF("Expected \'%s\' object type\n", expected_obj_type);
+		ERROR_PRINTF("Expected \'%s\' object type\n",
+			     expected_obj_type);
 		return -EINVAL;
 	}
 
@@ -169,8 +170,9 @@ int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 	}
 
 	if (*dprc_handle == 0) {
-		ERROR_PRINTF("dprc_open() returned invalid handle (auth 0) for "
-			     "dprc.%u\n", dprc_id);
+		ERROR_PRINTF(
+			"dprc_open() returned invalid handle (auth 0) for dprc.%u\n",
+			dprc_id);
 
 		(void)dprc_close(&resman.mc_io, *dprc_handle);
 		error = -ENOENT;
@@ -212,13 +214,14 @@ static int parse_global_options(int argc, char *argv[],
 			opt_index = GLOBAL_OPT_VERSION;
 			break;
 
-	       default:
+		default:
 			assert(false);
 		}
 
 		assert((unsigned int)opt_index < MAX_NUM_CMD_LINE_OPTIONS);
 		if (resman.global_option_mask & ONE_BIT_MASK(opt_index)) {
-			ERROR_PRINTF("Duplicated option: %s\n", global_options[opt_index].name);
+			ERROR_PRINTF("Duplicated option: %s\n",
+				     global_options[opt_index].name);
 			error = -EINVAL;
 			goto error;
 		}
@@ -266,7 +269,8 @@ static int parse_cmd_options(int argc, char *argv[],
 
 		assert((unsigned int)opt_index < MAX_NUM_CMD_LINE_OPTIONS);
 		if (resman.cmd_option_mask & ONE_BIT_MASK(opt_index)) {
-			ERROR_PRINTF("Duplicated option: %s\n", options[opt_index].name);
+			ERROR_PRINTF("Duplicated option: %s\n",
+				     options[opt_index].name);
 			error = -EINVAL;
 			goto error;
 		}
@@ -350,8 +354,8 @@ static int parse_obj_command(const char *obj_type,
 	 */
 	if (obj_cmd->options != NULL) {
 		error = parse_cmd_options(argc, argv,
-				          obj_cmd->options,
-				          &next_argv_index);
+					  obj_cmd->options,
+					  &next_argv_index);
 
 		if (error != 0)
 			goto out;
@@ -379,7 +383,7 @@ static int parse_obj_command(const char *obj_type,
 
 	if (resman.cmd_option_mask != 0) {
 		print_unexpected_options_error(resman.cmd_option_mask,
-					        obj_cmd->options);
+					       obj_cmd->options);
 	}
 out:
 	return error;
@@ -447,12 +451,14 @@ int main(int argc, char *argv[])
 		if (resman.global_option_mask & ONE_BIT_MASK(GLOBAL_OPT_HELP))
 			print_usage();
 
-		if (resman.global_option_mask & ONE_BIT_MASK(GLOBAL_OPT_VERSION))
+		if (resman.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_VERSION))
 			print_version();
 
 		if (resman.global_option_mask != 0) {
-			print_unexpected_options_error(resman.global_option_mask,
-						       global_options);
+			print_unexpected_options_error(
+				resman.global_option_mask,
+				global_options);
 			error = -EINVAL;
 		}
 	} else {
@@ -460,8 +466,9 @@ int main(int argc, char *argv[])
 
 		assert(next_argv_index < argc);
 		if (resman.global_option_mask != 0) {
-			print_unexpected_options_error(resman.global_option_mask,
-						       global_options);
+			print_unexpected_options_error(
+				resman.global_option_mask,
+				global_options);
 			print_usage();
 			error = -EINVAL;
 			goto out;
