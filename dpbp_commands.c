@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2014 Freescale Semiconductor, Inc.
  * Author: German Rivera <German.Rivera@freescale.com>
- * 	   Lijun Pan <Lijun.Pan@freescale.com>
+ *	   Lijun Pan <Lijun.Pan@freescale.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -29,6 +29,8 @@
  */
 
 #include <stdio.h>
+#include <stdlib.h>
+#include <limits.h>
 #include <string.h>
 #include <stdint.h>
 #include <stdbool.h>
@@ -41,15 +43,26 @@
 #include "fsl_dpbp.h"
 
 /**
- * dpbp show command options
+ * dpbp info command options
  */
 enum dpbp_info_options {
-	OPT_VERBOSE = 0,
+	INFO_OPT_HELP = 0,
+	INFO_OPT_VERBOSE,
 };
 
 static struct option dpbp_info_options[] = {
-	[OPT_VERBOSE] = {
+	[INFO_OPT_HELP] = {
+		.name = "help",
+		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[INFO_OPT_VERBOSE] = {
 		.name = "verbose",
+		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
 	},
 
 	{ 0 },
@@ -57,11 +70,69 @@ static struct option dpbp_info_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpbp_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+/**
+ * dpbp create command options
+ */
+enum dpbp_create_options {
+	CREATE_OPT_HELP = 0,
+	CREATE_OPT_BUFFER_SIZE,
+};
+
+static struct option dpbp_create_options[] = {
+	[CREATE_OPT_HELP] = {
+		.name = "help",
+		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_BUFFER_SIZE] = {
+		.name = "buffer-size",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dpbp_create_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+/**
+ * dpbp destroy command options
+ */
+enum dpbp_destroy_options {
+	DESTROY_OPT_HELP = 0,
+};
+
+static struct option dpbp_destroy_options[] = {
+	[DESTROY_OPT_HELP] = {
+		.name = "help",
+		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dpbp_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 static int cmd_dpbp_help(void)
 {
-	ERROR_PRINTF("not implemented yet\n");
-	return -ENOTSUP;
+	static const char help_msg[] =
+		"\n"
+		"resman dpbp <command> [--help] [ARGS...]\n"
+		"Where <command> can be:\n"
+		"   info - displays detailed information about a DPBP object.\n"
+		"   create - creates a new child DPBP under the root DPRC.\n"
+		"   destroy - destroys a child DPBP under the root DPRC.\n"
+		"\n"
+		"For command-specific help, use the --help option of each command.\n"
+		"\n";
+
+	printf(help_msg);
+	return 0;
 }
 
 static int print_dpbp_attr(uint32_t dpbp_id)
@@ -73,12 +144,15 @@ static int print_dpbp_attr(uint32_t dpbp_id)
 
 	error = dpbp_open(&resman.mc_io, dpbp_id, &dpbp_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_open() failed for dpbp.%u with error %d\n", dpbp_id, error);
+		ERROR_PRINTF("dpbp_open() failed for dpbp.%u with error %d\n",
+			     dpbp_id, error);
 		goto out;
 	}
 	dpbp_opened = true;
-	if(0 == dpbp_handle) {
-		ERROR_PRINTF("dpbp_open() returned invalid handle (auth 0) for dpbp.%u\n", dpbp_id);
+	if (0 == dpbp_handle) {
+		ERROR_PRINTF(
+			"dpbp_open() returned invalid handle (auth 0) for dpbp.%u\n",
+			dpbp_id);
 		error = -ENOENT;
 		goto out;
 	}
@@ -86,12 +160,14 @@ static int print_dpbp_attr(uint32_t dpbp_id)
 	memset(&dpbp_attr, 0, sizeof(dpbp_attr));
 	error = dpbp_get_attributes(&resman.mc_io, dpbp_handle, &dpbp_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_get_attributes() failed with error: %d\n", error);
+		ERROR_PRINTF("dpbp_get_attributes() failed with error: %d\n",
+			     error);
 		goto out;
 	}
 	assert(dpbp_id == (uint32_t)dpbp_attr.id);
 
-	printf("dpbp version: %u.%u\n", dpbp_attr.version.major, dpbp_attr.version.minor);
+	printf("dpbp version: %u.%u\n", dpbp_attr.version.major,
+	       dpbp_attr.version.minor);
 	printf("dpbp id: %d\n", dpbp_attr.id);
 	printf("buffer pool id: %u\n", (unsigned int)dpbp_attr.bpid);
 
@@ -102,8 +178,9 @@ out:
 		int error2;
 
 		error2 = dpbp_close(&resman.mc_io, dpbp_handle);
-		if(error2 < 0) {
-			ERROR_PRINTF("dpbp_close() failed with error %d\n", error2);
+		if (error2 < 0) {
+			ERROR_PRINTF("dpbp_close() failed with error %d\n",
+				     error2);
 			if (error == 0)
 				error = error2;
 		}
@@ -126,8 +203,8 @@ static int print_dpbp_info(uint32_t dpbp_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(OPT_VERBOSE);
+	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_dpbp_verbose();
 		goto out;
 	}
@@ -138,11 +215,29 @@ out:
 
 static int cmd_dpbp_info(void)
 {
+	static const char usage_msg[] =
+	"\n"
+	"Usage: resman dpbp info <dpbp-object> [--verbose]\n"
+	"   e.g. resman dpbp info dpbp.5\n"
+	"\n"
+	"--verbose\n"
+	"   Shows extended/verbose information about the object\n"
+	"   e.g. resman dpbp info dpbp.5 --verbose\n"
+	"\n";
+
 	uint32_t obj_id;
 	int error;
 
+	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
 	if (resman.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
+		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -158,14 +253,136 @@ out:
 
 static int cmd_dpbp_create(void)
 {
-	ERROR_PRINTF("not implemented yet\n");
-	return -ENOTSUP;
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dpbp create [OPTIONS]\n"
+		"   e.g. create a DPBP object with all default options:\n"
+		"	resman dpbp create\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPBP by default options\n"
+		"--buffer-size=<size>\n"
+		"   size should > 0\n"
+		"   Default value is 0x200. i.e. 512\n"
+		"   e.g. resman dpbp create --buffer-size=512\n"
+		"\n";
+
+	int error;
+	long val;
+	char *endptr;
+	char *str;
+	struct dpbp_cfg dpbp_cfg;
+	uint16_t dpbp_handle;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (resman.obj_name != NULL) {
+		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
+			     resman.obj_name);
+		printf(usage_msg);
+		return -EINVAL;
+	}
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_BUFFER_SIZE)) {
+		resman.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_BUFFER_SIZE);
+		errno = 0;
+		str = resman.cmd_option_args[CREATE_OPT_BUFFER_SIZE];
+		val = strtol(str, &endptr, 0);
+
+		if (STRTOL_ERROR(str, endptr, val, errno) || (val < 0)) {
+			printf(usage_msg);
+			return -EINVAL;
+		}
+
+		dpbp_cfg.tmp = val;
+	} else {
+		dpbp_cfg.tmp = 512;
+	}
+
+	error = dpbp_create(&resman.mc_io, &dpbp_cfg, &dpbp_handle);
+	if (error < 0) {
+		ERROR_PRINTF("dpbp_create() failed with error %d\n", error);
+		return error;
+	}
+
+	error = dpbp_close(&resman.mc_io, dpbp_handle);
+	if (error < 0) {
+		ERROR_PRINTF("dpbp_close() failed with error %d\n", error);
+		return error;
+	}
+	return 0;
 }
 
 static int cmd_dpbp_destroy(void)
 {
-	ERROR_PRINTF("not implemented yet\n");
-	return -ENOTSUP;
+	static const char usage_msg[] =
+		"\n"
+		"Usage: resman dpbp destroy <dpbp-object>\n"
+		"   e.g. resman dpbp destroy dpbp.9\n"
+		"\n";
+
+	int error;
+	int error2;
+	uint32_t dpbp_id;
+	uint16_t dpbp_handle;
+	bool dpbp_opened = false;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+		printf(usage_msg);
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		return 0;
+	}
+
+	if (resman.obj_name == NULL) {
+		ERROR_PRINTF("<object> argument missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	error = parse_object_name(resman.obj_name, "dpbp", &dpbp_id);
+	if (error < 0)
+		goto out;
+
+	error = dpbp_open(&resman.mc_io, dpbp_id, &dpbp_handle);
+	if (error < 0) {
+		ERROR_PRINTF("dpbp_open() failed for dpbp.%u with error %d\n",
+			     dpbp_id, error);
+		goto out;
+	}
+	dpbp_opened = true;
+	if (0 == dpbp_handle) {
+		ERROR_PRINTF(
+			"dpbp_open() returned invalid handle (auth 0) for dpbp.%u\n",
+			dpbp_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	error = dpbp_destroy(&resman.mc_io, dpbp_handle);
+	if (error < 0) {
+		ERROR_PRINTF("dpbp_destroy() failed with error %d\n", error);
+		goto out;
+	}
+	dpbp_opened = false;
+
+out:
+	if (dpbp_opened) {
+		error2 = dpbp_close(&resman.mc_io, dpbp_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dpbp_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
 }
 
 struct object_command dpbp_commands[] = {
@@ -178,9 +395,11 @@ struct object_command dpbp_commands[] = {
 	  .cmd_func = cmd_dpbp_info },
 
 	{ .cmd_name = "create",
+	  .options = dpbp_create_options,
 	  .cmd_func = cmd_dpbp_create },
 
 	{ .cmd_name = "destroy",
+	  .options = dpbp_destroy_options,
 	  .cmd_func = cmd_dpbp_destroy },
 
 	{ .cmd_name = NULL },
