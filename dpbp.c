@@ -17,7 +17,7 @@
  * Foundation, either version 2 of that License or (at your option) any
  * later version.
  *
- * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor "AS IS" AND ANY
+ * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL Freescale Semiconductor BE LIABLE FOR ANY
@@ -28,125 +28,155 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpbp.h"
 #include "fsl_dpbp_cmd.h"
 
-#define CMD_PREP(_param, _offset, _width, _type, _arg) \
-	(cmd.params[_param] |= u64_enc((_offset), (_width), (_arg)))
-
-#define RSP_READ(_param, _offset, _width, _type, _arg) \
-	(*(_arg) = (_type)u64_dec(cmd.params[_param], (_offset), (_width)))
-
-#define RSP_READ_STRUCT(_param, _offset, _width, _type, _arg) \
-	(_arg = (_type)u64_dec(cmd.params[_param], (_offset), (_width)))
-
-int dpbp_create(struct fsl_mc_io *mc_io, const struct dpbp_cfg *cfg,
-		uint16_t *dpbp_handle)
+int dpbp_open(struct fsl_mc_io *mc_io, int dpbp_id, uint16_t *token)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 
-	cmd.header = mc_encode_cmd_header(MC_DPBP_CMDID_CREATE,
-					  DPBP_CMDSZ_CREATE,
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_OPEN,
 					  MC_CMD_PRI_LOW, 0);
+	DPBP_CMD_OPEN(cmd, dpbp_id);
 
-	DPBP_CMD_CREATE(CMD_PREP);
-
+	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
-	if (!err)
-		*dpbp_handle = MC_CMD_HDR_READ_AUTHID(cmd.header);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	*token = MC_CMD_HDR_READ_AUTHID(cmd.header);
 
 	return err;
 }
 
-int dpbp_open(struct fsl_mc_io *mc_io, int dpbp_id, uint16_t *dpbp_handle)
-{
-	struct mc_command cmd = { 0 };
-	int err;
-
-	cmd.header = mc_encode_cmd_header(MC_DPBP_CMDID_OPEN,
-					  MC_CMD_OPEN_SIZE,
-					  MC_CMD_PRI_LOW, 0);
-
-	DPBP_CMD_OPEN(CMD_PREP);
-
-	err = mc_send_command(mc_io, &cmd);
-	if (!err)
-		*dpbp_handle = MC_CMD_HDR_READ_AUTHID(cmd.header);
-
-	return err;
-}
-
-int dpbp_close(struct fsl_mc_io *mc_io, uint16_t dpbp_handle)
+int dpbp_close(struct fsl_mc_io *mc_io, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	cmd.header = mc_encode_cmd_header(MC_CMDID_CLOSE,
-					  MC_CMD_CLOSE_SIZE,
-					  MC_CMD_PRI_HIGH,
-					  dpbp_handle);
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_CLOSE, MC_CMD_PRI_HIGH,
+					  token);
 
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpbp_destroy(struct fsl_mc_io *mc_io, uint16_t dpbp_handle)
+int dpbp_create(struct fsl_mc_io *mc_io,
+		const struct dpbp_cfg *cfg,
+		uint16_t *token)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	(void)(cfg); /* unused */
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_CREATE,
+					  MC_CMD_PRI_LOW, 0);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	*token = MC_CMD_HDR_READ_AUTHID(cmd.header);
+
+	return 0;
+}
+
+int dpbp_destroy(struct fsl_mc_io *mc_io, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_DESTROY,
-					  DPBP_CMDSZ_DESTROY,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+					  MC_CMD_PRI_LOW, token);
 
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpbp_enable(struct fsl_mc_io *mc_io, uint16_t dpbp_handle)
+int dpbp_enable(struct fsl_mc_io *mc_io, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	cmd.header = mc_encode_cmd_header(DPBP_CMDID_ENABLE,
-					  DPBP_CMDSZ_ENABLE,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_ENABLE, MC_CMD_PRI_LOW,
+					  token);
 
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpbp_disable(struct fsl_mc_io *mc_io, uint16_t dpbp_handle)
+int dpbp_disable(struct fsl_mc_io *mc_io, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_DISABLE,
-					  DPBP_CMDSZ_DISABLE,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+					  MC_CMD_PRI_LOW, token);
 
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpbp_get_attributes(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-			struct dpbp_attr *attr)
+int dpbp_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en)
 {
 	struct mc_command cmd = { 0 };
 	int err;
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_IS_ENABLED, MC_CMD_PRI_LOW,
+					  token);
 
-	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_ATTR,
-					  DPBP_CMDSZ_GET_ATTR,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
-
+	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
-	if (!err)
-		DPBP_RSP_GET_ATTRIBUTES(RSP_READ_STRUCT);
+	if (err)
+		return err;
 
-	return err;
+	/* retrieve response parameters */
+	DPBP_RSP_IS_ENABLED(cmd, *en);
+
+	return 0;
 }
 
-int dpbp_get_irq(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
+int dpbp_reset(struct fsl_mc_io *mc_io, uint16_t token)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_RESET,
+					  MC_CMD_PRI_LOW, token);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpbp_set_irq(struct fsl_mc_io *mc_io,
+		 uint16_t token,
+		 uint8_t irq_index,
+		 uint64_t irq_paddr,
+		 uint32_t irq_val,
+		 int user_irq_id)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_SET_IRQ,
+					  MC_CMD_PRI_LOW, token);
+	DPBP_CMD_SET_IRQ(cmd, irq_index, irq_paddr, irq_val, user_irq_id);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpbp_get_irq(struct fsl_mc_io *mc_io,
+		 uint16_t token,
 		 uint8_t irq_index,
 		 int *type,
 		 uint64_t *irq_paddr,
@@ -156,142 +186,160 @@ int dpbp_get_irq(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
 	struct mc_command cmd = { 0 };
 	int err;
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ,
-					  DPBP_CMDSZ_GET_IRQ,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+					  MC_CMD_PRI_LOW, token);
+	DPBP_CMD_GET_IRQ(cmd, irq_index);
 
-	DPBP_CMD_GET_IRQ(CMD_PREP);
-
+	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
-	if (!err)
-		DPBP_RSP_GET_IRQ(RSP_READ);
+	if (err)
+		return err;
 
-	return err;
+	/* retrieve response parameters */
+	DPBP_RSP_GET_IRQ(cmd, *type, *irq_paddr, *irq_val, *user_irq_id);
+
+	return 0;
 }
 
-int dpbp_set_irq(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-		 uint8_t irq_index,
-		 uint64_t irq_paddr,
-		 uint32_t irq_val,
-		 int user_irq_id)
-{
-	struct mc_command cmd = { 0 };
-
-	cmd.header = mc_encode_cmd_header(DPBP_CMDID_SET_IRQ,
-					  DPBP_CMDSZ_SET_IRQ,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
-
-	DPBP_CMD_SET_IRQ(CMD_PREP);
-
-	return mc_send_command(mc_io, &cmd);
-}
-
-int dpbp_get_irq_enable(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
+int dpbp_set_irq_enable(struct fsl_mc_io *mc_io,
+			uint16_t token,
 			uint8_t irq_index,
-			uint8_t *enable_state)
-{
-	struct mc_command cmd = { 0 };
-	int err;
-
-	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ_ENABLE,
-					  DPBP_CMDSZ_GET_IRQ_ENABLE,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
-
-	DPBP_CMD_GET_IRQ_ENABLE(CMD_PREP);
-
-	err = mc_send_command(mc_io, &cmd);
-	if (!err)
-		DPBP_RSP_GET_IRQ_ENABLE(RSP_READ);
-
-	return err;
-}
-
-int dpbp_set_irq_enable(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-			uint8_t irq_index,
-			uint8_t enable_state)
+			uint8_t en)
 {
 	struct mc_command cmd = { 0 };
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_SET_IRQ_ENABLE,
-					  DPBP_CMDSZ_SET_IRQ_ENABLE,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+					  MC_CMD_PRI_LOW, token);
+	DPBP_CMD_SET_IRQ_ENABLE(cmd, irq_index, en);
 
-	DPBP_CMD_SET_IRQ_ENABLE(CMD_PREP);
-
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpbp_get_irq_mask(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-		      uint8_t irq_index, uint32_t *mask)
+int dpbp_get_irq_enable(struct fsl_mc_io *mc_io,
+			uint16_t token,
+			uint8_t irq_index,
+			uint8_t *en)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 
-	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ_MASK,
-					  DPBP_CMDSZ_GET_IRQ_MASK,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ_ENABLE,
+					  MC_CMD_PRI_LOW, token);
+	DPBP_CMD_GET_IRQ_ENABLE(cmd, irq_index);
 
-	DPBP_CMD_GET_IRQ_MASK(CMD_PREP);
-
+	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
-	if (!err)
-		DPBP_RSP_GET_IRQ_MASK(RSP_READ);
+	if (err)
+		return err;
 
-	return err;
+	/* retrieve response parameters */
+	DPBP_RSP_GET_IRQ_ENABLE(cmd, *en);
+
+	return 0;
 }
 
-int dpbp_set_irq_mask(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-		      uint8_t irq_index, uint32_t mask)
+int dpbp_set_irq_mask(struct fsl_mc_io *mc_io,
+		      uint16_t token,
+		      uint8_t irq_index,
+		      uint32_t mask)
 {
 	struct mc_command cmd = { 0 };
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_SET_IRQ_MASK,
-					  DPBP_CMDSZ_SET_IRQ_MASK,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+					  MC_CMD_PRI_LOW, token);
+	DPBP_CMD_SET_IRQ_MASK(cmd, irq_index, mask);
 
-	DPBP_CMD_SET_IRQ_MASK(CMD_PREP);
-
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpbp_get_irq_status(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-			uint8_t irq_index, uint32_t *status)
+int dpbp_get_irq_mask(struct fsl_mc_io *mc_io,
+		      uint16_t token,
+		      uint8_t irq_index,
+		      uint32_t *mask)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 
-	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ_STATUS,
-					  DPBP_CMDSZ_GET_IRQ_STATUS,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ_MASK,
+					  MC_CMD_PRI_LOW, token);
+	DPBP_CMD_GET_IRQ_MASK(cmd, irq_index);
 
-	DPBP_CMD_GET_IRQ_STATUS(CMD_PREP);
-
+	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
-	if (!err)
-		DPBP_RSP_GET_IRQ_STATUS(RSP_READ);
+	if (err)
+		return err;
 
-	return err;
+	/* retrieve response parameters */
+	DPBP_RSP_GET_IRQ_MASK(cmd, *mask);
+
+	return 0;
 }
 
-int dpbp_clear_irq_status(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
+int dpbp_get_irq_status(struct fsl_mc_io *mc_io,
+			uint16_t token,
+			uint8_t irq_index,
+			uint32_t *status)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ_STATUS,
+					  MC_CMD_PRI_LOW, token);
+	DPBP_CMD_GET_IRQ_STATUS(cmd, irq_index);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPBP_RSP_GET_IRQ_STATUS(cmd, *status);
+
+	return 0;
+}
+
+int dpbp_clear_irq_status(struct fsl_mc_io *mc_io,
+			  uint16_t token,
 			  uint8_t irq_index,
 			  uint32_t status)
 {
 	struct mc_command cmd = { 0 };
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_CLEAR_IRQ_STATUS,
-					  DPBP_CMDSZ_CLEAR_IRQ_STATUS,
-					  MC_CMD_PRI_LOW,
-					  dpbp_handle);
+					  MC_CMD_PRI_LOW, token);
+	DPBP_CMD_CLEAR_IRQ_STATUS(cmd, irq_index, status);
 
-	DPBP_CMD_CLEAR_IRQ_STATUS(CMD_PREP);
-
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
+}
+
+int dpbp_get_attributes(struct fsl_mc_io *mc_io,
+			uint16_t token,
+			struct dpbp_attr *attr)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_ATTR,
+					  MC_CMD_PRI_LOW, token);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPBP_RSP_GET_ATTRIBUTES(cmd, attr);
+
+	return 0;
 }

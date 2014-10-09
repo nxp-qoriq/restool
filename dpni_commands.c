@@ -42,24 +42,20 @@
 #include "utils.h"
 #include "fsl_dpni.h"
 
-#define ALL_DPNI_OPTS (				\
-	DPNI_OPT_ALLOW_DIST_KEY_PER_TC |	\
-	DPNI_OPT_TX_CONF_DISABLED |		\
-	DPNI_OPT_PRIVATE_TX_CONF_ERR_DISABLED |	\
-	DPNI_OPT_QOS |				\
-	DPNI_OPT_DIST_HASH |			\
-	DPNI_OPT_DIST_FS |			\
-	DPNI_OPT_POLICING |			\
-	DPNI_OPT_UNICAST_FILTER	|		\
-	DPNI_OPT_MULTICAST_FILTER |		\
-	DPNI_OPT_VLAN_FILTER |			\
-	DPNI_OPT_MACSEC	|			\
-	DPNI_OPT_IPR |				\
-	DPNI_OPT_IPF |				\
-	DPNI_OPT_RSC |				\
-	DPNI_OPT_GSO |				\
-	DPNI_OPT_IPSEC |			\
-	DPNI_OPT_VLAN_MANIPULATION)
+#define ALL_DPNI_OPTS (					\
+	DPNI_OPT_ALLOW_DIST_KEY_PER_TC |		\
+	DPNI_OPT_TX_CONF_DISABLED |			\
+	DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED |	\
+	DPNI_OPT_DIST_HASH |				\
+	DPNI_OPT_DIST_FS |				\
+	DPNI_OPT_UNICAST_FILTER	|			\
+	DPNI_OPT_MULTICAST_FILTER |			\
+	DPNI_OPT_VLAN_FILTER |				\
+	DPNI_OPT_IPR |					\
+	DPNI_OPT_IPF |					\
+	DPNI_OPT_VLAN_MANIPULATION |			\
+	DPNI_OPT_QOS_MASK_SUPPORT |			\
+	DPNI_OPT_FS_MASK_SUPPORT)
 
 /**
  * dpni info command options
@@ -247,20 +243,14 @@ static void print_dpni_options(uint64_t options)
 	if (options & DPNI_OPT_TX_CONF_DISABLED)
 		printf("\tDPNI_OPT_TX_CONF_DISABLED\n");
 
-	if (options & DPNI_OPT_PRIVATE_TX_CONF_ERR_DISABLED)
-		printf("\tDPNI_OPT_PRIVATE_TX_CONF_ERR_DISABLED\n");
-
-	if (options & DPNI_OPT_QOS)
-		printf("\tDPNI_OPT_QOS\n");
+	if (options & DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED)
+		printf("\tDPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED\n");
 
 	if (options & DPNI_OPT_DIST_HASH)
 		printf("\tDPNI_OPT_DIST_HASH\n");
 
 	if (options & DPNI_OPT_DIST_FS)
 		printf("\tDPNI_OPT_DIST_FS\n");
-
-	if (options & DPNI_OPT_POLICING)
-		printf("\tDPNI_OPT_POLICING\n");
 
 	if (options & DPNI_OPT_UNICAST_FILTER)
 		printf("\tDPNI_OPT_UNICAST_FILTER\n");
@@ -271,26 +261,20 @@ static void print_dpni_options(uint64_t options)
 	if (options & DPNI_OPT_VLAN_FILTER)
 		printf("\tDPNI_OPT_VLAN_FILTER\n");
 
-	if (options & DPNI_OPT_MACSEC)
-		printf("\tDPNI_OPT_MACSEC\n");
-
 	if (options & DPNI_OPT_IPR)
 		printf("\tDPNI_OPT_IPR\n");
 
 	if (options & DPNI_OPT_IPF)
 		printf("\tDPNI_OPT_IPF\n");
 
-	if (options & DPNI_OPT_RSC)
-		printf("\tDPNI_OPT_RSC\n");
-
-	if (options & DPNI_OPT_GSO)
-		printf("\tDPNI_OPT_GSOC\n");
-
-	if (options & DPNI_OPT_IPSEC)
-		printf("\tDPNI_OPT_IPSEC\n");
-
 	if (options & DPNI_OPT_VLAN_MANIPULATION)
 		printf("\tDPNI_OPT_VLAN_MANIPULATION\n");
+
+	if (options & DPNI_OPT_QOS_MASK_SUPPORT)
+		printf("\tDPNI_OPT_QOS_MASK_SUPPORT\n");
+
+	if (options & DPNI_OPT_FS_MASK_SUPPORT)
+		printf("\tDPNI_OPT_FS_MASK_SUPPORT\n");
 }
 
 static int print_dpni_attr(uint32_t dpni_id)
@@ -460,7 +444,7 @@ static int parse_dpni_create_options(char *options_str, uint64_t *options)
 	} options_map[] = {
 		OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
 		OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
-		OPTION_MAP_ENTRY(DPNI_OPT_PRIVATE_TX_CONF_ERR_DISABLED),
+		OPTION_MAP_ENTRY(DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED),
 		OPTION_MAP_ENTRY(DPNI_OPT_DIST_HASH),
 		OPTION_MAP_ENTRY(DPNI_OPT_DIST_FS),
 		OPTION_MAP_ENTRY(DPNI_OPT_UNICAST_FILTER),
@@ -469,7 +453,8 @@ static int parse_dpni_create_options(char *options_str, uint64_t *options)
 		OPTION_MAP_ENTRY(DPNI_OPT_IPR),
 		OPTION_MAP_ENTRY(DPNI_OPT_IPF),
 		OPTION_MAP_ENTRY(DPNI_OPT_VLAN_MANIPULATION),
-		OPTION_MAP_ENTRY(DPNI_OPT_QOS),
+		OPTION_MAP_ENTRY(DPNI_OPT_QOS_MASK_SUPPORT),
+		OPTION_MAP_ENTRY(DPNI_OPT_FS_MASK_SUPPORT),
 	};
 
 	char *cursor = NULL;
@@ -542,7 +527,7 @@ static int parse_dpni_mac_addr(char *mac_addr_str, uint8_t *mac_addr)
 }
 
 static int parse_dpni_max_dist_per_tc(char *max_dist_per_tc_str,
-	uint16_t *max_dist_per_tc, uint8_t max_tcs)
+	uint8_t *max_dist_per_tc, uint8_t max_tcs)
 {
 	char *cursor = NULL;
 	char *endptr;
@@ -562,7 +547,7 @@ static int parse_dpni_max_dist_per_tc(char *max_dist_per_tc_str,
 		val = strtol(max_dist_str, &endptr, 0);
 
 		if (STRTOL_ERROR(max_dist_str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
+		    (val < 0 || val > UINT8_MAX)) {
 			ERROR_PRINTF("Invalid dist-size.\n");
 			return -EINVAL;
 		}

@@ -1,4 +1,4 @@
-/* Copyright 2013-2014 Freescale Semiconductor Inc.
+/* Copyright 2014 Freescale Semiconductor Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -17,7 +17,7 @@
  * Foundation, either version 2 of that License or (at your option) any
  * later version.
  *
- * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor "AS IS" AND ANY
+ * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL Freescale Semiconductor BE LIABLE FOR ANY
@@ -28,7 +28,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*!
  *  @file    fsl_dpmng.h
  *  @brief   Management Complex General API
@@ -49,22 +48,18 @@ struct fsl_mc_io;
 /**
  * @brief	Management Complex firmware version information
  */
-#define MC_VER_MAJOR 2
+#define MC_VER_MAJOR 3
 #define MC_VER_MINOR 0
 
 struct mc_version {
 	uint32_t major;
-	/*!<
-	 * Major version number: incremented on API compatibility changes
-	 */
+	/*!< Major version number: incremented on API compatibility changes */
 	uint32_t minor;
-	/*!<
-	 * Minor version number: incremented on API additions (backward
-	 * compatible); reset when major version is incremented.
+	/*!< Minor version number: incremented on API additions (that are
+	 * backward compatible); reset when major version is incremented
 	 */
 	uint32_t revision;
-	/*!<
-	 * Internal revision number: incremented on implementation changes
+	/*!< Internal revision number: incremented on implementation changes
 	 * and/or bug fixes that have no impact on API
 	 */
 };
@@ -72,8 +67,8 @@ struct mc_version {
 /**
  * @brief	Retrieves the Management Complex firmware version information
  *
- * @param[in]   mc_io - Pointer to opaque I/O object
- * @param[out]	mc_ver_info - Pointer to version information structure
+ * @param[in]	mc_io		Pointer to opaque I/O object
+ * @param[out]	mc_ver_info	Pointer to version information structure
  *
  * @returns	'0' on Success; Error code otherwise.
  */
@@ -82,42 +77,70 @@ int mc_get_version(struct fsl_mc_io *mc_io, struct mc_version *mc_ver_info);
 /**
  * @brief	Resets an AIOP tile
  *
- * @param[in]   mc_io - Pointer to opaque I/O object
- * @param[in]	aiop_tile_id - AIOP tile ID to reset
+ * @param[in]	mc_io		Pointer to opaque I/O object
+ * @param[in]	container_id	AIOP container ID
+ * @param[in]	aiop_tile_id	AIOP tile ID to reset
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpmng_reset_aiop(struct fsl_mc_io *mc_io, int aiop_tile_id);
+int dpmng_reset_aiop(struct fsl_mc_io	*mc_io,
+		     int		container_id,
+		     int		aiop_tile_id);
 
 /**
  * @brief	Loads an image to AIOP tile
  *
- * @param[in]   mc_io - Pointer to opaque I/O object
- * @param[in]	aiop_tile_id - AIOP tile ID
- * @param[in]	img_addr - Pointer to AIOP ELF image in memory
- * @param[in]	img_size - Size in bytes of AIOP ELF image in memory
+ * @param[in]	mc_io		Pointer to opaque I/O object
+ * @param[in]	container_id	AIOP container ID
+ * @param[in]	aiop_tile_id	AIOP tile ID to reset
+ * @param[in]	img_iova	I/O virtual address of AIOP ELF image
+ * @param[in]	img_size	Size of AIOP ELF image in memory (in bytes)
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpmng_load_aiop(struct fsl_mc_io *mc_io,
-		    int aiop_tile_id,
-		    uint8_t *img_addr,
-		    int img_size);
+int dpmng_load_aiop(struct fsl_mc_io	*mc_io,
+		    int			container_id,
+		    int			aiop_tile_id,
+		    uint64_t		img_iova,
+		    uint32_t		img_size);
+
+/**
+ * @brief	AIOP run configuration
+ */
+struct dpmng_aiop_run_cfg {
+	uint32_t cores_mask;
+	/*!< Mask of AIOP cores to run (core 0 in most significant bit) */
+	uint64_t options;
+	/*!< Execution options (currently none defined) */
+};
 
 /**
  * @brief	Starts AIOP tile execution
  *
- * @param[in]   mc_io - Pointer to opaque I/O object
- * @param[in]	aiop_tile_id - AIOP tile ID to run
- * @param[in]	cores_mask - Mask of AIOP cores to run (core 0 in msb)
- * @param[in]	options - Execution options (currently none defined)
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]	container_id	AIOP container ID
+ * @param[in]	aiop_tile_id	AIOP tile ID to reset
+ * @param[in]	cfg		AIOP run configuration
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpmng_run_aiop(struct fsl_mc_io *mc_io,
-		   int aiop_tile_id,
-		   uint32_t cores_mask,
-		   uint64_t options);
+int dpmng_run_aiop(struct fsl_mc_io			*mc_io,
+		   int					container_id,
+		   int					aiop_tile_id,
+		   const struct dpmng_aiop_run_cfg	*cfg);
+
+/**
+ * @brief	Resets MC portal
+ *
+ * This function closes all object handles (tokens) that are currently
+ * open in the MC portal on which the command is submitted. This allows
+ * cleanup of stale handles that belong to non-functional user processes.
+ *
+ * @param[in]	mc_io	Pointer to MC portal's I/O object
+ *
+ * @returns	'0' on Success; Error code otherwise.
+ */
+int dpmng_reset_mc_portal(struct fsl_mc_io *mc_io);
 
 /** @} */
 

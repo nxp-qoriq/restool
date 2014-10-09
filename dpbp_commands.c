@@ -299,9 +299,9 @@ static int cmd_dpbp_create(void)
 			return -EINVAL;
 		}
 
-		dpbp_cfg.tmp = val;
+		dpbp_cfg.options = val;
 	} else {
-		dpbp_cfg.tmp = 512;
+		dpbp_cfg.options = 512;
 	}
 
 	error = dpbp_create(&resman.mc_io, &dpbp_cfg, &dpbp_handle);

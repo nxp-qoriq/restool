@@ -1,4 +1,4 @@
-/* Copyright 2013-2014 Freescale Semiconductor Inc.
+/* Copyright 2014 Freescale Semiconductor Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -17,7 +17,7 @@
  * Foundation, either version 2 of that License or (at your option) any
  * later version.
  *
- * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor "AS IS" AND ANY
+ * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL Freescale Semiconductor BE LIABLE FOR ANY
@@ -28,7 +28,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 /*!
  *  @file    fsl_dpbp.h
  *  @brief   Data Path Buffer Pool API
@@ -45,268 +44,302 @@
 
 struct fsl_mc_io;
 
-/*!
- * @name General DPBP macros
+/**
+ * @brief	Open a control session for the specified object
+ *
+ *		This function can be used to open a control session for an
+ *		already created object; an object may have been declared in
+ *		the DPL or by calling the dpbp_create() function.
+ *		This function returns a unique authentication token,
+ *		associated with the specific object ID and the specific MC
+ *		portal; this token must be used in all subsequent commands for
+ *		this specific object.
+ *
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]	dpbp_id		DPBP unique ID
+ * @param[out]	token		Returned token; use in subsequent API calls
+ *
+ * @returns	'0' on Success; Error code otherwise.
  */
-#define DPBP_BPID_NOT_VALID			(-1)
-/*!< Invalid BPID  */
-/* @} */
+int dpbp_open(struct fsl_mc_io *mc_io, int dpbp_id, uint16_t *token);
 
 /**
- * @brief	structure representing DPBP configuration
+ * @brief	Close the control session of the object
+ *
+ *		After this function is called, no further operations are
+ *		allowed on the object without opening a new control session.
+ *
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ *
+ * @returns	'0' on Success; Error code otherwise.
+ */
+int dpbp_close(struct fsl_mc_io *mc_io, uint16_t token);
+
+/**
+ * @brief	Structure representing DPBP configuration
  */
 struct dpbp_cfg {
-	int tmp; /* place holder!!!! */
-	/* TODO - need to add depletion parameters
- * (either here or in separate routine) */
+	uint32_t options; /* place holder */
 };
 
 /**
- * @brief	structure representing attr parameter
+ * @brief	Create the DPBP object, allocate required resources and
+ *		perform required initialization.
+ *
+ *		The object can be created either by declaring it in the
+ *		DPL file, or by calling this function.
+ *
+ *		This function returns a unique authentication token,
+ *		associated with the specific object ID and the specific MC
+ *		portal; this token must be used in all subsequent calls to
+ *		this specific object. For objects that are created using the
+ *		DPL file, call dpbp_open() function to get an authentication
+ *		token first.
+ *
+ * @param[in]	mc_io	Pointer to MC portal's I/O object
+ * @param[in]	cfg	Configuration structure
+ * @param[out]	token	Returned token; use in subsequent API calls
+ *
+ * @returns	'0' on Success; Error code otherwise.
+ */
+int dpbp_create(struct fsl_mc_io	*mc_io,
+		const struct dpbp_cfg	*cfg,
+		uint16_t		*token);
+
+/**
+ * @brief	Destroy the DPBP object and release all its resources.
+ *
+ * @param[in]	mc_io	Pointer to MC portal's I/O object
+ * @param[in]   token	Token of DPBP object
+ *
+ * @returns	'0' on Success; error code otherwise.
+ */
+int dpbp_destroy(struct fsl_mc_io *mc_io, uint16_t token);
+
+/**
+ * @brief	Enable the DPBP.
+ *
+ * @param[in]	mc_io	Pointer to MC portal's I/O object
+ * @param[in]   token	Token of DPBP object
+ *
+ * @returns	'0' on Success; Error code otherwise.
+ */
+int dpbp_enable(struct fsl_mc_io *mc_io, uint16_t token);
+
+/**
+ * @brief	Disable the DPBP.
+ *
+ * @param[in]	mc_io	Pointer to MC portal's I/O object
+ * @param[in]   token	Token of DPBP object
+ *
+ * @returns	'0' on Success; Error code otherwise.
+ */
+int dpbp_disable(struct fsl_mc_io *mc_io, uint16_t token);
+
+/**
+ * @brief	Check if the DPBP is enabled.
+ *
+ * @param[in]	mc_io	Pointer to MC portal's I/O object
+ * @param[in]   token	Token of DPBP object
+ * @param[out]  en	Returns '1' if object is enabled; '0' otherwise
+ *
+ * @returns	'0' on Success; Error code otherwise.
+ */
+int dpbp_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en);
+
+/**
+ * @brief	Reset the DPBP, returns the object to initial state.
+ *
+ * @param[in]	mc_io	Pointer to MC portal's I/O object
+ * @param[in]   token	Token of DPBP object
+ *
+ * @returns	'0' on Success; Error code otherwise.
+ */
+int dpbp_reset(struct fsl_mc_io *mc_io, uint16_t token);
+
+/**
+ * @brief	Structure representing DPBP attributes
  */
 struct dpbp_attr {
-	int id; /*!< DPBP id*/
-	uint16_t bpid; /*!< buffer pool id;
-	 in case equal to DPBP_BPID_NOT_VALID the bpid isn't valid
-	 and must not be used; Only after 'enable' bpid will be valid; */
+	int id;
+	/*!< DPBP object id */
 	struct {
-		uint32_t major; /*!< DPBP major version*/
-		uint32_t minor; /*!< DPBP minor version*/
-	} version; /*!< DPBP version */
+		uint16_t major;
+		/*!< DPBP major version */
+		uint16_t minor;
+		/*!< DPBP minor version */
+	} version;
+	/*!< DPBP version */
+	uint16_t bpid;
+	/*!< Hardware buffer pool ID; should be used as an argument in
+	 * acquire/release operations on buffers
+	 */
 };
 
 /**
- * @brief	Open object handle, allocate resources and preliminary initialization -
- *		required before any operation on the object
+ * @brief	Retrieve DPBP attributes.
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	cfg - Configuration structure
- * @param[out]	dpbp_handle - Pointer to handle of the DPBP object
- *
- * @returns	'0' on Success; Error code otherwise.
- *
- * @warning	Required before any operation on the object
- */
-int dpbp_create(struct fsl_mc_io *mc_io, const struct dpbp_cfg *cfg,
-		uint16_t *dpbp_handle);
-
-/**
- * @brief	Open object handle
- *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_id - DPBP unique ID
- * @param[out]	dpbp_handle - Pointer to handle of the DPBP object
- *
- * @returns	'0' on Success; Error code otherwise.
- *
- */
-int dpbp_open(struct fsl_mc_io *mc_io, int dpbp_id, uint16_t *dpbp_handle);
-
-/**
- * @brief	Closes the object handle, no further operations on the object
- *		are allowed
- *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
+ * @param[in]	mc_io	Pointer to MC portal's I/O object
+ * @param[in]   token	Token of DPBP object
+ * @param[out]	attr	Object's attributes
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpbp_close(struct fsl_mc_io *mc_io, uint16_t dpbp_handle);
+int dpbp_get_attributes(struct fsl_mc_io	*mc_io,
+			uint16_t		token,
+			struct dpbp_attr	*attr);
 
 /**
- * @brief	Frees all allocated resources
+ * @brief	Set IRQ information for the DPBP to trigger an interrupt.
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- *
- * @returns	'0' on Success; Error code otherwise.
- */
-int dpbp_destroy(struct fsl_mc_io *mc_io, uint16_t dpbp_handle);
-
-/**
- * @brief	Enable the dpbp
- *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- *
- * @returns	'0' on Success; Error code otherwise.
- */
-int dpbp_enable(struct fsl_mc_io *mc_io, uint16_t dpbp_handle);
-
-/**
- * @brief	Disable the dpbp
- *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- *
- * @returns	'0' on Success; Error code otherwise.
- */
-int dpbp_disable(struct fsl_mc_io *mc_io, uint16_t dpbp_handle);
-
-/**
- * @brief	Reset the dpbp, will return to initial state.
- *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- *
- * @returns	'0' on Success; Error code otherwise.
- */
-int dpbp_reset(struct fsl_mc_io *mc_io, uint16_t dpbp_handle);
-
-/**
- * @brief	Retrieves the object's attributes.
- *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[out]	attr - Object's attributes
- *
- * @returns	'0' on Success; Error code otherwise.
- *
- * @warning	Allowed only following dpbp_enable().
- */
-int dpbp_get_attributes(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-			struct dpbp_attr *attr);
-
-/**
- * @brief	Sets IRQ information for the DPBP to trigger an interrupt.
- *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[in]	irq_index	Identifies the interrupt index to configure.
- * @param[in]	irq_paddr	Physical IRQ address that must be written to
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ * @param[in]	irq_index	Identifies the interrupt index to configure
+ * @param[in]	irq_addr	Address that must be written to
  *				signal a message-based interrupt
- * @param[in]	irq_val		Value to write into irq_paddr address
- * @param[in]	user_irq_id	A user defined number associated with this IRQ;
+ * @param[in]	irq_val		Value to write into irq_addr address
+ * @param[in]	user_irq_id	A user defined number associated with this IRQ
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpbp_set_irq(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-		 uint8_t irq_index,
-		 uint64_t irq_paddr,
-		 uint32_t irq_val,
-		 int user_irq_id);
+int dpbp_set_irq(struct fsl_mc_io	*mc_io,
+		 uint16_t		token,
+		 uint8_t		irq_index,
+		 uint64_t		irq_addr,
+		 uint32_t		irq_val,
+		 int			user_irq_id);
 
 /**
- * @brief	Gets IRQ information from the DPBP.
+ * @brief	Get IRQ information from the DPBP.
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[in]   irq_index	The interrupt index to configure;
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ * @param[in]   irq_index	The interrupt index to configure
  * @param[out]  type		Interrupt type: 0 represents message interrupt
- *				type (both irq_paddr and irq_val are valid);
- * @param[out]	irq_paddr	Physical address that must be written in order
- *				to signal the message-based interrupt
- * @param[out]	irq_val		Value to write in order to signal the
- *				message-based interrupt
- * @param[out]	user_irq_id	A user defined number associated with this IRQ;
+ *				type (both irq_addr and irq_val are valid)
+ * @param[out]	irq_addr	Address that must be written to
+ *				signal the message-based interrupt
+ * @param[out]	irq_val		Value to write into irq_addr address
+ * @param[out]	user_irq_id	A user defined number associated with this IRQ
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpbp_get_irq(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-		 uint8_t irq_index,
-		 int *type,
-		 uint64_t *irq_paddr,
-		 uint32_t *irq_val,
-		 int *user_irq_id);
+int dpbp_get_irq(struct fsl_mc_io	*mc_io,
+		 uint16_t		token,
+		 uint8_t		irq_index,
+		 int			*type,
+		 uint64_t		*irq_addr,
+		 uint32_t		*irq_val,
+		 int			*user_irq_id);
 
 /**
- * @brief	Sets overall interrupt state.
+ * @brief	Set overall interrupt state.
  *
  * Allows GPP software to control when interrupts are generated.
  * Each interrupt can have up to 32 causes.  The enable/disable control's the
  * overall interrupt state. if the interrupt is disabled no causes will cause
  * an interrupt.
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[in]   irq_index	The interrupt index to configure;
- * @param[in]	enable_state	interrupt state - enable = 1, disable = 0.
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ * @param[in]   irq_index	The interrupt index to configure
+ * @param[in]	en		Interrupt state - enable = 1, disable = 0
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpbp_set_irq_enable(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-			uint8_t irq_index,
-			uint8_t enable_state);
+int dpbp_set_irq_enable(struct fsl_mc_io	*mc_io,
+			uint16_t		token,
+			uint8_t			irq_index,
+			uint8_t			en);
 
 /**
- * @brief	Gets overall interrupt state
+ * @brief	Get overall interrupt state
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[in]   irq_index	The interrupt index to configure;
- * @param[out]	enable_state	interrupt state - enable = 1, disable = 0.
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ * @param[in]   irq_index	The interrupt index to configure
+ * @param[out]	en		Interrupt state - enable = 1, disable = 0
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpbp_get_irq_enable(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-			uint8_t irq_index,
-			uint8_t *enable_state);
+int dpbp_get_irq_enable(struct fsl_mc_io	*mc_io,
+			uint16_t		token,
+			uint8_t			irq_index,
+			uint8_t			*en);
 
 /**
- * @brief	Sets interrupt mask.
+ * @brief	Set interrupt mask.
  *
  * Every interrupt can have up to 32 causes and the interrupt model supports
  * masking/unmasking each cause independently
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[in]   irq_index	The interrupt index to configure;
- * @param[in]	mask		event mask to trigger interrupt.
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ * @param[in]   irq_index	The interrupt index to configure
+ * @param[in]	mask		Event mask to trigger interrupt;
  *				each bit:
  *					0 = ignore event
- *					1 = consider event for asserting irq
+ *					1 = consider event for asserting IRQ
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpbp_set_irq_mask(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-		      uint8_t irq_index, uint32_t mask);
+int dpbp_set_irq_mask(struct fsl_mc_io	*mc_io,
+		      uint16_t		token,
+		      uint8_t		irq_index,
+		      uint32_t		mask);
 
 /**
- * @brief	Gets interrupt mask.
+ * @brief	Get interrupt mask.
  *
  * Every interrupt can have up to 32 causes and the interrupt model supports
  * masking/unmasking each cause independently
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[in]   irq_index	The interrupt index to configure;
- * @param[out]	mask		event mask to trigger interrupt
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ * @param[in]   irq_index	The interrupt index to configure
+ * @param[out]	mask		Event mask to trigger interrupt
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpbp_get_irq_mask(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-		      uint8_t irq_index, uint32_t *mask);
+int dpbp_get_irq_mask(struct fsl_mc_io	*mc_io,
+		      uint16_t		token,
+		      uint8_t		irq_index,
+		      uint32_t		*mask);
 
 /**
- * @brief	Gets the current status of any pending interrupts.
+ * @brief	Get the current status of any pending interrupts.
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[in]   irq_index	The interrupt index to configure;
- * @param[out]	status		interrupts status - one bit per cause
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ * @param[in]   irq_index	The interrupt index to configure
+ * @param[out]	status		Interrupts status - one bit per cause:
  *					0 = no interrupt pending
  *					1 = interrupt pending
  *
  * @returns	'0' on Success; Error code otherwise.
- * */
-int dpbp_get_irq_status(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-			uint8_t irq_index, uint32_t *status);
+ */
+int dpbp_get_irq_status(struct fsl_mc_io	*mc_io,
+			uint16_t		token,
+			uint8_t			irq_index,
+			uint32_t		*status);
 
 /**
- * @brief	Clears a pending interrupt's status
+ * @brief	Clear a pending interrupt's status
  *
- * @param[in]	mc_io - Pointer to opaque I/O object
- * @param[in]	dpbp_handle - handle of the DPBP object
- * @param[in]   irq_index	The interrupt index to configure;
- * @param[out]	status		bits to clear (W1C) - one bit per cause
+ * @param[in]	mc_io		Pointer to MC portal's I/O object
+ * @param[in]   token		Token of DPBP object
+ * @param[in]   irq_index	The interrupt index to configure
+ * @param[out]	status		Bits to clear (W1C) - one bit per cause:
  *					0 = don't change
  *					1 = clear status bit
  *
  * @returns	'0' on Success; Error code otherwise.
- * */
-int dpbp_clear_irq_status(struct fsl_mc_io *mc_io, uint16_t dpbp_handle,
-			  uint8_t irq_index,
-			  uint32_t status);
+ */
+int dpbp_clear_irq_status(struct fsl_mc_io	*mc_io,
+			  uint16_t		token,
+			  uint8_t		irq_index,
+			  uint32_t		status);
 
 /** @} */
 

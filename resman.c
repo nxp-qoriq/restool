@@ -417,6 +417,16 @@ int main(int argc, char *argv[])
 		goto out;
 	}
 
+	if (MC_VER_MAJOR != resman.mc_fw_version.major)
+		printf(
+			"ERROR: MC firmware major version mismatch (found: %d, expected: %d)\n",
+			resman.mc_fw_version.major, MC_VER_MAJOR);
+
+	if (MC_VER_MINOR != resman.mc_fw_version.minor)
+		printf(
+			"WARNING: MC Firmware minor version mismatch (found: %d, expected: %d)\n",
+			resman.mc_fw_version.minor, MC_VER_MINOR);
+
 	DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
 		     resman.mc_fw_version.major,
 		     resman.mc_fw_version.minor,

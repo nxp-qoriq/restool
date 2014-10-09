@@ -1,4 +1,4 @@
-/* Copyright 2013-2014 Freescale Semiconductor Inc.
+/* Copyright 2014 Freescale Semiconductor Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -17,7 +17,7 @@
  * Foundation, either version 2 of that License or (at your option) any
  * later version.
  *
- * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor "AS IS" AND ANY
+ * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor ``AS IS'' AND ANY
  * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
  * DISCLAIMED. IN NO EVENT SHALL Freescale Semiconductor BE LIABLE FOR ANY
@@ -28,80 +28,90 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpmng.h"
 #include "fsl_dpmng_cmd.h"
-
-#define CMD_PREP(_param, _offset, _width, _type, _arg) \
-	(cmd.params[_param] |= u64_enc((_offset), (_width), (_arg)))
-
-#define RSP_READ(_param, _offset, _width, _type, _arg) \
-	(*(_arg) = (_type)u64_dec(cmd.params[_param], (_offset), (_width)))
-
-#define RSP_READ_STRUCT(_param, _offset, _width, _type, _arg) \
-	(_arg = (_type)u64_dec(cmd.params[_param], (_offset), (_width)))
 
 int mc_get_version(struct fsl_mc_io *mc_io, struct mc_version *mc_ver_info)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMNG_CMDID_GET_VERSION,
-					  DPMNG_CMDSZ_GET_VERSION,
 					  MC_CMD_PRI_LOW, 0);
 
+	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
-	if (!err)
-		DPMNG_RSP_GET_VERSION(RSP_READ_STRUCT);
+	if (err)
+		return err;
 
-	return err;
+	/* retrieve response parameters */
+	DPMNG_RSP_GET_VERSION(cmd, mc_ver_info);
+
+	return 0;
 }
 
-int dpmng_reset_aiop(struct fsl_mc_io *mc_io, int aiop_tile_id)
+int dpmng_reset_aiop(struct fsl_mc_io *mc_io, int container_id,
+		     int aiop_tile_id)
 {
 	struct mc_command cmd = { 0 };
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMNG_CMDID_RESET_AIOP,
-					  DPMNG_CMDSZ_RESET_AIOP,
 					  MC_CMD_PRI_LOW, 0);
+	DPMNG_CMD_RESET_AIOP(cmd, container_id, aiop_tile_id);
 
-	DPMNG_CMD_RESET_AIOP(CMD_PREP);
-
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-#if 0
 int dpmng_load_aiop(struct fsl_mc_io *mc_io,
+		    int container_id,
 		    int aiop_tile_id,
-		    uint8_t *img_addr,
-		    int img_size)
+		    uint64_t img_iova,
+		    uint32_t img_size)
 {
 	struct mc_command cmd = { 0 };
-	uint64_t img_paddr = virt_to_phys(img_addr);
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMNG_CMDID_LOAD_AIOP,
-					  DPMNG_CMDSZ_LOAD_AIOP,
-					  MC_CMD_PRI_LOW, 0);
+					  MC_CMD_PRI_LOW,
+					  0);
+	DPMNG_CMD_LOAD_AIOP(cmd, container_id, aiop_tile_id, img_size,
+			    img_iova);
 
-	DPMNG_CMD_LOAD_AIOP(CMD_PREP);
-
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 int dpmng_run_aiop(struct fsl_mc_io *mc_io,
+		   int container_id,
 		   int aiop_tile_id,
-		   uint32_t cores_mask,
-		   uint64_t options)
+		   const struct dpmng_aiop_run_cfg *cfg)
 {
 	struct mc_command cmd = { 0 };
 
+	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMNG_CMDID_RUN_AIOP,
-					  DPMNG_CMDSZ_RUN_AIOP,
-					  MC_CMD_PRI_LOW, 0);
-	DPMNG_CMD_RUN_AIOP(CMD_PREP);
+					  MC_CMD_PRI_LOW,
+					  0);
+	DPMNG_CMD_RUN_AIOP(cmd, container_id, aiop_tile_id, cfg);
 
+	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
-#endif
+
+int dpmng_reset_mc_portal(struct fsl_mc_io *mc_io)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPMNG_CMDID_RESET_MC_PORTAL,
+					  MC_CMD_PRI_LOW,
+					  0);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
