@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2014 Freescale Semiconductor, Inc.
  * Author: German Rivera <German.Rivera@freescale.com>
- * 	   Lijun Pan <Lijun.Pan@freescale.com>
+ *	   Lijun Pan <Lijun.Pan@freescale.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -36,10 +36,10 @@
 #include <time.h>
 
 #define C_ASSERT(_cond) \
-        extern const char c_assert_dummy_decl[(_cond) ? 1 : -1]
+	extern const char c_assert_dummy_decl[(_cond) ? 1 : -1]
 
 #define ARRAY_SIZE(_array) \
-        (sizeof(_array) / sizeof((_array)[0]))
+	(sizeof(_array) / sizeof((_array)[0]))
 
 #define ONE_BIT_MASK(_bit_index)     (UINT32_C(0x1) << (_bit_index))
 
@@ -63,6 +63,6 @@
 #define __STRINGIFY_EXPANDED(_expanded_x)   #_expanded_x
 
 #define CLOCK_DELTA(_start_clock, _end_clock) \
-        ((clock_t)((int64_t)(_end_clock) - (int64_t)(_start_clock)))
+	((clock_t)((int64_t)(_end_clock) - (int64_t)(_start_clock)))
 
 #endif /* _UTILS_H */
