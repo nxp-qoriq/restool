@@ -1280,6 +1280,13 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE);
 		assert(resman.cmd_option_args[ASSIGN_OPT_RES_TYPE] != NULL);
 		strcpy(res_req.type, resman.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
+		if (strcmp(res_req.type, "mcp") == 0) {
+			ERROR_PRINTF("resource type '%s' not supported\n",
+				     res_req.type);
+			error = -ENOTSUP;
+			goto out;
+		}
+
 		if (!(resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_COUNT))) {
 			ERROR_PRINTF("--count option missing\n");
 			printf(usage_msg);
