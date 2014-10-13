@@ -87,7 +87,6 @@ void print_unexpected_options_error(uint32_t option_mask,
 		if (option_mask & ONE_BIT_MASK(i))
 			fprintf(stderr, "\t--%s\n", options[i].name);
 
-		ERROR_PRINTF("\n");
 	}
 }
 
@@ -380,10 +379,13 @@ static int parse_obj_command(const char *obj_type,
 	 * Execute object-level command:
 	 */
 	error = obj_cmd->cmd_func();
+	if (error < 0)
+		goto out;
 
 	if (resman.cmd_option_mask != 0) {
 		print_unexpected_options_error(resman.cmd_option_mask,
 					       obj_cmd->options);
+		error = -EINVAL;
 	}
 out:
 	return error;
