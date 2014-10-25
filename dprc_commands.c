@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2014 Freescale Semiconductor, Inc.
  * Author: German Rivera <German.Rivera@freescale.com>
- * 	   Lijun Pan <Lijun.Pan@freescale.com>
+ *	   Lijun Pan <Lijun.Pan@freescale.com>
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -409,12 +409,14 @@ static int cmd_dprc_list(void)
 	}
 
 	if (resman.obj_name != NULL) {
-		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n", resman.obj_name);
+		ERROR_PRINTF(
+			"Unexpected argument: \'%s\'\n\n", resman.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	return list_dprc(resman.root_dprc_id, resman.root_dprc_handle, 0, false);
+	return list_dprc(
+		resman.root_dprc_id, resman.root_dprc_handle, 0, false);
 }
 
 static int show_one_resource_type(uint16_t dprc_handle,
@@ -456,9 +458,9 @@ static int show_one_resource_type(uint16_t dprc_handle,
 			       mc_res_type, range_desc.base_id,
 			       mc_res_type, range_desc.last_id);
 
-		for (id = range_desc.base_id; id <= range_desc.last_id; id++) {
+		for (id = range_desc.base_id; id <= range_desc.last_id; id++)
 			res_discovered_count++;
-		}
+
 	} while (res_discovered_count < res_count &&
 		 range_desc.iter_status != DPRC_ITER_STATUS_LAST);
 out:
@@ -474,13 +476,14 @@ static int show_one_resource_type_count(uint16_t dprc_handle,
 	error = dprc_get_res_count(&resman.mc_io, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_res_count() failed for resource type \'%s\' (error: %d)\n",
-			     mc_res_type, error);
+		ERROR_PRINTF(
+			"dprc_get_res_count() failed for resource type \'%s\' (error: %d)\n",
+			mc_res_type, error);
 		goto out;
 	}
 
 	assert(res_count >= 0);
-	printf("%s: %d\n" ,mc_res_type, res_count);
+	printf("%s: %d\n", mc_res_type, res_count);
 out:
 	return error;
 }
@@ -512,8 +515,9 @@ static int show_mc_resources(uint16_t dprc_handle)
 		assert(res_type[sizeof(res_type) - 1] == '\0');
 
 		if (error < 0) {
-			ERROR_PRINTF("dprc_get_pool() failed for pool index %d (error: %d)\n",
-				     i, error);
+			ERROR_PRINTF(
+				"dprc_get_pool() failed for pool index %d (error: %d)\n",
+				i, error);
 			if (ret_error == 0)
 				ret_error = error;
 
@@ -783,28 +787,41 @@ static int print_dprc_verbose(uint16_t dprc_handle,
 			continue;
 
 		if (target_id == (uint32_t)obj_desc.id) {
-			printf("number of mappable regions: %u\n",obj_desc.region_count);
-			printf("number of interrupts: %u\n", obj_desc.irq_count);
+			printf("number of mappable regions: %u\n",
+			       obj_desc.region_count);
+			printf("number of interrupts: %u\n",
+			       obj_desc.irq_count);
 
 			error = open_dprc(obj_desc.id, &child_dprc_handle);
 			if (error < 0)
 				goto out;
 
 			for (int j = 0; j < obj_desc.irq_count; j++) {
-				dprc_get_irq_mask(&resman.mc_io, child_dprc_handle, j, &irq_mask);
-				printf("interrupt %d's mask: %#x\n", j, irq_mask);
-				dprc_get_irq_status(&resman.mc_io, child_dprc_handle, j, &irq_status);
+				dprc_get_irq_mask(&resman.mc_io,
+					child_dprc_handle, j, &irq_mask);
+				printf(
+					"interrupt %d's mask: %#x\n",
+					j, irq_mask);
+				dprc_get_irq_status(&resman.mc_io,
+					child_dprc_handle, j, &irq_status);
 				(irq_status == 0) ?
-				printf("interrupt %d's status: %#x - no interrupt pending.\n", j, irq_status) :
+				printf(
+					"interrupt %d's status: %#x - no interrupt pending.\n",
+				j, irq_status) :
 				(irq_status == 1) ?
-				printf("interrupt %d's status: %#x - interrupt pending.\n", j, irq_status) :
-				printf("interrupt %d's status: %#x - error status.\n", j, irq_status);
+				printf(
+					"interrupt %d's status: %#x - interrupt pending.\n",
+					j, irq_status) :
+				printf(
+					"interrupt %d's status: %#x - error status.\n",
+					j, irq_status);
 			}
 
 			error2 = dprc_close(&resman.mc_io, child_dprc_handle);
 			if (error2 < 0) {
-				ERROR_PRINTF("dprc_close() failed with error %d\n",
-					     error2);
+				ERROR_PRINTF(
+					"dprc_close() failed with error %d\n",
+					error2);
 				if (error == 0)
 					error = error2;
 			}
@@ -865,7 +882,7 @@ static int cmd_dprc_info(void)
 		"Usage: resman dprc info <dprc-object> [--verbose]\n"
 		"\n"
 		"--verbose\n"
-		"   Shows extended/verbose information about the object \n"
+		"   Shows extended/verbose information about the object\n"
 		"\n";
 
 	uint32_t dprc_id;
@@ -943,8 +960,10 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	}
 
 	child_dprc_created = true;
-	printf("dprc.%u object created (using MC portal id %u, portal addr %#llx)\n",
-	       child_dprc_id, portal_id, (unsigned long long)mc_portal_phys_addr);
+	printf(
+		"dprc.%u object created (using MC portal id %u, portal addr %#llx)\n",
+		child_dprc_id, portal_id,
+		(unsigned long long)mc_portal_phys_addr);
 
 	return 0;
 error:
@@ -1065,12 +1084,14 @@ static int cmd_dprc_create_child(void)
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_create_options(resman.cmd_option_args[CREATE_OPT_OPTIONS],
-					     &options);
+		error = parse_create_options(
+				resman.cmd_option_args[CREATE_OPT_OPTIONS],
+				&options);
 		if (error < 0)
 			goto out;
 	} else {
-		options = DPRC_CFG_OPT_SPAWN_ALLOWED | DPRC_CFG_OPT_ALLOC_ALLOWED;
+		options = DPRC_CFG_OPT_SPAWN_ALLOWED |
+			  DPRC_CFG_OPT_ALLOC_ALLOWED;
 	}
 
 	error = create_child_dprc(dprc_handle, options);
@@ -1111,7 +1132,8 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 
 	dprc_opened = true;
 	memset(&dprc_attr, 0, sizeof(dprc_attr));
-	error = dprc_get_attributes(&resman.mc_io, child_dprc_handle, &dprc_attr);
+	error = dprc_get_attributes(&resman.mc_io, child_dprc_handle,
+				    &dprc_attr);
 	if (error < 0) {
 		ERROR_PRINTF("dprc_get_attributes() failed: %d\n", error);
 		goto error;
@@ -1268,8 +1290,9 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_TARGET)) {
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_TARGET);
 		assert(resman.cmd_option_args[ASSIGN_OPT_TARGET] != NULL);
-		error = parse_object_name(resman.cmd_option_args[ASSIGN_OPT_TARGET],
-					  "dprc", &target_dprc_id);
+		error = parse_object_name(
+				resman.cmd_option_args[ASSIGN_OPT_TARGET],
+				"dprc", &target_dprc_id);
 		if (error < 0)
 			goto out;
 	} else {
@@ -1279,7 +1302,8 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE)) {
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE);
 		assert(resman.cmd_option_args[ASSIGN_OPT_RES_TYPE] != NULL);
-		strcpy(res_req.type, resman.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
+		strcpy(res_req.type,
+		       resman.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
 		if (strcmp(res_req.type, "mcp") == 0) {
 			ERROR_PRINTF("resource type '%s' not supported\n",
 				     res_req.type);
@@ -1287,7 +1311,8 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			goto out;
 		}
 
-		if (!(resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_COUNT))) {
+		if (!(resman.cmd_option_mask &
+		    ONE_BIT_MASK(ASSIGN_OPT_COUNT))) {
 			ERROR_PRINTF("--count option missing\n");
 			printf(usage_msg);
 			error = -EINVAL;
@@ -1325,7 +1350,8 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		}
 
 		res_req.options = DPRC_RES_REQ_OPT_EXPLICIT;
-		if (!(resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_PLUGGED))) {
+		if (!(resman.cmd_option_mask &
+		    ONE_BIT_MASK(ASSIGN_OPT_PLUGGED))) {
 			ERROR_PRINTF("--plugged option missing\n");
 			printf(usage_msg);
 			error = -EINVAL;
@@ -1629,7 +1655,8 @@ static int cmd_dprc_connect(void)
 
 	resman.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_ENDPOINT1);
 	assert(resman.cmd_option_args[CONNECT_OPT_ENDPOINT1] != NULL);
-	error = parse_endpoint(resman.cmd_option_args[CONNECT_OPT_ENDPOINT1], &endpoint1);
+	error = parse_endpoint(resman.cmd_option_args[CONNECT_OPT_ENDPOINT1],
+			       &endpoint1);
 	if (error < 0) {
 		ERROR_PRINTF("Invalid --endpoint1 arg: '%s'\n",
 			     resman.cmd_option_args[CONNECT_OPT_ENDPOINT1]);
@@ -1645,7 +1672,8 @@ static int cmd_dprc_connect(void)
 
 	resman.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_ENDPOINT2);
 	assert(resman.cmd_option_args[CONNECT_OPT_ENDPOINT2] != NULL);
-	error = parse_endpoint(resman.cmd_option_args[CONNECT_OPT_ENDPOINT2], &endpoint2);
+	error = parse_endpoint(resman.cmd_option_args[CONNECT_OPT_ENDPOINT2],
+			       &endpoint2);
 	if (error < 0) {
 		ERROR_PRINTF("Invalid --endpoint2 arg: '%s'\n",
 			     resman.cmd_option_args[CONNECT_OPT_ENDPOINT1]);
@@ -1729,7 +1757,8 @@ static int cmd_dprc_disconnect(void)
 
 	resman.cmd_option_mask &= ~ONE_BIT_MASK(DISCONNECT_OPT_ENDPOINT);
 	assert(resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT] != NULL);
-	error = parse_endpoint(resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT], &endpoint);
+	error = parse_endpoint(resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT],
+			       &endpoint);
 	if (error < 0) {
 		ERROR_PRINTF("Invalid --endpoint arg: '%s'\n",
 			     resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT]);
