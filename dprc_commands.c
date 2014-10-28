@@ -505,7 +505,11 @@ static int show_mc_resources(uint16_t dprc_handle)
 		goto out;
 	}
 
-	assert(pool_count > 0);
+	assert(pool_count >= 0);
+	if (0 == pool_count) {
+		printf("Don't have any resource in current dprc container.\n");
+		return 0;
+	}
 	for (int i = 0; i < pool_count; i++) {
 		memset(res_type, 0, sizeof(res_type));
 		error = dprc_get_pool(&resman.mc_io, dprc_handle,
@@ -595,7 +599,7 @@ static int cmd_dprc_show(void)
 		"\n"
 		"Usage: resman dprc show <container>\n"
 		"	resman dprc show <container> --resources\n"
-		"	resman dprc show <container> --type=<resource-type>\n"
+		"	resman dprc show <container> --resource-type=<type>\n"
 		"\n"
 		"\n";
 
