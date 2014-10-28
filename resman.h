@@ -51,6 +51,11 @@
  */
 #define MAX_NUM_CMD_LINE_OPTIONS    (sizeof(uint32_t) * 8)
 
+/**
+ * Maximum level of nesting of DPRCs
+ */
+#define MAX_DPRC_NESTING	    16
+
 struct resman;
 
 typedef int resman_cmd_func_t(void);
@@ -165,5 +170,6 @@ extern struct object_command dprc_commands[];
 extern struct object_command dpni_commands[];
 extern struct object_command dpio_commands[];
 extern struct object_command dpbp_commands[];
+extern struct object_command dpsw_commands[];
 
 #endif /* _RESMAN_H_ */

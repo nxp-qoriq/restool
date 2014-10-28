@@ -50,11 +50,6 @@
 	DPRC_CFG_OPT_AIOP)
 
 /**
- * Maximum level of nesting of DPRCs
- */
-#define MAX_DPRC_NESTING	    16
-
-/**
  * dprc list command options
  */
 enum dprc_list_options {
