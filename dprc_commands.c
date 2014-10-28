@@ -1585,7 +1585,7 @@ static int parse_endpoint(char *endpoint_str, struct dprc_endpoint *endpoint)
 	memset(endpoint, 0, sizeof(*endpoint));
 
 	n = sscanf(endpoint_str,
-		   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "s.%d.%d",
+		   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "[a-z].%d.%d",
 		   endpoint->type, &endpoint->id, &endpoint->interface_id);
 
 	if (n < 2)
@@ -1676,7 +1676,7 @@ static int cmd_dprc_connect(void)
 			       &endpoint2);
 	if (error < 0) {
 		ERROR_PRINTF("Invalid --endpoint2 arg: '%s'\n",
-			     resman.cmd_option_args[CONNECT_OPT_ENDPOINT1]);
+			     resman.cmd_option_args[CONNECT_OPT_ENDPOINT2]);
 		goto out;
 	}
 
