@@ -138,7 +138,7 @@ int parse_object_name(const char *obj_name, char *expected_obj_type,
 	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
 
 	assert(expected_obj_type != NULL);
-	n = sscanf(obj_name, "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "s.%u",
+	n = sscanf(obj_name, "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "[a-z].%u",
 		   obj_type, obj_id);
 	if (n != 2) {
 		ERROR_PRINTF("Invalid MC object name: %s\n", obj_name);

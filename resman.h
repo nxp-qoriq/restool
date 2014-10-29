@@ -39,7 +39,7 @@
 /**
  * MC object type string max length (without including the null terminator)
  */
-#define OBJ_TYPE_MAX_LENGTH	4
+#define OBJ_TYPE_MAX_LENGTH	5
 
 /**
  * MC resource type string max length (without including the null terminator)
