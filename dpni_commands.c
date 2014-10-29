@@ -398,6 +398,12 @@ static int print_dpni_verbose(uint16_t dprc_handle,
 		uint16_t child_dprc_handle;
 		uint16_t dpni_handle;
 		int error2;
+		struct dprc_endpoint endpoint1;
+		struct dprc_endpoint endpoint2;
+		int state;
+
+		memset(&endpoint1, 0, sizeof(struct dprc_endpoint));
+		memset(&endpoint2, 0, sizeof(struct dprc_endpoint));
 
 		error = dprc_get_obj(
 				&resman.mc_io,
@@ -416,6 +422,30 @@ static int print_dpni_verbose(uint16_t dprc_handle,
 			printf("plugged state: %splugged\n",
 			       (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) ?
 			       "" : "un");
+
+			memcpy(endpoint1.type, "dpni", 5);
+			endpoint1.id = target_id;
+			endpoint1.interface_id = 0;
+			error = dprc_get_connection(&resman.mc_io, dprc_handle,
+					&endpoint1, &endpoint2, &state);
+			if (error < 0) {
+				ERROR_PRINTF(
+					"dprc_get_connection() failed with error %d\n",
+					error);
+				goto out;
+			}
+
+			if (1 == state && 0 != endpoint2.interface_id) {
+				printf("endpoint: %s.%d.%d\n", endpoint2.type,
+				       endpoint2.id, endpoint2.interface_id);
+			}
+			if (1 == state && 0 == endpoint2.interface_id) {
+				printf("endpoint: %s.%d\n", endpoint2.type,
+				       endpoint2.id);
+			}
+			if (0 == state)
+				printf("endpoint: No object associated\n");
+
 			printf("number of mappable regions: %u\n",
 			       obj_desc.region_count);
 			printf("number of interrupts: %u\n",
