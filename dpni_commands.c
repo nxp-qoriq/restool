@@ -744,24 +744,21 @@ static int create_dpni(const char *usage_msg)
 				       DPNI_OPT_MULTICAST_FILTER;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ADDR)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ADDR);
-		error  = parse_dpni_mac_addr(
-				resman.cmd_option_args[CREATE_OPT_MAC_ADDR],
-				dpni_cfg.mac_addr);
-		if (error < 0) {
-			ERROR_PRINTF(
-				"parse_dpni_mac_addr() failed with error %d, cannot get mac address\n",
-				error);
-			return error;
-		}
-	} else { /* set default 12:34:56:78:9a:bc */
-		dpni_cfg.mac_addr[0] = 18; /* 0x12 */
-		dpni_cfg.mac_addr[1] = 52; /* 0x34 */
-		dpni_cfg.mac_addr[2] = 86; /* 0x56 */
-		dpni_cfg.mac_addr[3] = 120; /* 0x78 */
-		dpni_cfg.mac_addr[4] = 154; /* 0x9a */
-		dpni_cfg.mac_addr[5] = 188; /* 0xbc */
+	if (!(resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ADDR))) {
+		ERROR_PRINTF("--mac-addr option missing\n");
+		printf(usage_msg);
+		return -EINVAL;
+	}
+
+	resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ADDR);
+	error  = parse_dpni_mac_addr(
+			resman.cmd_option_args[CREATE_OPT_MAC_ADDR],
+			dpni_cfg.mac_addr);
+	if (error < 0) {
+		ERROR_PRINTF(
+			"parse_dpni_mac_addr() failed with error %d, cannot get mac address\n",
+			error);
+		return error;
 	}
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_TCS)) {
