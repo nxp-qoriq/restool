@@ -1338,7 +1338,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		assert(resman.cmd_option_args[ASSIGN_OPT_OBJECT] != NULL);
 
 		n = sscanf(resman.cmd_option_args[ASSIGN_OPT_OBJECT],
-			   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "s.%d",
+			   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "[a-z].%d",
 			   res_req.type, &res_req.id_base_align);
 		if (n != 2) {
 			ERROR_PRINTF("Invalid --object arg: \'%s\'\n",
