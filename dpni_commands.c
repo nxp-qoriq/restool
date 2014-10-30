@@ -713,6 +713,7 @@ static int create_dpni(const char *usage_msg)
 	long val;
 	char *str;
 	char *endptr;
+	struct dpni_attr dpni_attr;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
@@ -941,6 +942,15 @@ static int create_dpni(const char *usage_msg)
 		ERROR_PRINTF("dpni_create() failed with error %d\n", error);
 		return error;
 	}
+
+	memset(&dpni_attr, 0, sizeof(struct dpni_attr));
+	error = dpni_get_attributes(&resman.mc_io, dpni_handle, &dpni_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dpni_get_attributes() failed with error: %d\n",
+			     error);
+		return error;
+	}
+	printf("dpni.%d is created\n", dpni_attr.id);
 
 	error = dpni_close(&resman.mc_io, dpni_handle);
 	if (error < 0) {

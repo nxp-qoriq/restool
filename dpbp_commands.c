@@ -381,6 +381,7 @@ static int cmd_dpbp_create(void)
 	char *str;
 	struct dpbp_cfg dpbp_cfg;
 	uint16_t dpbp_handle;
+	struct dpbp_attr dpbp_attr;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
@@ -417,6 +418,15 @@ static int cmd_dpbp_create(void)
 		ERROR_PRINTF("dpbp_create() failed with error %d\n", error);
 		return error;
 	}
+
+	memset(&dpbp_attr, 0, sizeof(struct dpbp_attr));
+	error = dpbp_get_attributes(&resman.mc_io, dpbp_handle, &dpbp_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dpbp_get_attributes() failed with error: %d\n",
+			     error);
+		return error;
+	}
+	printf("dpbp.%d is created\n", dpbp_attr.id);
 
 	error = dpbp_close(&resman.mc_io, dpbp_handle);
 	if (error < 0) {

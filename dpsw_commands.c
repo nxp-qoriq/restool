@@ -494,6 +494,7 @@ static int create_dpsw(const char *usage_msg)
 	long val;
 	char *str;
 	char *endptr;
+	struct dpsw_attr dpsw_attr;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
@@ -640,6 +641,15 @@ static int create_dpsw(const char *usage_msg)
 		ERROR_PRINTF("dpsw_create() failed with error %d\n", error);
 		return error;
 	}
+
+	memset(&dpsw_attr, 0, sizeof(struct dpsw_attr));
+	error = dpsw_get_attributes(&resman.mc_io, dpsw_handle, &dpsw_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dpsw_get_attributes() failed with error: %d\n",
+			     error);
+		return error;
+	}
+	printf("dpsw.%d is created\n", dpsw_attr.id);
 
 	error = dpsw_close(&resman.mc_io, dpsw_handle);
 	if (error < 0) {

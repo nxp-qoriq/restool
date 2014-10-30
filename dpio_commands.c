@@ -405,6 +405,7 @@ static int cmd_dpio_create(void)
 	char *str;
 	struct dpio_cfg dpio_cfg;
 	uint16_t dpio_handle;
+	struct dpio_attr dpio_attr;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
@@ -461,6 +462,15 @@ static int cmd_dpio_create(void)
 		ERROR_PRINTF("dpio_create() failed with error %d\n", error);
 		return error;
 	}
+
+	memset(&dpio_attr, 0, sizeof(struct dpio_attr));
+	error = dpio_get_attributes(&resman.mc_io, dpio_handle, &dpio_attr);
+	if (error < 0) {
+		ERROR_PRINTF("dpio_get_attributes() failed with error: %d\n",
+			     error);
+		return error;
+	}
+	printf("dpio.%d is created\n", dpio_attr.id);
 
 	error = dpio_close(&resman.mc_io, dpio_handle);
 	if (error < 0) {
