@@ -1247,6 +1247,79 @@ out:
 	return error;
 }
 
+static int lookup_obj_desc(uint32_t parent_dprc_id,
+			   const char *obj_type,
+			   int obj_id,
+			   struct dprc_obj_desc *obj_desc_out)
+{
+	uint16_t dprc_handle;
+	int i;
+	int error;
+	int num_child_devices;
+	bool dprc_opened = false;
+
+	if (parent_dprc_id != resman.root_dprc_id) {
+		error = open_dprc(parent_dprc_id, &dprc_handle);
+		if (error < 0)
+			goto out;
+
+		dprc_opened = true;
+	} else {
+		dprc_handle = resman.root_dprc_handle;
+	}
+
+	error = dprc_get_obj_count(&resman.mc_io,
+				   dprc_handle,
+				   &num_child_devices);
+	if (error < 0) {
+		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
+			     error);
+		goto out;
+	}
+
+	for (i = 0; i < num_child_devices; i++) {
+		struct dprc_obj_desc obj_desc;
+
+		error = dprc_get_obj(&resman.mc_io,
+				     dprc_handle,
+				     i,
+				     &obj_desc);
+		if (error < 0) {
+			ERROR_PRINTF(
+				"dprc_get_object(%u) failed with error %d\n",
+				i, error);
+			goto out;
+		}
+
+		if (strcmp(obj_desc.type, obj_type) == 0 &&
+		    obj_desc.id == obj_id) {
+			*obj_desc_out = obj_desc;
+			break;
+		}
+	}
+
+	if (i == num_child_devices) {
+		error = -ENOENT;
+		ERROR_PRINTF("%s.%d does not exist in dprc.%u\n",
+			     obj_type, obj_id, parent_dprc_id);
+	}
+
+out:
+	if (dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		if (error2 < 0) {
+			ERROR_PRINTF("dprc_close() failed with error %d\n",
+				     error2);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 {
 	uint16_t dprc_handle;
@@ -1255,6 +1328,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	uint32_t parent_dprc_id;
 	uint32_t target_dprc_id;
 	struct dprc_res_req res_req;
+	struct dprc_obj_desc obj_desc;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
 		printf(usage_msg);
@@ -1348,27 +1422,56 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			goto out;
 		}
 
+		if (target_dprc_id != parent_dprc_id) {
+			error = lookup_obj_desc(do_assign ? parent_dprc_id :
+							    target_dprc_id,
+						res_req.type,
+						res_req.id_base_align,
+						&obj_desc);
+			if (error < 0)
+				goto out;
+
+			if (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) {
+				ERROR_PRINTF(
+				    "%s cannot be %s because it is currently in plugged state\n",
+				    resman.cmd_option_args[ASSIGN_OPT_OBJECT],
+				    do_assign ? "assigned" : "unassigned");
+
+				error = -EBUSY;
+				goto out;
+			}
+		}
+
 		res_req.options = DPRC_RES_REQ_OPT_EXPLICIT;
-		if (!(resman.cmd_option_mask &
-		    ONE_BIT_MASK(ASSIGN_OPT_PLUGGED))) {
-			ERROR_PRINTF("--plugged option missing\n");
-			printf(usage_msg);
-			error = -EINVAL;
-			goto out;
-		}
 
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_PLUGGED);
-		assert(resman.cmd_option_args[ASSIGN_OPT_PLUGGED] != NULL);
-		state = atoi(resman.cmd_option_args[ASSIGN_OPT_PLUGGED]);
-		if (state < 0 || state > 1) {
-			ERROR_PRINTF("Invalid --plugged arg: \'%s\'\n",
-			     resman.cmd_option_args[ASSIGN_OPT_PLUGGED]);
-			error = -EINVAL;
-			goto out;
-		}
+		if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_PLUGGED)) {
+			resman.cmd_option_mask &=
+				~ONE_BIT_MASK(ASSIGN_OPT_PLUGGED);
 
-		if (state == 1)
-			res_req.options |= DPRC_RES_REQ_OPT_PLUGGED;
+			assert(resman.cmd_option_args[ASSIGN_OPT_PLUGGED] !=
+			       NULL);
+			state = atoi(resman.
+					cmd_option_args[ASSIGN_OPT_PLUGGED]);
+
+			if (state < 0 || state > 1) {
+				ERROR_PRINTF(
+				    "Invalid --plugged arg: \'%s\'\n",
+				    resman.cmd_option_args[ASSIGN_OPT_PLUGGED]);
+				error = -EINVAL;
+				goto out;
+			}
+
+			if (state == 1)
+				res_req.options |= DPRC_RES_REQ_OPT_PLUGGED;
+		} else {
+			if (target_dprc_id == parent_dprc_id) {
+				ERROR_PRINTF(
+				    "--plugged option required in this case\n");
+				printf(usage_msg);
+				error = -EINVAL;
+				goto out;
+			}
+		}
 	} else {
 		ERROR_PRINTF("Invalid command line\n");
 		printf(usage_msg);
