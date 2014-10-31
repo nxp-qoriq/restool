@@ -523,7 +523,7 @@ static int create_dpsw(const char *usage_msg)
 
 		dpsw_cfg.num_ifs = val;
 	} else {
-		dpsw_cfg.num_ifs = 0; /* Todo: default value not defined */
+		dpsw_cfg.num_ifs = 4; /* Todo: default value not defined */
 	}
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
