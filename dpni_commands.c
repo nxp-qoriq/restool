@@ -428,23 +428,33 @@ static int print_dpni_verbose(uint16_t dprc_handle,
 			endpoint1.interface_id = 0;
 			error = dprc_get_connection(&resman.mc_io, dprc_handle,
 					&endpoint1, &endpoint2, &state);
-			if (error < 0) {
+
+			if (error == -ENAVAIL) {
+				printf("endpoint: No object associated\n");
+			} else if (error == 0) {
+				if (strcmp(endpoint2.type, "dpsw") == 0 ||
+				    strcmp(endpoint2.type, "dpdmux") == 0) {
+					printf("endpoint: %s.%d.%d",
+						endpoint2.type, endpoint2.id,
+						endpoint2.interface_id);
+				} else if (0 == endpoint2.interface_id) {
+					printf("endpoint: %s.%d",
+						endpoint2.type, endpoint2.id);
+				}
+
+				if (1 == state)
+					printf(", link is up\n");
+				else if (0 == state)
+					printf(", link is down\n");
+				else
+					printf(", link is in error state\n");
+
+			} else {
 				ERROR_PRINTF(
 					"dprc_get_connection() failed with error %d\n",
 					error);
 				goto out;
 			}
-
-			if (1 == state && 0 != endpoint2.interface_id) {
-				printf("endpoint: %s.%d.%d\n", endpoint2.type,
-				       endpoint2.id, endpoint2.interface_id);
-			}
-			if (1 == state && 0 == endpoint2.interface_id) {
-				printf("endpoint: %s.%d\n", endpoint2.type,
-				       endpoint2.id);
-			}
-			if (0 == state)
-				printf("endpoint: No object associated\n");
 
 			printf("number of mappable regions: %u\n",
 			       obj_desc.region_count);
