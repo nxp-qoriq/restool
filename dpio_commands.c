@@ -470,7 +470,7 @@ static int cmd_dpio_create(void)
 			     error);
 		return error;
 	}
-	printf("dpio.%d is created\n", dpio_attr.id);
+	printf("dpio.%d is created in dprc.1\n", dpio_attr.id);
 
 	error = dpio_close(&resman.mc_io, dpio_handle);
 	if (error < 0) {

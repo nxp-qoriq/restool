@@ -947,7 +947,7 @@ static int create_dpni(const char *usage_msg)
 			     error);
 		return error;
 	}
-	printf("dpni.%d is created\n", dpni_attr.id);
+	printf("dpni.%d is created in dprc.1\n", dpni_attr.id);
 
 	error = dpni_close(&resman.mc_io, dpni_handle);
 	if (error < 0) {

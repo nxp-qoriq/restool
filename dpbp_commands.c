@@ -426,7 +426,7 @@ static int cmd_dpbp_create(void)
 			     error);
 		return error;
 	}
-	printf("dpbp.%d is created\n", dpbp_attr.id);
+	printf("dpbp.%d is created in dprc.1\n", dpbp_attr.id);
 
 	error = dpbp_close(&resman.mc_io, dpbp_handle);
 	if (error < 0) {

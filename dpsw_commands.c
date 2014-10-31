@@ -649,7 +649,7 @@ static int create_dpsw(const char *usage_msg)
 			     error);
 		return error;
 	}
-	printf("dpsw.%d is created\n", dpsw_attr.id);
+	printf("dpsw.%d is created in dprc.1\n", dpsw_attr.id);
 
 	error = dpsw_close(&resman.mc_io, dpsw_handle);
 	if (error < 0) {
