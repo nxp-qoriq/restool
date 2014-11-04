@@ -76,6 +76,7 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 	{ .obj_type = "dpio", .obj_commands = dpio_commands },
 	{ .obj_type = "dpbp", .obj_commands = dpbp_commands },
 	{ .obj_type = "dpsw", .obj_commands = dpsw_commands },
+	{ .obj_type = "dpci", .obj_commands = dpci_commands },
 };
 
 struct resman resman;

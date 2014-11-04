@@ -8,12 +8,14 @@ OBJS = resman.o \
        dpio_commands.o \
        dpbp_commands.o \
        dpsw_commands.o \
+       dpci_commands.o \
        dprc.o \
        dpmng.o \
        dpni.o \
        dpbp.o \
        dpio.o \
        dpsw.o \
+       dpci.o \
        fsl_mc_sys.o
 
 CFLAGS = ${EXTRA_CFLAGS} \
