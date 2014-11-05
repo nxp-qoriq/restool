@@ -85,7 +85,7 @@ void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options)
 {
 	ERROR_PRINTF("Invalid options:\n");
-	for (unsigned int i; i < MAX_NUM_CMD_LINE_OPTIONS; i++) {
+	for (unsigned int i = 0; i < MAX_NUM_CMD_LINE_OPTIONS; i++) {
 		if (option_mask & ONE_BIT_MASK(i))
 			fprintf(stderr, "\t--%s\n", options[i].name);
 
@@ -453,6 +453,8 @@ int main(int argc, char *argv[])
 
 	root_dprc_opened = true;
 	error = parse_global_options(argc, argv, &next_argv_index);
+	if (error < 0)
+		goto out;
 
 	if (next_argv_index == argc) {
 		if (resman.global_option_mask == 0) {

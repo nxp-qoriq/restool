@@ -1050,7 +1050,7 @@ static int cmd_dprc_create_child(void)
 	int error;
 	bool dprc_opened = false;
 	uint32_t dprc_id;
-	uint64_t options;
+	uint64_t options = 0;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
@@ -1328,7 +1328,6 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	uint32_t parent_dprc_id;
 	uint32_t target_dprc_id;
 	struct dprc_res_req res_req;
-	struct dprc_obj_desc obj_desc;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
 		printf(usage_msg);
@@ -1423,6 +1422,8 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		}
 
 		if (target_dprc_id != parent_dprc_id) {
+			struct dprc_obj_desc obj_desc;
+
 			error = lookup_obj_desc(do_assign ? parent_dprc_id :
 							    target_dprc_id,
 						res_req.type,
