@@ -1541,7 +1541,7 @@ static int cmd_dprc_unassign(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc unassign <container> --object=<object> [--target=<container>] --plugged=<state>\n"
+		"Usage: resman dprc unassign <container> --object=<object> [--target=<container>]\n"
 		"	resman dprc unassign <container> --resource-type <type> --count <number> --target <container>\n"
 		"\n"
 		"--object=<object>\n"
@@ -1552,8 +1552,6 @@ static int cmd_dprc_unassign(void)
 		"   may be the same as the parent container, allowing unassign to self.\n"
 		"   Indeed, if this option is not specified, the default target is\n"
 		"   <parent-container> itself.\n"
-		"--plugged=<state>\n"
-		"   Specifies the plugged state of the object (valid values are 0 or 1)\n"
 		"--resource-type=<type>\n"
 		"   String specifying the resource type to unassign (e.g, \'mcp\', \'fq\', \'cg\', etc)\n"
 		"--count=<number>\n"
