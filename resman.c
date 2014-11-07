@@ -52,7 +52,7 @@
 #define MC_PORTAL_PADDR_TO_PORTAL_ID(_portal_paddr) \
 	(((_portal_paddr) - MC_PORTALS_BASE_PADDR) / MC_PORTAL_STRIDE)
 
-static const char resman_version[] = "0.3";
+static const char resman_version[] = "0.4";
 
 static struct option global_options[] = {
 	[GLOBAL_OPT_HELP] = {
@@ -102,7 +102,7 @@ static void print_usage(void)
 		"   -v,--version   Displays tool version info\n"
 		"   -h,-?,--help   Displays general help info\n"
 		"\n"
-		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpcon|dpci|dpseci|dpmux>\n"
+		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci>\n"
 		"\n"
 		"Valid commands vary for each object type.  Use the \'help\'\n"
 		"command to see detailed usage info for an object.  The following\n"
