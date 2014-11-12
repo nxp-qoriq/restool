@@ -48,6 +48,8 @@
 	DPSW_OPT_TC_DIS |		\
 	DPSW_OPT_CONTROL)
 
+enum mc_cmd_status mc_status;
+
 /**
  * dpsw info command options
  */
@@ -221,8 +223,9 @@ static int print_dpsw_attr(uint32_t dpsw_id)
 
 	error = dpsw_open(&resman.mc_io, dpsw_id, &dpsw_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpsw_open() failed for dpsw.%u with error %d\n",
-			     dpsw_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpsw_opened = true;
@@ -237,8 +240,9 @@ static int print_dpsw_attr(uint32_t dpsw_id)
 	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
 	error = dpsw_get_attributes(&resman.mc_io, dpsw_handle, &dpsw_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpsw_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	assert(dpsw_id == (uint32_t)dpsw_attr.id);
@@ -265,8 +269,9 @@ out:
 
 		error2 = dpsw_close(&resman.mc_io, dpsw_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpsw_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -637,22 +642,27 @@ static int create_dpsw(const char *usage_msg)
 
 	error = dpsw_create(&resman.mc_io, &dpsw_cfg, &dpsw_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpsw_create() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 
 	memset(&dpsw_attr, 0, sizeof(struct dpsw_attr));
 	error = dpsw_get_attributes(&resman.mc_io, dpsw_handle, &dpsw_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpsw_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	printf("dpsw.%d is created in dprc.1\n", dpsw_attr.id);
 
 	error = dpsw_close(&resman.mc_io, dpsw_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpsw_close() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	return 0;
@@ -725,8 +735,9 @@ static int cmd_dpsw_destroy(void)
 
 	error = dpsw_open(&resman.mc_io, dpsw_id, &dpsw_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpsw_open() failed for dpsw.%u with error %d\n",
-			     dpsw_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpsw_opened = true;
@@ -740,7 +751,9 @@ static int cmd_dpsw_destroy(void)
 
 	error = dpsw_destroy(&resman.mc_io, dpsw_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpsw_destroy() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpsw_opened = false;
@@ -749,8 +762,9 @@ out:
 	if (dpsw_opened) {
 		error2 = dpsw_close(&resman.mc_io, dpsw_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpsw_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}

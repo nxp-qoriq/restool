@@ -48,6 +48,8 @@
 	DPRC_CFG_OPT_IOMMU_BYPASS |		\
 	DPRC_CFG_OPT_AIOP)
 
+enum mc_cmd_status mc_status;
+
 /**
  * dprc list command options
  */
@@ -334,8 +336,9 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -376,8 +379,9 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 
 		error2 = dprc_close(&resman.mc_io, child_dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 
@@ -424,7 +428,9 @@ static int show_one_resource_type(uint16_t dprc_handle,
 	error = dprc_get_res_count(&resman.mc_io, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_res_count() failed: %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -441,7 +447,9 @@ static int show_one_resource_type(uint16_t dprc_handle,
 		error = dprc_get_res_ids(&resman.mc_io, dprc_handle,
 					 (char *)mc_res_type, &range_desc);
 		if (error < 0) {
-			ERROR_PRINTF("dprc_get_res_ids() failed: %d\n", error);
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			goto out;
 		}
 
@@ -470,9 +478,9 @@ static int show_one_resource_type_count(uint16_t dprc_handle,
 	error = dprc_get_res_count(&resman.mc_io, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
-		ERROR_PRINTF(
-			"dprc_get_res_count() failed for resource type \'%s\' (error: %d)\n",
-			mc_res_type, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -495,7 +503,9 @@ static int show_mc_resources(uint16_t dprc_handle)
 	error = dprc_get_pool_count(&resman.mc_io, dprc_handle,
 				    &pool_count);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_pool_count() failed: %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -513,7 +523,7 @@ static int show_mc_resources(uint16_t dprc_handle)
 		assert(res_type[sizeof(res_type) - 1] == '\0');
 
 		if (error < 0) {
-			ERROR_PRINTF(
+			DEBUG_PRINTF(
 				"dprc_get_pool() failed for pool index %d (error: %d)\n",
 				i, error);
 			if (ret_error == 0)
@@ -550,8 +560,9 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -566,7 +577,7 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 				     i,
 				     &obj_desc);
 		if (error < 0) {
-			ERROR_PRINTF(
+			DEBUG_PRINTF(
 				"dprc_get_object(%u) failed with error %d\n",
 				i, error);
 			goto out;
@@ -653,8 +664,9 @@ out:
 
 		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -709,7 +721,9 @@ static int print_dprc_attr(uint32_t dprc_id)
 	memset(&dprc_attr, 0, sizeof(dprc_attr));
 	error = dprc_get_attributes(&resman.mc_io, dprc_handle, &dprc_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_attributes() failed: %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -735,8 +749,9 @@ out:
 
 		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -953,7 +968,9 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 			&child_dprc_id,
 			&mc_portal_phys_addr);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_create_container() failed: %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto error;
 	}
 
@@ -969,9 +986,9 @@ error:
 		error2 = dprc_destroy_container(&resman.mc_io, dprc_handle,
 						child_dprc_id);
 		if (error2 < 0) {
-			ERROR_PRINTF(
-			    "dprc_destroy_container() failed with error %d\n",
-			    error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 		}
 	}
 
@@ -1099,8 +1116,9 @@ out:
 
 		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -1133,7 +1151,9 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 	error = dprc_get_attributes(&resman.mc_io, child_dprc_handle,
 				    &dprc_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_attributes() failed: %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto error;
 	}
 
@@ -1141,7 +1161,9 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 	dprc_opened = false;
 	error = dprc_close(&resman.mc_io, child_dprc_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_close() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto error;
 	}
 
@@ -1151,9 +1173,9 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 	error = dprc_destroy_container(&resman.mc_io, parent_dprc_handle,
 					child_dprc_id);
 	if (error < 0) {
-		ERROR_PRINTF(
-		    "dprc_destroy_container() failed with error %d\n",
-		    error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 
 		goto error;
 	}
@@ -1183,8 +1205,9 @@ error:
 
 		error2 = dprc_close(&resman.mc_io, child_dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF(
-				"dprc_close() failed with error %d\n", error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 		}
 	}
 
@@ -1271,8 +1294,9 @@ static int lookup_obj_desc(uint32_t parent_dprc_id,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
-		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -1284,7 +1308,7 @@ static int lookup_obj_desc(uint32_t parent_dprc_id,
 				     i,
 				     &obj_desc);
 		if (error < 0) {
-			ERROR_PRINTF(
+			DEBUG_PRINTF(
 				"dprc_get_object(%u) failed with error %d\n",
 				i, error);
 			goto out;
@@ -1309,8 +1333,9 @@ out:
 
 		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -1491,15 +1516,21 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				    dprc_handle,
 				    target_dprc_id,
 				    &res_req);
-		if (error < 0)
-			ERROR_PRINTF("dprc_assign() failed: %d\n", error);
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+		}
 	} else {
 		error = dprc_unassign(&resman.mc_io,
 				      dprc_handle,
 				      target_dprc_id,
 				      &res_req);
-		if (error < 0)
-			ERROR_PRINTF("dprc_unassign() failed: %d\n", error);
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+		}
 	}
 out:
 	if (dprc_opened) {
@@ -1507,8 +1538,9 @@ out:
 
 		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -1667,16 +1699,20 @@ static int cmd_dprc_set_quota(void)
 				   res_type,
 				   quota);
 
-	if (error < 0)
-		ERROR_PRINTF("dprc_set_res_quota() failed: %d\n", error);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+	}
 out:
 	if (dprc_opened) {
 		int error2;
 
 		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -1811,16 +1847,20 @@ static int cmd_dprc_connect(void)
 			     &endpoint1,
 			     &endpoint2);
 
-	if (error < 0)
-		ERROR_PRINTF("dprc_connect() failed: %d\n", error);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+	}
 out:
 	if (dprc_opened) {
 		int error2;
 
 		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -1895,16 +1935,20 @@ static int cmd_dprc_disconnect(void)
 				dprc_handle,
 				&endpoint);
 
-	if (error < 0)
-		ERROR_PRINTF("dprc_disconnect() failed: %d\n", error);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+	}
 out:
 	if (dprc_opened) {
 		int error2;
 
 		error2 = dprc_close(&resman.mc_io, dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}

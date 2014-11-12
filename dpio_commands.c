@@ -42,6 +42,8 @@
 #include "fsl_dpio.h"
 #include "fsl_dprc.h"
 
+enum mc_cmd_status mc_status;
+
 /**
  * dpio info command options
  */
@@ -152,8 +154,9 @@ static int print_dpio_attr(uint32_t dpio_id)
 
 	error = dpio_open(&resman.mc_io, dpio_id, &dpio_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpio_open() failed for dpio.%u with error %d\n",
-			     dpio_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpio_opened = true;
@@ -168,8 +171,9 @@ static int print_dpio_attr(uint32_t dpio_id)
 	memset(&dpio_attr, 0, sizeof(dpio_attr));
 	error = dpio_get_attributes(&resman.mc_io, dpio_handle, &dpio_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpio_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	assert(dpio_id == (uint32_t)dpio_attr.id);
@@ -200,8 +204,9 @@ out:
 
 		error2 = dpio_close(&resman.mc_io, dpio_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpio_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -465,15 +470,18 @@ static int cmd_dpio_create(void)
 	memset(&dpio_attr, 0, sizeof(struct dpio_attr));
 	error = dpio_get_attributes(&resman.mc_io, dpio_handle, &dpio_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpio_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	printf("dpio.%d is created in dprc.1\n", dpio_attr.id);
 
 	error = dpio_close(&resman.mc_io, dpio_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpio_close() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 
@@ -513,8 +521,9 @@ static int cmd_dpio_destroy(void)
 
 	error = dpio_open(&resman.mc_io, dpio_id, &dpio_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpio_open() failed for dpio.%u with error %d\n",
-			     dpio_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpio_opened = true;
@@ -528,7 +537,9 @@ static int cmd_dpio_destroy(void)
 
 	error = dpio_destroy(&resman.mc_io, dpio_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpio_destroy() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpio_opened = false;
@@ -537,8 +548,9 @@ out:
 	if (dpio_opened) {
 		error2 = dpio_close(&resman.mc_io, dpio_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpio_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}

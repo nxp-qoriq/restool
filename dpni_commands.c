@@ -57,6 +57,8 @@
 	DPNI_OPT_QOS_MASK_SUPPORT |			\
 	DPNI_OPT_FS_MASK_SUPPORT)
 
+enum mc_cmd_status mc_status;
+
 /**
  * dpni info command options
  */
@@ -288,8 +290,9 @@ static int print_dpni_attr(uint32_t dpni_id)
 
 	error = dpni_open(&resman.mc_io, dpni_id, &dpni_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpni_open() failed for dpni.%u with error %d\n",
-			     dpni_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpni_opened = true;
@@ -304,8 +307,9 @@ static int print_dpni_attr(uint32_t dpni_id)
 	memset(&dpni_attr, 0, sizeof(dpni_attr));
 	error = dpni_get_attributes(&resman.mc_io, dpni_handle, &dpni_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpni_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	assert(dpni_id == (uint32_t)dpni_attr.id);
@@ -313,16 +317,17 @@ static int print_dpni_attr(uint32_t dpni_id)
 
 	error = dpni_get_primary_mac_addr(&resman.mc_io, dpni_handle, mac_addr);
 	if (error < 0) {
-		ERROR_PRINTF(
-			"dpni_get_primary_mac_addr() failed with error: %d\n",
-			error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
 	error = dpni_get_link_state(&resman.mc_io, dpni_handle, &link_state);
 	if (error < 0) {
-		ERROR_PRINTF("dpni_get_link_state() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -363,8 +368,9 @@ out:
 
 		error2 = dpni_close(&resman.mc_io, dpni_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpni_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -945,22 +951,27 @@ static int create_dpni(const char *usage_msg)
 
 	error = dpni_create(&resman.mc_io, &dpni_cfg, &dpni_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpni_create() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 
 	memset(&dpni_attr, 0, sizeof(struct dpni_attr));
 	error = dpni_get_attributes(&resman.mc_io, dpni_handle, &dpni_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpni_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	printf("dpni.%d is created in dprc.1\n", dpni_attr.id);
 
 	error = dpni_close(&resman.mc_io, dpni_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpni_close() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	return 0;
@@ -1059,8 +1070,9 @@ static int cmd_dpni_destroy(void)
 
 	error = dpni_open(&resman.mc_io, dpni_id, &dpni_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpni_open() failed for dpni.%u with error %d\n",
-			     dpni_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpni_opened = true;
@@ -1074,7 +1086,9 @@ static int cmd_dpni_destroy(void)
 
 	error = dpni_destroy(&resman.mc_io, dpni_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpni_destroy() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpni_opened = false;
@@ -1083,8 +1097,9 @@ out:
 	if (dpni_opened) {
 		error2 = dpni_close(&resman.mc_io, dpni_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpni_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}

@@ -85,6 +85,63 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 
 struct resman resman;
 
+enum mc_cmd_status flib_error_to_mc_status(int error)
+{
+	switch (error) {
+	case 0:
+		return MC_CMD_STATUS_OK;
+	case -EACCES:
+		return MC_CMD_STATUS_AUTH_ERR;
+	case -EPERM:
+		return MC_CMD_STATUS_NO_PRIVILEGE;
+	case -EIO:
+		return MC_CMD_STATUS_DMA_ERR;
+	case -EINVAL:
+		return MC_CMD_STATUS_CONFIG_ERR;
+	case -ETIMEDOUT:
+		return MC_CMD_STATUS_TIMEOUT;
+	case -ENAVAIL:
+		return MC_CMD_STATUS_NO_RESOURCE;
+	case -ENOMEM:
+		return MC_CMD_STATUS_NO_MEMORY;
+	case -EBUSY:
+		return MC_CMD_STATUS_BUSY;
+	case -ENOTSUP:
+		return MC_CMD_STATUS_UNSUPPORTED_OP;
+	case -ENODEV:
+		return MC_CMD_STATUS_INVALID_STATE;
+	default:
+		assert(false);
+		break;
+	}
+
+	/* Not expected to reach here */
+	return 1000;
+}
+
+const char *mc_status_to_string(enum mc_cmd_status status)
+{
+	static const char *const status_strings[] = {
+		[MC_CMD_STATUS_OK] = "Command completed successfully",
+		[MC_CMD_STATUS_READY] = "Command ready to be processed",
+		[MC_CMD_STATUS_AUTH_ERR] = "Authentication error",
+		[MC_CMD_STATUS_NO_PRIVILEGE] = "No privilege",
+		[MC_CMD_STATUS_DMA_ERR] = "DMA or I/O error",
+		[MC_CMD_STATUS_CONFIG_ERR] = "Configuration error",
+		[MC_CMD_STATUS_TIMEOUT] = "Operation timed out",
+		[MC_CMD_STATUS_NO_RESOURCE] = "No resources",
+		[MC_CMD_STATUS_NO_MEMORY] = "No memory available",
+		[MC_CMD_STATUS_BUSY] = "Device is busy",
+		[MC_CMD_STATUS_UNSUPPORTED_OP] = "Unsupported operation",
+		[MC_CMD_STATUS_INVALID_STATE] = "Invalid state"
+	};
+
+	if ((unsigned int)status >= ARRAY_SIZE(status_strings))
+		return "Unknown MC error";
+
+	return status_strings[status];
+}
+
 void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options)
 {

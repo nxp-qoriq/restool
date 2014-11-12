@@ -172,6 +172,9 @@ int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle);
 void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options);
 
+enum mc_cmd_status flib_error_to_mc_status(int error);
+const char *mc_status_to_string(enum mc_cmd_status status);
+
 extern struct resman resman;
 extern struct object_command dprc_commands[];
 extern struct object_command dpni_commands[];

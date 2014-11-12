@@ -42,6 +42,8 @@
 #include "fsl_dpbp.h"
 #include "fsl_dprc.h"
 
+enum mc_cmd_status mc_status;
+
 /**
  * dpbp info command options
  */
@@ -144,8 +146,9 @@ static int print_dpbp_attr(uint32_t dpbp_id)
 
 	error = dpbp_open(&resman.mc_io, dpbp_id, &dpbp_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_open() failed for dpbp.%u with error %d\n",
-			     dpbp_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpbp_opened = true;
@@ -160,8 +163,9 @@ static int print_dpbp_attr(uint32_t dpbp_id)
 	memset(&dpbp_attr, 0, sizeof(dpbp_attr));
 	error = dpbp_get_attributes(&resman.mc_io, dpbp_handle, &dpbp_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	assert(dpbp_id == (uint32_t)dpbp_attr.id);
@@ -179,8 +183,9 @@ out:
 
 		error2 = dpbp_close(&resman.mc_io, dpbp_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpbp_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -414,22 +419,27 @@ static int cmd_dpbp_create(void)
 
 	error = dpbp_create(&resman.mc_io, &dpbp_cfg, &dpbp_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_create() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 
 	memset(&dpbp_attr, 0, sizeof(struct dpbp_attr));
 	error = dpbp_get_attributes(&resman.mc_io, dpbp_handle, &dpbp_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	printf("dpbp.%d is created in dprc.1\n", dpbp_attr.id);
 
 	error = dpbp_close(&resman.mc_io, dpbp_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_close() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	return 0;
@@ -468,8 +478,9 @@ static int cmd_dpbp_destroy(void)
 
 	error = dpbp_open(&resman.mc_io, dpbp_id, &dpbp_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_open() failed for dpbp.%u with error %d\n",
-			     dpbp_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpbp_opened = true;
@@ -483,7 +494,9 @@ static int cmd_dpbp_destroy(void)
 
 	error = dpbp_destroy(&resman.mc_io, dpbp_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpbp_destroy() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpbp_opened = false;
@@ -492,8 +505,9 @@ out:
 	if (dpbp_opened) {
 		error2 = dpbp_close(&resman.mc_io, dpbp_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpbp_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}

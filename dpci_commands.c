@@ -41,6 +41,8 @@
 #include "fsl_dpci.h"
 #include "fsl_dprc.h"
 
+enum mc_cmd_status mc_status;
+
 /**
  * dpci info command options
  */
@@ -146,8 +148,9 @@ static int print_dpci_attr(uint32_t dpci_id)
 
 	error = dpci_open(&resman.mc_io, dpci_id, &dpci_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpci_open() failed for dpci.%u with error %d\n",
-			     dpci_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpci_opened = true;
@@ -162,8 +165,9 @@ static int print_dpci_attr(uint32_t dpci_id)
 	memset(&dpci_attr, 0, sizeof(dpci_attr));
 	error = dpci_get_attributes(&resman.mc_io, dpci_handle, &dpci_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpci_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	assert(dpci_id == (uint32_t)dpci_attr.id);
@@ -173,8 +177,9 @@ static int print_dpci_attr(uint32_t dpci_id)
 
 	error = dpci_get_link_state(&resman.mc_io, dpci_handle, &link_state);
 	if (error < 0) {
-		ERROR_PRINTF("dpci_get_link_state() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -203,8 +208,9 @@ out:
 
 		error2 = dpci_close(&resman.mc_io, dpci_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpci_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
@@ -440,22 +446,27 @@ static int cmd_dpci_create(void)
 
 	error = dpci_create(&resman.mc_io, &dpci_cfg, &dpci_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpci_create() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 
 	memset(&dpci_attr, 0, sizeof(struct dpci_attr));
 	error = dpci_get_attributes(&resman.mc_io, dpci_handle, &dpci_attr);
 	if (error < 0) {
-		ERROR_PRINTF("dpci_get_attributes() failed with error: %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	printf("dpci.%d is created in dprc.1\n", dpci_attr.id);
 
 	error = dpci_close(&resman.mc_io, dpci_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpci_close() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 	return 0;
@@ -494,8 +505,9 @@ static int cmd_dpci_destroy(void)
 
 	error = dpci_open(&resman.mc_io, dpci_id, &dpci_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpci_open() failed for dpci.%u with error %d\n",
-			     dpci_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpci_opened = true;
@@ -509,7 +521,9 @@ static int cmd_dpci_destroy(void)
 
 	error = dpci_destroy(&resman.mc_io, dpci_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpci_destroy() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 	dpci_opened = false;
@@ -518,8 +532,9 @@ out:
 	if (dpci_opened) {
 		error2 = dpci_close(&resman.mc_io, dpci_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dpci_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}
