@@ -79,7 +79,7 @@ int mc_send_command(struct fsl_mc_io *mc_io, struct mc_command *cmd)
 	error = ioctl(mc_io->fd, RESMAN_SEND_MC_COMMAND, cmd);
 	if (error == -1) {
 		error = -errno;
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"ioctl(RESMAN_SEND_MC_COMMAND) failed with error %d\n",
 			error);
 	}
