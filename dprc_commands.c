@@ -1449,6 +1449,13 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			resman.cmd_option_mask &=
 				~ONE_BIT_MASK(ASSIGN_OPT_PLUGGED);
 
+			if (do_assign == false) {
+				ERROR_PRINTF(
+					"Cannot change plugged state via \'dprc unassign\'\nPlease try \'resman dprc assign --help\'\n");
+				error = -EINVAL;
+				goto out;
+			}
+
 			assert(resman.cmd_option_args[ASSIGN_OPT_PLUGGED] !=
 			       NULL);
 			state = atoi(resman.
