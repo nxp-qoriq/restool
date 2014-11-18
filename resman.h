@@ -32,6 +32,7 @@
 #define _RESMAN_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "fsl_mc_sys.h"
 #include "fsl_dpmng.h"
 #include "fsl_mc_ioctl.h"
@@ -147,14 +148,20 @@ struct resman {
 	 * Handle for the root DPRC in the system
 	 */
 	uint16_t root_dprc_handle;
+
+	/**
+	 * global flag to enable debug printing
+	 */
+	bool debug;
 };
 
 /**
- * Command-line option indices form global resman options
+ * Command-line option indices for global resman options
  */
 enum global_options {
 	GLOBAL_OPT_HELP = 0,
 	GLOBAL_OPT_VERSION,
+	GLOBAL_OPT_DEBUG,
 };
 
 int parse_object_name(const char *obj_name, char *expected_obj_type,

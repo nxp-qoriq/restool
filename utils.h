@@ -34,6 +34,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
+#include "resman.h"
 
 #define C_ASSERT(_cond) \
 	extern const char c_assert_dummy_decl[(_cond) ? 1 : -1]
@@ -43,20 +44,20 @@
 
 #define ONE_BIT_MASK(_bit_index)     (UINT32_C(0x1) << (_bit_index))
 
-#ifdef ERROR_PRINT
-#define ERROR_PRINTF(_fmt, ...)	\
-	fprintf(stderr, "%s: " _fmt, __func__, ##__VA_ARGS__)
-#else
 #define ERROR_PRINTF(_fmt, ...) \
-	printf(_fmt, ##__VA_ARGS__)
-#endif
+do { \
+	if (resman.debug) \
+		fprintf(stderr, "%s:%d " _fmt, \
+			__func__, __LINE__, ##__VA_ARGS__); \
+	else \
+		fprintf(stderr, _fmt, ##__VA_ARGS__); \
+} while (0)
 
-#ifdef DEBUG
 #define DEBUG_PRINTF(_fmt, ...)	\
-	fprintf(stderr, "DBG: %s: " _fmt, __func__, ##__VA_ARGS__)
-#else
-#define DEBUG_PRINTF(_fmt, ...)
-#endif
+do { \
+	if (resman.debug) \
+		fprintf(stderr, "DBG: %s: " _fmt, __func__, ##__VA_ARGS__); \
+} while (0)
 
 #define STRINGIFY(_x)	__STRINGIFY_EXPANDED(_x)
 

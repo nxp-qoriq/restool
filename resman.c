@@ -31,7 +31,6 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
-#include <stdbool.h>
 #include <errno.h>
 #include <assert.h>
 #include <getopt.h>
@@ -63,6 +62,11 @@ static struct option global_options[] = {
 	[GLOBAL_OPT_VERSION] = {
 		.name = "version",
 		.val = 'v',
+	},
+
+	[GLOBAL_OPT_DEBUG] = {
+		.name = "debug",
+		.val = 'd',
 	},
 
 	{ 0 },
@@ -101,6 +105,9 @@ static void print_usage(void)
 		"Valid <global-options> are:\n"
 		"   -v,--version   Displays tool version info\n"
 		"   -h,-?,--help   Displays general help info\n"
+		"   -d, --debug	   Print out DEBUG info\n"
+		"	--debug option must be used together with an object\n"
+		"	e.g. resman --debug dpni info dpni.11\n"
 		"\n"
 		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci>\n"
 		"\n"
@@ -201,7 +208,7 @@ static int parse_global_options(int argc, char *argv[],
 	resman.global_option_mask = 0;
 	for ( ; ; ) {
 		opt_index = 0;
-		c = getopt_long(argc, argv, "+h?v", global_options, NULL);
+		c = getopt_long(argc, argv, "+h?vd", global_options, NULL);
 		if (c == -1)
 			break;
 
@@ -213,6 +220,10 @@ static int parse_global_options(int argc, char *argv[],
 
 		case 'v':
 			opt_index = GLOBAL_OPT_VERSION;
+			break;
+
+		case 'd':
+			opt_index = GLOBAL_OPT_DEBUG;
 			break;
 
 		default:
@@ -404,6 +415,10 @@ int main(int argc, char *argv[])
 	bool root_dprc_opened = false;
 	struct ioctl_dprc_info root_dprc_info = { 0 };
 
+	#ifdef DEBUG
+	resman.debug = true;
+	#endif
+
 	DEBUG_PRINTF("resman built on " __DATE__ " " __TIME__ "\n");
 	error = mc_io_init(&resman.mc_io);
 	if (error != 0)
@@ -471,6 +486,15 @@ int main(int argc, char *argv[])
 		    ONE_BIT_MASK(GLOBAL_OPT_VERSION))
 			print_version();
 
+		if (resman.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_DEBUG)) {
+			resman.global_option_mask &=
+				~ONE_BIT_MASK(GLOBAL_OPT_DEBUG);
+			print_usage();
+			error = -EINVAL;
+			goto out;
+		}
+
 		if (resman.global_option_mask != 0) {
 			print_unexpected_options_error(
 				resman.global_option_mask,
@@ -478,6 +502,13 @@ int main(int argc, char *argv[])
 			error = -EINVAL;
 		}
 	} else {
+		if (resman.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_DEBUG)) {
+			resman.global_option_mask &=
+				~ONE_BIT_MASK(GLOBAL_OPT_DEBUG);
+			resman.debug = true;
+		}
+
 		int num_remaining_args;
 
 		assert(next_argv_index < argc);
