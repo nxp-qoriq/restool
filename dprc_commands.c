@@ -574,9 +574,9 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 		}
 
 		if (strcmp(obj_desc.type, "dprc") == 0 || !verbose) {
-			printf("%s.%u\n", obj_desc.type, obj_desc.id);
+			printf("%8s.%u\n", obj_desc.type, obj_desc.id);
 		} else {
-			printf("%s.%u\t(%splugged)\n", obj_desc.type,
+			printf("%8s.%u\t(%splugged)\n", obj_desc.type,
 			       obj_desc.id,
 			       (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) ?
 					"" : "un");
