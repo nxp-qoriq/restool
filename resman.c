@@ -315,7 +315,7 @@ static int parse_obj_command(const char *obj_type,
 	}
 
 	if (obj_cmd_parser == NULL) {
-		ERROR_PRINTF("error: invalid object type \'%s\'\n", argv[0]);
+		ERROR_PRINTF("error: invalid object type \'%s\'\n", obj_type);
 		print_usage();
 		error = -EINVAL;
 		goto out;
