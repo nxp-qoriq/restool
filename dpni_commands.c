@@ -651,6 +651,8 @@ static int create_dpni(const char *usage_msg)
 	char *endptr;
 	struct dpni_attr dpni_attr;
 
+	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
+
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
