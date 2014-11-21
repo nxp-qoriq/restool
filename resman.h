@@ -35,6 +35,7 @@
 #include <stdbool.h>
 #include "fsl_mc_sys.h"
 #include "fsl_dpmng.h"
+#include "fsl_dprc.h"
 #include "fsl_mc_ioctl.h"
 
 /**
@@ -164,6 +165,28 @@ enum global_options {
 	GLOBAL_OPT_DEBUG,
 };
 
+/**
+ * define generic flib operations
+ */
+typedef int flib_obj_open_t(struct fsl_mc_io *mc_io, int obj_id,
+				uint16_t *token);
+typedef int flib_obj_close_t(struct fsl_mc_io *mc_io, uint16_t token);
+typedef int flib_obj_get_irq_mask_t(struct fsl_mc_io	*mc_io,
+				uint16_t	token,
+				uint8_t		irq_index,
+				uint32_t	*mask);
+typedef int flib_obj_get_irq_status_t(struct fsl_mc_io	*mc_io,
+					uint16_t	token,
+					uint8_t		irq_index,
+					uint32_t	*status);
+
+struct flib_ops {
+	flib_obj_open_t *obj_open;
+	flib_obj_close_t *obj_close;
+	flib_obj_get_irq_mask_t *obj_get_irq_mask;
+	flib_obj_get_irq_status_t *obj_get_irq_status;
+};
+
 int parse_object_name(const char *obj_name, char *expected_obj_type,
 		      uint32_t *obj_id);
 
@@ -174,6 +197,12 @@ void print_unexpected_options_error(uint32_t option_mask,
 
 enum mc_cmd_status flib_error_to_mc_status(int error);
 const char *mc_status_to_string(enum mc_cmd_status status);
+int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
+			uint32_t target_id, char *target_type,
+			struct dprc_obj_desc *target_obj_desc,
+			uint16_t *target_parent_dprc_handle, bool *found);
+int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
+			const struct flib_ops *ops);
 
 extern struct resman resman;
 extern struct object_command dprc_commands[];

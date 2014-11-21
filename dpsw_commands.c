@@ -39,7 +39,6 @@
 #include "resman.h"
 #include "utils.h"
 #include "fsl_dpsw.h"
-#include "fsl_dprc.h"
 
 #define ALL_DPSW_OPTS (			\
 	DPSW_OPT_FLOODING_DIS |		\
@@ -174,6 +173,13 @@ static struct option dpsw_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpsw_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+static const struct flib_ops dpsw_ops = {
+	.obj_open = dpsw_open,
+	.obj_close = dpsw_close,
+	.obj_get_irq_mask = dpsw_get_irq_mask,
+	.obj_get_irq_status = dpsw_get_irq_status,
+};
+
 static int cmd_dpsw_help(void)
 {
 	static const char help_msg[] =
@@ -214,7 +220,63 @@ static void print_dpsw_options(uint64_t options)
 		printf("\tDPSW_OPT_CONTROL\n");
 }
 
-static int print_dpsw_attr(uint32_t dpsw_id)
+static int print_dpsw_endpoint(uint32_t target_id,
+				uint16_t target_parent_dprc_handle,
+				uint16_t num_ifs)
+{
+	struct dprc_endpoint endpoint1;
+	struct dprc_endpoint endpoint2;
+	int state;
+	int error = 0;
+	int k;
+
+	printf("endpoints:\n");
+	for (k = 0; k < num_ifs; ++k) {
+		memset(&endpoint1, 0, sizeof(struct dprc_endpoint));
+		memset(&endpoint2, 0, sizeof(struct dprc_endpoint));
+		memcpy(endpoint1.type, "dpsw", 5);
+		endpoint1.id = target_id;
+		endpoint1.interface_id = k;
+		error = dprc_get_connection(&resman.mc_io,
+					target_parent_dprc_handle,
+					&endpoint1,
+					&endpoint2,
+					&state);
+
+		if (error == -ENAVAIL) {
+			printf("\tinterface %d: No object associated\n", k);
+		} else if (error == 0) {
+			if (strcmp(endpoint2.type, "dpsw") == 0 ||
+			    strcmp(endpoint2.type, "dpdmux") == 0) {
+				printf("\tinterface %d: %s.%d.%d",
+					k, endpoint2.type, endpoint2.id,
+					endpoint2.interface_id);
+			} else if (0 == endpoint2.interface_id) {
+				printf("\tinterface %d: %s.%d",
+					k, endpoint2.type, endpoint2.id);
+			}
+
+			if (1 == state)
+				printf(", link is up\n");
+			else if (0 == state)
+				printf(", link is down\n");
+			else
+				printf(", link is in error state\n");
+
+		} else {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
+			return error;
+		}
+	}
+
+	return 0;
+}
+
+static int print_dpsw_attr(uint32_t dpsw_id,
+			struct dprc_obj_desc *target_obj_desc,
+			uint16_t target_parent_dprc_handle)
 {
 	uint16_t dpsw_handle;
 	int error;
@@ -250,6 +312,10 @@ static int print_dpsw_attr(uint32_t dpsw_id)
 	printf("dpsw version: %u.%u\n", dpsw_attr.version.major,
 	       dpsw_attr.version.minor);
 	printf("dpsw id: %d\n", dpsw_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_dpsw_endpoint(dpsw_id, target_parent_dprc_handle,
+				dpsw_attr.num_ifs);
 	printf("dpsw_attr.options value is: %#llx\n",
 	       (unsigned long long)dpsw_attr.options);
 	print_dpsw_options(dpsw_attr.options);
@@ -280,130 +346,33 @@ out:
 	return error;
 }
 
-static int print_dpsw_verbose(uint16_t dprc_handle,
-			      int nesting_level, uint32_t target_id)
-{
-	int num_child_devices;
-	int error = 0;
-	uint32_t irq_mask;
-	uint32_t irq_status;
-
-	assert(nesting_level <= MAX_DPRC_NESTING);
-
-	error = dprc_get_obj_count(&resman.mc_io,
-				   dprc_handle,
-				   &num_child_devices);
-	if (error < 0) {
-		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
-			     error);
-		goto out;
-	}
-
-	for (int i = 0; i < num_child_devices; i++) {
-		struct dprc_obj_desc obj_desc;
-		uint16_t child_dprc_handle;
-		uint16_t dpsw_handle;
-		int error2;
-
-		error = dprc_get_obj(
-				&resman.mc_io,
-				dprc_handle,
-				i,
-				&obj_desc);
-		if (error < 0) {
-			ERROR_PRINTF(
-				"dprc_get_object(%u) failed with error %d\n",
-				i, error);
-			goto out;
-		}
-
-		if (strcmp(obj_desc.type, "dpsw") == 0 &&
-		    target_id == (uint32_t)obj_desc.id) {
-			printf("plugged state: %splugged\n",
-			       (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) ?
-			       "" : "un");
-			printf("number of mappable regions: %u\n",
-			       obj_desc.region_count);
-			printf("number of interrupts: %u\n",
-			       obj_desc.irq_count);
-
-			error = dpsw_open(&resman.mc_io, target_id,
-					  &dpsw_handle);
-			if (error < 0) {
-				ERROR_PRINTF(
-					"dpsw_open() failed for dpsw.%u with error %d\n",
-					target_id, error);
-				goto out;
-			}
-
-			for (int j = 0; j < obj_desc.irq_count; j++) {
-				dpsw_get_irq_mask(&resman.mc_io,
-					dpsw_handle, j, &irq_mask);
-				printf(
-					"interrupt %d's mask: %#x\n",
-					j, irq_mask);
-				dpsw_get_irq_status(&resman.mc_io,
-					dpsw_handle, j, &irq_status);
-				(irq_status == 0) ?
-				printf(
-					"interrupt %d's status: %#x - no interrupt pending.\n",
-				j, irq_status) :
-				(irq_status == 1) ?
-				printf(
-					"interrupt %d's status: %#x - interrupt pending.\n",
-					j, irq_status) :
-				printf(
-					"interrupt %d's status: %#x - error status.\n",
-					j, irq_status);
-			}
-
-			error2 = dpsw_close(&resman.mc_io, dpsw_handle);
-			if (error2 < 0) {
-				ERROR_PRINTF(
-					"dpsw_close() failed with error %d\n",
-					error2);
-				if (error == 0)
-					error = error2;
-			}
-			goto out;
-		} else if (strcmp(obj_desc.type, "dprc") == 0) {
-			error = open_dprc(obj_desc.id, &child_dprc_handle);
-			if (error < 0)
-				goto out;
-
-			error = print_dpsw_verbose(child_dprc_handle,
-					  nesting_level + 1, target_id);
-
-			error2 = dprc_close(&resman.mc_io, child_dprc_handle);
-			if (error2 < 0) {
-				ERROR_PRINTF(
-					"dprc_close() failed with error %d\n",
-					error2);
-				if (error == 0)
-					error = error2;
-
-				goto out;
-			}
-		} else {
-			continue;
-		}
-	}
-
-out:
-	return error;
-}
-
 static int print_dpsw_info(uint32_t dpsw_id)
 {
 	int error;
+	struct dprc_obj_desc target_obj_desc;
+	uint16_t target_parent_dprc_handle;
+	bool found = false;
 
-	error = print_dpsw_attr(dpsw_id);
+	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpsw_id,
+				"dpsw", &target_obj_desc,
+				&target_parent_dprc_handle, &found);
+	if (error < 0)
+		goto out;
+
+	if (strcmp(target_obj_desc.type, "dpsw")) {
+		printf("dpsw.%d does not exist\n", dpsw_id);
+		return -EINVAL;
+	}
+
+	error = print_dpsw_attr(dpsw_id, &target_obj_desc,
+				target_parent_dprc_handle);
 	if (error < 0)
 		goto out;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_dpsw_verbose(resman.root_dprc_handle, 0, dpsw_id);
+		error = print_obj_verbose(&target_obj_desc, &dpsw_ops);
 	}
 
 out:

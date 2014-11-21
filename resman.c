@@ -142,6 +142,153 @@ const char *mc_status_to_string(enum mc_cmd_status status)
 	return status_strings[status];
 }
 
+int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
+			uint32_t target_id, char *target_type,
+			struct dprc_obj_desc *target_obj_desc,
+			uint16_t *target_parent_dprc_handle, bool *found)
+{
+	int num_child_devices;
+	int error = 0;
+	enum mc_cmd_status mc_status;
+
+	assert(nesting_level <= MAX_DPRC_NESTING);
+
+	if (strcmp(target_type, "dprc") == 0 &&
+	    target_id == resman.root_dprc_id) {
+		DEBUG_PRINTF("This is root dprc.\n");
+		strcpy(target_obj_desc->type, "dprc");
+		target_obj_desc->id = 1;
+		return 0;
+	}
+
+	error = dprc_get_obj_count(&resman.mc_io,
+				   dprc_handle,
+				   &num_child_devices);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	for (int i = 0; i < num_child_devices; i++) {
+		struct dprc_obj_desc obj_desc;
+		uint16_t child_dprc_handle;
+		int error2;
+
+		error = dprc_get_obj(
+				&resman.mc_io,
+				dprc_handle,
+				i,
+				&obj_desc);
+		if (error < 0) {
+			DEBUG_PRINTF(
+				"dprc_get_object(%u) failed with error %d\n",
+				i, error);
+			goto out;
+		}
+
+		DEBUG_PRINTF("it is %s.%u\n", obj_desc.type, obj_desc.id);
+
+		if (strcmp(obj_desc.type, target_type) == 0 &&
+		    target_id == (uint32_t)obj_desc.id) {
+			*target_obj_desc = obj_desc;
+			*target_parent_dprc_handle = dprc_handle;
+			DEBUG_PRINTF("object found\n");
+			*found = true;
+			goto out;
+		} else if (strcmp(obj_desc.type, "dprc") == 0) {
+			bool found2 = false;
+
+			error = open_dprc(obj_desc.id, &child_dprc_handle);
+			if (error < 0)
+				goto out;
+
+			DEBUG_PRINTF("entering %s.%u\n", obj_desc.type,
+					obj_desc.id);
+			error = find_target_obj_desc(child_dprc_handle,
+					nesting_level + 1,
+					target_id,
+					target_type,
+					target_obj_desc,
+					target_parent_dprc_handle,
+					&found2);
+
+			error2 = dprc_close(&resman.mc_io, child_dprc_handle);
+			if (error2 < 0) {
+				mc_status = flib_error_to_mc_status(error2);
+				ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
+				if (error == 0)
+					error = error2;
+
+				goto out;
+			}
+
+			DEBUG_PRINTF("exiting %s.%u\n", obj_desc.type,
+					obj_desc.id);
+			if (found2)
+				goto out;
+		} else {
+			continue;
+		}
+	}
+
+out:
+	return error;
+}
+
+int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
+			const struct flib_ops *ops)
+{
+	uint16_t obj_handle;
+	uint32_t irq_mask;
+	uint32_t irq_status;
+	enum mc_cmd_status mc_status;
+	int error = 0;
+
+	if (strcmp(target_obj_desc->type, "dprc") == 0 &&
+	    target_obj_desc->id == resman.root_dprc_id) {
+		printf("root dprc doesn't have verbose info to display\n");
+		return 0;
+	}
+
+	printf("number of mappable regions: %u\n",
+		target_obj_desc->region_count);
+	printf("number of interrupts: %u\n", target_obj_desc->irq_count);
+
+	error = ops->obj_open(&resman.mc_io, target_obj_desc->id, &obj_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	for (int j = 0; j < target_obj_desc->irq_count; j++) {
+		ops->obj_get_irq_mask(&resman.mc_io, obj_handle, j, &irq_mask);
+		printf("interrupt %d's mask: %#x\n", j, irq_mask);
+		ops->obj_get_irq_status(&resman.mc_io, obj_handle, j,
+					&irq_status);
+		(irq_status == 0) ?
+		printf("interrupt %d's status: %#x - no interrupt pending.\n",
+			j, irq_status) : (irq_status == 1) ?
+		printf("interrupt %d's status: %#x - interrupt pending.\n",
+			j, irq_status) :
+		printf("interrupt %d's status: %#x - error status.\n",
+			j, irq_status);
+	}
+
+	error = ops->obj_close(&resman.mc_io, obj_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
+	}
+
+	return error;
+}
+
 void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options)
 {

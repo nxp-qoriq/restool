@@ -40,7 +40,6 @@
 #include "resman.h"
 #include "utils.h"
 #include "fsl_dpni.h"
-#include "fsl_dprc.h"
 
 #define ALL_DPNI_OPTS (					\
 	DPNI_OPT_ALLOW_DIST_KEY_PER_TC |		\
@@ -215,6 +214,13 @@ static struct option dpni_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpni_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+static const struct flib_ops dpni_ops = {
+	.obj_open = dpni_open,
+	.obj_close = dpni_close,
+	.obj_get_irq_mask = dpni_get_irq_mask,
+	.obj_get_irq_status = dpni_get_irq_status,
+};
+
 static int cmd_dpni_help(void)
 {
 	static const char help_msg[] =
@@ -279,7 +285,56 @@ static void print_dpni_options(uint64_t options)
 		printf("\tDPNI_OPT_FS_MASK_SUPPORT\n");
 }
 
-static int print_dpni_attr(uint32_t dpni_id)
+static int print_dpni_endpoint(uint32_t target_id,
+				uint16_t target_parent_dprc_handle)
+{
+	struct dprc_endpoint endpoint1;
+	struct dprc_endpoint endpoint2;
+	int state;
+	int error = 0;
+
+	memset(&endpoint1, 0, sizeof(struct dprc_endpoint));
+	memset(&endpoint2, 0, sizeof(struct dprc_endpoint));
+
+	memcpy(endpoint1.type, "dpni", 5);
+	endpoint1.id = target_id;
+	endpoint1.interface_id = 0;
+	error = dprc_get_connection(&resman.mc_io, target_parent_dprc_handle,
+					&endpoint1, &endpoint2, &state);
+
+	if (error == -ENAVAIL) {
+		printf("endpoint: No object associated\n");
+	} else if (error == 0) {
+		if (strcmp(endpoint2.type, "dpsw") == 0 ||
+		    strcmp(endpoint2.type, "dpdmux") == 0) {
+			printf("endpoint: %s.%d.%d",
+				endpoint2.type, endpoint2.id,
+				endpoint2.interface_id);
+		} else if (0 == endpoint2.interface_id) {
+			printf("endpoint: %s.%d",
+				endpoint2.type, endpoint2.id);
+		}
+
+		if (1 == state)
+			printf(", link is up\n");
+		else if (0 == state)
+			printf(", link is down\n");
+		else
+			printf(", link is in error state\n");
+
+	} else {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int print_dpni_attr(uint32_t dpni_id,
+			struct dprc_obj_desc *target_obj_desc,
+			uint16_t target_parent_dprc_handle)
 {
 	uint16_t dpni_handle;
 	int error;
@@ -334,6 +389,9 @@ static int print_dpni_attr(uint32_t dpni_id)
 	printf("dpni version: %u.%u\n", dpni_attr.version.major,
 	       dpni_attr.version.minor);
 	printf("dpni id: %d\n", dpni_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_dpni_endpoint(dpni_id, target_parent_dprc_handle);
 	printf("link status: %d - ", link_state);
 	link_state == 0 ? printf("down\n") :
 	link_state == 1 ? printf("up\n") : printf("error state\n");
@@ -379,170 +437,33 @@ out:
 	return error;
 }
 
-static int print_dpni_verbose(uint16_t dprc_handle,
-			      int nesting_level, uint32_t target_id)
-{
-	int num_child_devices;
-	int error = 0;
-	uint32_t irq_mask;
-	uint32_t irq_status;
-
-	assert(nesting_level <= MAX_DPRC_NESTING);
-
-	error = dprc_get_obj_count(&resman.mc_io,
-				   dprc_handle,
-				   &num_child_devices);
-	if (error < 0) {
-		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
-			     error);
-		goto out;
-	}
-
-	for (int i = 0; i < num_child_devices; i++) {
-		struct dprc_obj_desc obj_desc;
-		uint16_t child_dprc_handle;
-		uint16_t dpni_handle;
-		int error2;
-		struct dprc_endpoint endpoint1;
-		struct dprc_endpoint endpoint2;
-		int state;
-
-		memset(&endpoint1, 0, sizeof(struct dprc_endpoint));
-		memset(&endpoint2, 0, sizeof(struct dprc_endpoint));
-
-		error = dprc_get_obj(
-				&resman.mc_io,
-				dprc_handle,
-				i,
-				&obj_desc);
-		if (error < 0) {
-			ERROR_PRINTF(
-				"dprc_get_object(%u) failed with error %d\n",
-				i, error);
-			goto out;
-		}
-
-		if (strcmp(obj_desc.type, "dpni") == 0 &&
-		    target_id == (uint32_t)obj_desc.id) {
-			printf("plugged state: %splugged\n",
-			       (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) ?
-			       "" : "un");
-
-			memcpy(endpoint1.type, "dpni", 5);
-			endpoint1.id = target_id;
-			endpoint1.interface_id = 0;
-			error = dprc_get_connection(&resman.mc_io, dprc_handle,
-					&endpoint1, &endpoint2, &state);
-
-			if (error == -ENAVAIL) {
-				printf("endpoint: No object associated\n");
-			} else if (error == 0) {
-				if (strcmp(endpoint2.type, "dpsw") == 0 ||
-				    strcmp(endpoint2.type, "dpdmux") == 0) {
-					printf("endpoint: %s.%d.%d",
-						endpoint2.type, endpoint2.id,
-						endpoint2.interface_id);
-				} else if (0 == endpoint2.interface_id) {
-					printf("endpoint: %s.%d",
-						endpoint2.type, endpoint2.id);
-				}
-
-				if (1 == state)
-					printf(", link is up\n");
-				else if (0 == state)
-					printf(", link is down\n");
-				else
-					printf(", link is in error state\n");
-
-			} else {
-				ERROR_PRINTF(
-					"dprc_get_connection() failed with error %d\n",
-					error);
-				goto out;
-			}
-
-			printf("number of mappable regions: %u\n",
-			       obj_desc.region_count);
-			printf("number of interrupts: %u\n",
-			       obj_desc.irq_count);
-
-			error = dpni_open(&resman.mc_io, target_id,
-					  &dpni_handle);
-			if (error < 0) {
-				ERROR_PRINTF(
-					"dpni_open() failed for dpni.%u with error %d\n",
-					target_id, error);
-				goto out;
-			}
-
-			for (int j = 0; j < obj_desc.irq_count; j++) {
-				dpni_get_irq_mask(&resman.mc_io,
-					dpni_handle, j, &irq_mask);
-				printf(
-					"interrupt %d's mask: %#x\n",
-					j, irq_mask);
-				dpni_get_irq_status(&resman.mc_io,
-					dpni_handle, j, &irq_status);
-				(irq_status == 0) ?
-				printf(
-					"interrupt %d's status: %#x - no interrupt pending.\n",
-				j, irq_status) :
-				(irq_status == 1) ?
-				printf(
-					"interrupt %d's status: %#x - interrupt pending.\n",
-					j, irq_status) :
-				printf(
-					"interrupt %d's status: %#x - error status.\n",
-					j, irq_status);
-			}
-
-			error2 = dpni_close(&resman.mc_io, dpni_handle);
-			if (error2 < 0) {
-				ERROR_PRINTF(
-					"dpni_close() failed with error %d\n",
-					error2);
-				if (error == 0)
-					error = error2;
-			}
-			goto out;
-		} else if (strcmp(obj_desc.type, "dprc") == 0) {
-			error = open_dprc(obj_desc.id, &child_dprc_handle);
-			if (error < 0)
-				goto out;
-
-			error = print_dpni_verbose(child_dprc_handle,
-					  nesting_level + 1, target_id);
-
-			error2 = dprc_close(&resman.mc_io, child_dprc_handle);
-			if (error2 < 0) {
-				ERROR_PRINTF(
-					"dprc_close() failed with error %d\n",
-					error2);
-				if (error == 0)
-					error = error2;
-
-				goto out;
-			}
-		} else {
-			continue;
-		}
-	}
-
-out:
-	return error;
-}
-
 static int print_dpni_info(uint32_t dpni_id)
 {
 	int error;
+	struct dprc_obj_desc target_obj_desc;
+	uint16_t target_parent_dprc_handle;
+	bool found = false;
 
-	error = print_dpni_attr(dpni_id);
+	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpni_id,
+				"dpni", &target_obj_desc,
+				&target_parent_dprc_handle, &found);
+	if (error < 0)
+		goto out;
+
+	if (strcmp(target_obj_desc.type, "dpni")) {
+		printf("dpni.%d does not exist\n", dpni_id);
+		return -EINVAL;
+	}
+
+	error = print_dpni_attr(dpni_id, &target_obj_desc,
+				target_parent_dprc_handle);
 	if (error < 0)
 		goto out;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_dpni_verbose(resman.root_dprc_handle, 0, dpni_id);
+		error = print_obj_verbose(&target_obj_desc, &dpni_ops);
 	}
 
 out:

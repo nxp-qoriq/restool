@@ -38,7 +38,6 @@
 #include <sys/ioctl.h>
 #include "resman.h"
 #include "utils.h"
-#include "fsl_dprc.h"
 
 #define ALL_DPRC_OPTS (				\
 	DPRC_CFG_OPT_SPAWN_ALLOWED |		\
@@ -290,6 +289,13 @@ static struct option dprc_disconnect_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dprc_disconnect_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+static const struct flib_ops dprc_ops = {
+	.obj_open = dprc_open,
+	.obj_close = dprc_close,
+	.obj_get_irq_mask = dprc_get_irq_mask,
+	.obj_get_irq_status = dprc_get_irq_status,
+};
+
 static int cmd_dprc_help(void)
 {
 	static const char help_msg[] =
@@ -353,7 +359,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 				i,
 				&obj_desc);
 		if (error < 0) {
-			ERROR_PRINTF(
+			DEBUG_PRINTF(
 				"dprc_get_object(%u) failed with error %d\n",
 				i, error);
 			goto out;
@@ -583,7 +589,7 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 			goto out;
 		}
 
-		if (strcmp(obj_desc.type, "dprc") == 0 || !verbose) {
+		if (!verbose) {
 			printf("%8s.%u\n", obj_desc.type, obj_desc.id);
 		} else {
 			printf("%8s.%u\t(%splugged)\n", obj_desc.type,
@@ -701,7 +707,8 @@ static void print_dprc_options(uint64_t options)
 		printf("\tDPRC_CFG_OPT_AIOP\n");
 }
 
-static int print_dprc_attr(uint32_t dprc_id)
+static int print_dprc_attr(uint32_t dprc_id,
+			struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dprc_handle;
 	int error;
@@ -742,7 +749,14 @@ static int print_dprc_attr(uint32_t dprc_id)
 		(unsigned long long)dprc_attr.options);
 	print_dprc_options(dprc_attr.options);
 
+	if (dprc_id == resman.root_dprc_id)
+		printf("plugged state: plugged\n");
+	else
+		printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+
 	error = 0;
+
 out:
 	if (dprc_opened) {
 		int error2;
@@ -760,130 +774,34 @@ out:
 	return error;
 }
 
-static int print_dprc_verbose(uint16_t dprc_handle,
-			     int nesting_level, uint32_t target_id)
-{
-	int num_child_devices;
-	int error = 0;
-	uint32_t irq_mask;
-	uint32_t irq_status;
-
-	assert(nesting_level <= MAX_DPRC_NESTING);
-
-	error = dprc_get_obj_count(&resman.mc_io,
-				   dprc_handle,
-				   &num_child_devices);
-	if (error < 0) {
-		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
-			     error);
-		goto out;
-	}
-
-	for (int i = 0; i < num_child_devices; i++) {
-		struct dprc_obj_desc obj_desc;
-		uint16_t child_dprc_handle;
-		int error2;
-
-		error = dprc_get_obj(
-				&resman.mc_io,
-				dprc_handle,
-				i,
-				&obj_desc);
-		if (error < 0) {
-			ERROR_PRINTF(
-				"dprc_get_object(%u) failed with error %d\n",
-				i, error);
-			goto out;
-		}
-
-		if (strcmp(obj_desc.type, "dprc") != 0)
-			continue;
-
-		if (target_id == (uint32_t)obj_desc.id) {
-			printf("number of mappable regions: %u\n",
-			       obj_desc.region_count);
-			printf("number of interrupts: %u\n",
-			       obj_desc.irq_count);
-
-			error = open_dprc(obj_desc.id, &child_dprc_handle);
-			if (error < 0)
-				goto out;
-
-			for (int j = 0; j < obj_desc.irq_count; j++) {
-				dprc_get_irq_mask(&resman.mc_io,
-					child_dprc_handle, j, &irq_mask);
-				printf(
-					"interrupt %d's mask: %#x\n",
-					j, irq_mask);
-				dprc_get_irq_status(&resman.mc_io,
-					child_dprc_handle, j, &irq_status);
-				(irq_status == 0) ?
-				printf(
-					"interrupt %d's status: %#x - no interrupt pending.\n",
-				j, irq_status) :
-				(irq_status == 1) ?
-				printf(
-					"interrupt %d's status: %#x - interrupt pending.\n",
-					j, irq_status) :
-				printf(
-					"interrupt %d's status: %#x - error status.\n",
-					j, irq_status);
-			}
-
-			error2 = dprc_close(&resman.mc_io, child_dprc_handle);
-			if (error2 < 0) {
-				ERROR_PRINTF(
-					"dprc_close() failed with error %d\n",
-					error2);
-				if (error == 0)
-					error = error2;
-			}
-			goto out;
-		}
-
-		error = open_dprc(obj_desc.id, &child_dprc_handle);
-		if (error < 0)
-			goto out;
-
-		error = print_dprc_verbose(child_dprc_handle,
-					  nesting_level + 1, target_id);
-
-		error2 = dprc_close(&resman.mc_io, child_dprc_handle);
-		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
-			if (error == 0)
-				error = error2;
-
-			goto out;
-		}
-	}
-
-out:
-	return error;
-}
-
 static int print_dprc_info(uint32_t dprc_id)
 {
 	int error;
+	struct dprc_obj_desc target_obj_desc;
+	uint16_t target_parent_dprc_handle;
+	bool found = false;
 
-	error = print_dprc_attr(dprc_id);
+	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(resman.root_dprc_handle, 0, dprc_id,
+				"dprc", &target_obj_desc,
+				&target_parent_dprc_handle, &found);
 	if (error < 0)
 		goto out;
 
-	if ((resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) &&
-	    dprc_id == resman.root_dprc_id) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		printf("root dprc doesn't have verbose info to display\n");
-		goto out;
+	if (strcmp(target_obj_desc.type, "dprc")) {
+		printf("dprc.%d does not exist\n", dprc_id);
+		return -EINVAL;
 	}
 
-	if ((resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) &&
-	    dprc_id != resman.root_dprc_id) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_dprc_verbose(resman.root_dprc_handle, 0, dprc_id);
+	error = print_dprc_attr(dprc_id, &target_obj_desc);
+	if (error < 0)
 		goto out;
+
+	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+		error = print_obj_verbose(&target_obj_desc, &dprc_ops);
 	}
+
 out:
 	return error;
 }

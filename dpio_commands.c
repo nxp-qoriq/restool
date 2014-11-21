@@ -40,7 +40,6 @@
 #include "resman.h"
 #include "utils.h"
 #include "fsl_dpio.h"
-#include "fsl_dprc.h"
 
 enum mc_cmd_status mc_status;
 
@@ -128,6 +127,13 @@ static struct option dpio_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpio_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+static const struct flib_ops dpio_ops = {
+	.obj_open = dpio_open,
+	.obj_close = dpio_close,
+	.obj_get_irq_mask = dpio_get_irq_mask,
+	.obj_get_irq_status = dpio_get_irq_status,
+};
+
 static int cmd_dpio_help(void)
 {
 	static const char help_msg[] =
@@ -145,7 +151,8 @@ static int cmd_dpio_help(void)
 	return 0;
 }
 
-static int print_dpio_attr(uint32_t dpio_id)
+static int print_dpio_attr(uint32_t dpio_id,
+			struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpio_handle;
 	int error;
@@ -181,6 +188,8 @@ static int print_dpio_attr(uint32_t dpio_id)
 	printf("dpio version: %u.%u\n", dpio_attr.version.major,
 	       dpio_attr.version.minor);
 	printf("dpio id: %d\n", dpio_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf(
 		"physical address of qbman software portal cache-enabled area: %#llx\n",
 		(unsigned long long)dpio_attr.qbman_portal_ce_paddr);
@@ -215,131 +224,32 @@ out:
 	return error;
 }
 
-static int print_dpio_verbose(uint16_t dprc_handle,
-			      int nesting_level, uint32_t target_id)
-{
-	int num_child_devices;
-	int error = 0;
-	uint32_t irq_mask;
-	uint32_t irq_status;
-
-	assert(nesting_level <= MAX_DPRC_NESTING);
-
-	error = dprc_get_obj_count(&resman.mc_io,
-				   dprc_handle,
-				   &num_child_devices);
-	if (error < 0) {
-		ERROR_PRINTF("dprc_get_object_count() failed with error %d\n",
-			     error);
-		goto out;
-	}
-
-	for (int i = 0; i < num_child_devices; i++) {
-		struct dprc_obj_desc obj_desc;
-		uint16_t child_dprc_handle;
-		uint16_t dpio_handle;
-		int error2;
-
-		error = dprc_get_obj(
-				&resman.mc_io,
-				dprc_handle,
-				i,
-				&obj_desc);
-		if (error < 0) {
-			ERROR_PRINTF(
-				"dprc_get_object(%u) failed with error %d\n",
-				i, error);
-			goto out;
-		}
-
-		if (strcmp(obj_desc.type, "dpio") == 0 &&
-		    target_id == (uint32_t)obj_desc.id) {
-			printf("plugged state: %splugged\n",
-			       (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) ?
-			       "" : "un");
-			printf("number of mappable regions: %u\n",
-			       obj_desc.region_count);
-			printf("number of interrupts: %u\n",
-			       obj_desc.irq_count);
-
-			error = dpio_open(&resman.mc_io, target_id,
-					  &dpio_handle);
-			if (error < 0) {
-				ERROR_PRINTF(
-					"dpio_open() failed for dpio.%u with error %d\n",
-					target_id, error);
-				goto out;
-			}
-
-			for (int j = 0; j < obj_desc.irq_count; j++) {
-				dpio_get_irq_mask(&resman.mc_io,
-					dpio_handle, j, &irq_mask);
-				printf(
-					"interrupt %d's mask: %#x\n",
-					j, irq_mask);
-				dpio_get_irq_status(&resman.mc_io,
-					dpio_handle, j, &irq_status);
-				(irq_status == 0) ?
-				printf(
-					"interrupt %d's status: %#x - no interrupt pending.\n",
-				j, irq_status) :
-				(irq_status == 1) ?
-				printf(
-					"interrupt %d's status: %#x - interrupt pending.\n",
-					j, irq_status) :
-				printf(
-					"interrupt %d's status: %#x - error status.\n",
-					j, irq_status);
-			}
-
-			error2 = dpio_close(&resman.mc_io, dpio_handle);
-			if (error2 < 0) {
-				ERROR_PRINTF(
-					"dpio_close() failed with error %d\n",
-					error2);
-				if (error == 0)
-					error = error2;
-			}
-			goto out;
-		} else if (strcmp(obj_desc.type, "dprc") == 0) {
-			error = open_dprc(obj_desc.id, &child_dprc_handle);
-			if (error < 0)
-				goto out;
-
-			error = print_dpio_verbose(child_dprc_handle,
-					  nesting_level + 1, target_id);
-
-			error2 = dprc_close(&resman.mc_io, child_dprc_handle);
-			if (error2 < 0) {
-				ERROR_PRINTF(
-					"dprc_close() failed with error %d\n",
-					error2);
-				if (error == 0)
-					error = error2;
-
-				goto out;
-			}
-		} else {
-			continue;
-		}
-	}
-
-out:
-	return error;
-}
-
 static int print_dpio_info(uint32_t dpio_id)
 {
 	int error;
+	struct dprc_obj_desc target_obj_desc;
+	uint16_t target_parent_dprc_handle;
+	bool found = false;
 
-	error = print_dpio_attr(dpio_id);
+	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpio_id,
+				"dpio", &target_obj_desc,
+				&target_parent_dprc_handle, &found);
+	if (error < 0)
+		goto out;
+
+	if (strcmp(target_obj_desc.type, "dpio")) {
+		printf("dpio.%d does not exist\n", dpio_id);
+		return -EINVAL;
+	}
+
+	error = print_dpio_attr(dpio_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
 		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_dpio_verbose(resman.root_dprc_handle, 0, dpio_id);
-		goto out;
+		error = print_obj_verbose(&target_obj_desc, &dpio_ops);
 	}
 
 out:
@@ -463,7 +373,9 @@ static int cmd_dpio_create(void)
 
 	error = dpio_create(&resman.mc_io, &dpio_cfg, &dpio_handle);
 	if (error < 0) {
-		ERROR_PRINTF("dpio_create() failed with error %d\n", error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
 
