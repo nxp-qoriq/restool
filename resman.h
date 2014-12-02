@@ -211,5 +211,8 @@ extern struct object_command dpio_commands[];
 extern struct object_command dpbp_commands[];
 extern struct object_command dpsw_commands[];
 extern struct object_command dpci_commands[];
+extern struct object_command dpcon_commands[];
+extern struct object_command dpseci_commands[];
+extern struct object_command dpdmux_commands[];
 
 #endif /* _RESMAN_H_ */

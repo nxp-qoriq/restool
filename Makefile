@@ -9,6 +9,9 @@ OBJS = resman.o \
        dpbp_commands.o \
        dpsw_commands.o \
        dpci_commands.o \
+       dpcon_commands.o \
+       dpseci_commands.o \
+       dpdmux_commands.o \
        dprc.o \
        dpmng.o \
        dpni.o \
@@ -16,6 +19,9 @@ OBJS = resman.o \
        dpio.o \
        dpsw.o \
        dpci.o \
+       dpcon.o \
+       dpseci.o \
+       dpdmux.o \
        fsl_mc_sys.o
 
 CFLAGS = ${EXTRA_CFLAGS} \

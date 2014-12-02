@@ -51,7 +51,7 @@
 #define MC_PORTAL_PADDR_TO_PORTAL_ID(_portal_paddr) \
 	(((_portal_paddr) - MC_PORTALS_BASE_PADDR) / MC_PORTAL_STRIDE)
 
-static const char resman_version[] = "0.4";
+static const char resman_version[] = "0.5";
 
 static struct option global_options[] = {
 	[GLOBAL_OPT_HELP] = {
@@ -81,6 +81,9 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 	{ .obj_type = "dpbp", .obj_commands = dpbp_commands },
 	{ .obj_type = "dpsw", .obj_commands = dpsw_commands },
 	{ .obj_type = "dpci", .obj_commands = dpci_commands },
+	{ .obj_type = "dpcon", .obj_commands = dpcon_commands },
+	{ .obj_type = "dpseci", .obj_commands = dpseci_commands },
+	{ .obj_type = "dpdmux", .obj_commands = dpdmux_commands },
 };
 
 struct resman resman;
@@ -313,7 +316,7 @@ static void print_usage(void)
 		"	--debug option must be used together with an object\n"
 		"	e.g. resman --debug dpni info dpni.11\n"
 		"\n"
-		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci>\n"
+		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux>\n"
 		"\n"
 		"Valid commands vary for each object type.  Use the \'help\'\n"
 		"command to see detailed usage info for an object.  The following\n"
