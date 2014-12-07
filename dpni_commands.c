@@ -713,7 +713,7 @@ static int create_dpni(const char *usage_msg)
 
 		dpni_cfg.adv.max_tcs = val;
 	} else {
-		dpni_cfg.adv.max_tcs = 2; /* set default value 2 */
+		dpni_cfg.adv.max_tcs = 1; /* set default value 1 */
 	}
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_DIST_PER_TC)) {
@@ -732,7 +732,7 @@ static int create_dpni(const char *usage_msg)
 	} else {
 		if (dpni_cfg.adv.max_tcs <= DPNI_MAX_TC) {
 			for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
-				dpni_cfg.adv.max_dist_per_tc[i] = 2;
+				dpni_cfg.adv.max_dist_per_tc[i] = 1;
 		} else {
 			ERROR_PRINTF("max_tcs is out of effective range\n");
 			return -EINVAL;
@@ -753,7 +753,7 @@ static int create_dpni(const char *usage_msg)
 
 		dpni_cfg.adv.max_senders = val;
 	} else {
-		dpni_cfg.adv.max_senders = 2;
+		dpni_cfg.adv.max_senders = 1;
 	}
 
 	if (resman.cmd_option_mask &
@@ -933,6 +933,7 @@ static int cmd_dpni_create(void)
 		"	DPNI_OPT_QOS\n"
 		"--max-tcs=<number>\n"
 		"	Specifies the maximum number of traffic-classes\n"
+		"	0 will be treated as 1\n"
 		"--max-dist-per-tc=<dist-size>,<dist-size>,…\n"
 		"	Comma separated list of counts specifying the\n"
 		"	maximum distribution's size per RX traffic-class\n"
