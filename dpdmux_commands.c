@@ -512,8 +512,7 @@ static int create_dpdmux(const char *usage_msg)
 			return error;
 		}
 	} else {
-		dpdmux_cfg.adv.options = DPDMUX_OPT_REPLICATION_DIS |
-				       DPDMUX_OPT_BRIDGE_EN;
+		dpdmux_cfg.adv.options = 0;
 	}
 
 	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_METHOD)) {
@@ -684,6 +683,7 @@ static int cmd_dpdmux_create(void)
 		"   Where <options-mask> is a comma separated list of DPDMUX options:\n"
 		"	DPDMUX_OPT_REPLICATION_DIS\n"
 		"	DPDMUX_OPT_BRIDGE_EN\n"
+		"   Default is 0\n"
 		"--max-dmat-entries=<number>\n"
 		"   Max entries in DMux address table. Default is 64.\n"
 		"--max-mc-groups=<number>\n"
