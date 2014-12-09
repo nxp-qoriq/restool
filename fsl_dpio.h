@@ -178,6 +178,13 @@ int dpio_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en);
  */
 int dpio_reset(struct fsl_mc_io *mc_io, uint16_t token);
 
+/*!
+ * @name DPIO IRQ Index and Events
+ */
+#define DPIO_IRQ_SWP_INDEX				0
+/*!< Irq software-portal index */
+/* @} */
+
 /**
  * @brief	Set IRQ information for the DPIO to trigger an interrupt.
  *

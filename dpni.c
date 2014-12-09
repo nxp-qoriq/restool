@@ -29,7 +29,6 @@
 * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 * POSSIBILITY OF SUCH DAMAGE.
 */
-
 #include <errno.h>
 #include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
@@ -53,6 +52,13 @@ static int build_extract_cfg_extention(struct dpkg_profile_cfg *cfg,
 		uint8_t constant;
 		uint8_t num_of_repeats;
 	} u_cfg[DPKG_MAX_NUM_OF_EXTRACTS];
+
+	if (!ext_params) {
+		if (!cfg)
+			return 0;
+
+		return -EINVAL;
+	}
 
 	for (i = 0; i < DPKG_MAX_NUM_OF_EXTRACTS; i++) {
 		switch (cfg->extracts[i].type) {

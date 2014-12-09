@@ -900,7 +900,7 @@ int dpsw_if_get_max_frame_length(struct fsl_mc_io *mc_io,
 	if (err)
 		return err;
 
-	DPSW_CMD_IF_GET_MAX_FRAME_LENGTH(cmd, *frame_length);
+	DPSW_RSP_IF_GET_MAX_FRAME_LENGTH(cmd, *frame_length);
 
 	return 0;
 }
@@ -923,7 +923,7 @@ int dpsw_if_get_link_state(struct fsl_mc_io	*mc_io,
 	if (err)
 		return err;
 
-	DPSW_CMD_IF_GET_LINK_STATE(cmd, *state);
+	DPSW_RSP_IF_GET_LINK_STATE(cmd, *state);
 
 	return 0;
 }

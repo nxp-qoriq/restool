@@ -34,22 +34,22 @@
 
 /* DPIO Version */
 #define DPIO_VER_MAJOR				2
-#define DPIO_VER_MINOR				0
+#define DPIO_VER_MINOR				1
 
 /* Command IDs */
-#define DPIO_CMDID_CLOSE				0x800
-#define DPIO_CMDID_OPEN					0x803
-#define DPIO_CMDID_CREATE				0x903
-#define DPIO_CMDID_DESTROY				0x900
+#define DPIO_CMDID_CLOSE					0x800
+#define DPIO_CMDID_OPEN						0x803
+#define DPIO_CMDID_CREATE					0x903
+#define DPIO_CMDID_DESTROY					0x900
 
-#define DPIO_CMDID_ENABLE				0x002
-#define DPIO_CMDID_DISABLE				0x003
-#define DPIO_CMDID_GET_ATTR				0x004
-#define DPIO_CMDID_RESET				0x005
+#define DPIO_CMDID_ENABLE					0x002
+#define DPIO_CMDID_DISABLE					0x003
+#define DPIO_CMDID_GET_ATTR					0x004
+#define DPIO_CMDID_RESET					0x005
 #define DPIO_CMDID_IS_ENABLED				0x006
 
-#define DPIO_CMDID_SET_IRQ				0x010
-#define DPIO_CMDID_GET_IRQ				0x011
+#define DPIO_CMDID_SET_IRQ					0x010
+#define DPIO_CMDID_GET_IRQ					0x011
 #define DPIO_CMDID_SET_IRQ_ENABLE			0x012
 #define DPIO_CMDID_GET_IRQ_ENABLE			0x013
 #define DPIO_CMDID_SET_IRQ_MASK				0x014

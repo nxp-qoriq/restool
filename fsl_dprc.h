@@ -224,22 +224,22 @@ int dprc_reset_container(struct fsl_mc_io *mc_io,
 /*!
  * @name Object irq events
  */
-#define DPRC_IRQ_EVENT_OBJ_ASSIGNED		0x00000001
-/*!< IRQ event - Indicates that a new object assigned to the container */
-#define DPRC_IRQ_EVENT_OBJ_UNASSIGNED		0x00000002
-/*!< IRQ event - Indicates that an object was unassigned from the container */
-#define DPRC_IRQ_EVENT_RES_ASSIGNED		0x00000004
-/*!< IRQ event - Indicates that resources assigned to the container */
-#define DPRC_IRQ_EVENT_RES_UNASSIGNED		0x00000008
-/*!< IRQ event - Indicates that resources unassigned from the container */
+#define DPRC_IRQ_EVENT_OBJ_ADDED			0x00000001
+/*!< IRQ event - Indicates that an object was added to the container */
+#define DPRC_IRQ_EVENT_OBJ_REMOVED			0x00000002
+/*!< IRQ event - Indicates that an object was removed from the container */
+#define DPRC_IRQ_EVENT_RES_ADDED			0x00000004
+/*!< IRQ event - Indicates that resources were added to the container */
+#define DPRC_IRQ_EVENT_RES_REMOVED			0x00000008
+/*!< IRQ event - Indicates that resources were removed from the container */
 #define DPRC_IRQ_EVENT_CONTAINER_DESTROYED	0x00000010
-/*!< IRQ event - Indicates that one of the descendant containers that opened by
- * this container is destroyed
- */
-#define DPRC_IRQ_EVENT_OBJ_DESTROYED		0x00000011
-/*!< IRQ event - Indicates that on one of the container's opened object is
- * destroyed
- */
+/*!< IRQ event - Indicates that one of the descendant containers opened by
+ * this container is destroyed */
+#define DPRC_IRQ_EVENT_OBJ_DESTROYED		0x00000020
+/*!< IRQ event - Indicates that one of the container's objects was
+ destroyed */
+#define DPRC_IRQ_EVENT_OBJ_CREATED			0x00000040
+/*!< IRQ event - Indicates that a new object was created in the container */
 /* @} */
 
 /**
