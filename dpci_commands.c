@@ -151,7 +151,6 @@ static int print_dpci_attr(uint32_t dpci_id,
 	struct dpci_peer_attr dpci_peer_attr;
 	bool dpci_opened = false;
 	int link_state;
-	int peer;
 
 	error = dpci_open(&resman.mc_io, dpci_id, &dpci_handle);
 	if (error < 0) {
@@ -179,8 +178,14 @@ static int print_dpci_attr(uint32_t dpci_id,
 	}
 	assert(dpci_id == (uint32_t)dpci_attr.id);
 
-	peer = dpci_get_peer_attributes(&resman.mc_io, dpci_handle,
+	error = dpci_get_peer_attributes(&resman.mc_io, dpci_handle,
 					 &dpci_peer_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
 
 	error = dpci_get_link_state(&resman.mc_io, dpci_handle, &link_state);
 	if (error < 0) {
@@ -198,12 +203,12 @@ static int print_dpci_attr(uint32_t dpci_id,
 	printf("num_of_priorities: %u\n",
 	       (unsigned int)dpci_attr.num_of_priorities);
 	printf("connected peer: ");
-	if (0 == peer) {
+	if (-1 == dpci_peer_attr.peer_id) {
+		printf("no peer\n");
+	} else {
 		printf("dpci.%d\n", dpci_peer_attr.peer_id);
 		printf("peer's num_of_priorities: %u\n",
 		       (unsigned int)dpci_peer_attr.num_of_priorities);
-	} else {
-		printf("no peer\n");
 	}
 	printf("link status: %d - ", link_state);
 	link_state == 0 ? printf("down\n") :
