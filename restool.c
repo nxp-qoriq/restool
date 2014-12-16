@@ -35,7 +35,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dprc.h"
@@ -51,7 +51,7 @@
 #define MC_PORTAL_PADDR_TO_PORTAL_ID(_portal_paddr) \
 	(((_portal_paddr) - MC_PORTALS_BASE_PADDR) / MC_PORTAL_STRIDE)
 
-static const char resman_version[] = "0.5";
+static const char restool_version[] = "0.5";
 
 static struct option global_options[] = {
 	[GLOBAL_OPT_HELP] = {
@@ -86,7 +86,7 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 	{ .obj_type = "dpdmux", .obj_commands = dpdmux_commands },
 };
 
-struct resman resman;
+struct restool restool;
 
 enum mc_cmd_status flib_error_to_mc_status(int error)
 {
@@ -157,14 +157,14 @@ int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
 	assert(nesting_level <= MAX_DPRC_NESTING);
 
 	if (strcmp(target_type, "dprc") == 0 &&
-	    target_id == resman.root_dprc_id) {
+	    target_id == restool.root_dprc_id) {
 		DEBUG_PRINTF("This is root dprc.\n");
 		strcpy(target_obj_desc->type, "dprc");
 		target_obj_desc->id = 1;
 		return 0;
 	}
 
-	error = dprc_get_obj_count(&resman.mc_io,
+	error = dprc_get_obj_count(&restool.mc_io,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -180,7 +180,7 @@ int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
 		int error2;
 
 		error = dprc_get_obj(
-				&resman.mc_io,
+				&restool.mc_io,
 				dprc_handle,
 				i,
 				&obj_desc);
@@ -217,7 +217,7 @@ int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
 					target_parent_dprc_handle,
 					&found2);
 
-			error2 = dprc_close(&resman.mc_io, child_dprc_handle);
+			error2 = dprc_close(&restool.mc_io, child_dprc_handle);
 			if (error2 < 0) {
 				mc_status = flib_error_to_mc_status(error2);
 				ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -251,7 +251,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 	int error = 0;
 
 	if (strcmp(target_obj_desc->type, "dprc") == 0 &&
-	    target_obj_desc->id == resman.root_dprc_id) {
+	    target_obj_desc->id == restool.root_dprc_id) {
 		printf("root dprc doesn't have verbose info to display\n");
 		return 0;
 	}
@@ -260,7 +260,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 		target_obj_desc->region_count);
 	printf("number of interrupts: %u\n", target_obj_desc->irq_count);
 
-	error = ops->obj_open(&resman.mc_io, target_obj_desc->id, &obj_handle);
+	error = ops->obj_open(&restool.mc_io, target_obj_desc->id, &obj_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -269,9 +269,9 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 	}
 
 	for (int j = 0; j < target_obj_desc->irq_count; j++) {
-		ops->obj_get_irq_mask(&resman.mc_io, obj_handle, j, &irq_mask);
+		ops->obj_get_irq_mask(&restool.mc_io, obj_handle, j, &irq_mask);
 		printf("interrupt %d's mask: %#x\n", j, irq_mask);
-		ops->obj_get_irq_status(&resman.mc_io, obj_handle, j,
+		ops->obj_get_irq_status(&restool.mc_io, obj_handle, j,
 					&irq_status);
 		(irq_status == 0) ?
 		printf("interrupt %d's status: %#x - no interrupt pending.\n",
@@ -282,7 +282,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 			j, irq_status);
 	}
 
-	error = ops->obj_close(&resman.mc_io, obj_handle);
+	error = ops->obj_close(&restool.mc_io, obj_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -307,14 +307,14 @@ static void print_usage(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman [<global-options>] <object-type> <command> <object-name> [ARGS...]\n"
+		"Usage: restool [<global-options>] <object-type> <command> <object-name> [ARGS...]\n"
 		"\n"
 		"Valid <global-options> are:\n"
 		"   -v,--version   Displays tool version info\n"
 		"   -h,-?,--help   Displays general help info\n"
 		"   -d, --debug	   Print out DEBUG info\n"
 		"	--debug option must be used together with an object\n"
-		"	e.g. resman --debug dpni info dpni.11\n"
+		"	e.g. restool --debug dpni info dpni.11\n"
 		"\n"
 		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux>\n"
 		"\n"
@@ -333,18 +333,18 @@ static void print_usage(void)
 		"\n";
 
 	printf(usage_msg);
-	resman.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
+	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
 }
 
 static void print_version(void)
 {
-	printf("Freescale MC resman tool version %s\n", resman_version);
+	printf("Freescale MC restool tool version %s\n", restool_version);
 	printf("MC firmware version: %u.%u.%u\n",
-	       resman.mc_fw_version.major,
-	       resman.mc_fw_version.minor,
-	       resman.mc_fw_version.revision);
+	       restool.mc_fw_version.major,
+	       restool.mc_fw_version.minor,
+	       restool.mc_fw_version.revision);
 
-	resman.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_VERSION);
+	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_VERSION);
 }
 
 int parse_object_name(const char *obj_name, char *expected_obj_type,
@@ -374,7 +374,7 @@ int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 {
 	int error;
 
-	error = dprc_open(&resman.mc_io,
+	error = dprc_open(&restool.mc_io,
 			  dprc_id,
 			  dprc_handle);
 	if (error < 0) {
@@ -389,7 +389,7 @@ int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 			"dprc_open() returned invalid handle (auth 0) for dprc.%u\n",
 			dprc_id);
 
-		(void)dprc_close(&resman.mc_io, *dprc_handle);
+		(void)dprc_close(&restool.mc_io, *dprc_handle);
 		error = -ENOENT;
 		goto out;
 	}
@@ -412,7 +412,7 @@ static int parse_global_options(int argc, char *argv[],
 	optind = 1;
 	optarg = NULL;
 
-	resman.global_option_mask = 0;
+	restool.global_option_mask = 0;
 	for ( ; ; ) {
 		opt_index = 0;
 		c = getopt_long(argc, argv, "+h?vd", global_options, NULL);
@@ -438,18 +438,18 @@ static int parse_global_options(int argc, char *argv[],
 		}
 
 		assert((unsigned int)opt_index < MAX_NUM_CMD_LINE_OPTIONS);
-		if (resman.global_option_mask & ONE_BIT_MASK(opt_index)) {
+		if (restool.global_option_mask & ONE_BIT_MASK(opt_index)) {
 			ERROR_PRINTF("Duplicated option: %s\n",
 				     global_options[opt_index].name);
 			error = -EINVAL;
 			goto error;
 		}
 
-		resman.global_option_mask |= ONE_BIT_MASK(opt_index);
+		restool.global_option_mask |= ONE_BIT_MASK(opt_index);
 		if (global_options[opt_index].has_arg)
-			resman.global_option_args[opt_index] = optarg;
+			restool.global_option_args[opt_index] = optarg;
 		else
-			resman.global_option_args[opt_index] = NULL;
+			restool.global_option_args[opt_index] = NULL;
 	}
 
 	DEBUG_PRINTF("optind: %d, argc: %d\n", optind, argc);
@@ -473,7 +473,7 @@ static int parse_cmd_options(int argc, char *argv[],
 	optind = 1;
 	optarg = NULL;
 
-	resman.cmd_option_mask = 0;
+	restool.cmd_option_mask = 0;
 	assert(options != NULL);
 
 	for ( ; ; ) {
@@ -487,18 +487,18 @@ static int parse_cmd_options(int argc, char *argv[],
 		}
 
 		assert((unsigned int)opt_index < MAX_NUM_CMD_LINE_OPTIONS);
-		if (resman.cmd_option_mask & ONE_BIT_MASK(opt_index)) {
+		if (restool.cmd_option_mask & ONE_BIT_MASK(opt_index)) {
 			ERROR_PRINTF("Duplicated option: %s\n",
 				     options[opt_index].name);
 			error = -EINVAL;
 			goto error;
 		}
 
-		resman.cmd_option_mask |= ONE_BIT_MASK(opt_index);
+		restool.cmd_option_mask |= ONE_BIT_MASK(opt_index);
 		if (options[opt_index].has_arg)
-			resman.cmd_option_args[opt_index] = optarg;
+			restool.cmd_option_args[opt_index] = optarg;
 		else
-			resman.cmd_option_args[opt_index] = NULL;
+			restool.cmd_option_args[opt_index] = NULL;
 	}
 
 	DEBUG_PRINTF("optind: %d, argc: %d\n", optind, argc);
@@ -558,14 +558,14 @@ static int parse_obj_command(const char *obj_type,
 		goto out;
 	}
 
-	resman.obj_cmd = obj_cmd;
+	restool.obj_cmd = obj_cmd;
 
 	if (argc >= 2 && argv[1][0] != '-') {
-		resman.obj_name = argv[1];
+		restool.obj_name = argv[1];
 		argv++;
 		argc--;
 	} else {
-		resman.obj_name = NULL;
+		restool.obj_name = NULL;
 	}
 
 	/*
@@ -602,8 +602,8 @@ static int parse_obj_command(const char *obj_type,
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask != 0) {
-		print_unexpected_options_error(resman.cmd_option_mask,
+	if (restool.cmd_option_mask != 0) {
+		print_unexpected_options_error(restool.cmd_option_mask,
 					       obj_cmd->options);
 		error = -EINVAL;
 	}
@@ -623,41 +623,41 @@ int main(int argc, char *argv[])
 	struct ioctl_dprc_info root_dprc_info = { 0 };
 
 	#ifdef DEBUG
-	resman.debug = true;
+	restool.debug = true;
 	#endif
 
-	DEBUG_PRINTF("resman built on " __DATE__ " " __TIME__ "\n");
-	error = mc_io_init(&resman.mc_io);
+	DEBUG_PRINTF("restool built on " __DATE__ " " __TIME__ "\n");
+	error = mc_io_init(&restool.mc_io);
 	if (error != 0)
 		goto out;
 
 	mc_io_initialized = true;
-	DEBUG_PRINTF("resman.mc_io.fd: %d\n", resman.mc_io.fd);
+	DEBUG_PRINTF("restool.mc_io.fd: %d\n", restool.mc_io.fd);
 
-	error = mc_get_version(&resman.mc_io, &resman.mc_fw_version);
+	error = mc_get_version(&restool.mc_io, &restool.mc_fw_version);
 	if (error != 0) {
 		ERROR_PRINTF("mc_get_version() failed with error %d\n",
 			     error);
 		goto out;
 	}
 
-	if (MC_VER_MAJOR != resman.mc_fw_version.major)
+	if (MC_VER_MAJOR != restool.mc_fw_version.major)
 		printf(
 			"ERROR: MC firmware major version mismatch (found: %d, expected: %d)\n",
-			resman.mc_fw_version.major, MC_VER_MAJOR);
+			restool.mc_fw_version.major, MC_VER_MAJOR);
 
-	if (MC_VER_MINOR != resman.mc_fw_version.minor)
+	if (MC_VER_MINOR != restool.mc_fw_version.minor)
 		printf(
 			"WARNING: MC Firmware minor version mismatch (found: %d, expected: %d)\n",
-			resman.mc_fw_version.minor, MC_VER_MINOR);
+			restool.mc_fw_version.minor, MC_VER_MINOR);
 
 	DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
-		     resman.mc_fw_version.major,
-		     resman.mc_fw_version.minor,
-		     resman.mc_fw_version.revision);
+		     restool.mc_fw_version.major,
+		     restool.mc_fw_version.minor,
+		     restool.mc_fw_version.revision);
 
-	DEBUG_PRINTF("calling ioctl(RESMAN_GET_ROOT_DPRC_INFO)\n");
-	error = ioctl(resman.mc_io.fd, RESMAN_GET_ROOT_DPRC_INFO,
+	DEBUG_PRINTF("calling ioctl(RESTOOL_GET_ROOT_DPRC_INFO)\n");
+	error = ioctl(restool.mc_io.fd, RESTOOL_GET_ROOT_DPRC_INFO,
 		      &root_dprc_info);
 	if (error == -1) {
 		error = -errno;
@@ -668,8 +668,8 @@ int main(int argc, char *argv[])
 		     root_dprc_info.dprc_id,
 		     root_dprc_info.dprc_handle);
 
-	resman.root_dprc_id = root_dprc_info.dprc_id;
-	error = open_dprc(resman.root_dprc_id, &resman.root_dprc_handle);
+	restool.root_dprc_id = root_dprc_info.dprc_id;
+	error = open_dprc(restool.root_dprc_id, &restool.root_dprc_handle);
 	if (error < 0)
 		goto out;
 
@@ -679,49 +679,49 @@ int main(int argc, char *argv[])
 		goto out;
 
 	if (next_argv_index == argc) {
-		if (resman.global_option_mask == 0) {
+		if (restool.global_option_mask == 0) {
 			ERROR_PRINTF("Incomplete command line\n");
 			print_usage();
 			error = -EINVAL;
 			goto out;
 		}
 
-		if (resman.global_option_mask & ONE_BIT_MASK(GLOBAL_OPT_HELP))
+		if (restool.global_option_mask & ONE_BIT_MASK(GLOBAL_OPT_HELP))
 			print_usage();
 
-		if (resman.global_option_mask &
+		if (restool.global_option_mask &
 		    ONE_BIT_MASK(GLOBAL_OPT_VERSION))
 			print_version();
 
-		if (resman.global_option_mask &
+		if (restool.global_option_mask &
 		    ONE_BIT_MASK(GLOBAL_OPT_DEBUG)) {
-			resman.global_option_mask &=
+			restool.global_option_mask &=
 				~ONE_BIT_MASK(GLOBAL_OPT_DEBUG);
 			print_usage();
 			error = -EINVAL;
 			goto out;
 		}
 
-		if (resman.global_option_mask != 0) {
+		if (restool.global_option_mask != 0) {
 			print_unexpected_options_error(
-				resman.global_option_mask,
+				restool.global_option_mask,
 				global_options);
 			error = -EINVAL;
 		}
 	} else {
-		if (resman.global_option_mask &
+		if (restool.global_option_mask &
 		    ONE_BIT_MASK(GLOBAL_OPT_DEBUG)) {
-			resman.global_option_mask &=
+			restool.global_option_mask &=
 				~ONE_BIT_MASK(GLOBAL_OPT_DEBUG);
-			resman.debug = true;
+			restool.debug = true;
 		}
 
 		int num_remaining_args;
 
 		assert(next_argv_index < argc);
-		if (resman.global_option_mask != 0) {
+		if (restool.global_option_mask != 0) {
 			print_unexpected_options_error(
-				resman.global_option_mask,
+				restool.global_option_mask,
 				global_options);
 			print_usage();
 			error = -EINVAL;
@@ -747,7 +747,7 @@ out:
 	if (root_dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, resman.root_dprc_handle);
+		error2 = dprc_close(&restool.mc_io, restool.root_dprc_handle);
 		if (error2 < 0) {
 			ERROR_PRINTF("dprc_close() failed with error %d\n",
 				     error2);
@@ -757,7 +757,7 @@ out:
 	}
 
 	if (mc_io_initialized)
-		mc_io_cleanup(&resman.mc_io);
+		mc_io_cleanup(&restool.mc_io);
 
 	return error;
 }

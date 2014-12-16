@@ -37,7 +37,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 #include "fsl_dpni.h"
 
@@ -225,7 +225,7 @@ static int cmd_dpni_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"resman dpni <command> [--help] [ARGS...]\n"
+		"restool dpni <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPNI object.\n"
 		"   create - creates a new child DPNI under the root DPRC.\n"
@@ -299,7 +299,7 @@ static int print_dpni_endpoint(uint32_t target_id,
 	memcpy(endpoint1.type, "dpni", 5);
 	endpoint1.id = target_id;
 	endpoint1.interface_id = 0;
-	error = dprc_get_connection(&resman.mc_io, target_parent_dprc_handle,
+	error = dprc_get_connection(&restool.mc_io, target_parent_dprc_handle,
 					&endpoint1, &endpoint2, &state);
 
 	if (error == -ENAVAIL) {
@@ -343,7 +343,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	bool dpni_opened = false;
 	int link_state;
 
-	error = dpni_open(&resman.mc_io, dpni_id, &dpni_handle);
+	error = dpni_open(&restool.mc_io, dpni_id, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -360,7 +360,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	}
 
 	memset(&dpni_attr, 0, sizeof(dpni_attr));
-	error = dpni_get_attributes(&resman.mc_io, dpni_handle, &dpni_attr);
+	error = dpni_get_attributes(&restool.mc_io, dpni_handle, &dpni_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -370,7 +370,8 @@ static int print_dpni_attr(uint32_t dpni_id,
 	assert(dpni_id == (uint32_t)dpni_attr.id);
 	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
 
-	error = dpni_get_primary_mac_addr(&resman.mc_io, dpni_handle, mac_addr);
+	error = dpni_get_primary_mac_addr(&restool.mc_io,
+					dpni_handle, mac_addr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -378,7 +379,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 		goto out;
 	}
 
-	error = dpni_get_link_state(&resman.mc_io, dpni_handle, &link_state);
+	error = dpni_get_link_state(&restool.mc_io, dpni_handle, &link_state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -424,7 +425,7 @@ out:
 	if (dpni_opened) {
 		int error2;
 
-		error2 = dpni_close(&resman.mc_io, dpni_handle);
+		error2 = dpni_close(&restool.mc_io, dpni_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -445,7 +446,7 @@ static int print_dpni_info(uint32_t dpni_id)
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpni_id,
+	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpni_id,
 				"dpni", &target_obj_desc,
 				&target_parent_dprc_handle, &found);
 	if (error < 0)
@@ -461,8 +462,8 @@ static int print_dpni_info(uint32_t dpni_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_obj_verbose(&target_obj_desc, &dpni_ops);
 	}
 
@@ -474,32 +475,32 @@ static int cmd_dpni_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpni info <dpni-object> [--verbose]\n"
-		"   e.g. resman dpni info dpni.7\n"
+		"Usage: restool dpni info <dpni-object> [--verbose]\n"
+		"   e.g. restool dpni info dpni.7\n"
 		"\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
-		"   e.g. resman dpni info dpni.7 --verbose\n"
+		"   e.g. restool dpni info dpni.7 --verbose\n"
 		"\n";
 
 	uint32_t obj_id;
 	int error;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpni", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpni", &obj_id);
 	if (error < 0)
 		goto out;
 
@@ -653,23 +654,23 @@ static int create_dpni(const char *usage_msg)
 
 	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name != NULL) {
+	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     resman.obj_name);
+			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 		error = parse_dpni_create_options(
-				resman.cmd_option_args[CREATE_OPT_OPTIONS],
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
 				&dpni_cfg.adv.options);
 		if (error < 0) {
 			ERROR_PRINTF(
@@ -682,15 +683,15 @@ static int create_dpni(const char *usage_msg)
 				       DPNI_OPT_MULTICAST_FILTER;
 	}
 
-	if (!(resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ADDR))) {
+	if (!(restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ADDR))) {
 		ERROR_PRINTF("--mac-addr option missing\n");
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ADDR);
+	restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ADDR);
 	error  = parse_dpni_mac_addr(
-			resman.cmd_option_args[CREATE_OPT_MAC_ADDR],
+			restool.cmd_option_args[CREATE_OPT_MAC_ADDR],
 			dpni_cfg.mac_addr);
 	if (error < 0) {
 		ERROR_PRINTF(
@@ -699,10 +700,10 @@ static int create_dpni(const char *usage_msg)
 		return error;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_TCS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_TCS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_TCS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_TCS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_TCS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_TCS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -716,11 +717,12 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_tcs = 1; /* set default value 1 */
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_DIST_PER_TC)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask &
+	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_PER_TC)) {
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_PER_TC);
 		error = parse_dpni_max_dist_per_tc(
-			resman.cmd_option_args[CREATE_OPT_MAX_DIST_PER_TC],
+			restool.cmd_option_args[CREATE_OPT_MAX_DIST_PER_TC],
 			dpni_cfg.adv.max_dist_per_tc,
 			dpni_cfg.adv.max_tcs);
 		if (error < 0) {
@@ -739,10 +741,11 @@ static int create_dpni(const char *usage_msg)
 		}
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS)) {
+		restool.cmd_option_mask &=
+				~ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_SENDERS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_SENDERS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -756,12 +759,12 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_senders = 1;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_UNICAST_FILTERS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_UNICAST_FILTERS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -775,12 +778,12 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_unicast_filters = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_MULTICAST_FILTERS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_MULTICAST_FILTERS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -794,12 +797,12 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_multicast_filters = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_VLAN_FILTERS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_VLAN_FILTERS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -813,11 +816,12 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_vlan_filters = 0;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask &
+	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES)) {
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_QOS_ENTRIES];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_QOS_ENTRIES];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -831,12 +835,12 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_qos_entries = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_QOS_KEY_SIZE];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_QOS_KEY_SIZE];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -850,15 +854,15 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_qos_key_size = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE);
 		dpni_cfg.adv.max_dist_key_size = strtol(
-			resman.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE],
+			restool.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE],
 			(char **)NULL, 0);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -872,7 +876,7 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_dist_key_size = 0;
 	}
 
-	error = dpni_create(&resman.mc_io, &dpni_cfg, &dpni_handle);
+	error = dpni_create(&restool.mc_io, &dpni_cfg, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -881,7 +885,7 @@ static int create_dpni(const char *usage_msg)
 	}
 
 	memset(&dpni_attr, 0, sizeof(struct dpni_attr));
-	error = dpni_get_attributes(&resman.mc_io, dpni_handle, &dpni_attr);
+	error = dpni_get_attributes(&restool.mc_io, dpni_handle, &dpni_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -890,7 +894,7 @@ static int create_dpni(const char *usage_msg)
 	}
 	printf("dpni.%d is created in dprc.1\n", dpni_attr.id);
 
-	error = dpni_close(&resman.mc_io, dpni_handle);
+	error = dpni_close(&restool.mc_io, dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -904,9 +908,9 @@ static int cmd_dpni_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpni create [OPTIONS]\n"
+		"Usage: restool dpni create [OPTIONS]\n"
 		"   e.g. create a DPNI object with all default options:\n"
-		"	resman dpni create\n"
+		"	restool dpni create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPNI by default options\n"
@@ -964,8 +968,8 @@ static int cmd_dpni_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpni destroy <dpni-object>\n"
-		"   e.g. resman dpni destroy dpni.9\n"
+		"Usage: restool dpni destroy <dpni-object>\n"
+		"   e.g. restool dpni destroy dpni.9\n"
 		"\n";
 
 	int error;
@@ -975,24 +979,24 @@ static int cmd_dpni_destroy(void)
 	bool dpni_opened = false;
 
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpni", &dpni_id);
+	error = parse_object_name(restool.obj_name, "dpni", &dpni_id);
 	if (error < 0)
 		goto out;
 
-	error = dpni_open(&resman.mc_io, dpni_id, &dpni_handle);
+	error = dpni_open(&restool.mc_io, dpni_id, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1008,7 +1012,7 @@ static int cmd_dpni_destroy(void)
 		goto out;
 	}
 
-	error = dpni_destroy(&resman.mc_io, dpni_handle);
+	error = dpni_destroy(&restool.mc_io, dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1019,7 +1023,7 @@ static int cmd_dpni_destroy(void)
 
 out:
 	if (dpni_opened) {
-		error2 = dpni_close(&resman.mc_io, dpni_handle);
+		error2 = dpni_close(&restool.mc_io, dpni_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

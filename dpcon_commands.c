@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 #include "fsl_dpcon.h"
 
@@ -129,7 +129,7 @@ static int cmd_dpcon_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"resman dpcon <command> [--help] [ARGS...]\n"
+		"restool dpcon <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPCON object.\n"
 		"   create - creates a new child DPCON under the root DPRC.\n"
@@ -150,7 +150,7 @@ static int print_dpcon_attr(uint32_t dpcon_id,
 	struct dpcon_attr dpcon_attr;
 	bool dpcon_opened = false;
 
-	error = dpcon_open(&resman.mc_io, dpcon_id, &dpcon_handle);
+	error = dpcon_open(&restool.mc_io, dpcon_id, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -167,7 +167,7 @@ static int print_dpcon_attr(uint32_t dpcon_id,
 	}
 
 	memset(&dpcon_attr, 0, sizeof(dpcon_attr));
-	error = dpcon_get_attributes(&resman.mc_io, dpcon_handle, &dpcon_attr);
+	error = dpcon_get_attributes(&restool.mc_io, dpcon_handle, &dpcon_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -192,7 +192,7 @@ out:
 	if (dpcon_opened) {
 		int error2;
 
-		error2 = dpcon_close(&resman.mc_io, dpcon_handle);
+		error2 = dpcon_close(&restool.mc_io, dpcon_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -213,7 +213,7 @@ static int print_dpcon_info(uint32_t dpcon_id)
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpcon_id,
+	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpcon_id,
 				"dpcon", &target_obj_desc,
 				&target_parent_dprc_handle, &found);
 	if (error < 0)
@@ -228,8 +228,8 @@ static int print_dpcon_info(uint32_t dpcon_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_obj_verbose(&target_obj_desc, &dpcon_ops);
 	}
 
@@ -241,32 +241,32 @@ static int cmd_dpcon_info(void)
 {
 	static const char usage_msg[] =
 	"\n"
-	"Usage: resman dpcon info <dpcon-object> [--verbose]\n"
-	"   e.g. resman dpcon info dpcon.5\n"
+	"Usage: restool dpcon info <dpcon-object> [--verbose]\n"
+	"   e.g. restool dpcon info dpcon.5\n"
 	"\n"
 	"--verbose\n"
 	"   Shows extended/verbose information about the object\n"
-	"   e.g. resman dpcon info dpcon.5 --verbose\n"
+	"   e.g. restool dpcon info dpcon.5 --verbose\n"
 	"\n";
 
 	uint32_t obj_id;
 	int error;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpcon", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpcon", &obj_id);
 	if (error < 0)
 		goto out;
 
@@ -279,9 +279,9 @@ static int cmd_dpcon_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpcon create [OPTIONS]\n"
+		"Usage: restool dpcon create [OPTIONS]\n"
 		"   e.g. create a DPCON object with all default options:\n"
-		"	resman dpcon create\n"
+		"	restool dpcon create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPCON by default options\n"
@@ -289,7 +289,7 @@ static int cmd_dpcon_create(void)
 		"   Valid values for <number> are 1-8. Default value is 1.\n"
 		"\n"
 		"e.g. create a DPCON with 4 priorities:\n"
-		"   resman dpcon create --num-priorities=4\n"
+		"   restool dpcon create --num-priorities=4\n"
 		"\n";
 
 	int error;
@@ -300,24 +300,24 @@ static int cmd_dpcon_create(void)
 	uint16_t dpcon_handle;
 	struct dpcon_attr dpcon_attr;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name != NULL) {
+	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     resman.obj_name);
+			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
+		str = restool.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -331,7 +331,7 @@ static int cmd_dpcon_create(void)
 		dpcon_cfg.num_priorities = 1;
 	}
 
-	error = dpcon_create(&resman.mc_io, &dpcon_cfg, &dpcon_handle);
+	error = dpcon_create(&restool.mc_io, &dpcon_cfg, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -340,7 +340,7 @@ static int cmd_dpcon_create(void)
 	}
 
 	memset(&dpcon_attr, 0, sizeof(struct dpcon_attr));
-	error = dpcon_get_attributes(&resman.mc_io, dpcon_handle, &dpcon_attr);
+	error = dpcon_get_attributes(&restool.mc_io, dpcon_handle, &dpcon_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -349,7 +349,7 @@ static int cmd_dpcon_create(void)
 	}
 	printf("dpcon.%d is created in dprc.1\n", dpcon_attr.id);
 
-	error = dpcon_close(&resman.mc_io, dpcon_handle);
+	error = dpcon_close(&restool.mc_io, dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -364,8 +364,8 @@ static int cmd_dpcon_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpcon destroy <dpcon-object>\n"
-		"   e.g. resman dpcon destroy dpcon.9\n"
+		"Usage: restool dpcon destroy <dpcon-object>\n"
+		"   e.g. restool dpcon destroy dpcon.9\n"
 		"\n";
 
 	int error;
@@ -374,24 +374,24 @@ static int cmd_dpcon_destroy(void)
 	uint16_t dpcon_handle;
 	bool dpcon_opened = false;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpcon", &dpcon_id);
+	error = parse_object_name(restool.obj_name, "dpcon", &dpcon_id);
 	if (error < 0)
 		goto out;
 
-	error = dpcon_open(&resman.mc_io, dpcon_id, &dpcon_handle);
+	error = dpcon_open(&restool.mc_io, dpcon_id, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -407,7 +407,7 @@ static int cmd_dpcon_destroy(void)
 		goto out;
 	}
 
-	error = dpcon_destroy(&resman.mc_io, dpcon_handle);
+	error = dpcon_destroy(&restool.mc_io, dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -418,7 +418,7 @@ static int cmd_dpcon_destroy(void)
 
 out:
 	if (dpcon_opened) {
-		error2 = dpcon_close(&resman.mc_io, dpcon_handle);
+		error2 = dpcon_close(&restool.mc_io, dpcon_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

@@ -34,7 +34,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <time.h>
-#include "resman.h"
+#include "restool.h"
 
 #define C_ASSERT(_cond) \
 	extern const char c_assert_dummy_decl[(_cond) ? 1 : -1]
@@ -46,7 +46,7 @@
 
 #define ERROR_PRINTF(_fmt, ...) \
 do { \
-	if (resman.debug) \
+	if (restool.debug) \
 		fprintf(stderr, "%s:%d " _fmt, \
 			__func__, __LINE__, ##__VA_ARGS__); \
 	else \
@@ -55,7 +55,7 @@ do { \
 
 #define DEBUG_PRINTF(_fmt, ...)	\
 do { \
-	if (resman.debug) \
+	if (restool.debug) \
 		fprintf(stderr, "DBG: %s: " _fmt, __func__, ##__VA_ARGS__); \
 } while (0)
 

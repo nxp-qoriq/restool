@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 
 #define ALL_DPRC_OPTS (				\
@@ -300,7 +300,7 @@ static int cmd_dprc_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"resman dprc <command>\n"
+		"restool dprc <command>\n"
 		"Where <command> can be:\n"
 		"   list - lists all containers (DPRC objects) in the system.\n"
 		"   show - displays the contents (objects and resources) of a DPRC object.\n"
@@ -338,7 +338,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 
 	printf("dprc.%u\n", dprc_id);
 
-	error = dprc_get_obj_count(&resman.mc_io,
+	error = dprc_get_obj_count(&restool.mc_io,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -354,7 +354,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 		int error2;
 
 		error = dprc_get_obj(
-				&resman.mc_io,
+				&restool.mc_io,
 				dprc_handle,
 				i,
 				&obj_desc);
@@ -383,7 +383,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 		error = list_dprc(obj_desc.id, child_dprc_handle,
 				  nesting_level + 1, show_non_dprc_objects);
 
-		error2 = dprc_close(&resman.mc_io, child_dprc_handle);
+		error2 = dprc_close(&restool.mc_io, child_dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -403,24 +403,24 @@ static int cmd_dprc_list(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc list\n"
+		"Usage: restool dprc list\n"
 		"\n";
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(LIST_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(LIST_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(LIST_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(LIST_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name != NULL) {
+	if (restool.obj_name != NULL) {
 		ERROR_PRINTF(
-			"Unexpected argument: \'%s\'\n\n", resman.obj_name);
+			"Unexpected argument: \'%s\'\n\n", restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
 	return list_dprc(
-		resman.root_dprc_id, resman.root_dprc_handle, 0, false);
+		restool.root_dprc_id, restool.root_dprc_handle, 0, false);
 }
 
 static int show_one_resource_type(uint16_t dprc_handle,
@@ -431,7 +431,7 @@ static int show_one_resource_type(uint16_t dprc_handle,
 	struct dprc_res_ids_range_desc range_desc;
 	int error;
 
-	error = dprc_get_res_count(&resman.mc_io, dprc_handle,
+	error = dprc_get_res_count(&restool.mc_io, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -450,7 +450,7 @@ static int show_one_resource_type(uint16_t dprc_handle,
 	do {
 		int id;
 
-		error = dprc_get_res_ids(&resman.mc_io, dprc_handle,
+		error = dprc_get_res_ids(&restool.mc_io, dprc_handle,
 					 (char *)mc_res_type, &range_desc);
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
@@ -481,7 +481,7 @@ static int show_one_resource_type_count(uint16_t dprc_handle,
 	int res_count = -1;
 	int error;
 
-	error = dprc_get_res_count(&resman.mc_io, dprc_handle,
+	error = dprc_get_res_count(&restool.mc_io, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -506,7 +506,7 @@ static int show_mc_resources(uint16_t dprc_handle)
 	int error;
 	int ret_error = 0;
 
-	error = dprc_get_pool_count(&resman.mc_io, dprc_handle,
+	error = dprc_get_pool_count(&restool.mc_io, dprc_handle,
 				    &pool_count);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -522,7 +522,7 @@ static int show_mc_resources(uint16_t dprc_handle)
 	}
 	for (int i = 0; i < pool_count; i++) {
 		memset(res_type, 0, sizeof(res_type));
-		error = dprc_get_pool(&resman.mc_io, dprc_handle,
+		error = dprc_get_pool(&restool.mc_io, dprc_handle,
 				      i, res_type);
 
 		/* check for buffer overrun: */
@@ -557,12 +557,12 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 	int error;
 	bool verbose = false;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_VERBOSE);
 		verbose = true;
 	}
 
-	error = dprc_get_obj_count(&resman.mc_io,
+	error = dprc_get_obj_count(&restool.mc_io,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -578,7 +578,7 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 	for (int i = 0; i < num_child_devices; i++) {
 		struct dprc_obj_desc obj_desc;
 
-		error = dprc_get_obj(&resman.mc_io,
+		error = dprc_get_obj(&restool.mc_io,
 				     dprc_handle,
 				     i,
 				     &obj_desc);
@@ -608,9 +608,9 @@ static int cmd_dprc_show(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc show <container>\n"
-		"	resman dprc show <container> --resources\n"
-		"	resman dprc show <container> --resource-type=<type>\n"
+		"Usage: restool dprc show <container>\n"
+		"	restool dprc show <container> --resources\n"
+		"	restool dprc show <container> --resource-type=<type>\n"
 		"\n"
 		"\n";
 
@@ -621,21 +621,21 @@ static int cmd_dprc_show(void)
 	bool dprc_opened = false;
 	const char *res_type;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	dprc_name = resman.obj_name;
+	dprc_name = restool.obj_name;
 	if (strcmp(dprc_name, "mc.global") == 0)
 		dprc_name = "dprc.0";
 
@@ -643,23 +643,23 @@ static int cmd_dprc_show(void)
 	if (error < 0)
 		goto out;
 
-	if (dprc_id != resman.root_dprc_id) {
+	if (dprc_id != restool.root_dprc_id) {
 		error = open_dprc(dprc_id, &dprc_handle);
 		if (error < 0)
 			goto out;
 
 		dprc_opened = true;
 	} else {
-		dprc_handle = resman.root_dprc_handle;
+		dprc_handle = restool.root_dprc_handle;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RESOURCES)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RESOURCES);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RESOURCES)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RESOURCES);
 		error = show_mc_resources(dprc_handle);
-	} else if (resman.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RES_TYPE)) {
-		assert(resman.cmd_option_args[SHOW_OPT_RES_TYPE] != NULL);
-		res_type = resman.cmd_option_args[SHOW_OPT_RES_TYPE];
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RES_TYPE);
+	} else if (restool.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RES_TYPE)) {
+		assert(restool.cmd_option_args[SHOW_OPT_RES_TYPE] != NULL);
+		res_type = restool.cmd_option_args[SHOW_OPT_RES_TYPE];
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RES_TYPE);
 		error = show_one_resource_type(dprc_handle, res_type);
 	} else {
 		error = show_mc_objects(dprc_handle, dprc_name);
@@ -668,7 +668,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -715,18 +715,18 @@ static int print_dprc_attr(uint32_t dprc_id,
 	struct dprc_attributes dprc_attr;
 	bool dprc_opened = false;
 
-	if (dprc_id != resman.root_dprc_id) {
+	if (dprc_id != restool.root_dprc_id) {
 		error = open_dprc(dprc_id, &dprc_handle);
 		if (error < 0)
 			goto out;
 
 		dprc_opened = true;
 	} else {
-		dprc_handle = resman.root_dprc_handle;
+		dprc_handle = restool.root_dprc_handle;
 	}
 
 	memset(&dprc_attr, 0, sizeof(dprc_attr));
-	error = dprc_get_attributes(&resman.mc_io, dprc_handle, &dprc_attr);
+	error = dprc_get_attributes(&restool.mc_io, dprc_handle, &dprc_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -749,7 +749,7 @@ static int print_dprc_attr(uint32_t dprc_id,
 		(unsigned long long)dprc_attr.options);
 	print_dprc_options(dprc_attr.options);
 
-	if (dprc_id == resman.root_dprc_id)
+	if (dprc_id == restool.root_dprc_id)
 		printf("plugged state: plugged\n");
 	else
 		printf("plugged state: %splugged\n",
@@ -761,7 +761,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -782,7 +782,7 @@ static int print_dprc_info(uint32_t dprc_id)
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(resman.root_dprc_handle, 0, dprc_id,
+	error = find_target_obj_desc(restool.root_dprc_handle, 0, dprc_id,
 				"dprc", &target_obj_desc,
 				&target_parent_dprc_handle, &found);
 	if (error < 0)
@@ -797,8 +797,8 @@ static int print_dprc_info(uint32_t dprc_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_obj_verbose(&target_obj_desc, &dprc_ops);
 	}
 
@@ -810,7 +810,7 @@ static int cmd_dprc_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc info <dprc-object> [--verbose]\n"
+		"Usage: restool dprc info <dprc-object> [--verbose]\n"
 		"\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
@@ -820,21 +820,21 @@ static int cmd_dprc_info(void)
 	const char *dprc_name;
 	int error;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	dprc_name = resman.obj_name;
+	dprc_name = restool.obj_name;
 	if (strcmp(dprc_name, "mc.global") == 0)
 		dprc_name = "dprc.0";
 
@@ -863,12 +863,12 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	bool child_dprc_created = false;
 
 	assert(dprc_handle != 0);
-	error = ioctl(resman.mc_io.fd, RESMAN_ALLOCATE_MC_PORTAL,
+	error = ioctl(restool.mc_io.fd, RESTOOL_ALLOCATE_MC_PORTAL,
 		      &portal_id);
 	if (error == -1) {
 		error = -errno;
 		ERROR_PRINTF(
-			"ioctl(RESMAN_ALLOCATE_MC_PORTAL) failed with error %d\n",
+			"ioctl(RESTOOL_ALLOCATE_MC_PORTAL) failed with error %d\n",
 			error);
 		goto error;
 	}
@@ -880,7 +880,7 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	cfg.portal_id = portal_id;
 	cfg.options = options;
 	error = dprc_create_container(
-			&resman.mc_io,
+			&restool.mc_io,
 			dprc_handle,
 			&cfg,
 			&child_dprc_id,
@@ -901,7 +901,7 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	return 0;
 error:
 	if (child_dprc_created) {
-		error2 = dprc_destroy_container(&resman.mc_io, dprc_handle,
+		error2 = dprc_destroy_container(&restool.mc_io, dprc_handle,
 						child_dprc_id);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
@@ -911,12 +911,12 @@ error:
 	}
 
 	if (portal_allocated) {
-		error2 = ioctl(resman.mc_io.fd, RESMAN_FREE_MC_PORTAL,
+		error2 = ioctl(restool.mc_io.fd, RESTOOL_FREE_MC_PORTAL,
 			       portal_id);
 		if (error2 == -1) {
 			error2 = -errno;
 			ERROR_PRINTF(
-				"ioctl(RESMAN_FREE_MC_PORTAL) failed with error %d\n",
+				"ioctl(RESTOOL_FREE_MC_PORTAL) failed with error %d\n",
 				error2);
 		}
 	}
@@ -969,7 +969,7 @@ static int cmd_dprc_create_child(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc create <parent-container> [--options=<options-mask>]\n"
+		"Usage: restool dprc create <parent-container> [--options=<options-mask>]\n"
 		"\n"
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma separated list of DPRC options:\n"
@@ -986,39 +986,39 @@ static int cmd_dprc_create_child(void)
 	uint32_t dprc_id;
 	uint64_t options = 0;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name,
+	error = parse_object_name(restool.obj_name,
 				  "dprc", &dprc_id);
 	if (error < 0)
 		goto out;
 
-	if (dprc_id != resman.root_dprc_id) {
+	if (dprc_id != restool.root_dprc_id) {
 		error = open_dprc(dprc_id, &dprc_handle);
 		if (error < 0)
 			goto out;
 
 		dprc_opened = true;
 	} else {
-		dprc_handle = resman.root_dprc_handle;
+		dprc_handle = restool.root_dprc_handle;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 		error = parse_create_options(
-				resman.cmd_option_args[CREATE_OPT_OPTIONS],
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
 				&options);
 		if (error < 0)
 			goto out;
@@ -1032,7 +1032,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1056,7 +1056,7 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 
 	/*
 	 * Before destroying the child container, get its MC portal id.
-	 * We need to notify the fsl_mc_resman kernel driver that this
+	 * We need to notify the fsl_mc_restool kernel driver that this
 	 * MC portal has become available for reallocation, once we destroy it:
 	 */
 
@@ -1066,7 +1066,7 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 
 	dprc_opened = true;
 	memset(&dprc_attr, 0, sizeof(dprc_attr));
-	error = dprc_get_attributes(&resman.mc_io, child_dprc_handle,
+	error = dprc_get_attributes(&restool.mc_io, child_dprc_handle,
 				    &dprc_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -1077,7 +1077,7 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 
 	assert(child_dprc_id == dprc_attr.container_id);
 	dprc_opened = false;
-	error = dprc_close(&resman.mc_io, child_dprc_handle);
+	error = dprc_close(&restool.mc_io, child_dprc_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1088,7 +1088,7 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 	/*
 	 * Destroy child container in the MC:
 	 */
-	error = dprc_destroy_container(&resman.mc_io, parent_dprc_handle,
+	error = dprc_destroy_container(&restool.mc_io, parent_dprc_handle,
 					child_dprc_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -1101,16 +1101,16 @@ static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
 	printf("dprc.%u object destroyed\n", child_dprc_id);
 
 	/*
-	 * Tell the fsl_mc_resman kernel driver that the
+	 * Tell the fsl_mc_restool kernel driver that the
 	 * MC portal that was allocated for the destroyed child
 	 * container can now be freed.
 	 */
-	error = ioctl(resman.mc_io.fd, RESMAN_FREE_MC_PORTAL,
+	error = ioctl(restool.mc_io.fd, RESTOOL_FREE_MC_PORTAL,
 		       dprc_attr.portal_id);
 	if (error == -1) {
 		error = -errno;
 		ERROR_PRINTF(
-			"ioctl(RESMAN_FREE_MC_PORTAL) failed with error %d\n",
+			"ioctl(RESTOOL_FREE_MC_PORTAL) failed with error %d\n",
 			error);
 		goto error;
 	}
@@ -1121,7 +1121,7 @@ error:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, child_dprc_handle);
+		error2 = dprc_close(&restool.mc_io, child_dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1136,7 +1136,7 @@ static int cmd_dprc_destroy_child(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc destroy <container>\n"
+		"Usage: restool dprc destroy <container>\n"
 		"\n"
 		"NOTE: <container> cannot be the root container (dprc.1)\n"
 		"\n";
@@ -1144,27 +1144,27 @@ static int cmd_dprc_destroy_child(void)
 	int error;
 	uint32_t dprc_id;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name,
+	error = parse_object_name(restool.obj_name,
 				  "dprc", &dprc_id);
 	if (error < 0)
 		goto out;
 
-	if (dprc_id == resman.root_dprc_id) {
+	if (dprc_id == restool.root_dprc_id) {
 		ERROR_PRINTF("The root DPRC (%s) cannot be destroyed\n",
-			     resman.obj_name);
+			     restool.obj_name);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1182,7 +1182,7 @@ static int cmd_dprc_destroy_child(void)
 	dprc_opened = true;
 #endif
 
-	error = destroy_child_dprc(resman.root_dprc_handle, dprc_id);
+	error = destroy_child_dprc(restool.root_dprc_handle, dprc_id);
 out:
 	return error;
 }
@@ -1198,17 +1198,17 @@ static int lookup_obj_desc(uint32_t parent_dprc_id,
 	int num_child_devices;
 	bool dprc_opened = false;
 
-	if (parent_dprc_id != resman.root_dprc_id) {
+	if (parent_dprc_id != restool.root_dprc_id) {
 		error = open_dprc(parent_dprc_id, &dprc_handle);
 		if (error < 0)
 			goto out;
 
 		dprc_opened = true;
 	} else {
-		dprc_handle = resman.root_dprc_handle;
+		dprc_handle = restool.root_dprc_handle;
 	}
 
-	error = dprc_get_obj_count(&resman.mc_io,
+	error = dprc_get_obj_count(&restool.mc_io,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -1221,7 +1221,7 @@ static int lookup_obj_desc(uint32_t parent_dprc_id,
 	for (i = 0; i < num_child_devices; i++) {
 		struct dprc_obj_desc obj_desc;
 
-		error = dprc_get_obj(&resman.mc_io,
+		error = dprc_get_obj(&restool.mc_io,
 				     dprc_handle,
 				     i,
 				     &obj_desc);
@@ -1249,7 +1249,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1271,14 +1271,14 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	uint32_t target_dprc_id;
 	struct dprc_res_req res_req;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<parent-container> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
@@ -1286,26 +1286,26 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	}
 
 	memset(&res_req, 0, sizeof(res_req));
-	error = parse_object_name(resman.obj_name,
+	error = parse_object_name(restool.obj_name,
 				  "dprc", &parent_dprc_id);
 	if (error < 0)
 		goto out;
 
-	if (parent_dprc_id != resman.root_dprc_id) {
+	if (parent_dprc_id != restool.root_dprc_id) {
 		error = open_dprc(parent_dprc_id, &dprc_handle);
 		if (error < 0)
 			goto out;
 
 		dprc_opened = true;
 	} else {
-		dprc_handle = resman.root_dprc_handle;
+		dprc_handle = restool.root_dprc_handle;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_TARGET)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_TARGET);
-		assert(resman.cmd_option_args[ASSIGN_OPT_TARGET] != NULL);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_TARGET)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_TARGET);
+		assert(restool.cmd_option_args[ASSIGN_OPT_TARGET] != NULL);
 		error = parse_object_name(
-				resman.cmd_option_args[ASSIGN_OPT_TARGET],
+				restool.cmd_option_args[ASSIGN_OPT_TARGET],
 				"dprc", &target_dprc_id);
 		if (error < 0)
 			goto out;
@@ -1313,11 +1313,11 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		target_dprc_id = parent_dprc_id;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE);
-		assert(resman.cmd_option_args[ASSIGN_OPT_RES_TYPE] != NULL);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE);
+		assert(restool.cmd_option_args[ASSIGN_OPT_RES_TYPE] != NULL);
 		strcpy(res_req.type,
-		       resman.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
+		       restool.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
 		if (strcmp(res_req.type, "mcp") == 0) {
 			ERROR_PRINTF("resource type '%s' not supported\n",
 				     res_req.type);
@@ -1325,7 +1325,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			goto out;
 		}
 
-		if (!(resman.cmd_option_mask &
+		if (!(restool.cmd_option_mask &
 		    ONE_BIT_MASK(ASSIGN_OPT_COUNT))) {
 			ERROR_PRINTF("--count option missing\n");
 			printf(usage_msg);
@@ -1333,31 +1333,31 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			goto out;
 		}
 
-		assert(resman.cmd_option_args[ASSIGN_OPT_COUNT] != NULL);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_COUNT);
-		res_req.num = atoi(resman.cmd_option_args[ASSIGN_OPT_COUNT]);
+		assert(restool.cmd_option_args[ASSIGN_OPT_COUNT] != NULL);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_COUNT);
+		res_req.num = atoi(restool.cmd_option_args[ASSIGN_OPT_COUNT]);
 		if (res_req.num <= 0) {
 			ERROR_PRINTF("Invalid --count arg: %s\n",
-				     resman.cmd_option_args[ASSIGN_OPT_COUNT]);
+				     restool.cmd_option_args[ASSIGN_OPT_COUNT]);
 			error = -EINVAL;
 			goto out;
 		}
 
 		res_req.options = 0;
 		res_req.id_base_align = 0;
-	} else if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_OBJECT)) {
+	} else if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_OBJECT)) {
 		int n;
 		int state;
 
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_OBJECT);
-		assert(resman.cmd_option_args[ASSIGN_OPT_OBJECT] != NULL);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_OBJECT);
+		assert(restool.cmd_option_args[ASSIGN_OPT_OBJECT] != NULL);
 
-		n = sscanf(resman.cmd_option_args[ASSIGN_OPT_OBJECT],
+		n = sscanf(restool.cmd_option_args[ASSIGN_OPT_OBJECT],
 			   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "[a-z].%d",
 			   res_req.type, &res_req.id_base_align);
 		if (n != 2) {
 			ERROR_PRINTF("Invalid --object arg: \'%s\'\n",
-				     resman.cmd_option_args[ASSIGN_OPT_OBJECT]);
+				restool.cmd_option_args[ASSIGN_OPT_OBJECT]);
 
 			error = -EINVAL;
 			goto out;
@@ -1377,7 +1377,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			if (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) {
 				ERROR_PRINTF(
 				    "%s cannot be %s because it is currently in plugged state\n",
-				    resman.cmd_option_args[ASSIGN_OPT_OBJECT],
+				    restool.cmd_option_args[ASSIGN_OPT_OBJECT],
 				    do_assign ? "assigned" : "unassigned");
 
 				error = -EBUSY;
@@ -1387,26 +1387,27 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 
 		res_req.options = DPRC_RES_REQ_OPT_EXPLICIT;
 
-		if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_PLUGGED)) {
-			resman.cmd_option_mask &=
+		if (restool.cmd_option_mask &
+		    ONE_BIT_MASK(ASSIGN_OPT_PLUGGED)) {
+			restool.cmd_option_mask &=
 				~ONE_BIT_MASK(ASSIGN_OPT_PLUGGED);
 
 			if (do_assign == false) {
 				ERROR_PRINTF(
-					"Cannot change plugged state via \'dprc unassign\'\nPlease try \'resman dprc assign --help\'\n");
+					"Cannot change plugged state via \'dprc unassign\'\nPlease try \'restool dprc assign --help\'\n");
 				error = -EINVAL;
 				goto out;
 			}
 
-			assert(resman.cmd_option_args[ASSIGN_OPT_PLUGGED] !=
+			assert(restool.cmd_option_args[ASSIGN_OPT_PLUGGED] !=
 			       NULL);
-			state = atoi(resman.
+			state = atoi(restool.
 					cmd_option_args[ASSIGN_OPT_PLUGGED]);
 
 			if (state < 0 || state > 1) {
 				ERROR_PRINTF(
 				    "Invalid --plugged arg: \'%s\'\n",
-				    resman.cmd_option_args[ASSIGN_OPT_PLUGGED]);
+				restool.cmd_option_args[ASSIGN_OPT_PLUGGED]);
 				error = -EINVAL;
 				goto out;
 			}
@@ -1430,7 +1431,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	}
 
 	if (do_assign) {
-		error = dprc_assign(&resman.mc_io,
+		error = dprc_assign(&restool.mc_io,
 				    dprc_handle,
 				    target_dprc_id,
 				    &res_req);
@@ -1440,7 +1441,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				     mc_status_to_string(mc_status), mc_status);
 		}
 	} else {
-		error = dprc_unassign(&resman.mc_io,
+		error = dprc_unassign(&restool.mc_io,
 				      dprc_handle,
 				      target_dprc_id,
 				      &res_req);
@@ -1454,7 +1455,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1471,8 +1472,8 @@ static int cmd_dprc_assign(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc assign <parent-container> --object=<object> [--target=<container>] --plugged=<state>\n"
-		"	resman dprc assign <parent-container> --resource-type=<type> --count=<number> [--target=<container>]\n"
+		"Usage: restool dprc assign <parent-container> --object=<object> [--target=<container>] --plugged=<state>\n"
+		"	restool dprc assign <parent-container> --resource-type=<type> --count=<number> [--target=<container>]\n"
 		"\n"
 		"--object=<object>\n"
 		"   Specifies the object to assign to the target container\n"
@@ -1497,8 +1498,8 @@ static int cmd_dprc_unassign(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc unassign <container> --object=<object> [--target=<container>]\n"
-		"	resman dprc unassign <container> --resource-type <type> --count <number> --target <container>\n"
+		"Usage: restool dprc unassign <container> --object=<object> [--target=<container>]\n"
+		"	restool dprc unassign <container> --resource-type <type> --count <number> --target <container>\n"
 		"\n"
 		"--object=<object>\n"
 		"   Specifies the object to unassign from the target container\n"
@@ -1521,7 +1522,7 @@ static int cmd_dprc_set_quota(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc set-quota <parent-container> --resource-type=<type> --count=<number>\n"
+		"Usage: restool dprc set-quota <parent-container> --resource-type=<type> --count=<number>\n"
 		"						 --child-container=<container>\n"
 		"\n"
 		"--resource-type=<type>\n"
@@ -1540,78 +1541,78 @@ static int cmd_dprc_set_quota(void)
 	char *res_type;
 	int quota;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<parent-container> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name,
+	error = parse_object_name(restool.obj_name,
 				  "dprc", &parent_dprc_id);
 	if (error < 0)
 		goto out;
 
-	if (parent_dprc_id != resman.root_dprc_id) {
+	if (parent_dprc_id != restool.root_dprc_id) {
 		error = open_dprc(parent_dprc_id, &dprc_handle);
 		if (error < 0)
 			goto out;
 
 		dprc_opened = true;
 	} else {
-		dprc_handle = resman.root_dprc_handle;
+		dprc_handle = restool.root_dprc_handle;
 	}
 
-	if (!(resman.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_RES_TYPE))) {
+	if (!(restool.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_RES_TYPE))) {
 		ERROR_PRINTF("--resource-type option missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	resman.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_RES_TYPE);
-	assert(resman.cmd_option_args[SET_QUOTA_OPT_RES_TYPE] != NULL);
-	res_type = resman.cmd_option_args[SET_QUOTA_OPT_RES_TYPE];
+	restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_RES_TYPE);
+	assert(restool.cmd_option_args[SET_QUOTA_OPT_RES_TYPE] != NULL);
+	res_type = restool.cmd_option_args[SET_QUOTA_OPT_RES_TYPE];
 
-	if (!(resman.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_COUNT))) {
+	if (!(restool.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_COUNT))) {
 		ERROR_PRINTF("--count option missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	assert(resman.cmd_option_args[SET_QUOTA_OPT_COUNT] != NULL);
-	resman.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_COUNT);
-	quota = atoi(resman.cmd_option_args[SET_QUOTA_OPT_COUNT]);
+	assert(restool.cmd_option_args[SET_QUOTA_OPT_COUNT] != NULL);
+	restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_COUNT);
+	quota = atoi(restool.cmd_option_args[SET_QUOTA_OPT_COUNT]);
 	if (quota <= 0 || quota > UINT16_MAX) {
 		ERROR_PRINTF("Invalid --count arg: %s\n",
-			     resman.cmd_option_args[SET_QUOTA_OPT_COUNT]);
+			     restool.cmd_option_args[SET_QUOTA_OPT_COUNT]);
 		error = -ERANGE;
 		goto out;
 	}
 
-	if (!(resman.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_CHILD))) {
+	if (!(restool.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_CHILD))) {
 		ERROR_PRINTF("--child-container option missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	resman.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_CHILD);
-	assert(resman.cmd_option_args[SET_QUOTA_OPT_CHILD] != NULL);
-	error = parse_object_name(resman.cmd_option_args[SET_QUOTA_OPT_CHILD],
+	restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_CHILD);
+	assert(restool.cmd_option_args[SET_QUOTA_OPT_CHILD] != NULL);
+	error = parse_object_name(restool.cmd_option_args[SET_QUOTA_OPT_CHILD],
 				  "dprc", &child_dprc_id);
 	if (error < 0)
 		goto out;
 
-	error = dprc_set_res_quota(&resman.mc_io,
+	error = dprc_set_res_quota(&restool.mc_io,
 				   dprc_handle,
 				   child_dprc_id,
 				   res_type,
@@ -1626,7 +1627,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1663,7 +1664,7 @@ static int cmd_dprc_connect(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc connect <container> --endpoint1=<object> --endpoint2=<object>\n"
+		"Usage: restool dprc connect <container> --endpoint1=<object> --endpoint2=<object>\n"
 		"\n"
 		"--endpoint1=<object>\n"
 		"   Specifies the first endpoint object.\n"
@@ -1679,15 +1680,15 @@ static int cmd_dprc_connect(void)
 		"For instance, dpni.8 is under dprc.4, dpsw.1 is under dprc.1\n"
 		"dpni.8 is connected to dpmac.8, dpsw.1.0 is connected to dpni.1\n"
 		"\n"
-		"\'resman dprc connect dprc.4  --endpoint1=dpni.8 --endpoint2=dpsw.1.0\'  shall fail\n"
+		"\'restool dprc connect dprc.4  --endpoint1=dpni.8 --endpoint2=dpsw.1.0\'  shall fail\n"
 		"\n"
 		"correct steps are:\n"
 		"\n"
-		"resman dprc disconnect dprc.4 --endpoint=dpni.8\n"
-		"resman dprc disconnect dprc.1 --endpoint=dpsw.1.0\n"
-		"resman dprc assign dprc.4 --object=dpni.8 --plugged=0\n"
-		"resman dprc unassign dprc.1 --object=dpni.8 --target=dprc.4\n"
-		"resman dprc connect dprc.1 --endpoint1=dpni.8 --endpoint2=dpsw.1.0\n"
+		"restool dprc disconnect dprc.4 --endpoint=dpni.8\n"
+		"restool dprc disconnect dprc.1 --endpoint=dpsw.1.0\n"
+		"restool dprc assign dprc.4 --object=dpni.8 --plugged=0\n"
+		"restool dprc unassign dprc.1 --object=dpni.8 --target=dprc.4\n"
+		"restool dprc connect dprc.1 --endpoint1=dpni.8 --endpoint2=dpsw.1.0\n"
 		"\n";
 
 	uint16_t dprc_handle;
@@ -1697,70 +1698,70 @@ static int cmd_dprc_connect(void)
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<parent-container> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name,
+	error = parse_object_name(restool.obj_name,
 				  "dprc", &parent_dprc_id);
 	if (error < 0)
 		goto out;
 
-	if (parent_dprc_id != resman.root_dprc_id) {
+	if (parent_dprc_id != restool.root_dprc_id) {
 		error = open_dprc(parent_dprc_id, &dprc_handle);
 		if (error < 0)
 			goto out;
 
 		dprc_opened = true;
 	} else {
-		dprc_handle = resman.root_dprc_handle;
+		dprc_handle = restool.root_dprc_handle;
 	}
 
-	if (!(resman.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_ENDPOINT1))) {
+	if (!(restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_ENDPOINT1))) {
 		ERROR_PRINTF("--endpoint1 option missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	resman.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_ENDPOINT1);
-	assert(resman.cmd_option_args[CONNECT_OPT_ENDPOINT1] != NULL);
-	error = parse_endpoint(resman.cmd_option_args[CONNECT_OPT_ENDPOINT1],
+	restool.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_ENDPOINT1);
+	assert(restool.cmd_option_args[CONNECT_OPT_ENDPOINT1] != NULL);
+	error = parse_endpoint(restool.cmd_option_args[CONNECT_OPT_ENDPOINT1],
 			       &endpoint1);
 	if (error < 0) {
 		ERROR_PRINTF("Invalid --endpoint1 arg: '%s'\n",
-			     resman.cmd_option_args[CONNECT_OPT_ENDPOINT1]);
+			     restool.cmd_option_args[CONNECT_OPT_ENDPOINT1]);
 		goto out;
 	}
 
-	if (!(resman.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_ENDPOINT2))) {
+	if (!(restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_ENDPOINT2))) {
 		ERROR_PRINTF("--endpoint2 option missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	resman.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_ENDPOINT2);
-	assert(resman.cmd_option_args[CONNECT_OPT_ENDPOINT2] != NULL);
-	error = parse_endpoint(resman.cmd_option_args[CONNECT_OPT_ENDPOINT2],
+	restool.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_ENDPOINT2);
+	assert(restool.cmd_option_args[CONNECT_OPT_ENDPOINT2] != NULL);
+	error = parse_endpoint(restool.cmd_option_args[CONNECT_OPT_ENDPOINT2],
 			       &endpoint2);
 	if (error < 0) {
 		ERROR_PRINTF("Invalid --endpoint2 arg: '%s'\n",
-			     resman.cmd_option_args[CONNECT_OPT_ENDPOINT2]);
+			     restool.cmd_option_args[CONNECT_OPT_ENDPOINT2]);
 		goto out;
 	}
 
-	error = dprc_connect(&resman.mc_io,
+	error = dprc_connect(&restool.mc_io,
 			     dprc_handle,
 			     &endpoint1,
 			     &endpoint2);
@@ -1774,7 +1775,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1791,7 +1792,7 @@ static int cmd_dprc_disconnect(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dprc disconnect <container> --endpoint=<object>\n"
+		"Usage: restool dprc disconnect <container> --endpoint=<object>\n"
 		"\n"
 		"--endpoint=<object>\n"
 		"   Specifies either endpoint of a connection.\n"
@@ -1803,53 +1804,54 @@ static int cmd_dprc_disconnect(void)
 	uint32_t parent_dprc_id;
 	struct dprc_endpoint endpoint;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DISCONNECT_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DISCONNECT_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DISCONNECT_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DISCONNECT_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<parent-container> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name,
+	error = parse_object_name(restool.obj_name,
 				  "dprc", &parent_dprc_id);
 	if (error < 0)
 		goto out;
 
-	if (parent_dprc_id != resman.root_dprc_id) {
+	if (parent_dprc_id != restool.root_dprc_id) {
 		error = open_dprc(parent_dprc_id, &dprc_handle);
 		if (error < 0)
 			goto out;
 
 		dprc_opened = true;
 	} else {
-		dprc_handle = resman.root_dprc_handle;
+		dprc_handle = restool.root_dprc_handle;
 	}
 
-	if (!(resman.cmd_option_mask & ONE_BIT_MASK(DISCONNECT_OPT_ENDPOINT))) {
+	if (!(restool.cmd_option_mask &
+	    ONE_BIT_MASK(DISCONNECT_OPT_ENDPOINT))) {
 		ERROR_PRINTF("--endpoint option missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	resman.cmd_option_mask &= ~ONE_BIT_MASK(DISCONNECT_OPT_ENDPOINT);
-	assert(resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT] != NULL);
-	error = parse_endpoint(resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT],
+	restool.cmd_option_mask &= ~ONE_BIT_MASK(DISCONNECT_OPT_ENDPOINT);
+	assert(restool.cmd_option_args[DISCONNECT_OPT_ENDPOINT] != NULL);
+	error = parse_endpoint(restool.cmd_option_args[DISCONNECT_OPT_ENDPOINT],
 			       &endpoint);
 	if (error < 0) {
 		ERROR_PRINTF("Invalid --endpoint arg: '%s'\n",
-			     resman.cmd_option_args[DISCONNECT_OPT_ENDPOINT]);
+			     restool.cmd_option_args[DISCONNECT_OPT_ENDPOINT]);
 		goto out;
 	}
 
-	error = dprc_disconnect(&resman.mc_io,
+	error = dprc_disconnect(&restool.mc_io,
 				dprc_handle,
 				&endpoint);
 
@@ -1862,7 +1864,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&resman.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

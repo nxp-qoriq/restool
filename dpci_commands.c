@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 #include "fsl_dpci.h"
 
@@ -129,7 +129,7 @@ static int cmd_dpci_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"resman dpci <command> [--help] [ARGS...]\n"
+		"restool dpci <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPCI object.\n"
 		"   create - creates a new child DPCI under the root DPRC.\n"
@@ -152,7 +152,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 	bool dpci_opened = false;
 	int link_state;
 
-	error = dpci_open(&resman.mc_io, dpci_id, &dpci_handle);
+	error = dpci_open(&restool.mc_io, dpci_id, &dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -169,7 +169,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 	}
 
 	memset(&dpci_attr, 0, sizeof(dpci_attr));
-	error = dpci_get_attributes(&resman.mc_io, dpci_handle, &dpci_attr);
+	error = dpci_get_attributes(&restool.mc_io, dpci_handle, &dpci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -178,7 +178,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 	}
 	assert(dpci_id == (uint32_t)dpci_attr.id);
 
-	error = dpci_get_peer_attributes(&resman.mc_io, dpci_handle,
+	error = dpci_get_peer_attributes(&restool.mc_io, dpci_handle,
 					 &dpci_peer_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -187,7 +187,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 		goto out;
 	}
 
-	error = dpci_get_link_state(&resman.mc_io, dpci_handle, &link_state);
+	error = dpci_get_link_state(&restool.mc_io, dpci_handle, &link_state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -220,7 +220,7 @@ out:
 	if (dpci_opened) {
 		int error2;
 
-		error2 = dpci_close(&resman.mc_io, dpci_handle);
+		error2 = dpci_close(&restool.mc_io, dpci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -241,7 +241,7 @@ static int print_dpci_info(uint32_t dpci_id)
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpci_id,
+	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpci_id,
 				"dpci", &target_obj_desc,
 				&target_parent_dprc_handle, &found);
 	if (error < 0)
@@ -256,8 +256,8 @@ static int print_dpci_info(uint32_t dpci_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_obj_verbose(&target_obj_desc, &dpci_ops);
 	}
 
@@ -269,32 +269,32 @@ static int cmd_dpci_info(void)
 {
 	static const char usage_msg[] =
 	"\n"
-	"Usage: resman dpci info <dpci-object> [--verbose]\n"
-	"   e.g. resman dpci info dpci.8\n"
+	"Usage: restool dpci info <dpci-object> [--verbose]\n"
+	"   e.g. restool dpci info dpci.8\n"
 	"\n"
 	"--verbose\n"
 	"   Shows extended/verbose information about the object\n"
-	"   e.g. resman dpci info dpci.8 --verbose\n"
+	"   e.g. restool dpci info dpci.8 --verbose\n"
 	"\n";
 
 	uint32_t obj_id;
 	int error;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpci", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpci", &obj_id);
 	if (error < 0)
 		goto out;
 
@@ -307,9 +307,9 @@ static int cmd_dpci_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpci create [OPTIONS]\n"
+		"Usage: restool dpci create [OPTIONS]\n"
 		"   e.g. create a DPCI object with all default options:\n"
-		"	resman dpci create\n"
+		"	restool dpci create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPCI by default options\n"
@@ -317,7 +317,7 @@ static int cmd_dpci_create(void)
 		"   specifies the number of priorities\n"
 		"   valid values are 1-2\n"
 		"   Default value is 1\n"
-		"   e.g. resman dpci create --num-priorities=8\n"
+		"   e.g. restool dpci create --num-priorities=8\n"
 		"\n";
 
 	int error;
@@ -328,24 +328,24 @@ static int cmd_dpci_create(void)
 	uint16_t dpci_handle;
 	struct dpci_attr dpci_attr;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name != NULL) {
+	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     resman.obj_name);
+			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
+		str = restool.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno)/* ||
@@ -359,7 +359,7 @@ static int cmd_dpci_create(void)
 		dpci_cfg.num_of_priorities = 1;
 	}
 
-	error = dpci_create(&resman.mc_io, &dpci_cfg, &dpci_handle);
+	error = dpci_create(&restool.mc_io, &dpci_cfg, &dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -368,7 +368,7 @@ static int cmd_dpci_create(void)
 	}
 
 	memset(&dpci_attr, 0, sizeof(struct dpci_attr));
-	error = dpci_get_attributes(&resman.mc_io, dpci_handle, &dpci_attr);
+	error = dpci_get_attributes(&restool.mc_io, dpci_handle, &dpci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -377,7 +377,7 @@ static int cmd_dpci_create(void)
 	}
 	printf("dpci.%d is created in dprc.1\n", dpci_attr.id);
 
-	error = dpci_close(&resman.mc_io, dpci_handle);
+	error = dpci_close(&restool.mc_io, dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -391,8 +391,8 @@ static int cmd_dpci_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpci destroy <dpci-object>\n"
-		"   e.g. resman dpci destroy dpci.3\n"
+		"Usage: restool dpci destroy <dpci-object>\n"
+		"   e.g. restool dpci destroy dpci.3\n"
 		"\n";
 
 	int error;
@@ -401,24 +401,24 @@ static int cmd_dpci_destroy(void)
 	uint16_t dpci_handle;
 	bool dpci_opened = false;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpci", &dpci_id);
+	error = parse_object_name(restool.obj_name, "dpci", &dpci_id);
 	if (error < 0)
 		goto out;
 
-	error = dpci_open(&resman.mc_io, dpci_id, &dpci_handle);
+	error = dpci_open(&restool.mc_io, dpci_id, &dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -434,7 +434,7 @@ static int cmd_dpci_destroy(void)
 		goto out;
 	}
 
-	error = dpci_destroy(&resman.mc_io, dpci_handle);
+	error = dpci_destroy(&restool.mc_io, dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -445,7 +445,7 @@ static int cmd_dpci_destroy(void)
 
 out:
 	if (dpci_opened) {
-		error2 = dpci_close(&resman.mc_io, dpci_handle);
+		error2 = dpci_close(&restool.mc_io, dpci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

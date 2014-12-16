@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 #include "fsl_dpdmux.h"
 
@@ -181,7 +181,7 @@ static int cmd_dpdmux_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"resman dpdmux <command> [--help] [ARGS...]\n"
+		"restool dpdmux <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPDMUX object.\n"
 		"   create - creates a new child DPDMUX under the root DPRC.\n"
@@ -257,7 +257,7 @@ static int print_dpdmux_attr(uint32_t dpdmux_id,
 	struct dpdmux_attr dpdmux_attr;
 	bool dpdmux_opened = false;
 
-	error = dpdmux_open(&resman.mc_io, dpdmux_id, &dpdmux_handle);
+	error = dpdmux_open(&restool.mc_io, dpdmux_id, &dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -274,7 +274,7 @@ static int print_dpdmux_attr(uint32_t dpdmux_id,
 	}
 
 	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes(&resman.mc_io, dpdmux_handle,
+	error = dpdmux_get_attributes(&restool.mc_io, dpdmux_handle,
 					&dpdmux_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -307,7 +307,7 @@ out:
 	if (dpdmux_opened) {
 		int error2;
 
-		error2 = dpdmux_close(&resman.mc_io, dpdmux_handle);
+		error2 = dpdmux_close(&restool.mc_io, dpdmux_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -328,7 +328,7 @@ static int print_dpdmux_info(uint32_t dpdmux_id)
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpdmux_id,
+	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpdmux_id,
 				"dpdmux", &target_obj_desc,
 				&target_parent_dprc_handle, &found);
 	if (error < 0)
@@ -343,8 +343,8 @@ static int print_dpdmux_info(uint32_t dpdmux_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_obj_verbose(&target_obj_desc, &dpdmux_ops);
 	}
 
@@ -356,32 +356,32 @@ static int cmd_dpdmux_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpdmux info <dpdmux-object> [--verbose]\n"
-		"   e.g. resman dpdmux info dpdmux.7\n"
+		"Usage: restool dpdmux info <dpdmux-object> [--verbose]\n"
+		"   e.g. restool dpdmux info dpdmux.7\n"
 		"\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
-		"   e.g. resman dpdmux info dpdmux.7 --verbose\n"
+		"   e.g. restool dpdmux info dpdmux.7 --verbose\n"
 		"\n";
 
 	uint32_t obj_id;
 	int error;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpdmux", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpdmux", &obj_id);
 	if (error < 0)
 		goto out;
 
@@ -487,23 +487,23 @@ static int create_dpdmux(const char *usage_msg)
 	char *endptr;
 	struct dpdmux_attr dpdmux_attr;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name != NULL) {
+	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     resman.obj_name);
+			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 		error = parse_dpdmux_create_options(
-				resman.cmd_option_args[CREATE_OPT_OPTIONS],
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
 				&dpdmux_cfg.adv.options);
 		if (error < 0) {
 			DEBUG_PRINTF(
@@ -515,11 +515,11 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.adv.options = 0;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_METHOD)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_METHOD)) {
+		restool.cmd_option_mask &=
 				~ONE_BIT_MASK(CREATE_OPT_METHOD);
 		error = parse_dpdmux_method(
-			resman.cmd_option_args[CREATE_OPT_METHOD],
+			restool.cmd_option_args[CREATE_OPT_METHOD],
 			&dpdmux_cfg.method);
 		if (error < 0) {
 			DEBUG_PRINTF(
@@ -531,11 +531,11 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.method = DPDMUX_METHOD_NONE;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MANIP)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MANIP)) {
+		restool.cmd_option_mask &=
 				~ONE_BIT_MASK(CREATE_OPT_MANIP);
 		error = parse_dpdmux_manip(
-				resman.cmd_option_args[CREATE_OPT_MANIP],
+				restool.cmd_option_args[CREATE_OPT_MANIP],
 				&dpdmux_cfg.manip);
 		if (error < 0) {
 			DEBUG_PRINTF(
@@ -547,10 +547,10 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.manip = DPDMUX_MANIP_NONE;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_NUM_IFS];
+		str = restool.cmd_option_args[CREATE_OPT_NUM_IFS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -566,10 +566,10 @@ static int create_dpdmux(const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_CONTROL_IF)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_CONTROL_IF);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_CONTROL_IF)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_CONTROL_IF);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_CONTROL_IF];
+		str = restool.cmd_option_args[CREATE_OPT_CONTROL_IF];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -585,12 +585,12 @@ static int create_dpdmux(const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_DMAT_ENTRIES];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_DMAT_ENTRIES];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -604,12 +604,12 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.adv.max_dmat_entries = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_MC_GROUPS)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_MC_GROUPS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_MC_GROUPS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_MC_GROUPS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -624,7 +624,7 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.adv.max_mc_groups = 0;
 	}
 
-	error = dpdmux_create(&resman.mc_io, &dpdmux_cfg, &dpdmux_handle);
+	error = dpdmux_create(&restool.mc_io, &dpdmux_cfg, &dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -633,7 +633,7 @@ static int create_dpdmux(const char *usage_msg)
 	}
 
 	memset(&dpdmux_attr, 0, sizeof(struct dpdmux_attr));
-	error = dpdmux_get_attributes(&resman.mc_io, dpdmux_handle,
+	error = dpdmux_get_attributes(&restool.mc_io, dpdmux_handle,
 					&dpdmux_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -643,7 +643,7 @@ static int create_dpdmux(const char *usage_msg)
 	}
 	printf("dpdmux.%d is created in dprc.1\n", dpdmux_attr.id);
 
-	error = dpdmux_close(&resman.mc_io, dpdmux_handle);
+	error = dpdmux_close(&restool.mc_io, dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -657,7 +657,7 @@ static int cmd_dpdmux_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpdmux create --num-ifs=<number> --control-if=<interface-num> [OPTIONS]\n"
+		"Usage: restool dpdmux create --num-ifs=<number> --control-if=<interface-num> [OPTIONS]\n"
 		"\n"
 		"ARGUMETNS:\n"
 		"--num-ifs=<number>\n"
@@ -697,8 +697,8 @@ static int cmd_dpdmux_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpdmux destroy <dpdmux-object>\n"
-		"   e.g. resman dpdmux destroy dpdmux.9\n"
+		"Usage: restool dpdmux destroy <dpdmux-object>\n"
+		"   e.g. restool dpdmux destroy dpdmux.9\n"
 		"\n";
 
 	int error;
@@ -708,24 +708,24 @@ static int cmd_dpdmux_destroy(void)
 	bool dpdmux_opened = false;
 
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpdmux", &dpdmux_id);
+	error = parse_object_name(restool.obj_name, "dpdmux", &dpdmux_id);
 	if (error < 0)
 		goto out;
 
-	error = dpdmux_open(&resman.mc_io, dpdmux_id, &dpdmux_handle);
+	error = dpdmux_open(&restool.mc_io, dpdmux_id, &dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -741,7 +741,7 @@ static int cmd_dpdmux_destroy(void)
 		goto out;
 	}
 
-	error = dpdmux_destroy(&resman.mc_io, dpdmux_handle);
+	error = dpdmux_destroy(&restool.mc_io, dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -752,7 +752,7 @@ static int cmd_dpdmux_destroy(void)
 
 out:
 	if (dpdmux_opened) {
-		error2 = dpdmux_close(&resman.mc_io, dpdmux_handle);
+		error2 = dpdmux_close(&restool.mc_io, dpdmux_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

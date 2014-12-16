@@ -2,7 +2,7 @@ CROSS_COMPILE ?=
 
 CC = $(CROSS_COMPILE)gcc
 
-OBJS = resman.o \
+OBJS = restool.o \
        dprc_commands.o \
        dpni_commands.o \
        dpio_commands.o \
@@ -39,16 +39,16 @@ LDFLAGS = -static -Wl,--hash-style=gnu
 
 HEADER_DEPENDENCIES = $(subst .o,.d,$(OBJS))
 
-all: resman
+all: restool
 
-resman: $(OBJS)
+restool: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 	file $@
 
 clean:
 	rm -f $(OBJS) \
 	      $(HEADER_DEPENDENCIES) \
-	      resman
+	      restool
 
 %.d: %.c
 	@($(CC) $(CFLAGS) -M $< | \

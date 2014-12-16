@@ -38,17 +38,17 @@
 #include "fsl_mc_ioctl.h"
 #include "utils.h"
 
-#define RESMAN_DEVICE_FILE  "/dev/mc_resman"
+#define RESTOOL_DEVICE_FILE  "/dev/mc_restool"
 
 int mc_io_init(struct fsl_mc_io *mc_io)
 {
 	int fd = -1;
 	int error;
 
-	fd = open(RESMAN_DEVICE_FILE, O_RDWR | O_SYNC);
+	fd = open(RESTOOL_DEVICE_FILE, O_RDWR | O_SYNC);
 	if (fd < 0) {
 		error = -errno;
-		perror("open() failed for " RESMAN_DEVICE_FILE);
+		perror("open() failed for " RESTOOL_DEVICE_FILE);
 		goto error;
 	}
 
@@ -76,11 +76,11 @@ int mc_send_command(struct fsl_mc_io *mc_io, struct mc_command *cmd)
 {
 	int error;
 
-	error = ioctl(mc_io->fd, RESMAN_SEND_MC_COMMAND, cmd);
+	error = ioctl(mc_io->fd, RESTOOL_SEND_MC_COMMAND, cmd);
 	if (error == -1) {
 		error = -errno;
 		DEBUG_PRINTF(
-			"ioctl(RESMAN_SEND_MC_COMMAND) failed with error %d\n",
+			"ioctl(RESTOOL_SEND_MC_COMMAND) failed with error %d\n",
 			error);
 	}
 

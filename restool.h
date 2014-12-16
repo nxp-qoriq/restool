@@ -28,8 +28,8 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _RESMAN_H_
-#define _RESMAN_H_
+#ifndef _RESTOOL_H_
+#define _RESTOOL_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -58,9 +58,9 @@
  */
 #define MAX_DPRC_NESTING	    16
 
-struct resman;
+struct restool;
 
-typedef int resman_cmd_func_t(void);
+typedef int restool_cmd_func_t(void);
 
 struct object_command {
 	/**
@@ -76,7 +76,7 @@ struct object_command {
 	/**
 	 * Pointer to command function
 	 */
-	resman_cmd_func_t *cmd_func;
+	restool_cmd_func_t *cmd_func;
 };
 
 /**
@@ -95,9 +95,9 @@ struct object_cmd_parser {
 };
 
 /**
- * Global state of the resman tool
+ * Global state of the restool tool
  */
-struct resman {
+struct restool {
 	/**
 	 * Bit mask of command-line options not consumed yet
 	 */
@@ -157,7 +157,7 @@ struct resman {
 };
 
 /**
- * Command-line option indices for global resman options
+ * Command-line option indices for global restool options
  */
 enum global_options {
 	GLOBAL_OPT_HELP = 0,
@@ -204,7 +204,7 @@ int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
 int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 			const struct flib_ops *ops);
 
-extern struct resman resman;
+extern struct restool restool;
 extern struct object_command dprc_commands[];
 extern struct object_command dpni_commands[];
 extern struct object_command dpio_commands[];
@@ -215,4 +215,4 @@ extern struct object_command dpcon_commands[];
 extern struct object_command dpseci_commands[];
 extern struct object_command dpdmux_commands[];
 
-#endif /* _RESMAN_H_ */
+#endif /* _RESTOOL_H_ */

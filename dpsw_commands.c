@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 #include "fsl_dpsw.h"
 
@@ -184,7 +184,7 @@ static int cmd_dpsw_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"resman dpsw <command> [--help] [ARGS...]\n"
+		"restool dpsw <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPSW object.\n"
 		"   create - creates a new child DPSW under the root DPRC.\n"
@@ -237,7 +237,7 @@ static int print_dpsw_endpoint(uint32_t target_id,
 		memcpy(endpoint1.type, "dpsw", 5);
 		endpoint1.id = target_id;
 		endpoint1.interface_id = k;
-		error = dprc_get_connection(&resman.mc_io,
+		error = dprc_get_connection(&restool.mc_io,
 					target_parent_dprc_handle,
 					&endpoint1,
 					&endpoint2,
@@ -283,7 +283,7 @@ static int print_dpsw_attr(uint32_t dpsw_id,
 	struct dpsw_attr dpsw_attr;
 	bool dpsw_opened = false;
 
-	error = dpsw_open(&resman.mc_io, dpsw_id, &dpsw_handle);
+	error = dpsw_open(&restool.mc_io, dpsw_id, &dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -300,7 +300,7 @@ static int print_dpsw_attr(uint32_t dpsw_id,
 	}
 
 	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
-	error = dpsw_get_attributes(&resman.mc_io, dpsw_handle, &dpsw_attr);
+	error = dpsw_get_attributes(&restool.mc_io, dpsw_handle, &dpsw_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -333,7 +333,7 @@ out:
 	if (dpsw_opened) {
 		int error2;
 
-		error2 = dpsw_close(&resman.mc_io, dpsw_handle);
+		error2 = dpsw_close(&restool.mc_io, dpsw_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -354,7 +354,7 @@ static int print_dpsw_info(uint32_t dpsw_id)
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpsw_id,
+	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpsw_id,
 				"dpsw", &target_obj_desc,
 				&target_parent_dprc_handle, &found);
 	if (error < 0)
@@ -370,8 +370,8 @@ static int print_dpsw_info(uint32_t dpsw_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_obj_verbose(&target_obj_desc, &dpsw_ops);
 	}
 
@@ -383,32 +383,32 @@ static int cmd_dpsw_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpsw info <dpsw-object> [--verbose]\n"
-		"   e.g. resman dpsw info dpsw.2\n"
+		"Usage: restool dpsw info <dpsw-object> [--verbose]\n"
+		"   e.g. restool dpsw info dpsw.2\n"
 		"\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
-		"   e.g. resman dpsw info dpsw.2 --verbose\n"
+		"   e.g. restool dpsw info dpsw.2 --verbose\n"
 		"\n";
 
 	uint32_t obj_id;
 	int error;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpsw", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpsw", &obj_id);
 	if (error < 0)
 		goto out;
 
@@ -469,23 +469,23 @@ static int create_dpsw(const char *usage_msg)
 	char *endptr;
 	struct dpsw_attr dpsw_attr;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name != NULL) {
+	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     resman.obj_name);
+			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_NUM_IFS];
+		str = restool.cmd_option_args[CREATE_OPT_NUM_IFS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -499,10 +499,10 @@ static int create_dpsw(const char *usage_msg)
 		dpsw_cfg.num_ifs = 4; /* Todo: default value not defined */
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 		error = parse_dpsw_create_options(
-				resman.cmd_option_args[CREATE_OPT_OPTIONS],
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
 				&dpsw_cfg.adv.options);
 		if (error < 0) {
 			ERROR_PRINTF(
@@ -515,10 +515,10 @@ static int create_dpsw(const char *usage_msg)
 				       DPSW_OPT_TC_DIS;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_VLANS)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_VLANS);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_VLANS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_VLANS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_VLANS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_VLANS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -532,12 +532,12 @@ static int create_dpsw(const char *usage_msg)
 		dpsw_cfg.adv.max_vlans = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDBS)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDBS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_FDBS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_FDBS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -551,12 +551,12 @@ static int create_dpsw(const char *usage_msg)
 		dpsw_cfg.adv.max_fdbs = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_FDB_ENTRIES];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_FDB_ENTRIES];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -570,12 +570,12 @@ static int create_dpsw(const char *usage_msg)
 		dpsw_cfg.adv.max_fdb_entries = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_FDB_AGING_TIME];
+		str = restool.cmd_option_args[CREATE_OPT_FDB_AGING_TIME];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -589,12 +589,12 @@ static int create_dpsw(const char *usage_msg)
 		dpsw_cfg.adv.fdb_aging_time = 0;
 	}
 
-	if (resman.cmd_option_mask &
+	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS)) {
-		resman.cmd_option_mask &=
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_MAX_FDB_MC_GROUPS];
+		str = restool.cmd_option_args[CREATE_OPT_MAX_FDB_MC_GROUPS];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -609,7 +609,7 @@ static int create_dpsw(const char *usage_msg)
 		dpsw_cfg.adv.max_fdb_mc_groups = 0;
 	}
 
-	error = dpsw_create(&resman.mc_io, &dpsw_cfg, &dpsw_handle);
+	error = dpsw_create(&restool.mc_io, &dpsw_cfg, &dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -618,7 +618,7 @@ static int create_dpsw(const char *usage_msg)
 	}
 
 	memset(&dpsw_attr, 0, sizeof(struct dpsw_attr));
-	error = dpsw_get_attributes(&resman.mc_io, dpsw_handle, &dpsw_attr);
+	error = dpsw_get_attributes(&restool.mc_io, dpsw_handle, &dpsw_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -627,7 +627,7 @@ static int create_dpsw(const char *usage_msg)
 	}
 	printf("dpsw.%d is created in dprc.1\n", dpsw_attr.id);
 
-	error = dpsw_close(&resman.mc_io, dpsw_handle);
+	error = dpsw_close(&restool.mc_io, dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -641,9 +641,9 @@ static int cmd_dpsw_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpsw create [OPTIONS]\n"
+		"Usage: restool dpsw create [OPTIONS]\n"
 		"   e.g. create a DPSW object with all default options:\n"
-		"	resman dpsw create\n"
+		"	restool dpsw create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPSW by default options\n"
@@ -675,8 +675,8 @@ static int cmd_dpsw_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpsw destroy <dpsw-object>\n"
-		"   e.g. resman dpsw destroy dpsw.8\n"
+		"Usage: restool dpsw destroy <dpsw-object>\n"
+		"   e.g. restool dpsw destroy dpsw.8\n"
 		"\n";
 
 	int error;
@@ -685,24 +685,24 @@ static int cmd_dpsw_destroy(void)
 	uint16_t dpsw_handle;
 	bool dpsw_opened = false;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpsw", &dpsw_id);
+	error = parse_object_name(restool.obj_name, "dpsw", &dpsw_id);
 	if (error < 0)
 		goto out;
 
-	error = dpsw_open(&resman.mc_io, dpsw_id, &dpsw_handle);
+	error = dpsw_open(&restool.mc_io, dpsw_id, &dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -718,7 +718,7 @@ static int cmd_dpsw_destroy(void)
 		goto out;
 	}
 
-	error = dpsw_destroy(&resman.mc_io, dpsw_handle);
+	error = dpsw_destroy(&restool.mc_io, dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -729,7 +729,7 @@ static int cmd_dpsw_destroy(void)
 
 out:
 	if (dpsw_opened) {
-		error2 = dpsw_close(&resman.mc_io, dpsw_handle);
+		error2 = dpsw_close(&restool.mc_io, dpsw_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

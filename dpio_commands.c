@@ -37,7 +37,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 #include "fsl_dpio.h"
 
@@ -138,7 +138,7 @@ static int cmd_dpio_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"resman dpio <command> [--help] [ARGS...]\n"
+		"restool dpio <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPIO object.\n"
 		"   create - creates a new child DPIO under the root DPRC.\n"
@@ -159,7 +159,7 @@ static int print_dpio_attr(uint32_t dpio_id,
 	struct dpio_attr dpio_attr;
 	bool dpio_opened = false;
 
-	error = dpio_open(&resman.mc_io, dpio_id, &dpio_handle);
+	error = dpio_open(&restool.mc_io, dpio_id, &dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -176,7 +176,7 @@ static int print_dpio_attr(uint32_t dpio_id,
 	}
 
 	memset(&dpio_attr, 0, sizeof(dpio_attr));
-	error = dpio_get_attributes(&resman.mc_io, dpio_handle, &dpio_attr);
+	error = dpio_get_attributes(&restool.mc_io, dpio_handle, &dpio_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -211,7 +211,7 @@ out:
 	if (dpio_opened) {
 		int error2;
 
-		error2 = dpio_close(&resman.mc_io, dpio_handle);
+		error2 = dpio_close(&restool.mc_io, dpio_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -232,7 +232,7 @@ static int print_dpio_info(uint32_t dpio_id)
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpio_id,
+	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpio_id,
 				"dpio", &target_obj_desc,
 				&target_parent_dprc_handle, &found);
 	if (error < 0)
@@ -247,8 +247,8 @@ static int print_dpio_info(uint32_t dpio_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_obj_verbose(&target_obj_desc, &dpio_ops);
 	}
 
@@ -260,32 +260,32 @@ static int cmd_dpio_info(void)
 {
 	static const char usage_msg[] =
 	"\n"
-	"Usage: resman dpio info <dpio-object> [--verbose]\n"
-	"   e.g. resman dpio info dpio.5\n"
+	"Usage: restool dpio info <dpio-object> [--verbose]\n"
+	"   e.g. restool dpio info dpio.5\n"
 	"\n"
 	"--verbose\n"
 	"   Shows extended/verbose information about the object\n"
-	"   e.g. resman dpio info dpio.5 --verbose\n"
+	"   e.g. restool dpio info dpio.5 --verbose\n"
 	"\n";
 
 	uint32_t obj_id;
 	int error;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpio", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpio", &obj_id);
 	if (error < 0)
 		goto out;
 
@@ -298,9 +298,9 @@ static int cmd_dpio_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpio create [OPTIONS]\n"
+		"Usage: restool dpio create [OPTIONS]\n"
 		"   e.g. create a DPIO object with all default options:\n"
-		"	resman dpio create\n"
+		"	restool dpio create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPIO by default options\n"
@@ -321,27 +321,27 @@ static int cmd_dpio_create(void)
 	uint16_t dpio_handle;
 	struct dpio_attr dpio_attr;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name != NULL) {
+	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     resman.obj_name);
+			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_CHANNEL_MODE)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_CHANNEL_MODE)) {
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_CHANNEL_MODE);
-		if (strcmp(resman.cmd_option_args[CREATE_OPT_CHANNEL_MODE],
+		if (strcmp(restool.cmd_option_args[CREATE_OPT_CHANNEL_MODE],
 		    "DPIO_LOCAL_CHANNEL") == 0) {
 			dpio_cfg.channel_mode = 0;
 		} else if (
-			strcmp(resman.cmd_option_args[CREATE_OPT_CHANNEL_MODE],
+			strcmp(restool.cmd_option_args[CREATE_OPT_CHANNEL_MODE],
 			"DPIO_NO_CHANNEL") == 0) {
 			dpio_cfg.channel_mode = 1;
 		} else {
@@ -353,11 +353,11 @@ static int cmd_dpio_create(void)
 		dpio_cfg.channel_mode = DPIO_LOCAL_CHANNEL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
 		errno = 0;
-		str = resman.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
+		str = restool.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
@@ -371,7 +371,7 @@ static int cmd_dpio_create(void)
 		dpio_cfg.num_priorities = 8;
 	}
 
-	error = dpio_create(&resman.mc_io, &dpio_cfg, &dpio_handle);
+	error = dpio_create(&restool.mc_io, &dpio_cfg, &dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -380,7 +380,7 @@ static int cmd_dpio_create(void)
 	}
 
 	memset(&dpio_attr, 0, sizeof(struct dpio_attr));
-	error = dpio_get_attributes(&resman.mc_io, dpio_handle, &dpio_attr);
+	error = dpio_get_attributes(&restool.mc_io, dpio_handle, &dpio_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -389,7 +389,7 @@ static int cmd_dpio_create(void)
 	}
 	printf("dpio.%d is created in dprc.1\n", dpio_attr.id);
 
-	error = dpio_close(&resman.mc_io, dpio_handle);
+	error = dpio_close(&restool.mc_io, dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -404,8 +404,8 @@ static int cmd_dpio_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpio destroy <dpio-object>\n"
-		"   e.g. resman dpio destroy dpio.9\n"
+		"Usage: restool dpio destroy <dpio-object>\n"
+		"   e.g. restool dpio destroy dpio.9\n"
 		"\n";
 
 	int error;
@@ -414,24 +414,24 @@ static int cmd_dpio_destroy(void)
 	uint16_t dpio_handle;
 	bool dpio_opened = false;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpio", &dpio_id);
+	error = parse_object_name(restool.obj_name, "dpio", &dpio_id);
 	if (error < 0)
 		goto out;
 
-	error = dpio_open(&resman.mc_io, dpio_id, &dpio_handle);
+	error = dpio_open(&restool.mc_io, dpio_id, &dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -447,7 +447,7 @@ static int cmd_dpio_destroy(void)
 		goto out;
 	}
 
-	error = dpio_destroy(&resman.mc_io, dpio_handle);
+	error = dpio_destroy(&restool.mc_io, dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -458,7 +458,7 @@ static int cmd_dpio_destroy(void)
 
 out:
 	if (dpio_opened) {
-		error2 = dpio_close(&resman.mc_io, dpio_handle);
+		error2 = dpio_close(&restool.mc_io, dpio_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

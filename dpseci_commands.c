@@ -36,7 +36,7 @@
 #include <assert.h>
 #include <getopt.h>
 #include <sys/ioctl.h>
-#include "resman.h"
+#include "restool.h"
 #include "utils.h"
 #include "fsl_dpseci.h"
 
@@ -129,7 +129,7 @@ static int cmd_dpseci_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"resman dpseci <command> [--help] [ARGS...]\n"
+		"restool dpseci <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPSECI object.\n"
 		"   create - creates a new child DPSECI under the root DPRC.\n"
@@ -150,7 +150,7 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 	struct dpseci_attr dpseci_attr;
 	bool dpseci_opened = false;
 
-	error = dpseci_open(&resman.mc_io, dpseci_id, &dpseci_handle);
+	error = dpseci_open(&restool.mc_io, dpseci_id, &dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -167,7 +167,7 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 	}
 
 	memset(&dpseci_attr, 0, sizeof(dpseci_attr));
-	error = dpseci_get_attributes(&resman.mc_io, dpseci_handle,
+	error = dpseci_get_attributes(&restool.mc_io, dpseci_handle,
 					&dpseci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -190,7 +190,7 @@ out:
 	if (dpseci_opened) {
 		int error2;
 
-		error2 = dpseci_close(&resman.mc_io, dpseci_handle);
+		error2 = dpseci_close(&restool.mc_io, dpseci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -211,7 +211,7 @@ static int print_dpseci_info(uint32_t dpseci_id)
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(resman.root_dprc_handle, 0, dpseci_id,
+	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpseci_id,
 				"dpseci", &target_obj_desc,
 				&target_parent_dprc_handle, &found);
 	if (error < 0)
@@ -226,8 +226,8 @@ static int print_dpseci_info(uint32_t dpseci_id)
 	if (error < 0)
 		goto out;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
 		error = print_obj_verbose(&target_obj_desc, &dpseci_ops);
 	}
 
@@ -239,32 +239,32 @@ static int cmd_dpseci_info(void)
 {
 	static const char usage_msg[] =
 	"\n"
-	"Usage: resman dpseci info <dpseci-object> [--verbose]\n"
-	"   e.g. resman dpseci info dpseci.5\n"
+	"Usage: restool dpseci info <dpseci-object> [--verbose]\n"
+	"   e.g. restool dpseci info dpseci.5\n"
 	"\n"
 	"--verbose\n"
 	"   Shows extended/verbose information about the object\n"
-	"   e.g. resman dpseci info dpseci.5 --verbose\n"
+	"   e.g. restool dpseci info dpseci.5 --verbose\n"
 	"\n";
 
 	uint32_t obj_id;
 	int error;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpseci", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpseci", &obj_id);
 	if (error < 0)
 		goto out;
 
@@ -314,9 +314,9 @@ static int cmd_dpseci_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpseci create [OPTIONS]\n"
+		"Usage: restool dpseci create [OPTIONS]\n"
 		"   e.g. create a DPSECI object with all default options:\n"
-		"	resman dpseci create\n"
+		"	restool dpseci create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPSECI by default options\n"
@@ -325,7 +325,7 @@ static int cmd_dpseci_create(void)
 		"   Valid values for <priority1> and <priority2> are 1-8. Default value is 1.\n"
 		"\n"
 		"e.g. create a DPSECI with 2,4 priorities:\n"
-		"   resman dpseci create --priorities=2,4\n"
+		"   restool dpseci create --priorities=2,4\n"
 		"\n";
 
 	int error;
@@ -333,24 +333,24 @@ static int cmd_dpseci_create(void)
 	uint16_t dpseci_handle;
 	struct dpseci_attr dpseci_attr;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name != NULL) {
+	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     resman.obj_name);
+			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
 	}
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PRIORITIES)) {
-		resman.cmd_option_mask &=
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PRIORITIES)) {
+		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_PRIORITIES);
 		error = parse_dpseci_priorities(
-			resman.cmd_option_args[CREATE_OPT_PRIORITIES],
+			restool.cmd_option_args[CREATE_OPT_PRIORITIES],
 			dpseci_cfg.priorities);
 		if (error < 0) {
 			DEBUG_PRINTF(
@@ -363,7 +363,7 @@ static int cmd_dpseci_create(void)
 		dpseci_cfg.priorities[1] = 1;
 	}
 
-	error = dpseci_create(&resman.mc_io, &dpseci_cfg, &dpseci_handle);
+	error = dpseci_create(&restool.mc_io, &dpseci_cfg, &dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -372,7 +372,7 @@ static int cmd_dpseci_create(void)
 	}
 
 	memset(&dpseci_attr, 0, sizeof(struct dpseci_attr));
-	error = dpseci_get_attributes(&resman.mc_io, dpseci_handle,
+	error = dpseci_get_attributes(&restool.mc_io, dpseci_handle,
 					&dpseci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -382,7 +382,7 @@ static int cmd_dpseci_create(void)
 	}
 	printf("dpseci.%d is created in dprc.1\n", dpseci_attr.id);
 
-	error = dpseci_close(&resman.mc_io, dpseci_handle);
+	error = dpseci_close(&restool.mc_io, dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -397,8 +397,8 @@ static int cmd_dpseci_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: resman dpseci destroy <dpseci-object>\n"
-		"   e.g. resman dpseci destroy dpseci.9\n"
+		"Usage: restool dpseci destroy <dpseci-object>\n"
+		"   e.g. restool dpseci destroy dpseci.9\n"
 		"\n";
 
 	int error;
@@ -407,24 +407,24 @@ static int cmd_dpseci_destroy(void)
 	uint16_t dpseci_handle;
 	bool dpseci_opened = false;
 
-	if (resman.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
-		resman.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
-	if (resman.obj_name == NULL) {
+	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
 
-	error = parse_object_name(resman.obj_name, "dpseci", &dpseci_id);
+	error = parse_object_name(restool.obj_name, "dpseci", &dpseci_id);
 	if (error < 0)
 		goto out;
 
-	error = dpseci_open(&resman.mc_io, dpseci_id, &dpseci_handle);
+	error = dpseci_open(&restool.mc_io, dpseci_id, &dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -440,7 +440,7 @@ static int cmd_dpseci_destroy(void)
 		goto out;
 	}
 
-	error = dpseci_destroy(&resman.mc_io, dpseci_handle);
+	error = dpseci_destroy(&restool.mc_io, dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -451,7 +451,7 @@ static int cmd_dpseci_destroy(void)
 
 out:
 	if (dpseci_opened) {
-		error2 = dpseci_close(&resman.mc_io, dpseci_handle);
+		error2 = dpseci_close(&restool.mc_io, dpseci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
