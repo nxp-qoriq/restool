@@ -1006,11 +1006,10 @@ static int cmd_dprc_create_child(void)
 		goto out;
 
 	if (dprc_id != restool.root_dprc_id) {
-		error = open_dprc(dprc_id, &dprc_handle);
-		if (error < 0)
-			goto out;
-
-		dprc_opened = true;
+		ERROR_PRINTF(
+			"cannot creat dprc under non-root dprc because of mcp resource management issue...\n");
+		error = -EINVAL;
+		goto out;
 	} else {
 		dprc_handle = restool.root_dprc_handle;
 	}
