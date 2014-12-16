@@ -528,7 +528,7 @@ static int create_dpdmux(const char *usage_msg)
 			return error;
 		}
 	} else {
-		dpdmux_cfg.method = DPDMUX_METHOD_NONE;
+		dpdmux_cfg.method = DPDMUX_METHOD_C_VLAN_MAC;
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MANIP)) {
@@ -674,11 +674,13 @@ static int cmd_dpdmux_create(void)
 		"	DPDMUX_METHOD_MAC\n"
 		"	DPDMUX_METHOD_C_VLAN\n"
 		"	DPDMUX_METHOD_S_VLAN\n"
+		"   Default is DPDMUX_METHOD_C_VLAN_MAC\n"
 		"--manip=<manip>\n"
 		"   Where <manip> defines the DMux required manipulation operation.\n"
 		"   A valid value is one of the following:\n"
 		"	DPDMUX_MANIP_NONE\n"
 		"	DPDMUX_MANIP_ADD_REMOVE_S_VLAN\n"
+		"   Default is DPDMUX_MANIP_NONE\n"
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma separated list of DPDMUX options:\n"
 		"	DPDMUX_OPT_REPLICATION_DIS\n"
