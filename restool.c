@@ -51,7 +51,7 @@
 #define MC_PORTAL_PADDR_TO_PORTAL_ID(_portal_paddr) \
 	(((_portal_paddr) - MC_PORTALS_BASE_PADDR) / MC_PORTAL_STRIDE)
 
-static const char restool_version[] = "0.5";
+static const char restool_version[] = "0.6";
 
 static struct option global_options[] = {
 	[GLOBAL_OPT_HELP] = {
