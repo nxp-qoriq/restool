@@ -168,7 +168,7 @@ static int print_dpio_attr(uint32_t dpio_id,
 	}
 	dpio_opened = true;
 	if (0 == dpio_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpio_open() returned invalid handle (auth 0) for dpio.%u\n",
 			dpio_id);
 		error = -ENOENT;
@@ -440,7 +440,7 @@ static int cmd_dpio_destroy(void)
 	}
 	dpio_opened = true;
 	if (0 == dpio_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpio_open() returned invalid handle (auth 0) for dpio.%u\n",
 			dpio_id);
 		error = -ENOENT;

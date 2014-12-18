@@ -160,7 +160,7 @@ static int print_dpbp_attr(uint32_t dpbp_id,
 	}
 	dpbp_opened = true;
 	if (0 == dpbp_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpbp_open() returned invalid handle (auth 0) for dpbp.%u\n",
 			dpbp_id);
 		error = -ENOENT;
@@ -394,7 +394,7 @@ static int cmd_dpbp_destroy(void)
 	}
 	dpbp_opened = true;
 	if (0 == dpbp_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpbp_open() returned invalid handle (auth 0) for dpbp.%u\n",
 			dpbp_id);
 		error = -ENOENT;

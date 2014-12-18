@@ -292,7 +292,7 @@ static int print_dpsw_attr(uint32_t dpsw_id,
 	}
 	dpsw_opened = true;
 	if (0 == dpsw_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpsw_open() returned invalid handle (auth 0) for dpsw.%u\n",
 			dpsw_id);
 		error = -ENOENT;
@@ -505,7 +505,7 @@ static int create_dpsw(const char *usage_msg)
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
 				&dpsw_cfg.adv.options);
 		if (error < 0) {
-			ERROR_PRINTF(
+			DEBUG_PRINTF(
 				"parse_dpsw_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
@@ -711,7 +711,7 @@ static int cmd_dpsw_destroy(void)
 	}
 	dpsw_opened = true;
 	if (0 == dpsw_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpsw_open() returned invalid handle (auth 0) for dpsw.%u\n",
 			dpsw_id);
 		error = -ENOENT;

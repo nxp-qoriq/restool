@@ -159,7 +159,7 @@ static int print_dpcon_attr(uint32_t dpcon_id,
 	}
 	dpcon_opened = true;
 	if (0 == dpcon_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpcon_open() returned invalid handle (auth 0) for dpcon.%u\n",
 			dpcon_id);
 		error = -ENOENT;
@@ -400,7 +400,7 @@ static int cmd_dpcon_destroy(void)
 	}
 	dpcon_opened = true;
 	if (0 == dpcon_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpcon_open() returned invalid handle (auth 0) for dpcon.%u\n",
 			dpcon_id);
 		error = -ENOENT;

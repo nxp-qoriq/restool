@@ -352,7 +352,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	}
 	dpni_opened = true;
 	if (0 == dpni_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
 			dpni_id);
 		error = -ENOENT;
@@ -673,7 +673,7 @@ static int create_dpni(const char *usage_msg)
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
 				&dpni_cfg.adv.options);
 		if (error < 0) {
-			ERROR_PRINTF(
+			DEBUG_PRINTF(
 				"parse_dpni_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
@@ -694,7 +694,7 @@ static int create_dpni(const char *usage_msg)
 			restool.cmd_option_args[CREATE_OPT_MAC_ADDR],
 			dpni_cfg.mac_addr);
 	if (error < 0) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"parse_dpni_mac_addr() failed with error %d, cannot get mac address\n",
 			error);
 		return error;
@@ -726,7 +726,7 @@ static int create_dpni(const char *usage_msg)
 			dpni_cfg.adv.max_dist_per_tc,
 			dpni_cfg.adv.max_tcs);
 		if (error < 0) {
-			ERROR_PRINTF(
+			DEBUG_PRINTF(
 				"parse_dpni_max_dist_per_tc() failed with error %d, cannot get maximum distribution's size per RX traffic-class\n",
 				error);
 			return error;
@@ -1005,7 +1005,7 @@ static int cmd_dpni_destroy(void)
 	}
 	dpni_opened = true;
 	if (0 == dpni_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
 			dpni_id);
 		error = -ENOENT;

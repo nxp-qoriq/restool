@@ -159,7 +159,7 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 	}
 	dpseci_opened = true;
 	if (0 == dpseci_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpseci_open() returned invalid handle (auth 0) for dpseci.%u\n",
 			dpseci_id);
 		error = -ENOENT;
@@ -433,7 +433,7 @@ static int cmd_dpseci_destroy(void)
 	}
 	dpseci_opened = true;
 	if (0 == dpseci_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpseci_open() returned invalid handle (auth 0) for dpseci.%u\n",
 			dpseci_id);
 		error = -ENOENT;

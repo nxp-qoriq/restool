@@ -161,7 +161,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 	}
 	dpci_opened = true;
 	if (0 == dpci_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpci_open() returned invalid handle (auth 0) for dpci.%u\n",
 			dpci_id);
 		error = -ENOENT;
@@ -427,7 +427,7 @@ static int cmd_dpci_destroy(void)
 	}
 	dpci_opened = true;
 	if (0 == dpci_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpci_open() returned invalid handle (auth 0) for dpci.%u\n",
 			dpci_id);
 		error = -ENOENT;

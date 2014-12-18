@@ -373,19 +373,20 @@ int parse_object_name(const char *obj_name, char *expected_obj_type,
 int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 {
 	int error;
+	enum mc_cmd_status mc_status;
 
 	error = dprc_open(&restool.mc_io,
 			  dprc_id,
 			  dprc_handle);
 	if (error < 0) {
-		ERROR_PRINTF(
-			"dprc_open() failed for dprc.%u with error %d\n",
-			dprc_id, error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
 	if (*dprc_handle == 0) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dprc_open() returned invalid handle (auth 0) for dprc.%u\n",
 			dprc_id);
 
@@ -621,6 +622,7 @@ int main(int argc, char *argv[])
 	bool mc_io_initialized = false;
 	bool root_dprc_opened = false;
 	struct ioctl_dprc_info root_dprc_info = { 0 };
+	enum mc_cmd_status mc_status;
 
 	#ifdef DEBUG
 	restool.debug = true;
@@ -636,8 +638,9 @@ int main(int argc, char *argv[])
 
 	error = mc_get_version(&restool.mc_io, &restool.mc_fw_version);
 	if (error != 0) {
-		ERROR_PRINTF("mc_get_version() failed with error %d\n",
-			     error);
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
 
@@ -749,8 +752,9 @@ out:
 
 		error2 = dprc_close(&restool.mc_io, restool.root_dprc_handle);
 		if (error2 < 0) {
-			ERROR_PRINTF("dprc_close() failed with error %d\n",
-				     error2);
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
 			if (error == 0)
 				error = error2;
 		}

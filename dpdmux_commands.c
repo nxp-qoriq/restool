@@ -266,7 +266,7 @@ static int print_dpdmux_attr(uint32_t dpdmux_id,
 	}
 	dpdmux_opened = true;
 	if (0 == dpdmux_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpdmux_open() returned invalid handle (auth 0) for dpdmux.%u\n",
 			dpdmux_id);
 		error = -ENOENT;
@@ -736,7 +736,7 @@ static int cmd_dpdmux_destroy(void)
 	}
 	dpdmux_opened = true;
 	if (0 == dpdmux_handle) {
-		ERROR_PRINTF(
+		DEBUG_PRINTF(
 			"dpdmux_open() returned invalid handle (auth 0) for dpdmux.%u\n",
 			dpdmux_id);
 		error = -ENOENT;
