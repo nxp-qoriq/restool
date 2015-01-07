@@ -273,13 +273,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 		printf("interrupt %d's mask: %#x\n", j, irq_mask);
 		ops->obj_get_irq_status(&restool.mc_io, obj_handle, j,
 					&irq_status);
-		(irq_status == 0) ?
-		printf("interrupt %d's status: %#x - no interrupt pending.\n",
-			j, irq_status) : (irq_status == 1) ?
-		printf("interrupt %d's status: %#x - interrupt pending.\n",
-			j, irq_status) :
-		printf("interrupt %d's status: %#x - error status.\n",
-			j, irq_status);
+		printf("interrupt %d's status: %#x\n", j, irq_status);
 	}
 
 	error = ops->obj_close(&restool.mc_io, obj_handle);
