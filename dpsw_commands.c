@@ -235,7 +235,7 @@ static int print_dpsw_endpoint(uint32_t target_id,
 					&endpoint2,
 					&state);
 
-		if (error == -ENAVAIL) {
+		if (error == 0 && state == -1) {
 			printf("\tinterface %d: No object associated\n", k);
 		} else if (error == 0) {
 			if (strcmp(endpoint2.type, "dpsw") == 0 ||

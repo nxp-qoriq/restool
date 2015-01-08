@@ -302,7 +302,7 @@ static int print_dpni_endpoint(uint32_t target_id,
 	error = dprc_get_connection(&restool.mc_io, target_parent_dprc_handle,
 					&endpoint1, &endpoint2, &state);
 
-	if (error == -ENAVAIL) {
+	if (error == 0 && state == -1) {
 		printf("endpoint: No object associated\n");
 	} else if (error == 0) {
 		if (strcmp(endpoint2.type, "dpsw") == 0 ||
