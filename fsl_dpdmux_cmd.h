@@ -1,39 +1,39 @@
-/* Copyright 2013-2014 Freescale Semiconductor Inc.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-* * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-* * Redistributions in binary form must reproduce the above copyright
-* notice, this list of conditions and the following disclaimer in the
-* documentation and/or other materials provided with the distribution.
-* * Neither the name of the above-listed copyright holders nor the
-* names of any contributors may be used to endorse or promote products
-* derived from this software without specific prior written permission.
-*
-*
-* ALTERNATIVELY, this software may be distributed under the terms of the
-* GNU General Public License ("GPL") as published by the Free Software
-* Foundation, either version 2 of that License or (at your option) any
-* later version.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/
+/* Copyright 2013-2015 Freescale Semiconductor Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the above-listed copyright holders nor the
+ * names of any contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ *
+ *
+ * ALTERNATIVELY, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") as published by the Free Software
+ * Foundation, either version 2 of that License or (at your option) any
+ * later version.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef _FSL_DPDMUX_CMD_H
 #define _FSL_DPDMUX_CMD_H
 
 /* DPDMUX Version */
-#define DPDMUX_VER_MAJOR				2
+#define DPDMUX_VER_MAJOR				3
 #define DPDMUX_VER_MINOR				0
 
 /* Command IDs */
@@ -59,8 +59,7 @@
 
 #define DPDMUX_CMDID_UL_SET_MAX_FRAME_LENGTH		0x0a1
 #define DPDMUX_CMDID_SET_DEFAULT_IF			0x0a2
-#define DPDMUX_CMDID_UL_GET_COUNTER			0x0a3
-#define DPDMUX_CMDID_UL_SET_COUNTER			0x0a4
+#define DPDMUX_CMDID_UL_RESET_COUNTERS			0x0a3
 
 #define DPDMUX_CMDID_IF_SET_ACCEPTED_FRAMES		0x0a7
 #define DPDMUX_CMDID_IF_GET_ATTR			0x0a8
@@ -68,6 +67,9 @@
 
 #define DPDMUX_CMDID_IF_ADD_L2_RULE			0x0b0
 #define DPDMUX_CMDID_IF_REMOVE_L2_RULE			0x0b1
+#define DPDMUX_CMDID_IF_GET_COUNTER			0x0b2
+#define DPDMUX_CMDID_IF_SET_LINK_CFG		0x0b3
+#define DPDMUX_CMDID_IF_GET_LINK_STATE		0x0b4
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDMUX_CMD_OPEN(cmd, dpdmux_id) \
@@ -82,6 +84,7 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 32, int,	    cfg->control_if);\
 	MC_CMD_OP(cmd, 1, 0,  16, uint16_t, cfg->adv.max_dmat_entries);\
 	MC_CMD_OP(cmd, 1, 16, 16, uint16_t, cfg->adv.max_mc_groups);\
+	MC_CMD_OP(cmd, 1, 32, 16, uint16_t, cfg->adv.max_vlan_ids);\
 	MC_CMD_OP(cmd, 2, 0,  64, uint64_t, cfg->adv.options);\
 } while (0)
 
@@ -90,11 +93,11 @@ do { \
 	MC_RSP_OP(cmd, 0, 0,  1,  int,	    en)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPDMUX_CMD_SET_IRQ(cmd, irq_index, irq_paddr, irq_val, user_irq_id) \
+#define DPDMUX_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  irq_index);\
 	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_val);\
-	MC_CMD_OP(cmd, 0, 0,  64, uint64_t, irq_paddr);\
+	MC_CMD_OP(cmd, 0, 0,  64, uint64_t, irq_addr);\
 	MC_CMD_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
 } while (0)
 
@@ -103,10 +106,10 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPDMUX_RSP_GET_IRQ(cmd, type, irq_paddr, irq_val, user_irq_id) \
+#define DPDMUX_RSP_GET_IRQ(cmd, type, irq_addr, irq_val, user_irq_id) \
 do { \
 	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_paddr); \
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_addr); \
 	MC_RSP_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
 	MC_RSP_OP(cmd, 2, 32, 32, int,	    type); \
 } while (0)
@@ -185,21 +188,6 @@ do { \
 	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, if_id)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPDMUX_CMD_UL_GET_COUNTER(cmd, type) \
-	MC_CMD_OP(cmd, 0, 0,  8,  enum dpdmux_counter_type, type)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPDMUX_RSP_UL_GET_COUNTER(cmd, counter) \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, counter)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPDMUX_CMD_UL_SET_COUNTER(cmd, type, counter) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  8,  enum dpdmux_counter_type, type);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, counter);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
 #define DPDMUX_CMD_IF_SET_ACCEPTED_FRAMES(cmd, if_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
@@ -244,6 +232,37 @@ do { \
 	MC_CMD_OP(cmd, 0, 48, 8,  uint8_t,  l2_rule->mac_addr[1]);\
 	MC_CMD_OP(cmd, 0, 56, 8,  uint8_t,  l2_rule->mac_addr[0]);\
 	MC_CMD_OP(cmd, 1, 32, 16, uint16_t, l2_rule->vlan_id);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPDMUX_CMD_IF_GET_COUNTER(cmd, if_id, counter_type) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
+	MC_CMD_OP(cmd, 0, 16, 8,  enum dpdmux_counter_type, counter_type);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPDMUX_RSP_IF_GET_COUNTER(cmd, counter) \
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, counter)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPDMUX_CMD_IF_SET_LINK_CFG(cmd, if_id, cfg) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->rate);\
+	MC_CMD_OP(cmd, 2, 0,  64, uint64_t, cfg->options);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPDMUX_CMD_IF_GET_LINK_STATE(cmd, if_id) \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPDMUX_RSP_IF_GET_LINK_STATE(cmd, state) \
+do { \
+	MC_RSP_OP(cmd, 0, 32, 32, int,      state->up);\
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, state->rate);\
+	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
 } while (0)
 
 #endif /* _FSL_DPDMUX_CMD_H */

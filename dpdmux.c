@@ -1,34 +1,34 @@
-/* Copyright 2013-2014 Freescale Semiconductor Inc.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-* * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-* * Redistributions in binary form must reproduce the above copyright
-* notice, this list of conditions and the following disclaimer in the
-* documentation and/or other materials provided with the distribution.
-* * Neither the name of the above-listed copyright holders nor the
-* names of any contributors may be used to endorse or promote products
-* derived from this software without specific prior written permission.
-*
-*
-* ALTERNATIVELY, this software may be distributed under the terms of the
-* GNU General Public License ("GPL") as published by the Free Software
-* Foundation, either version 2 of that License or (at your option) any
-* later version.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/
+/* Copyright 2013-2015 Freescale Semiconductor Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the above-listed copyright holders nor the
+ * names of any contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ *
+ *
+ * ALTERNATIVELY, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") as published by the Free Software
+ * Foundation, either version 2 of that License or (at your option) any
+ * later version.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 #include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpdmux.h"
@@ -50,7 +50,7 @@ int dpdmux_open(struct fsl_mc_io *mc_io, int dpdmux_id, uint16_t *token)
 		return err;
 
 	/* retrieve response parameters */
-	*token = MC_CMD_HDR_READ_AUTHID(cmd.header);
+	*token = MC_CMD_HDR_READ_TOKEN(cmd.header);
 
 	return 0;
 }
@@ -86,7 +86,7 @@ int dpdmux_create(struct fsl_mc_io *mc_io,
 		return err;
 
 	/* retrieve response parameters */
-	*token = MC_CMD_HDR_READ_AUTHID(cmd.header);
+	*token = MC_CMD_HDR_READ_TOKEN(cmd.header);
 
 	return 0;
 }
@@ -162,7 +162,7 @@ int dpdmux_reset(struct fsl_mc_io *mc_io, uint16_t token)
 int dpdmux_set_irq(struct fsl_mc_io *mc_io,
 		   uint16_t token,
 		   uint8_t irq_index,
-		   uint64_t irq_paddr,
+		   uint64_t irq_addr,
 		   uint32_t irq_val,
 		   int user_irq_id)
 {
@@ -172,7 +172,7 @@ int dpdmux_set_irq(struct fsl_mc_io *mc_io,
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_SET_IRQ,
 					  MC_CMD_PRI_LOW,
 					  token);
-	DPDMUX_CMD_SET_IRQ(cmd, irq_index, irq_paddr, irq_val, user_irq_id);
+	DPDMUX_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
@@ -182,7 +182,7 @@ int dpdmux_get_irq(struct fsl_mc_io *mc_io,
 		   uint16_t token,
 		   uint8_t irq_index,
 		   int *type,
-		   uint64_t *irq_paddr,
+		   uint64_t *irq_addr,
 		   uint32_t *irq_val,
 		   int *user_irq_id)
 {
@@ -201,7 +201,7 @@ int dpdmux_get_irq(struct fsl_mc_io *mc_io,
 		return err;
 
 	/* retrieve response parameters */
-	DPDMUX_RSP_GET_IRQ(cmd, *type, *irq_paddr, *irq_val, *user_irq_id);
+	DPDMUX_RSP_GET_IRQ(cmd, *type, *irq_addr, *irq_val, *user_irq_id);
 
 	return 0;
 }
@@ -403,43 +403,15 @@ int dpdmux_get_default_if(struct fsl_mc_io *mc_io, uint16_t token,
 	return 0;
 }
 
-int dpdmux_ul_get_counter(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			      enum dpdmux_counter_type type,
-			      uint64_t *counter)
-{
-	struct mc_command cmd = { 0 };
-	int err = 0;
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_UL_GET_COUNTER,
-					  MC_CMD_PRI_LOW,
-					  token);
-	DPDMUX_CMD_UL_GET_COUNTER(cmd, type);
-
-	/* send command to mc*/
-	err = mc_send_command(mc_io, &cmd);
-	if (err)
-		return err;
-
-	/* retrieve response parameters */
-	DPDMUX_RSP_UL_GET_COUNTER(cmd, *counter);
-
-	return 0;
-}
-
-int dpdmux_ul_set_counter(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			      enum dpdmux_counter_type type,
-			      uint64_t counter)
+int dpdmux_ul_reset_counters(struct fsl_mc_io *mc_io,
+			     uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_UL_SET_COUNTER,
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_UL_RESET_COUNTERS,
 					  MC_CMD_PRI_LOW,
 					  token);
-	DPDMUX_CMD_UL_SET_COUNTER(cmd, type, counter);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
@@ -517,4 +489,72 @@ int dpdmux_if_add_l2_rule(struct fsl_mc_io *mc_io, uint16_t token,
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
+}
+
+int dpdmux_if_get_counter(struct fsl_mc_io		*mc_io,
+			  uint16_t			token,
+			  uint16_t			if_id,
+			  enum dpdmux_counter_type	counter_type,
+			  uint64_t			*counter)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_GET_COUNTER,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPDMUX_CMD_IF_GET_COUNTER(cmd, if_id, counter_type);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPDMUX_RSP_IF_GET_COUNTER(cmd, *counter);
+
+	return 0;
+}
+
+int dpdmux_if_set_link_cfg(struct fsl_mc_io *mc_io,
+			   uint16_t token,
+			   uint16_t if_id,
+			   struct dpdmux_link_cfg *cfg)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_SET_LINK_CFG,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPDMUX_CMD_IF_SET_LINK_CFG(cmd, if_id, cfg);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpdmux_if_get_link_state(struct fsl_mc_io *mc_io,
+			     uint16_t token,
+			     uint16_t if_id,
+			     struct dpdmux_link_state *state)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_GET_LINK_STATE,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPDMUX_CMD_IF_GET_LINK_STATE(cmd, if_id);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPDMUX_RSP_IF_GET_LINK_STATE(cmd, state);
+
+	return 0;
 }

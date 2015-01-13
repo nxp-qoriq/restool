@@ -1,34 +1,34 @@
-/* Copyright 2013-2014 Freescale Semiconductor Inc.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-* * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-* * Redistributions in binary form must reproduce the above copyright
-* notice, this list of conditions and the following disclaimer in the
-* documentation and/or other materials provided with the distribution.
-* * Neither the name of the above-listed copyright holders nor the
-* names of any contributors may be used to endorse or promote products
-* derived from this software without specific prior written permission.
-*
-*
-* ALTERNATIVELY, this software may be distributed under the terms of the
-* GNU General Public License ("GPL") as published by the Free Software
-* Foundation, either version 2 of that License or (at your option) any
-* later version.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/
+/* Copyright 2013-2015 Freescale Semiconductor Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the above-listed copyright holders nor the
+ * names of any contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ *
+ *
+ * ALTERNATIVELY, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") as published by the Free Software
+ * Foundation, either version 2 of that License or (at your option) any
+ * later version.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 #include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpsw.h"
@@ -91,7 +91,7 @@ int dpsw_open(struct fsl_mc_io *mc_io, int dpsw_id, uint16_t *token)
 		return err;
 
 	/* retrieve response parameters */
-	*token = MC_CMD_HDR_READ_AUTHID(cmd.header);
+	*token = MC_CMD_HDR_READ_TOKEN(cmd.header);
 
 	return 0;
 }
@@ -126,7 +126,7 @@ int dpsw_create(struct fsl_mc_io *mc_io,
 		return err;
 
 	/* retrieve response parameters */
-	*token = MC_CMD_HDR_READ_AUTHID(cmd.header);
+	*token = MC_CMD_HDR_READ_TOKEN(cmd.header);
 
 	return 0;
 }
@@ -204,7 +204,7 @@ int dpsw_reset(struct fsl_mc_io *mc_io, uint16_t token)
 int dpsw_set_irq(struct fsl_mc_io *mc_io,
 		 uint16_t token,
 		 uint8_t irq_index,
-		 uint64_t irq_paddr,
+		 uint64_t irq_addr,
 		 uint32_t irq_val,
 		 int user_irq_id)
 {
@@ -214,7 +214,7 @@ int dpsw_set_irq(struct fsl_mc_io *mc_io,
 	cmd.header = mc_encode_cmd_header(DPSW_CMDID_SET_IRQ,
 					  MC_CMD_PRI_LOW,
 					  token);
-	DPSW_CMD_SET_IRQ(cmd, irq_index, irq_paddr, irq_val, user_irq_id);
+	DPSW_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
@@ -224,7 +224,7 @@ int dpsw_get_irq(struct fsl_mc_io *mc_io,
 		 uint16_t token,
 		 uint8_t irq_index,
 		 int *type,
-		 uint64_t *irq_paddr,
+		 uint64_t *irq_addr,
 		 uint32_t *irq_val,
 		 int *user_irq_id)
 {
@@ -243,7 +243,7 @@ int dpsw_get_irq(struct fsl_mc_io *mc_io,
 		return err;
 
 	/* retrieve response parameters */
-	DPSW_RSP_GET_IRQ(cmd, *type, *irq_paddr, *irq_val, *user_irq_id);
+	DPSW_RSP_GET_IRQ(cmd, *type, *irq_addr, *irq_val, *user_irq_id);
 
 	return 0;
 }
@@ -437,6 +437,43 @@ int dpsw_set_reflection_if(struct fsl_mc_io *mc_io,
 	return mc_send_command(mc_io, &cmd);
 }
 
+int dpsw_set_ctrl_if(struct fsl_mc_io *mc_io,
+		     uint16_t token,
+		     uint16_t if_id)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_SET_CTRL_IF,
+					  MC_CMD_PRI_LOW, token);
+	DPSW_CMD_SET_CTRL_IF(cmd, if_id);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpsw_get_ctrl_if(struct fsl_mc_io *mc_io,
+		     uint16_t token,
+		     uint16_t *if_id)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_GET_CTRL_IF,
+					  MC_CMD_PRI_LOW, token);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPSW_RSP_GET_CTRL_IF(cmd, *if_id);
+
+	return 0;
+}
+
 int dpsw_set_ptp_v2(struct fsl_mc_io *mc_io,
 		    uint16_t token,
 		    const struct dpsw_ptp_v2_cfg *cfg)
@@ -453,6 +490,47 @@ int dpsw_set_ptp_v2(struct fsl_mc_io *mc_io,
 	return mc_send_command(mc_io, &cmd);
 }
 
+int dpsw_if_set_link_cfg(struct fsl_mc_io *mc_io,
+			 uint16_t token,
+			   uint16_t if_id,
+			   struct dpsw_link_cfg *cfg)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_SET_LINK_CFG,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPSW_CMD_IF_SET_LINK_CFG(cmd, if_id, cfg);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpsw_if_get_link_state(struct fsl_mc_io *mc_io,
+			   uint16_t token,
+			     uint16_t if_id,
+			     struct dpsw_link_state *state)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_GET_LINK_STATE,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPSW_CMD_IF_GET_LINK_STATE(cmd, if_id);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPSW_RSP_IF_GET_LINK_STATE(cmd, state);
+
+	return 0;
+}
 
 int dpsw_if_set_flooding(struct fsl_mc_io *mc_io,
 			 uint16_t token,
@@ -634,7 +712,7 @@ int dpsw_if_set_counter(struct fsl_mc_io *mc_io,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpsw_if_tc_set_map(struct fsl_mc_io *mc_io,
+int dpsw_if_set_tc_map(struct fsl_mc_io *mc_io,
 		       uint16_t token,
 		       uint16_t if_id,
 		       const struct dpsw_tc_map_cfg *cfg)
@@ -714,6 +792,21 @@ int dpsw_add_custom_tpid(struct fsl_mc_io *mc_io,
 	return mc_send_command(mc_io, &cmd);
 }
 
+int dpsw_remove_custom_tpid(struct fsl_mc_io *mc_io,
+			    uint16_t token,
+			    const struct dpsw_custom_tpid_cfg *cfg)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_REMOVE_CUSTOM_TPID,
+					  MC_CMD_PRI_LOW, token);
+	DPSW_CMD_REMOVE_CUSTOM_TPID(cmd, cfg);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
 int dpsw_if_set_transmit_rate(struct fsl_mc_io *mc_io,
 			      uint16_t token,
 			      uint16_t if_id,
@@ -773,6 +866,30 @@ int dpsw_if_disable(struct fsl_mc_io *mc_io, uint16_t token, uint16_t if_id)
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
+}
+
+int dpsw_if_get_token(struct fsl_mc_io *mc_io,
+		      uint16_t token,
+		      uint16_t if_id,
+		      uint16_t *if_token)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_GET_TOKEN,
+					  MC_CMD_PRI_LOW, token);
+	DPSW_CMD_IF_GET_TOKEN(cmd, if_id);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPSW_RSP_IF_GET_TOKEN(cmd, *if_token);
+
+	return 0;
 }
 
 int dpsw_if_tc_set_queue_congestion(struct fsl_mc_io *mc_io,
@@ -901,29 +1018,6 @@ int dpsw_if_get_max_frame_length(struct fsl_mc_io *mc_io,
 		return err;
 
 	DPSW_RSP_IF_GET_MAX_FRAME_LENGTH(cmd, *frame_length);
-
-	return 0;
-}
-
-int dpsw_if_get_link_state(struct fsl_mc_io	*mc_io,
-			   uint16_t		token,
-			   uint16_t		if_id,
-			   int			*state)
-{
-	struct mc_command cmd = { 0 };
-	int err;
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_GET_LINK_STATE,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_GET_LINK_STATE(cmd, if_id);
-
-	/* send command to mc*/
-	err = mc_send_command(mc_io, &cmd);
-	if (err)
-		return err;
-
-	DPSW_RSP_IF_GET_LINK_STATE(cmd, *state);
 
 	return 0;
 }
@@ -1363,4 +1457,120 @@ int dpsw_fdb_get_attributes(struct fsl_mc_io *mc_io,
 	DPSW_RSP_FDB_GET_ATTR(cmd, attr);
 
 	return 0;
+}
+
+int dpsw_acl_add(struct fsl_mc_io *mc_io,
+		 uint16_t token,
+		 uint16_t *acl_id,
+		 const struct dpsw_acl_cfg  *cfg)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_ACL_ADD,
+					  MC_CMD_PRI_LOW, token);
+	DPSW_CMD_ACL_ADD(cmd, cfg);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPSW_RSP_ACL_ADD(cmd, *acl_id);
+
+	return 0;
+}
+
+int dpsw_acl_remove(struct fsl_mc_io *mc_io,
+		    uint16_t token,
+		    uint16_t acl_id)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_ACL_REMOVE,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPSW_CMD_ACL_REMOVE(cmd, acl_id);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpsw_acl_add_entry(struct fsl_mc_io *mc_io,
+		       uint16_t token,
+		       uint16_t acl_id,
+		       const struct dpsw_acl_entry_cfg *cfg,
+		       uint64_t params_iova)
+{
+	struct mc_command cmd = { 0 };
+	uint64_t *ext_params = (uint64_t *)params_iova;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_ACL_ADD_ENTRY,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPSW_EXT_ACL_ENTRY(ext_params, cfg);
+	DPSW_CMD_ACL_ADD_ENTRY(cmd, acl_id, params_iova);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpsw_acl_remove_entry(struct fsl_mc_io *mc_io,
+			  uint16_t token,
+		       uint16_t acl_id,
+		       const struct dpsw_acl_entry_cfg *cfg,
+		       uint64_t params_iova)
+{
+	struct mc_command cmd = { 0 };
+	uint64_t *ext_params = (uint64_t *)params_iova;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_ACL_REMOVE_ENTRY,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPSW_EXT_ACL_ENTRY(ext_params, cfg);
+	DPSW_CMD_ACL_REMOVE_ENTRY(cmd, acl_id, params_iova);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpsw_acl_add_if(struct fsl_mc_io *mc_io,
+		    uint16_t token,
+		    uint16_t acl_id,
+		    const struct dpsw_acl_if_cfg *cfg)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	build_if_id_bitmap(cfg->if_id, cfg->num_ifs, &cmd, 1);
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_ACL_ADD_IF,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPSW_CMD_ACL_ADD_IF(cmd, acl_id, cfg);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpsw_acl_remove_if(struct fsl_mc_io *mc_io,
+		       uint16_t token,
+		    uint16_t acl_id,
+		    const struct dpsw_acl_if_cfg *cfg)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	build_if_id_bitmap(cfg->if_id, cfg->num_ifs, &cmd, 1);
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_ACL_REMOVE_IF,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPSW_CMD_ACL_REMOVE_IF(cmd, acl_id, cfg);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
 }

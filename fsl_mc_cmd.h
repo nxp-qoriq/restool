@@ -1,15 +1,15 @@
-/* Copyright 2014 Freescale Semiconductor Inc.
+/* Copyright 2013-2015 Freescale Semiconductor Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of Freescale Semiconductor nor the
- *       names of its contributors may be used to endorse or promote products
- *       derived from this software without specific prior written permission.
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the above-listed copyright holders nor the
+ * names of any contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
  *
  *
  * ALTERNATIVELY, this software may be distributed under the terms of the
@@ -17,16 +17,17 @@
  * Foundation, either version 2 of that License or (at your option) any
  * later version.
  *
- * THIS SOFTWARE IS PROVIDED BY Freescale Semiconductor ``AS IS'' AND ANY
- * EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL Freescale Semiconductor BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- * (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND
- * ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
  */
 #ifndef __FSL_MC_CMD_H
 #define __FSL_MC_CMD_H
@@ -68,8 +69,8 @@ enum mc_cmd_status {
 
 #define MC_CMD_HDR_CMDID_O	52	/* Command ID field offset */
 #define MC_CMD_HDR_CMDID_S	12	/* Command ID field size */
-#define MC_CMD_HDR_AUTHID_O	38	/* Authentication ID field offset */
-#define MC_CMD_HDR_AUTHID_S	10	/* Authentication ID field size */
+#define MC_CMD_HDR_TOKEN_O	38	/* Token field offset */
+#define MC_CMD_HDR_TOKEN_S	10	/* Token field size */
 #define MC_CMD_HDR_STATUS_O	16	/* Status field offset */
 #define MC_CMD_HDR_STATUS_S	8	/* Status field size*/
 #define MC_CMD_HDR_PRI_O	15	/* Priority field offset */
@@ -79,11 +80,14 @@ enum mc_cmd_status {
 	((enum mc_cmd_status)u64_dec((_hdr), \
 		MC_CMD_HDR_STATUS_O, MC_CMD_HDR_STATUS_S))
 
-#define MC_CMD_HDR_READ_AUTHID(_hdr) \
-	((uint16_t)u64_dec((_hdr), MC_CMD_HDR_AUTHID_O, MC_CMD_HDR_AUTHID_S))
+#define MC_CMD_HDR_READ_TOKEN(_hdr) \
+	((uint16_t)u64_dec((_hdr), MC_CMD_HDR_TOKEN_O, MC_CMD_HDR_TOKEN_S))
 
 #define MC_CMD_PRI_LOW		0 /*!< Low Priority command indication */
 #define MC_CMD_PRI_HIGH		1 /*!< High Priority command indication */
+
+#define MC_EXT_OP(_ext, _param, _offset, _width, _type, _arg) \
+	((_ext)[_param] |= u64_enc((_offset), (_width), _arg))
 
 #define MC_CMD_OP(_cmd, _param, _offset, _width, _type, _arg) \
 	((_cmd).params[_param] |= u64_enc((_offset), (_width), _arg))
@@ -93,12 +97,12 @@ enum mc_cmd_status {
 
 static inline uint64_t mc_encode_cmd_header(uint16_t cmd_id,
 					    uint8_t priority,
-					    uint16_t auth_id)
+					    uint16_t token)
 {
 	uint64_t hdr;
 
 	hdr = u64_enc(MC_CMD_HDR_CMDID_O, MC_CMD_HDR_CMDID_S, cmd_id);
-	hdr |= u64_enc(MC_CMD_HDR_AUTHID_O, MC_CMD_HDR_AUTHID_S, auth_id);
+	hdr |= u64_enc(MC_CMD_HDR_TOKEN_O, MC_CMD_HDR_TOKEN_S, token);
 	hdr |= u64_enc(MC_CMD_HDR_PRI_O, MC_CMD_HDR_PRI_S, priority);
 	hdr |= u64_enc(MC_CMD_HDR_STATUS_O, MC_CMD_HDR_STATUS_S,
 		       MC_CMD_STATUS_READY);

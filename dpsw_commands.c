@@ -42,10 +42,8 @@
 
 #define ALL_DPSW_OPTS (			\
 	DPSW_OPT_FLOODING_DIS |		\
-	DPSW_OPT_BROADCAST_DIS |	\
 	DPSW_OPT_MULTICAST_DIS |	\
-	DPSW_OPT_TC_DIS |		\
-	DPSW_OPT_CONTROL)
+	DPSW_OPT_CTRL)
 
 enum mc_cmd_status mc_status;
 
@@ -207,17 +205,11 @@ static void print_dpsw_options(uint64_t options)
 	if (options & DPSW_OPT_FLOODING_DIS)
 		printf("\tDPSW_OPT_FLOODING_DIS\n");
 
-	if (options & DPSW_OPT_BROADCAST_DIS)
-		printf("\tDPSW_OPT_BROADCAST_DIS\n");
-
 	if (options & DPSW_OPT_MULTICAST_DIS)
 		printf("\tDPSW_OPT_MULTICAST_DIS\n");
 
-	if (options & DPSW_OPT_TC_DIS)
-		printf("\tDPSW_OPT_TC_DIS\n");
-
-	if (options & DPSW_OPT_CONTROL)
-		printf("\tDPSW_OPT_CONTROL\n");
+	if (options & DPSW_OPT_CTRL)
+		printf("\tDPSW_OPT_CTRL\n");
 }
 
 static int print_dpsw_endpoint(uint32_t target_id,
@@ -426,10 +418,8 @@ static int parse_dpsw_create_options(char *options_str, uint64_t *options)
 		uint64_t value;
 	} options_map[] = {
 		OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_DIS),
-		OPTION_MAP_ENTRY(DPSW_OPT_BROADCAST_DIS),
 		OPTION_MAP_ENTRY(DPSW_OPT_MULTICAST_DIS),
-		OPTION_MAP_ENTRY(DPSW_OPT_TC_DIS),
-		OPTION_MAP_ENTRY(DPSW_OPT_CONTROL),
+		OPTION_MAP_ENTRY(DPSW_OPT_CTRL),
 	};
 
 	char *cursor = NULL;
@@ -511,8 +501,7 @@ static int create_dpsw(const char *usage_msg)
 			return error;
 		}
 	} else { /* Todo: default option may change with spec */
-		dpsw_cfg.adv.options = DPSW_OPT_FLOODING_DIS |
-				       DPSW_OPT_TC_DIS;
+		dpsw_cfg.adv.options = DPSW_OPT_FLOODING_DIS;
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_VLANS)) {
@@ -652,10 +641,8 @@ static int cmd_dpsw_create(void)
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma separated list of DPSW options:\n"
 		"	DPSW_OPT_FLOODING_DIS\n"
-		"	DPSW_OPT_BROADCAST_DIS\n"
 		"	DPSW_OPT_MULTICAST_DIS\n"
-		"	DPSW_OPT_TC_DIS\n"
-		"	DPSW_OPT_CONTROL\n"
+		"	DPSW_OPT_CTRL\n"
 		"--max-vlans=<number>\n"
 		"	Maximum number of VLAN's. Default is 16.\n"
 		"--max-fdbs=<number>\n"

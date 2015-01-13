@@ -1,39 +1,41 @@
-/* Copyright 2013-2014 Freescale Semiconductor Inc.
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-* * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-* * Redistributions in binary form must reproduce the above copyright
-* notice, this list of conditions and the following disclaimer in the
-* documentation and/or other materials provided with the distribution.
-* * Neither the name of the above-listed copyright holders nor the
-* names of any contributors may be used to endorse or promote products
-* derived from this software without specific prior written permission.
-*
-*
-* ALTERNATIVELY, this software may be distributed under the terms of the
-* GNU General Public License ("GPL") as published by the Free Software
-* Foundation, either version 2 of that License or (at your option) any
-* later version.
-*
-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-* IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-* ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
-* LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-* CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-* SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-* INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-* CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-* ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-* POSSIBILITY OF SUCH DAMAGE.
-*/
+/* Copyright 2013-2015 Freescale Semiconductor Inc.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the above-listed copyright holders nor the
+ * names of any contributors may be used to endorse or promote products
+ * derived from this software without specific prior written permission.
+ *
+ *
+ * ALTERNATIVELY, this software may be distributed under the terms of the
+ * GNU General Public License ("GPL") as published by the Free Software
+ * Foundation, either version 2 of that License or (at your option) any
+ * later version.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ */
 #ifndef __FSL_DPSW_CMD_H
 #define __FSL_DPSW_CMD_H
 
+#define DPSW_CMD_EXTRACT_EXT_PARAMS		10
+
 /* DPSW Version */
-#define DPSW_VER_MAJOR				2
+#define DPSW_VER_MAJOR				3
 #define DPSW_VER_MINOR				0
 
 /* Command IDs */
@@ -62,6 +64,9 @@
 #define DPSW_CMDID_SET_REFLECTION_IF		0x022
 #define DPSW_CMDID_SET_PTP_V2			0x023
 #define DPSW_CMDID_ADD_CUSTOM_TPID		0x024
+#define DPSW_CMDID_SET_CTRL_IF			0x025
+#define DPSW_CMDID_REMOVE_CUSTOM_TPID		0x026
+#define DPSW_CMDID_GET_CTRL_IF			0x027
 
 #define DPSW_CMDID_IF_SET_TCI			0x030
 #define DPSW_CMDID_IF_SET_STP			0x031
@@ -90,6 +95,8 @@
 #define DPSW_CMDID_IF_SET_BROADCAST		0x048
 #define DPSW_CMDID_IF_SET_MULTICAST		0x049
 #define DPSW_CMDID_IF_GET_TCI			0x04A
+#define DPSW_CMDID_IF_GET_TOKEN			0x04B
+#define DPSW_CMDID_IF_SET_LINK_CFG		0x04C
 
 #define DPSW_CMDID_VLAN_ADD			0x060
 #define DPSW_CMDID_VLAN_ADD_IF			0x061
@@ -115,6 +122,13 @@
 #define DPSW_CMDID_FDB_SET_LEARNING_MODE	0x088
 #define DPSW_CMDID_FDB_GET_ATTR			0x089
 
+#define DPSW_CMDID_ACL_ADD			0x090
+#define DPSW_CMDID_ACL_REMOVE			0x091
+#define DPSW_CMDID_ACL_ADD_ENTRY		0x092
+#define DPSW_CMDID_ACL_REMOVE_ENTRY		0x093
+#define DPSW_CMDID_ACL_ADD_IF			0x094
+#define DPSW_CMDID_ACL_REMOVE_IF		0x095
+
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_OPEN(cmd, dpsw_id) \
 	MC_CMD_OP(cmd, 0, 0,  32, int,	 dpsw_id)
@@ -124,6 +138,7 @@
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, cfg->num_ifs);\
 	MC_CMD_OP(cmd, 0, 16,  8, uint8_t,  cfg->adv.max_fdbs);\
+	MC_CMD_OP(cmd, 0, 32, 16, uint16_t, cfg->adv.ctrl_if_id);\
 	MC_CMD_OP(cmd, 1, 0,  16, uint16_t, cfg->adv.max_vlans);\
 	MC_CMD_OP(cmd, 1, 16, 16, uint16_t, cfg->adv.max_fdb_entries);\
 	MC_CMD_OP(cmd, 1, 32, 16, uint16_t, cfg->adv.fdb_aging_time);\
@@ -136,11 +151,11 @@ do { \
 	MC_RSP_OP(cmd, 0, 0,  1,  int,	    en)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_SET_IRQ(cmd, irq_index, irq_paddr, irq_val, user_irq_id) \
+#define DPSW_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  irq_index);\
 	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_val);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_paddr);\
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
 	MC_CMD_OP(cmd, 2, 0,  32, int,	 user_irq_id); \
 } while (0)
 
@@ -149,10 +164,10 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_RSP_GET_IRQ(cmd, type, irq_paddr, irq_val, user_irq_id) \
+#define DPSW_RSP_GET_IRQ(cmd, type, irq_addr, irq_val, user_irq_id) \
 do { \
 	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_paddr);\
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
 	MC_RSP_OP(cmd, 2, 0,  32, int,	 user_irq_id); \
 	MC_RSP_OP(cmd, 2, 32, 32, int,	 type); \
 } while (0)
@@ -232,6 +247,14 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_SET_REFLECTION_IF(cmd, if_id) \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_SET_CTRL_IF(cmd, if_id) \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_RSP_GET_CTRL_IF(cmd, if_id) \
+	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, if_id)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_SET_PTP_V2(cmd, cfg) \
@@ -329,15 +352,16 @@ do { \
 #define DPSW_CMD_IF_TC_SET_MAP(cmd, if_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 0, 16, 3,  enum dpsw_user_priority, cfg->user_priority);\
-	MC_CMD_OP(cmd, 1, 0,  8,  uint8_t,  cfg->regenerated_priority[0]);\
-	MC_CMD_OP(cmd, 1, 8,  8,  uint8_t,  cfg->regenerated_priority[1]);\
-	MC_CMD_OP(cmd, 1, 16, 8,  uint8_t,  cfg->regenerated_priority[2]);\
-	MC_CMD_OP(cmd, 1, 24, 8,  uint8_t,  cfg->regenerated_priority[3]);\
-	MC_CMD_OP(cmd, 1, 32, 8,  uint8_t,  cfg->regenerated_priority[4]);\
-	MC_CMD_OP(cmd, 1, 40, 8,  uint8_t,  cfg->regenerated_priority[5]);\
-	MC_CMD_OP(cmd, 1, 48, 8,  uint8_t,  cfg->regenerated_priority[6]);\
-	MC_CMD_OP(cmd, 1, 56, 8,  uint8_t,  cfg->regenerated_priority[7]);\
+	MC_CMD_OP(cmd, 0, 16, 3,  enum dpsw_priority_selector, \
+						  cfg->priority_selector);\
+	MC_CMD_OP(cmd, 1, 0,  8,  uint8_t,  cfg->tc_id[0]);\
+	MC_CMD_OP(cmd, 1, 8,  8,  uint8_t,  cfg->tc_id[1]);\
+	MC_CMD_OP(cmd, 1, 16, 8,  uint8_t,  cfg->tc_id[2]);\
+	MC_CMD_OP(cmd, 1, 24, 8,  uint8_t,  cfg->tc_id[3]);\
+	MC_CMD_OP(cmd, 1, 32, 8,  uint8_t,  cfg->tc_id[4]);\
+	MC_CMD_OP(cmd, 1, 40, 8,  uint8_t,  cfg->tc_id[5]);\
+	MC_CMD_OP(cmd, 1, 48, 8,  uint8_t,  cfg->tc_id[6]);\
+	MC_CMD_OP(cmd, 1, 56, 8,  uint8_t,  cfg->tc_id[7]);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -374,6 +398,10 @@ do { \
 	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->tpid)
 
 /*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_REMOVE_CUSTOM_TPID(cmd, cfg) \
+	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->tpid)
+
+/*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_IF_SET_TRANSMIT_RATE(cmd, if_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
@@ -396,6 +424,14 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_IF_DISABLE(cmd, if_id) \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_IF_GET_TOKEN(cmd, if_id) \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_RSP_IF_GET_TOKEN(cmd, if_token) \
+	MC_RSP_OP(cmd, 0, 32,  16, uint16_t, if_token)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_IF_TC_SET_Q_CONGESTION(cmd, if_id, tc_id, cfg) \
@@ -467,12 +503,24 @@ do { \
 	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, frame_length)
 
 /*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_IF_SET_LINK_CFG(cmd, if_id, cfg) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->rate);\
+	MC_CMD_OP(cmd, 2, 0,  64, uint64_t, cfg->options);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_IF_GET_LINK_STATE(cmd, if_id) \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_RSP_IF_GET_LINK_STATE(cmd, state) \
-	MC_RSP_OP(cmd, 0, 32, 32, int,	 state)
+do { \
+	MC_RSP_OP(cmd, 0, 32, 32, int,      state->up);\
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, state->rate);\
+	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
+} while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_VLAN_ADD(cmd, vlan_id, cfg) \
@@ -674,6 +722,98 @@ do { \
 	MC_RSP_OP(cmd, 1, 0,  16, uint16_t, attr->max_fdb_mc_groups);\
 	MC_RSP_OP(cmd, 1, 16, 4,  enum dpsw_fdb_learning_mode, \
 							  attr->learning_mode);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_ACL_ADD(cmd, cfg) \
+	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->max_entries)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_RSP_ACL_ADD(cmd, acl_id) \
+	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, acl_id)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_ACL_REMOVE(cmd, acl_id) \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_EXT_ACL_ENTRY(ext, cfg) \
+do { \
+	MC_EXT_OP(ext, 0, 0,  8,  uint8_t,  cfg->key.match.l2_dest_mac[5]);\
+	MC_EXT_OP(ext, 0, 8,  8,  uint8_t,  cfg->key.match.l2_dest_mac[4]);\
+	MC_EXT_OP(ext, 0, 16, 8,  uint8_t,  cfg->key.match.l2_dest_mac[3]);\
+	MC_EXT_OP(ext, 0, 24, 8,  uint8_t,  cfg->key.match.l2_dest_mac[2]);\
+	MC_EXT_OP(ext, 0, 32, 8,  uint8_t,  cfg->key.match.l2_dest_mac[1]);\
+	MC_EXT_OP(ext, 0, 40, 8,  uint8_t,  cfg->key.match.l2_dest_mac[0]);\
+	MC_EXT_OP(ext, 0, 48, 16, uint16_t, cfg->key.match.l2_tpid);\
+	MC_EXT_OP(ext, 1, 0,  8,  uint8_t,  cfg->key.match.l2_source_mac[5]);\
+	MC_EXT_OP(ext, 1, 8,  8,  uint8_t,  cfg->key.match.l2_source_mac[4]);\
+	MC_EXT_OP(ext, 1, 16, 8,  uint8_t,  cfg->key.match.l2_source_mac[3]);\
+	MC_EXT_OP(ext, 1, 24, 8,  uint8_t,  cfg->key.match.l2_source_mac[2]);\
+	MC_EXT_OP(ext, 1, 32, 8,  uint8_t,  cfg->key.match.l2_source_mac[1]);\
+	MC_EXT_OP(ext, 1, 40, 8,  uint8_t,  cfg->key.match.l2_source_mac[0]);\
+	MC_EXT_OP(ext, 1, 48, 16, uint16_t, cfg->key.match.l2_vlan_id);\
+	MC_EXT_OP(ext, 2, 0,  32, uint32_t, cfg->key.match.l3_dest_ip);\
+	MC_EXT_OP(ext, 2, 32, 32, uint32_t, cfg->key.match.l3_source_ip);\
+	MC_EXT_OP(ext, 3, 0,  16, uint16_t, cfg->key.match.l4_dest_port);\
+	MC_EXT_OP(ext, 3, 16, 16, uint16_t, cfg->key.match.l4_source_port);\
+	MC_EXT_OP(ext, 3, 32, 16, uint16_t, cfg->key.match.l2_ether_type);\
+	MC_EXT_OP(ext, 3, 48, 8,  uint8_t,  cfg->key.match.l2_pcp_dei);\
+	MC_EXT_OP(ext, 3, 56, 8,  uint8_t,  cfg->key.match.l3_dscp);\
+	MC_EXT_OP(ext, 4, 0,  8,  uint8_t,  cfg->key.mask.l2_dest_mac[5]);\
+	MC_EXT_OP(ext, 4, 8,  8,  uint8_t,  cfg->key.mask.l2_dest_mac[4]);\
+	MC_EXT_OP(ext, 4, 16, 8,  uint8_t,  cfg->key.mask.l2_dest_mac[3]);\
+	MC_EXT_OP(ext, 4, 24, 8,  uint8_t,  cfg->key.mask.l2_dest_mac[2]);\
+	MC_EXT_OP(ext, 4, 32, 8,  uint8_t,  cfg->key.mask.l2_dest_mac[1]);\
+	MC_EXT_OP(ext, 4, 40, 8,  uint8_t,  cfg->key.mask.l2_dest_mac[0]);\
+	MC_EXT_OP(ext, 4, 48, 16, uint16_t, cfg->key.mask.l2_tpid);\
+	MC_EXT_OP(ext, 5, 0,  8,  uint8_t,  cfg->key.mask.l2_source_mac[5]);\
+	MC_EXT_OP(ext, 5, 8,  8,  uint8_t,  cfg->key.mask.l2_source_mac[4]);\
+	MC_EXT_OP(ext, 5, 16, 8,  uint8_t,  cfg->key.mask.l2_source_mac[3]);\
+	MC_EXT_OP(ext, 5, 24, 8,  uint8_t,  cfg->key.mask.l2_source_mac[2]);\
+	MC_EXT_OP(ext, 5, 32, 8,  uint8_t,  cfg->key.mask.l2_source_mac[1]);\
+	MC_EXT_OP(ext, 5, 40, 8,  uint8_t,  cfg->key.mask.l2_source_mac[0]);\
+	MC_EXT_OP(ext, 5, 48, 16, uint16_t, cfg->key.mask.l2_vlan_id);\
+	MC_EXT_OP(ext, 6, 0,  32, uint32_t, cfg->key.mask.l3_dest_ip);\
+	MC_EXT_OP(ext, 6, 32, 32, uint32_t, cfg->key.mask.l3_source_ip);\
+	MC_EXT_OP(ext, 7, 0,  16, uint16_t, cfg->key.mask.l4_dest_port);\
+	MC_EXT_OP(ext, 7, 16, 16, uint16_t, cfg->key.mask.l4_source_port);\
+	MC_EXT_OP(ext, 7, 32, 16, uint16_t, cfg->key.mask.l2_ether_type);\
+	MC_EXT_OP(ext, 7, 48, 8,  uint8_t,  cfg->key.mask.l2_pcp_dei);\
+	MC_EXT_OP(ext, 7, 56, 8,  uint8_t,  cfg->key.mask.l3_dscp);\
+	MC_EXT_OP(ext, 8, 0,  8,  uint8_t,  cfg->key.match.l3_protocol);\
+	MC_EXT_OP(ext, 8, 8,  8,  uint8_t,  cfg->key.mask.l3_protocol);\
+	MC_EXT_OP(ext, 8, 16, 16, uint16_t, cfg->result.if_id);\
+	MC_EXT_OP(ext, 8, 32, 32, int,      cfg->precedence);\
+	MC_EXT_OP(ext, 9, 0,  4,  enum dpsw_acl_action, cfg->result.action);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_ACL_ADD_ENTRY(cmd, acl_id, params_iova) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id);\
+	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, params_iova); \
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_ACL_REMOVE_ENTRY(cmd, acl_id, params_iova) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id);\
+	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, params_iova); \
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_ACL_ADD_IF(cmd, acl_id, cfg) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id);\
+	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->num_ifs); \
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_ACL_REMOVE_IF(cmd, acl_id, cfg) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id);\
+	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->num_ifs); \
 } while (0)
 
 #endif /* __FSL_DPSW_CMD_H */

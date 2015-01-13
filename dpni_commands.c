@@ -341,7 +341,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	struct dpni_attr dpni_attr;
 	uint8_t mac_addr[6];
 	bool dpni_opened = false;
-	int link_state;
+	struct dpni_link_state link_state;
 
 	error = dpni_open(&restool.mc_io, dpni_id, &dpni_handle);
 	if (error < 0) {
@@ -379,7 +379,9 @@ static int print_dpni_attr(uint32_t dpni_id,
 		goto out;
 	}
 
-	error = dpni_get_link_state(&restool.mc_io, dpni_handle, &link_state);
+	memset(&link_state, 0, sizeof(link_state));
+	error = dpni_get_link_state(&restool.mc_io, dpni_handle,
+					&link_state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -393,9 +395,9 @@ static int print_dpni_attr(uint32_t dpni_id,
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	print_dpni_endpoint(dpni_id, target_parent_dprc_handle);
-	printf("link status: %d - ", link_state);
-	link_state == 0 ? printf("down\n") :
-	link_state == 1 ? printf("up\n") : printf("error state\n");
+	printf("link status: %d - ", link_state.up);
+	link_state.up == 0 ? printf("down\n") :
+	link_state.up == 1 ? printf("up\n") : printf("error state\n");
 	printf("mac address: ");
 	for (int j = 0; j < 5; ++j)
 		printf("%02x:", mac_addr[j]);

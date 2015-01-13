@@ -40,9 +40,7 @@
 #include "utils.h"
 #include "fsl_dpdmux.h"
 
-#define ALL_DPDMUX_OPTS (		\
-	DPDMUX_OPT_REPLICATION_DIS |	\
-	DPDMUX_OPT_BRIDGE_EN)
+#define ALL_DPDMUX_OPTS		DPDMUX_OPT_BRIDGE_EN
 
 enum mc_cmd_status mc_status;
 
@@ -200,9 +198,6 @@ static void print_dpdmux_options(uint64_t options)
 		printf("\tUnrecognized options found...\n");
 		return;
 	}
-
-	if (options & DPDMUX_OPT_REPLICATION_DIS)
-		printf("\tDPDMUX_OPT_REPLICATION_DIS\n");
 
 	if (options & DPDMUX_OPT_BRIDGE_EN)
 		printf("\tDPDMUX_OPT_BRIDGE_EN\n");
@@ -398,7 +393,6 @@ static int parse_dpdmux_create_options(char *options_str, uint64_t *options)
 		const char *str;
 		uint64_t value;
 	} options_map[] = {
-		OPTION_MAP_ENTRY(DPDMUX_OPT_REPLICATION_DIS),
 		OPTION_MAP_ENTRY(DPDMUX_OPT_BRIDGE_EN),
 	};
 
@@ -683,7 +677,6 @@ static int cmd_dpdmux_create(void)
 		"   Default is DPDMUX_MANIP_NONE\n"
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma separated list of DPDMUX options:\n"
-		"	DPDMUX_OPT_REPLICATION_DIS\n"
 		"	DPDMUX_OPT_BRIDGE_EN\n"
 		"   Default is 0\n"
 		"--max-dmat-entries=<number>\n"
