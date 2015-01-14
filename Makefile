@@ -12,6 +12,10 @@ OBJS = restool.o \
        dpcon_commands.o \
        dpseci_commands.o \
        dpdmux_commands.o \
+       dpmcp_commands.o \
+       dpmac_commands.o \
+       dpdcei_commands.o \
+       dpaiop_commands.o \
        dprc.o \
        dpmng.o \
        dpni.o \
@@ -22,6 +26,10 @@ OBJS = restool.o \
        dpcon.o \
        dpseci.o \
        dpdmux.o \
+       dpmcp.o \
+       dpmac.o \
+       dpdcei.o \
+       dpaiop.o \
        fsl_mc_sys.o
 
 CFLAGS = ${EXTRA_CFLAGS} \

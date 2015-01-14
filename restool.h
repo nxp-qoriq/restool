@@ -58,6 +58,17 @@
  */
 #define MAX_DPRC_NESTING	    16
 
+/*
+ * TODO: Obtain the following constants from the fsl-mc bus driver via an ioctl
+ */
+#define MC_PORTALS_BASE_PADDR	((phys_addr_t)0x00080C000000ULL)
+#define MC_PORTAL_STRIDE	0x10000
+#define MC_PORTAL_SIZE		64
+#define MAX_MC_PORTALS		512
+
+#define MC_PORTAL_PADDR_TO_PORTAL_ID(_portal_paddr) \
+	(((_portal_paddr) - MC_PORTALS_BASE_PADDR) / MC_PORTAL_STRIDE)
+
 struct restool;
 
 typedef int restool_cmd_func_t(void);
@@ -214,5 +225,9 @@ extern struct object_command dpci_commands[];
 extern struct object_command dpcon_commands[];
 extern struct object_command dpseci_commands[];
 extern struct object_command dpdmux_commands[];
+extern struct object_command dpmcp_commands[];
+extern struct object_command dpmac_commands[];
+extern struct object_command dpdcei_commands[];
+extern struct object_command dpaiop_commands[];
 
 #endif /* _RESTOOL_H_ */

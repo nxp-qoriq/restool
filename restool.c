@@ -40,17 +40,6 @@
 #include "fsl_mc_cmd.h"
 #include "fsl_dprc.h"
 
-/*
- * TODO: Obtain the following constants from the fsl-mc bus driver via an ioctl
- */
-#define MC_PORTALS_BASE_PADDR	((phys_addr_t)0x00080C000000ULL)
-#define MC_PORTAL_STRIDE	0x10000
-#define MC_PORTAL_SIZE		64
-#define MAX_MC_PORTALS		512
-
-#define MC_PORTAL_PADDR_TO_PORTAL_ID(_portal_paddr) \
-	(((_portal_paddr) - MC_PORTALS_BASE_PADDR) / MC_PORTAL_STRIDE)
-
 static const char restool_version[] = "0.6";
 
 static struct option global_options[] = {
@@ -84,6 +73,11 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 	{ .obj_type = "dpcon", .obj_commands = dpcon_commands },
 	{ .obj_type = "dpseci", .obj_commands = dpseci_commands },
 	{ .obj_type = "dpdmux", .obj_commands = dpdmux_commands },
+	{ .obj_type = "dpmcp", .obj_commands = dpmcp_commands },
+	{ .obj_type = "dpmac", .obj_commands = dpmac_commands },
+	{ .obj_type = "dpdcei", .obj_commands = dpdcei_commands },
+	{ .obj_type = "dpaiop", .obj_commands = dpaiop_commands },
+
 };
 
 struct restool restool;
@@ -310,7 +304,7 @@ static void print_usage(void)
 		"	--debug option must be used together with an object\n"
 		"	e.g. restool --debug dpni info dpni.11\n"
 		"\n"
-		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux>\n"
+		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|dpmcp|dpmac|dpdcei|dpaiop>\n"
 		"\n"
 		"Valid commands vary for each object type.  Use the \'help\'\n"
 		"command to see detailed usage info for an object.  The following\n"
