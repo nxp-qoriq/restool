@@ -39,12 +39,6 @@
 #define RESTOOL_GET_ROOT_DPRC_INFO \
 	_IOR(RESTOOL_IOCTL_TYPE, 0x1, struct ioctl_dprc_info)
 
-#define RESTOOL_ALLOCATE_MC_PORTAL \
-	_IOR(RESTOOL_IOCTL_TYPE, 0x2, uint32_t)
-
-#define RESTOOL_FREE_MC_PORTAL \
-	_IOW(RESTOOL_IOCTL_TYPE, 0x3, uint32_t)
-
 #define RESTOOL_SEND_MC_COMMAND \
 	_IOWR(RESTOOL_IOCTL_TYPE, 0x4, struct mc_command)
 

@@ -61,7 +61,7 @@
 /*
  * TODO: Obtain the following constants from the fsl-mc bus driver via an ioctl
  */
-#define MC_PORTALS_BASE_PADDR	((phys_addr_t)0x00080C000000ULL)
+#define MC_PORTALS_BASE_PADDR	0x00080C000000ULL
 #define MC_PORTAL_STRIDE	0x10000
 #define MC_PORTAL_SIZE		64
 #define MAX_MC_PORTALS		512

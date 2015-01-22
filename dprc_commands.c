@@ -858,26 +858,12 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	struct dprc_cfg cfg;
 	int child_dprc_id;
 	uint64_t mc_portal_phys_addr;
-	int32_t portal_id;
-	bool portal_allocated = false;
 	bool child_dprc_created = false;
 
 	assert(dprc_handle != 0);
-	error = ioctl(restool.mc_io.fd, RESTOOL_ALLOCATE_MC_PORTAL,
-		      &portal_id);
-	if (error == -1) {
-		error = -errno;
-		ERROR_PRINTF(
-			"ioctl(RESTOOL_ALLOCATE_MC_PORTAL) failed with error %d\n",
-			error);
-		goto error;
-	}
-
-	portal_allocated = true;
-	DEBUG_PRINTF("ioctl returned portal_id: %u\n", portal_id);
 
 	cfg.icid = DPRC_GET_ICID_FROM_POOL;
-	cfg.portal_id = portal_id;
+	cfg.portal_id = DPRC_GET_PORTAL_ID_FROM_POOL;
 	cfg.options = options;
 	error = dprc_create_container(
 			&restool.mc_io,
@@ -895,7 +881,8 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	child_dprc_created = true;
 	printf(
 		"dprc.%u object created (using MC portal id %u, portal addr %#llx)\n",
-		child_dprc_id, portal_id,
+		child_dprc_id,
+		(unsigned int)MC_PORTAL_PADDR_TO_PORTAL_ID(mc_portal_phys_addr),
 		(unsigned long long)mc_portal_phys_addr);
 
 	return 0;
@@ -907,17 +894,6 @@ error:
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
 				     mc_status_to_string(mc_status), mc_status);
-		}
-	}
-
-	if (portal_allocated) {
-		error2 = ioctl(restool.mc_io.fd, RESTOOL_FREE_MC_PORTAL,
-			       portal_id);
-		if (error2 == -1) {
-			error2 = -errno;
-			ERROR_PRINTF(
-				"ioctl(RESTOOL_FREE_MC_PORTAL) failed with error %d\n",
-				error2);
 		}
 	}
 
@@ -1006,10 +982,11 @@ static int cmd_dprc_create_child(void)
 		goto out;
 
 	if (dprc_id != restool.root_dprc_id) {
-		ERROR_PRINTF(
-			"cannot creat dprc under non-root dprc because of mcp resource management issue...\n");
-		error = -EINVAL;
-		goto out;
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error < 0)
+			goto out;
+
+		dprc_opened = true;
 	} else {
 		dprc_handle = restool.root_dprc_handle;
 	}
@@ -1044,93 +1021,6 @@ out:
 	return error;
 }
 
-static int destroy_child_dprc(uint16_t parent_dprc_handle, int child_dprc_id)
-{
-	int error;
-	uint16_t child_dprc_handle;
-	struct dprc_attributes dprc_attr;
-	bool dprc_opened = false;
-
-	assert(parent_dprc_handle != 0);
-
-	/*
-	 * Before destroying the child container, get its MC portal id.
-	 * We need to notify the fsl_mc_restool kernel driver that this
-	 * MC portal has become available for reallocation, once we destroy it:
-	 */
-
-	error = open_dprc(child_dprc_id, &child_dprc_handle);
-	if (error < 0)
-		goto error;
-
-	dprc_opened = true;
-	memset(&dprc_attr, 0, sizeof(dprc_attr));
-	error = dprc_get_attributes(&restool.mc_io, child_dprc_handle,
-				    &dprc_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto error;
-	}
-
-	assert(child_dprc_id == dprc_attr.container_id);
-	dprc_opened = false;
-	error = dprc_close(&restool.mc_io, child_dprc_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto error;
-	}
-
-	/*
-	 * Destroy child container in the MC:
-	 */
-	error = dprc_destroy_container(&restool.mc_io, parent_dprc_handle,
-					child_dprc_id);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-
-		goto error;
-	}
-
-	printf("dprc.%u object destroyed\n", child_dprc_id);
-
-	/*
-	 * Tell the fsl_mc_restool kernel driver that the
-	 * MC portal that was allocated for the destroyed child
-	 * container can now be freed.
-	 */
-	error = ioctl(restool.mc_io.fd, RESTOOL_FREE_MC_PORTAL,
-		       dprc_attr.portal_id);
-	if (error == -1) {
-		error = -errno;
-		ERROR_PRINTF(
-			"ioctl(RESTOOL_FREE_MC_PORTAL) failed with error %d\n",
-			error);
-		goto error;
-	}
-
-	DEBUG_PRINTF("Freed MC portal id %u\n", dprc_attr.portal_id);
-	return 0;
-error:
-	if (dprc_opened) {
-		int error2;
-
-		error2 = dprc_close(&restool.mc_io, child_dprc_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-		}
-	}
-
-	return error;
-}
-
 static int cmd_dprc_destroy_child(void)
 {
 	static const char usage_msg[] =
@@ -1141,7 +1031,10 @@ static int cmd_dprc_destroy_child(void)
 		"\n";
 
 	int error;
-	uint32_t dprc_id;
+	uint32_t child_dprc_id;
+	struct dprc_obj_desc child_obj_desc;
+	uint16_t parent_dprc_handle;
+	bool found = false;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		printf(usage_msg);
@@ -1157,31 +1050,40 @@ static int cmd_dprc_destroy_child(void)
 	}
 
 	error = parse_object_name(restool.obj_name,
-				  "dprc", &dprc_id);
+				  "dprc", &child_dprc_id);
 	if (error < 0)
 		goto out;
 
-	if (dprc_id == restool.root_dprc_id) {
+	if (child_dprc_id == restool.root_dprc_id) {
 		ERROR_PRINTF("The root DPRC (%s) cannot be destroyed\n",
 			     restool.obj_name);
 		error = -EINVAL;
 		goto out;
 	}
 
-	/*
-	 * TODO: Do we need to open the parent of the DPRC being destroyed
-	 * in order to use the parent's handle in he dprc_destroy_container()
-	 * call?
-	 */
-#if 0
-	error = open_dprc(dprc_id, &dprc_handle);
-	if (error < 0)
+	memset(&child_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(restool.root_dprc_handle, 0,
+				child_dprc_id, "dprc", &child_obj_desc,
+				&parent_dprc_handle, &found);
+	if (error < 0) {
+		printf("destroy dprc.%u failed\n", child_dprc_id);
 		goto out;
+	}
 
-	dprc_opened = true;
-#endif
+	/*
+	 * Destroy child container in the MC:
+	 */
+	error = dprc_destroy_container(&restool.mc_io, parent_dprc_handle,
+					child_dprc_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
 
-	error = destroy_child_dprc(restool.root_dprc_handle, dprc_id);
+		goto out;
+	}
+
+	printf("dprc.%u object destroyed\n", child_dprc_id);
 out:
 	return error;
 }
@@ -1317,12 +1219,6 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		assert(restool.cmd_option_args[ASSIGN_OPT_RES_TYPE] != NULL);
 		strcpy(res_req.type,
 		       restool.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
-		if (strcmp(res_req.type, "mcp") == 0) {
-			ERROR_PRINTF("resource type '%s' not supported\n",
-				     res_req.type);
-			error = -ENOTSUP;
-			goto out;
-		}
 
 		if (!(restool.cmd_option_mask &
 		    ONE_BIT_MASK(ASSIGN_OPT_COUNT))) {
