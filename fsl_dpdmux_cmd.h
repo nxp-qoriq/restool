@@ -34,7 +34,7 @@
 
 /* DPDMUX Version */
 #define DPDMUX_VER_MAJOR				3
-#define DPDMUX_VER_MINOR				0
+#define DPDMUX_VER_MINOR				1
 
 /* Command IDs */
 #define DPDMUX_CMDID_CLOSE				0x800
@@ -260,7 +260,7 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDMUX_RSP_IF_GET_LINK_STATE(cmd, state) \
 do { \
-	MC_RSP_OP(cmd, 0, 32, 32, int,      state->up);\
+	MC_RSP_OP(cmd, 0, 32, 1,  int,      state->up);\
 	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, state->rate);\
 	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
 } while (0)

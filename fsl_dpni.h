@@ -827,6 +827,11 @@ int dpni_set_counter(struct fsl_mc_io	*mc_io,
 		     enum dpni_counter	counter,
 		     uint64_t		value);
 
+/* Enable auto-negotiation */
+#define DPNI_LINK_OPT_AUTONEG		0x0000000000000001ULL
+/* Enable half-duplex mode */
+#define DPNI_LINK_OPT_HALF_DUPLEX	0x0000000000000002ULL
+
 /**
  * struct - Structure representing DPNI link configuration
  * @rate: Rate
@@ -1135,20 +1140,35 @@ struct dpni_fs_tbl_cfg {
 };
 
 /**
+ * dpni_prepare_key_cfg() - function prepare extract parameters
+ * @cfg: defining a full Key Generation profile (rule)
+ * @key_cfg_buf: Zeroed 256 bytes of memory before mapping it to DMA
+ *
+ * This function has to be called before the following functions:
+ *	- dpni_set_rx_tc_dist()
+ *		- dpni_set_qos_table()
+ */
+int dpni_prepare_key_cfg(struct dpkg_profile_cfg *cfg,
+			 uint8_t *key_cfg_buf);
+
+/**
  * struct dpni_rx_tc_dist_cfg - Rx traffic class distribution configuration
  * @dist_size: Set the distribution size; Must be set to the required value
  *		minus 1, for example: 0->1, 1->2, ... ,255->256;
  *		Non-power-of-2 values are rounded up to the next power-of-2
  *		value as HW demands it
  * @dist_mode: Distribution mode
- * @dist_key_cfg: Select the extractions to be used for the distribution key
+ * @key_cfg_iova: I/O virtual address of 256 bytes DMA-able memory filled with
+ *		the extractions to be used for the distribution key by calling
+ *		dpni_prepare_key_cfg() - relevant only when
+ *		'dist_mode != DPNI_DIST_MODE_NONE', otherwise it can be '0'
  * @fs_cfg: Flow Steering table configuration; only relevant if
  *		'dist_mode = DPNI_DIST_MODE_FS'
  */
 struct dpni_rx_tc_dist_cfg {
 	uint8_t dist_size;
 	enum dpni_dist_mode dist_mode;
-	struct dpkg_profile_cfg *dist_key_cfg;
+	uint64_t key_cfg_iova;
 	struct dpni_fs_tbl_cfg fs_cfg;
 };
 
@@ -1158,8 +1178,9 @@ struct dpni_rx_tc_dist_cfg {
  * @token:	Token of DPNI object
  * @tc_id:	Traffic class selection (0-7)
  * @cfg:	Traffic class distribution configuration
- * @params_iova: I/O virtual address of zeroed 256 bytes of
- *				DMA-able memory
+ *
+ * warning: if 'dist_mode != DPNI_DIST_MODE_NONE', call dpni_prepare_key_cfg()
+ *			first to prepare the key_cfg_iova parameter
  *
  * warning: Allowed only when DPNI is disabled
  *
@@ -1168,8 +1189,7 @@ struct dpni_rx_tc_dist_cfg {
 int dpni_set_rx_tc_dist(struct fsl_mc_io			*mc_io,
 			uint16_t				token,
 			uint8_t					tc_id,
-			const struct dpni_rx_tc_dist_cfg	*cfg,
-			uint64_t				params_iova);
+			const struct dpni_rx_tc_dist_cfg	*cfg);
 
 /**
  * enum dpni_dest - DPNI destination types
@@ -1458,13 +1478,15 @@ int dpni_get_tx_conf_err_queue(struct fsl_mc_io		*mc_io,
 
 /**
  * struct dpni_qos_tbl_cfg - Structure representing QOS table configuration
- * @qos_key_cfg: Selects key extractions to be used as the QoS criteria
+ * @key_cfg_iova: I/O virtual address of 256 bytes DMA-able memory filled with
+ *		key extractions to be used as the QoS criteria by calling
+ *		dpni_prepare_key_cfg()
  * @discard_on_miss: Set to '1' to discard frames in case of no match (miss);
  *		'0' to use the 'default_tc' in such cases
  * @default_tc: Used in case of no-match and 'discard_on_miss'= 0
  */
 struct dpni_qos_tbl_cfg {
-	struct dpkg_profile_cfg *qos_key_cfg;
+	uint64_t key_cfg_iova;
 	int discard_on_miss;
 	uint8_t default_tc;
 };
@@ -1474,18 +1496,18 @@ struct dpni_qos_tbl_cfg {
  * @mc_io:	Pointer to MC portal's I/O object
  * @token:	Token of DPNI object
  * @cfg:	QoS table configuration
- * @params_iova: I/O virtual address of zeroed 256 bytes of
- *			DMA-able memory
  *
  * This function and all QoS-related functions require that
  *'max_tcs > 1' was set at DPNI creation.
+ *
+ * warning: Before calling this function, call dpni_prepare_key_cfg() to
+ *			prepare the key_cfg_iova parameter
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpni_set_qos_table(struct fsl_mc_io			*mc_io,
 		       uint16_t				token,
-		       const struct dpni_qos_tbl_cfg	*cfg,
-		       uint64_t				params_iova);
+		       const struct dpni_qos_tbl_cfg	*cfg);
 
 /**
  * struct dpni_rule_cfg - Rule configuration for table lookup

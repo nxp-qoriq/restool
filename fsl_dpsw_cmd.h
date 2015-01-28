@@ -35,7 +35,7 @@
 #define DPSW_CMD_EXTRACT_EXT_PARAMS		10
 
 /* DPSW Version */
-#define DPSW_VER_MAJOR				3
+#define DPSW_VER_MAJOR				4
 #define DPSW_VER_MINOR				0
 
 /* Command IDs */
@@ -74,7 +74,7 @@
 #define DPSW_CMDID_SET_IF_ACCEPT_ALL_VLAN	0x033
 #define DPSW_CMDID_IF_GET_COUNTER		0x034
 #define DPSW_CMDID_IF_SET_COUNTER		0x035
-#define DPSW_CMDID_IF_TC_SET_MAP		0x036
+#define DPSW_CMDID_IF_SET_TC_MAP		0x036
 #define DPSW_CMDID_IF_ADD_REFLECTION		0x037
 #define DPSW_CMDID_IF_REMOVE_REFLECTION		0x038
 #define DPSW_CMDID_IF_TC_SET_METERING_MARKING	0x039
@@ -349,7 +349,7 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_TC_SET_MAP(cmd, if_id, cfg) \
+#define DPSW_CMD_IF_SET_TC_MAP(cmd, if_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
 	MC_CMD_OP(cmd, 0, 16, 3,  enum dpsw_priority_selector, \
@@ -517,7 +517,7 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_RSP_IF_GET_LINK_STATE(cmd, state) \
 do { \
-	MC_RSP_OP(cmd, 0, 32, 32, int,      state->up);\
+	MC_RSP_OP(cmd, 0, 32, 1,  int,      state->up);\
 	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, state->rate);\
 	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
 } while (0)
@@ -737,69 +737,72 @@ do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_EXT_ACL_ENTRY(ext, cfg) \
+#define DPSW_EXT_ACL_ENTRY(ext, key) \
 do { \
-	MC_EXT_OP(ext, 0, 0,  8,  uint8_t,  cfg->key.match.l2_dest_mac[5]);\
-	MC_EXT_OP(ext, 0, 8,  8,  uint8_t,  cfg->key.match.l2_dest_mac[4]);\
-	MC_EXT_OP(ext, 0, 16, 8,  uint8_t,  cfg->key.match.l2_dest_mac[3]);\
-	MC_EXT_OP(ext, 0, 24, 8,  uint8_t,  cfg->key.match.l2_dest_mac[2]);\
-	MC_EXT_OP(ext, 0, 32, 8,  uint8_t,  cfg->key.match.l2_dest_mac[1]);\
-	MC_EXT_OP(ext, 0, 40, 8,  uint8_t,  cfg->key.match.l2_dest_mac[0]);\
-	MC_EXT_OP(ext, 0, 48, 16, uint16_t, cfg->key.match.l2_tpid);\
-	MC_EXT_OP(ext, 1, 0,  8,  uint8_t,  cfg->key.match.l2_source_mac[5]);\
-	MC_EXT_OP(ext, 1, 8,  8,  uint8_t,  cfg->key.match.l2_source_mac[4]);\
-	MC_EXT_OP(ext, 1, 16, 8,  uint8_t,  cfg->key.match.l2_source_mac[3]);\
-	MC_EXT_OP(ext, 1, 24, 8,  uint8_t,  cfg->key.match.l2_source_mac[2]);\
-	MC_EXT_OP(ext, 1, 32, 8,  uint8_t,  cfg->key.match.l2_source_mac[1]);\
-	MC_EXT_OP(ext, 1, 40, 8,  uint8_t,  cfg->key.match.l2_source_mac[0]);\
-	MC_EXT_OP(ext, 1, 48, 16, uint16_t, cfg->key.match.l2_vlan_id);\
-	MC_EXT_OP(ext, 2, 0,  32, uint32_t, cfg->key.match.l3_dest_ip);\
-	MC_EXT_OP(ext, 2, 32, 32, uint32_t, cfg->key.match.l3_source_ip);\
-	MC_EXT_OP(ext, 3, 0,  16, uint16_t, cfg->key.match.l4_dest_port);\
-	MC_EXT_OP(ext, 3, 16, 16, uint16_t, cfg->key.match.l4_source_port);\
-	MC_EXT_OP(ext, 3, 32, 16, uint16_t, cfg->key.match.l2_ether_type);\
-	MC_EXT_OP(ext, 3, 48, 8,  uint8_t,  cfg->key.match.l2_pcp_dei);\
-	MC_EXT_OP(ext, 3, 56, 8,  uint8_t,  cfg->key.match.l3_dscp);\
-	MC_EXT_OP(ext, 4, 0,  8,  uint8_t,  cfg->key.mask.l2_dest_mac[5]);\
-	MC_EXT_OP(ext, 4, 8,  8,  uint8_t,  cfg->key.mask.l2_dest_mac[4]);\
-	MC_EXT_OP(ext, 4, 16, 8,  uint8_t,  cfg->key.mask.l2_dest_mac[3]);\
-	MC_EXT_OP(ext, 4, 24, 8,  uint8_t,  cfg->key.mask.l2_dest_mac[2]);\
-	MC_EXT_OP(ext, 4, 32, 8,  uint8_t,  cfg->key.mask.l2_dest_mac[1]);\
-	MC_EXT_OP(ext, 4, 40, 8,  uint8_t,  cfg->key.mask.l2_dest_mac[0]);\
-	MC_EXT_OP(ext, 4, 48, 16, uint16_t, cfg->key.mask.l2_tpid);\
-	MC_EXT_OP(ext, 5, 0,  8,  uint8_t,  cfg->key.mask.l2_source_mac[5]);\
-	MC_EXT_OP(ext, 5, 8,  8,  uint8_t,  cfg->key.mask.l2_source_mac[4]);\
-	MC_EXT_OP(ext, 5, 16, 8,  uint8_t,  cfg->key.mask.l2_source_mac[3]);\
-	MC_EXT_OP(ext, 5, 24, 8,  uint8_t,  cfg->key.mask.l2_source_mac[2]);\
-	MC_EXT_OP(ext, 5, 32, 8,  uint8_t,  cfg->key.mask.l2_source_mac[1]);\
-	MC_EXT_OP(ext, 5, 40, 8,  uint8_t,  cfg->key.mask.l2_source_mac[0]);\
-	MC_EXT_OP(ext, 5, 48, 16, uint16_t, cfg->key.mask.l2_vlan_id);\
-	MC_EXT_OP(ext, 6, 0,  32, uint32_t, cfg->key.mask.l3_dest_ip);\
-	MC_EXT_OP(ext, 6, 32, 32, uint32_t, cfg->key.mask.l3_source_ip);\
-	MC_EXT_OP(ext, 7, 0,  16, uint16_t, cfg->key.mask.l4_dest_port);\
-	MC_EXT_OP(ext, 7, 16, 16, uint16_t, cfg->key.mask.l4_source_port);\
-	MC_EXT_OP(ext, 7, 32, 16, uint16_t, cfg->key.mask.l2_ether_type);\
-	MC_EXT_OP(ext, 7, 48, 8,  uint8_t,  cfg->key.mask.l2_pcp_dei);\
-	MC_EXT_OP(ext, 7, 56, 8,  uint8_t,  cfg->key.mask.l3_dscp);\
-	MC_EXT_OP(ext, 8, 0,  8,  uint8_t,  cfg->key.match.l3_protocol);\
-	MC_EXT_OP(ext, 8, 8,  8,  uint8_t,  cfg->key.mask.l3_protocol);\
-	MC_EXT_OP(ext, 8, 16, 16, uint16_t, cfg->result.if_id);\
-	MC_EXT_OP(ext, 8, 32, 32, int,      cfg->precedence);\
-	MC_EXT_OP(ext, 9, 0,  4,  enum dpsw_acl_action, cfg->result.action);\
+	MC_EXT_OP(ext, 0, 0,  8,  uint8_t,  key->match.l2_dest_mac[5]);\
+	MC_EXT_OP(ext, 0, 8,  8,  uint8_t,  key->match.l2_dest_mac[4]);\
+	MC_EXT_OP(ext, 0, 16, 8,  uint8_t,  key->match.l2_dest_mac[3]);\
+	MC_EXT_OP(ext, 0, 24, 8,  uint8_t,  key->match.l2_dest_mac[2]);\
+	MC_EXT_OP(ext, 0, 32, 8,  uint8_t,  key->match.l2_dest_mac[1]);\
+	MC_EXT_OP(ext, 0, 40, 8,  uint8_t,  key->match.l2_dest_mac[0]);\
+	MC_EXT_OP(ext, 0, 48, 16, uint16_t, key->match.l2_tpid);\
+	MC_EXT_OP(ext, 1, 0,  8,  uint8_t,  key->match.l2_source_mac[5]);\
+	MC_EXT_OP(ext, 1, 8,  8,  uint8_t,  key->match.l2_source_mac[4]);\
+	MC_EXT_OP(ext, 1, 16, 8,  uint8_t,  key->match.l2_source_mac[3]);\
+	MC_EXT_OP(ext, 1, 24, 8,  uint8_t,  key->match.l2_source_mac[2]);\
+	MC_EXT_OP(ext, 1, 32, 8,  uint8_t,  key->match.l2_source_mac[1]);\
+	MC_EXT_OP(ext, 1, 40, 8,  uint8_t,  key->match.l2_source_mac[0]);\
+	MC_EXT_OP(ext, 1, 48, 16, uint16_t, key->match.l2_vlan_id);\
+	MC_EXT_OP(ext, 2, 0,  32, uint32_t, key->match.l3_dest_ip);\
+	MC_EXT_OP(ext, 2, 32, 32, uint32_t, key->match.l3_source_ip);\
+	MC_EXT_OP(ext, 3, 0,  16, uint16_t, key->match.l4_dest_port);\
+	MC_EXT_OP(ext, 3, 16, 16, uint16_t, key->match.l4_source_port);\
+	MC_EXT_OP(ext, 3, 32, 16, uint16_t, key->match.l2_ether_type);\
+	MC_EXT_OP(ext, 3, 48, 8,  uint8_t,  key->match.l2_pcp_dei);\
+	MC_EXT_OP(ext, 3, 56, 8,  uint8_t,  key->match.l3_dscp);\
+	MC_EXT_OP(ext, 4, 0,  8,  uint8_t,  key->mask.l2_dest_mac[5]);\
+	MC_EXT_OP(ext, 4, 8,  8,  uint8_t,  key->mask.l2_dest_mac[4]);\
+	MC_EXT_OP(ext, 4, 16, 8,  uint8_t,  key->mask.l2_dest_mac[3]);\
+	MC_EXT_OP(ext, 4, 24, 8,  uint8_t,  key->mask.l2_dest_mac[2]);\
+	MC_EXT_OP(ext, 4, 32, 8,  uint8_t,  key->mask.l2_dest_mac[1]);\
+	MC_EXT_OP(ext, 4, 40, 8,  uint8_t,  key->mask.l2_dest_mac[0]);\
+	MC_EXT_OP(ext, 4, 48, 16, uint16_t, key->mask.l2_tpid);\
+	MC_EXT_OP(ext, 5, 0,  8,  uint8_t,  key->mask.l2_source_mac[5]);\
+	MC_EXT_OP(ext, 5, 8,  8,  uint8_t,  key->mask.l2_source_mac[4]);\
+	MC_EXT_OP(ext, 5, 16, 8,  uint8_t,  key->mask.l2_source_mac[3]);\
+	MC_EXT_OP(ext, 5, 24, 8,  uint8_t,  key->mask.l2_source_mac[2]);\
+	MC_EXT_OP(ext, 5, 32, 8,  uint8_t,  key->mask.l2_source_mac[1]);\
+	MC_EXT_OP(ext, 5, 40, 8,  uint8_t,  key->mask.l2_source_mac[0]);\
+	MC_EXT_OP(ext, 5, 48, 16, uint16_t, key->mask.l2_vlan_id);\
+	MC_EXT_OP(ext, 6, 0,  32, uint32_t, key->mask.l3_dest_ip);\
+	MC_EXT_OP(ext, 6, 32, 32, uint32_t, key->mask.l3_source_ip);\
+	MC_EXT_OP(ext, 7, 0,  16, uint16_t, key->mask.l4_dest_port);\
+	MC_EXT_OP(ext, 7, 16, 16, uint16_t, key->mask.l4_source_port);\
+	MC_EXT_OP(ext, 7, 32, 16, uint16_t, key->mask.l2_ether_type);\
+	MC_EXT_OP(ext, 7, 48, 8,  uint8_t,  key->mask.l2_pcp_dei);\
+	MC_EXT_OP(ext, 7, 56, 8,  uint8_t,  key->mask.l3_dscp);\
+	MC_EXT_OP(ext, 8, 0,  8,  uint8_t,  key->match.l3_protocol);\
+	MC_EXT_OP(ext, 8, 8,  8,  uint8_t,  key->mask.l3_protocol);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_ACL_ADD_ENTRY(cmd, acl_id, params_iova) \
+#define DPSW_CMD_ACL_ADD_ENTRY(cmd, acl_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id);\
-	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, params_iova); \
+	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->result.if_id);\
+	MC_CMD_OP(cmd, 0, 32, 32, int,      cfg->precedence);\
+	MC_CMD_OP(cmd, 1, 0,  4,  enum dpsw_acl_action, cfg->result.action);\
+	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, cfg->key_iova); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_ACL_REMOVE_ENTRY(cmd, acl_id, params_iova) \
+#define DPSW_CMD_ACL_REMOVE_ENTRY(cmd, acl_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id);\
-	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, params_iova); \
+	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->result.if_id);\
+	MC_CMD_OP(cmd, 0, 32, 32, int,      cfg->precedence);\
+	MC_CMD_OP(cmd, 1, 0,  4,  enum dpsw_acl_action, cfg->result.action);\
+	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, cfg->key_iova); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */

@@ -69,6 +69,60 @@ int dpmac_open(struct fsl_mc_io *mc_io, int dpmac_id, uint16_t *token);
 int dpmac_close(struct fsl_mc_io *mc_io, uint16_t token);
 
 /**
+ * enum dpmac_link_type -  DPMAC link type
+ * @DPMAC_LINK_TYPE_NONE: No link
+ * @DPMAC_LINK_TYPE_FIXED: Link is fixed type
+ * @DPMAC_LINK_TYPE_PHY: Link by PHY ID
+ * @DPMAC_LINK_TYPE_BACKPLANE: Backplane link type
+ */
+enum dpmac_link_type {
+	DPMAC_LINK_TYPE_NONE,
+	DPMAC_LINK_TYPE_FIXED,
+	DPMAC_LINK_TYPE_PHY,
+	DPMAC_LINK_TYPE_BACKPLANE
+};
+
+/**
+ * enum dpmac_eth_if - DPMAC Ethrnet interface
+ * @DPMAC_ETH_IF_MII: MII interface
+ * @DPMAC_ETH_IF_RMII: RMII interface
+ * @DPMAC_ETH_IF_SMII: SMII interface
+ * @DPMAC_ETH_IF_GMII: GMII interface
+ * @DPMAC_ETH_IF_RGMII: RGMII interface
+ * @DPMAC_ETH_IF_SGMII: SGMII interface
+ * @DPMAC_ETH_IF_XGMII: XGMII interface
+ * @DPMAC_ETH_IF_QSGMII: QSGMII interface
+ * @DPMAC_ETH_IF_XAUI: XAUI interface
+ * @DPMAC_ETH_IF_XFI: XFI interface
+ */
+enum dpmac_eth_if {
+	DPMAC_ETH_IF_MII,
+	DPMAC_ETH_IF_RMII,
+	DPMAC_ETH_IF_SMII,
+	DPMAC_ETH_IF_GMII,
+	DPMAC_ETH_IF_RGMII,
+	DPMAC_ETH_IF_SGMII,
+	DPMAC_ETH_IF_XGMII,
+	DPMAC_ETH_IF_QSGMII,
+	DPMAC_ETH_IF_XAUI,
+	DPMAC_ETH_IF_XFI
+};
+
+/**
+ * enum dpmac_speed - DPMAC speed
+ *	DPMAC_SPEED_10: 10Mbps
+ *	DPMAC_SPEED_100: 100Mbps
+ *	DPMAC_SPEED_1000: 1Gbps
+ *	DPMAC_SPEED_10000: 10Gpbs
+ */
+enum dpmac_speed {
+	DPMAC_SPEED_10		= 10,
+	DPMAC_SPEED_100		= 100,
+	DPMAC_SPEED_1000	= 1000,
+	DPMAC_SPEED_10000	= 10000,
+};
+
+/**
  * struct dpmac_cfg() - Structure representing DPMAC configuration
  * @mac_id:	Represents the Hardware MAC ID; in case of multiple WRIOP,
  *		the MAC IDs are continuous.
@@ -119,6 +173,8 @@ int dpmac_destroy(struct fsl_mc_io *mc_io, uint16_t token);
 #define DPMAC_IRQ_INDEX						0
 /* IRQ event - indicates a change in link state */
 #define DPMAC_IRQ_EVENT_LINK_CFG_REQ		0x00000001
+/* irq event - Indicates that the link state changed */
+#define DPMAC_IRQ_EVENT_LINK_CHANGED		0x00000002
 
 /**
  * dpmac_set_irq() - Set IRQ information for the DPMAC to trigger an interrupt.
@@ -269,11 +325,17 @@ int dpmac_clear_irq_status(struct fsl_mc_io	*mc_io,
  * struct dpmac_attr - Structure representing DPMAC attributes
  * @id:		DPMAC object ID
  * @phy_id:	PHY ID
+ * @link_type: link type
+ * @eth_if: Ethernet interface
+ * @max_rate: Maximum supported rate - in Mbps
  * @version:	DPMAC version
  */
 struct dpmac_attr {
 	int id;
 	int phy_id;
+	enum dpmac_link_type link_type;
+	enum dpmac_eth_if eth_if;
+	uint64_t max_rate;
 	/**
 	 * struct version - Structure representing DPMAC version
 	 * @major:	DPMAC major version
@@ -350,7 +412,7 @@ int dpmac_mdio_write(struct fsl_mc_io *mc_io, uint16_t token,
 
 /**
  * struct dpmac_link_cfg - Structure representing DPMAC link configuration
- * @rate: Link's rate
+ * @rate: Link's rate - in Mbps
  * @options: Enable/Disable DPMAC link cfg features (bitmap)
  */
 struct dpmac_link_cfg {
@@ -376,7 +438,7 @@ int dpmac_get_link_cfg(struct fsl_mc_io *mc_io, uint16_t token,
 
 /**
  * struct dpmac_link_state - DPMAC link configuration request
- * @rate: Rate
+ * @rate: Rate in Mbps
  * @options: Enable/Disable DPMAC link cfg features (bitmap)
  * @up: Link state
  */

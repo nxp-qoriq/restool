@@ -720,9 +720,9 @@ int dpsw_if_set_tc_map(struct fsl_mc_io *mc_io,
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_TC_SET_MAP,
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_SET_TC_MAP,
 					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_TC_SET_MAP(cmd, if_id, cfg);
+	DPSW_CMD_IF_SET_TC_MAP(cmd, if_id, cfg);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
@@ -1499,21 +1499,26 @@ int dpsw_acl_remove(struct fsl_mc_io *mc_io,
 	return mc_send_command(mc_io, &cmd);
 }
 
+void dpsw_acl_prepare_entry_cfg(const struct dpsw_acl_key *key,
+				uint8_t *entry_cfg_buf)
+{
+	uint64_t *ext_params = (uint64_t *)entry_cfg_buf;
+
+	DPSW_EXT_ACL_ENTRY(ext_params, key);
+}
+
 int dpsw_acl_add_entry(struct fsl_mc_io *mc_io,
 		       uint16_t token,
 		       uint16_t acl_id,
-		       const struct dpsw_acl_entry_cfg *cfg,
-		       uint64_t params_iova)
+		       const struct dpsw_acl_entry_cfg *cfg)
 {
 	struct mc_command cmd = { 0 };
-	uint64_t *ext_params = (uint64_t *)params_iova;
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSW_CMDID_ACL_ADD_ENTRY,
 					  MC_CMD_PRI_LOW,
 					  token);
-	DPSW_EXT_ACL_ENTRY(ext_params, cfg);
-	DPSW_CMD_ACL_ADD_ENTRY(cmd, acl_id, params_iova);
+	DPSW_CMD_ACL_ADD_ENTRY(cmd, acl_id, cfg);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
@@ -1522,18 +1527,15 @@ int dpsw_acl_add_entry(struct fsl_mc_io *mc_io,
 int dpsw_acl_remove_entry(struct fsl_mc_io *mc_io,
 			  uint16_t token,
 		       uint16_t acl_id,
-		       const struct dpsw_acl_entry_cfg *cfg,
-		       uint64_t params_iova)
+		       const struct dpsw_acl_entry_cfg *cfg)
 {
 	struct mc_command cmd = { 0 };
-	uint64_t *ext_params = (uint64_t *)params_iova;
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSW_CMDID_ACL_REMOVE_ENTRY,
 					  MC_CMD_PRI_LOW,
 					  token);
-	DPSW_EXT_ACL_ENTRY(ext_params, cfg);
-	DPSW_CMD_ACL_REMOVE_ENTRY(cmd, acl_id, params_iova);
+	DPSW_CMD_ACL_REMOVE_ENTRY(cmd, acl_id, cfg);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);

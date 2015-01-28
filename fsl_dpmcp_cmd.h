@@ -33,7 +33,7 @@
 #define _FSL_DPMCP_CMD_H
 
 /* DPMCP Version */
-#define DPMCP_VER_MAJOR				1
+#define DPMCP_VER_MAJOR				2
 #define DPMCP_VER_MINOR				0
 
 /* Command IDs */
@@ -132,7 +132,6 @@ do { \
 /*                cmd, param, offset, width, type,	arg_name */
 #define DPMCP_RSP_GET_ATTRIBUTES(cmd, attr) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,      attr->portal_id);\
 	MC_RSP_OP(cmd, 0, 32, 32, int,	    attr->id);\
 	MC_RSP_OP(cmd, 1, 0,  16, uint16_t, attr->version.major);\
 	MC_RSP_OP(cmd, 1, 16, 16, uint16_t, attr->version.minor);\

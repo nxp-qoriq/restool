@@ -539,9 +539,9 @@ int dpsw_set_ptp_v2(struct fsl_mc_io *mc_io,
 
 
 /**
- * struct dpsw_link_cfg - Structure representing DPDMUX link configuration
+ * struct dpsw_link_cfg - Structure representing DPSW link configuration
  * @rate: Rate
- * @options: Mask of available options; use 'DPDMUX_LINK_OPT_<X>' values
+ * @options: Mask of available options; use 'DPSW_LINK_OPT_<X>' values
  */
 struct dpsw_link_cfg {
 	uint64_t rate;
@@ -562,10 +562,10 @@ int dpsw_if_set_link_cfg(struct fsl_mc_io *mc_io,
 			 uint16_t if_id,
 			 struct dpsw_link_cfg *cfg);
 /**
- * struct dpsw_link_state - Structure representing DPDMUX link state
+ * struct dpsw_link_state - Structure representing DPSW link state
  * @rate: Rate
- * @options: Mask of available options; use 'DPDMUX_LINK_OPT_<X>' values
- * @up: 0 - down, 1 - up
+ * @options: Mask of available options; use 'DPSW_LINK_OPT_<X>' values
+ * @up: 0 - covers two cases: down and disconnected, 1 - up
  */
 struct dpsw_link_state {
 	uint64_t rate;
@@ -860,8 +860,8 @@ enum dpsw_priority_selector {
 /**
  * struct dpsw_tc_map_cfg - Mapping user priority into traffic class
  *				configuration
- * @user_priority: Source for user priority regeneration
- * @regenerated_priority: The Regenerated User priority that the incoming
+ * @priority_selector: Source for user priority regeneration
+ * @tc_id: The Regenerated User priority that the incoming
  *				User Priority is mapped to for this interface
  *
  */
@@ -1857,15 +1857,15 @@ struct dpsw_acl_cfg {
 
 /**
  * struct dpsw_acl_fields - ACL fields.
- * @l2_dest_mac: Destination MAC address: BPDU, Multicast, Broadcast, unicast,
+ * @l2_dest_mac: Destination MAC address: BPDU, Multicast, Broadcast, Unicast,
  *			slow protocols, MVRP, STP
  * @l2_source_mac: Source MAC address
- * @l2_tpid: Layer 2 (ethernet) protocol type, used to identify the following
+ * @l2_tpid: Layer 2 (Ethernet) protocol type, used to identify the following
  *		protocols: MPLS, PTP, PFC, ARP, Jumbo frames, LLDP, IEEE802.1ae,
  *		Q-in-Q, IPv4, IPv6, PPPoE
  * @l2_pcp_dei: indicate which protocol is encapsulated in the payload
- * @l2_vlan_id: layer 2 vlan ID
- * @l2_ether_type: layer 2 ethernet type
+ * @l2_vlan_id: layer 2 VLAN ID
+ * @l2_ether_type: layer 2 Ethernet type
  * @l3_dscp: Layer 3 differentiated services code point
  * @l3_protocol: Tells the Network layer at the destination host, to which
  *		Protocol this packet belongs to. The following protocol are
@@ -1926,14 +1926,15 @@ struct dpsw_acl_result {
 
 /**
  * struct dpsw_acl_entry_cfg - ACL entry
- * @key: key
+ * @key_iova: I/O virtual address of DMA-able memory filled with key after call
+ *				to dpsw_acl_prepare_entry_cfg()
  * @result: Required action when entry hit occurs
  * @precedence: Precedence inside ACL 0 is lowest; This priority can not change
  *		during the lifetime of a Policy. It is user responsibility to
  *		space the priorities according to consequent rule additions.
  */
 struct dpsw_acl_entry_cfg {
-	struct dpsw_acl_key     key;
+	uint64_t			key_iova;
 	struct dpsw_acl_result  result;
 	int                     precedence;
 };
@@ -1967,19 +1968,31 @@ int dpsw_acl_remove(struct fsl_mc_io *mc_io,
 		    uint16_t acl_id);
 
 /**
+ * dpsw_acl_prepare_entry_cfg() - Set an entry to ACL.
+ * @key:	key
+ * @entry_cfg_buf: Zeroed 256 bytes of memory before mapping it to DMA
+ *
+ * This function has to be called before adding or removing acl_entry
+ *
+ */
+void dpsw_acl_prepare_entry_cfg(const struct dpsw_acl_key *key,
+				uint8_t *entry_cfg_buf);
+
+/**
  * dpsw_acl_add_entry() - Adds an entry to ACL.
  * @mc_io:	Pointer to MC portal's I/O object
  * @token:	Token of DPSW object
  * @acl_id:	ACL ID
  * @cfg:	entry configuration
  *
+ * warning: This function has to be called after dpsw_acl_set_entry_cfg()
+ *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpsw_acl_add_entry(struct fsl_mc_io *mc_io,
 		       uint16_t token,
 		       uint16_t acl_id,
-		       const struct dpsw_acl_entry_cfg *cfg,
-		       uint64_t params_iova);
+		       const struct dpsw_acl_entry_cfg *cfg);
 
 /**
  * dpsw_acl_remove_entry() - Removes an entry from ACL.
@@ -1988,13 +2001,14 @@ int dpsw_acl_add_entry(struct fsl_mc_io *mc_io,
  * @acl_id:	ACL ID
  * @cfg:	entry configuration
  *
+ * warning: This function has to be called after dpsw_acl_set_entry_cfg()
+ *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpsw_acl_remove_entry(struct fsl_mc_io *mc_io,
 			  uint16_t token,
 			  uint16_t acl_id,
-			  const struct dpsw_acl_entry_cfg *cfg,
-			  uint64_t params_iova);
+			  const struct dpsw_acl_entry_cfg *cfg);
 
 /**
  * struct dpsw_acl_if_cfg - List of interfaces to Associate with ACL

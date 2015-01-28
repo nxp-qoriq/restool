@@ -35,7 +35,7 @@
 #define DPNI_CMD_EXTRACT_EXT_PARAMS		25
 
 /* DPNI Version */
-#define DPNI_VER_MAJOR				3
+#define DPNI_VER_MAJOR				4
 #define DPNI_VER_MINOR				0
 
 /* Command IDs */
@@ -429,7 +429,7 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPNI_RSP_GET_LINK_STATE(cmd, state) \
 do { \
-	MC_RSP_OP(cmd, 0, 32, 32, int,      state->up);\
+	MC_RSP_OP(cmd, 0, 32,  1, int,      state->up);\
 	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, state->rate);\
 	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
 } while (0)
@@ -537,7 +537,7 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPNI_CMD_SET_RX_TC_DIST(cmd, tc_id, cfg, params_iova) \
+#define DPNI_CMD_SET_RX_TC_DIST(cmd, tc_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->dist_size); \
 	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  tc_id); \
@@ -545,7 +545,7 @@ do { \
 	MC_CMD_OP(cmd, 0, 28, 4,  enum dpni_fs_miss_action, \
 						  cfg->fs_cfg.miss_action); \
 	MC_CMD_OP(cmd, 0, 48, 16, uint16_t, cfg->fs_cfg.default_flow_id); \
-	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, params_iova); \
+	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, cfg->key_cfg_iova); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -668,11 +668,11 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPNI_CMD_SET_QOS_TABLE(cmd, cfg, params_iova) \
+#define DPNI_CMD_SET_QOS_TABLE(cmd, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  cfg->default_tc); \
 	MC_CMD_OP(cmd, 0, 40, 1,  int,	    cfg->discard_on_miss); \
-	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, params_iova); \
+	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, cfg->key_cfg_iova); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */

@@ -56,6 +56,9 @@ struct fsl_mc_io;
  */
 int dpmcp_open(struct fsl_mc_io *mc_io, int dpmcp_id, uint16_t *token);
 
+/* Get portal ID from pool */
+#define DPMCP_GET_PORTAL_ID_FROM_POOL (-1)
+
 /**
  * dpmcp_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
@@ -70,7 +73,8 @@ int dpmcp_close(struct fsl_mc_io *mc_io, uint16_t token);
 
 /**
  * struct dpmcp_cfg() - Structure representing DPMCP configuration
- * @portal_id:	Portal ID
+ * @portal_id:	Portal ID; 'DPMCP_GET_PORTAL_ID_FROM_POOL' to get the portal ID
+ *				from pool
  */
 struct dpmcp_cfg {
 	int portal_id;
@@ -276,12 +280,10 @@ int dpmcp_clear_irq_status(struct fsl_mc_io	*mc_io,
 /**
  * struct dpmcp_attr - Structure representing DPMCP attributes
  * @id:		DPMCP object ID
- * @portal_id:	Portal ID
  * @version:	DPMCP version
  */
 struct dpmcp_attr {
 	int id;
-	int portal_id;
 	/**
 	 * struct version - Structure representing DPMCP version
 	 * @major:	DPMCP major version

@@ -33,7 +33,7 @@
 #define _FSL_DPDCEI_CMD_H
 
 /* DPDCEI Version */
-#define DPDCEI_VER_MAJOR				0
+#define DPDCEI_VER_MAJOR				1
 #define DPDCEI_VER_MINOR				0
 
 /* Command IDs */
@@ -143,8 +143,6 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index); \
 } while (0)
 
-
-/* ehud TODO */
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDCEI_RSP_GET_ATTR(cmd, attr) \
 do { \
@@ -154,7 +152,6 @@ do { \
 	MC_RSP_OP(cmd, 1, 16, 16, uint16_t, attr->version.minor);\
 } while (0)
 
-/* deleted priority */
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDCEI_CMD_SET_RX_QUEUE(cmd, cfg) \
 do { \

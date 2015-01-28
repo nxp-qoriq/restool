@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #ifndef __FSL_DPDCEI_H
-#define __FSL_DPDCEI_HF
+#define __FSL_DPDCEI_H
 
 /* Data Path DCE Interface API
  * Contains initialization APIs and runtime control APIs for DPDCEI

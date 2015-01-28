@@ -34,7 +34,7 @@
 
 /* DPMAC Version */
 #define DPMAC_VER_MAJOR				2
-#define DPMAC_VER_MINOR				0
+#define DPMAC_VER_MINOR				1
 
 /* Command IDs */
 #define DPMAC_CMDID_CLOSE			0x800
@@ -138,10 +138,13 @@ do { \
 /*                cmd, param, offset, width, type,	arg_name */
 #define DPMAC_RSP_GET_ATTRIBUTES(cmd, attr) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,	    attr->phy_id);\
-	MC_RSP_OP(cmd, 0, 32, 32, int,	    attr->id);\
-	MC_RSP_OP(cmd, 1, 0,  16, uint16_t, attr->version.major);\
-	MC_RSP_OP(cmd, 1, 16, 16, uint16_t, attr->version.minor);\
+	MC_RSP_OP(cmd, 0, 0,  32, int,			attr->phy_id);\
+	MC_RSP_OP(cmd, 0, 32, 32, int,			attr->id);\
+	MC_RSP_OP(cmd, 1, 0,  16, uint16_t,		attr->version.major);\
+	MC_RSP_OP(cmd, 1, 16, 16, uint16_t,		attr->version.minor);\
+	MC_RSP_OP(cmd, 1, 32,  8, enum dpmac_link_type,	attr->link_type);\
+	MC_RSP_OP(cmd, 1, 40,  8, enum dpmac_eth_if,	attr->eth_if);\
+	MC_RSP_OP(cmd, 2, 0,  64, uint64_t,		attr->max_rate);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -175,7 +178,7 @@ do { \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  64, uint64_t, cfg->options); \
 	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->rate); \
-	MC_CMD_OP(cmd, 2, 0,  32, int,      cfg->up); \
+	MC_CMD_OP(cmd, 2, 0,  1,  int,      cfg->up); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
