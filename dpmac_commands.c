@@ -142,6 +142,68 @@ static int cmd_dpmac_help(void)
 	return 0;
 }
 
+static void print_dpmac_link_type(enum dpmac_link_type link_type)
+{
+	printf("DPMAC link type: ");
+	switch (link_type) {
+	case DPMAC_LINK_TYPE_NONE:
+		printf("DPMAC_LINK_TYPE_NONE\n");
+		break;
+	case DPMAC_LINK_TYPE_FIXED:
+		printf("DPMAC_LINK_TYPE_FIXED\n");
+		break;
+	case DPMAC_LINK_TYPE_PHY:
+		printf("DPMAC_LINK_TYPE_PHY\n");
+		break;
+	case DPMAC_LINK_TYPE_BACKPLANE:
+		printf("DPMAC_LINK_TYPE_BACKPLANE\n");
+		break;
+	default:
+		assert(false);
+		break;
+	}
+}
+
+static void print_dpmac_eth_if(enum dpmac_eth_if eth_if)
+{
+	printf("DPMAC ethernet interface: ");
+	switch (eth_if) {
+	case DPMAC_ETH_IF_MII:
+		printf("DPMAC_ETH_IF_MII\n");
+		break;
+	case DPMAC_ETH_IF_RMII:
+		printf("DPMAC_ETH_IF_RMII\n");
+		break;
+	case DPMAC_ETH_IF_SMII:
+		printf("DPMAC_ETH_IF_SMII\n");
+		break;
+	case DPMAC_ETH_IF_GMII:
+		printf("DPMAC_ETH_IF_GMII\n");
+		break;
+	case DPMAC_ETH_IF_RGMII:
+		printf("DPMAC_ETH_IF_RGMII\n");
+		break;
+	case DPMAC_ETH_IF_SGMII:
+		printf("DPMAC_ETH_IF_SGMII\n");
+		break;
+	case DPMAC_ETH_IF_XGMII:
+		printf("DPMAC_ETH_IF_XGMII\n");
+		break;
+	case DPMAC_ETH_IF_QSGMII:
+		printf("DPMAC_ETH_IF_QSGMII\n");
+		break;
+	case DPMAC_ETH_IF_XAUI:
+		printf("DPMAC_ETH_IF_XAUI\n");
+		break;
+	case DPMAC_ETH_IF_XFI:
+		printf("DPMAC_ETH_IF_XFI\n");
+
+	default:
+		assert(false);
+		break;
+	}
+}
+
 static int print_dpmac_attr(uint32_t dpmac_id,
 			struct dprc_obj_desc *target_obj_desc)
 {
@@ -181,6 +243,10 @@ static int print_dpmac_attr(uint32_t dpmac_id,
 	printf("dpmac object id/portal id: %d\n", dpmac_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_dpmac_link_type(dpmac_attr.link_type);
+	print_dpmac_eth_if(dpmac_attr.eth_if);
+	printf("maximum supported rate %llu Mbps",
+			(unsigned long long)dpmac_attr.max_rate);
 
 	error = 0;
 
