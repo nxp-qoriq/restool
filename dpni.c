@@ -1391,7 +1391,7 @@ int dpni_set_vlan_removal(struct fsl_mc_io *mc_io, uint16_t token, int en)
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPNI_CMDID_SET_VLAN_INSERTION,
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_SET_VLAN_REMOVAL,
 					  MC_CMD_PRI_LOW, token);
 	DPNI_CMD_SET_VLAN_REMOVAL(cmd, en);
 
