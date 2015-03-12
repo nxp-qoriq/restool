@@ -173,6 +173,7 @@ struct restool {
 enum global_options {
 	GLOBAL_OPT_HELP = 0,
 	GLOBAL_OPT_VERSION,
+	GLOBAL_OPT_MC_VERSION,
 	GLOBAL_OPT_DEBUG,
 };
 

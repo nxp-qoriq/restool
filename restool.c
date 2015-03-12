@@ -53,6 +53,11 @@ static struct option global_options[] = {
 		.val = 'v',
 	},
 
+	[GLOBAL_OPT_MC_VERSION] = {
+		.name = "mc-version",
+		.val = 'm',
+	},
+
 	[GLOBAL_OPT_DEBUG] = {
 		.name = "debug",
 		.val = 'd',
@@ -299,6 +304,7 @@ static void print_usage(void)
 		"\n"
 		"Valid <global-options> are:\n"
 		"   -v,--version   Displays tool version info\n"
+		"   -m,--mc-version Displays mc firmware version.\n"
 		"   -h,-?,--help   Displays general help info\n"
 		"   -d, --debug	   Print out DEBUG info\n"
 		"	--debug option must be used together with an object\n"
@@ -327,12 +333,17 @@ static void print_usage(void)
 static void print_version(void)
 {
 	printf("Freescale MC restool tool version %s\n", restool_version);
+	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_VERSION);
+}
+
+static void print_mc_version(void)
+{
 	printf("MC firmware version: %u.%u.%u\n",
 	       restool.mc_fw_version.major,
 	       restool.mc_fw_version.minor,
 	       restool.mc_fw_version.revision);
 
-	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_VERSION);
+	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_MC_VERSION);
 }
 
 int parse_object_name(const char *obj_name, char *expected_obj_type,
@@ -404,7 +415,7 @@ static int parse_global_options(int argc, char *argv[],
 	restool.global_option_mask = 0;
 	for ( ; ; ) {
 		opt_index = 0;
-		c = getopt_long(argc, argv, "+h?vd", global_options, NULL);
+		c = getopt_long(argc, argv, "+h?vmd", global_options, NULL);
 		if (c == -1)
 			break;
 
@@ -416,6 +427,10 @@ static int parse_global_options(int argc, char *argv[],
 
 		case 'v':
 			opt_index = GLOBAL_OPT_VERSION;
+			break;
+
+		case 'm':
+			opt_index = GLOBAL_OPT_MC_VERSION;
 			break;
 
 		case 'd':
@@ -600,7 +615,6 @@ out:
 	return error;
 }
 
-
 int main(int argc, char *argv[])
 {
 	int error;
@@ -611,60 +625,78 @@ int main(int argc, char *argv[])
 	bool root_dprc_opened = false;
 	struct ioctl_dprc_info root_dprc_info = { 0 };
 	enum mc_cmd_status mc_status;
+	bool talk_to_mc = true;
 
 	#ifdef DEBUG
 	restool.debug = true;
 	#endif
 
-	DEBUG_PRINTF("restool built on " __DATE__ " " __TIME__ "\n");
-	error = mc_io_init(&restool.mc_io);
-	if (error != 0)
-		goto out;
-
-	mc_io_initialized = true;
-	DEBUG_PRINTF("restool.mc_io.fd: %d\n", restool.mc_io.fd);
-
-	error = mc_get_version(&restool.mc_io, &restool.mc_fw_version);
-	if (error != 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			mc_status_to_string(mc_status), mc_status);
-		goto out;
+	for (int i = 0; i < argc; i++) {
+		if (strcmp(argv[i], "-v") == 0 ||
+			strcmp(argv[i], "--version") == 0 ||
+			strcmp(argv[i], "-h") == 0 ||
+			strcmp(argv[i], "-?") == 0 ||
+			strcmp(argv[i], "--help") == 0 ||
+			strcmp(argv[i], "help") == 0) {
+			talk_to_mc = false;
+			break;
+		}
 	}
 
-	if (MC_VER_MAJOR != restool.mc_fw_version.major)
-		printf(
-			"ERROR: MC firmware major version mismatch (found: %d, expected: %d)\n",
-			restool.mc_fw_version.major, MC_VER_MAJOR);
+	DEBUG_PRINTF("talk_to_mc = %d\n", talk_to_mc);
+	if (talk_to_mc) {
+		DEBUG_PRINTF("restool built on " __DATE__ " " __TIME__ "\n");
+		error = mc_io_init(&restool.mc_io);
+		if (error != 0)
+			goto out;
 
-	if (MC_VER_MINOR != restool.mc_fw_version.minor)
-		printf(
-			"WARNING: MC Firmware minor version mismatch (found: %d, expected: %d)\n",
-			restool.mc_fw_version.minor, MC_VER_MINOR);
+		mc_io_initialized = true;
+		DEBUG_PRINTF("restool.mc_io.fd: %d\n", restool.mc_io.fd);
 
-	DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
-		     restool.mc_fw_version.major,
-		     restool.mc_fw_version.minor,
-		     restool.mc_fw_version.revision);
+		error = mc_get_version(&restool.mc_io, &restool.mc_fw_version);
+		if (error != 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
+			goto out;
+		}
 
-	DEBUG_PRINTF("calling ioctl(RESTOOL_GET_ROOT_DPRC_INFO)\n");
-	error = ioctl(restool.mc_io.fd, RESTOOL_GET_ROOT_DPRC_INFO,
-		      &root_dprc_info);
-	if (error == -1) {
-		error = -errno;
-		goto out;
+		if (MC_VER_MAJOR != restool.mc_fw_version.major)
+			printf(
+				"ERROR: MC firmware major version mismatch (found: %d, expected: %d)\n",
+				restool.mc_fw_version.major, MC_VER_MAJOR);
+
+		if (MC_VER_MINOR != restool.mc_fw_version.minor)
+			printf(
+				"WARNING: MC Firmware minor version mismatch (found: %d, expected: %d)\n",
+				restool.mc_fw_version.minor, MC_VER_MINOR);
+
+		DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
+			     restool.mc_fw_version.major,
+			     restool.mc_fw_version.minor,
+			     restool.mc_fw_version.revision);
+
+		DEBUG_PRINTF("calling ioctl(RESTOOL_GET_ROOT_DPRC_INFO)\n");
+		error = ioctl(restool.mc_io.fd, RESTOOL_GET_ROOT_DPRC_INFO,
+			      &root_dprc_info);
+		if (error == -1) {
+			error = -errno;
+			goto out;
+		}
+
+		DEBUG_PRINTF("ioctl returned dprc_id: %#x, dprc_handle: %#x\n",
+			     root_dprc_info.dprc_id,
+			     root_dprc_info.dprc_handle);
+
+		restool.root_dprc_id = root_dprc_info.dprc_id;
+		error = open_dprc(restool.root_dprc_id,
+				&restool.root_dprc_handle);
+		if (error < 0)
+			goto out;
+
+		root_dprc_opened = true;
 	}
 
-	DEBUG_PRINTF("ioctl returned dprc_id: %#x, dprc_handle: %#x\n",
-		     root_dprc_info.dprc_id,
-		     root_dprc_info.dprc_handle);
-
-	restool.root_dprc_id = root_dprc_info.dprc_id;
-	error = open_dprc(restool.root_dprc_id, &restool.root_dprc_handle);
-	if (error < 0)
-		goto out;
-
-	root_dprc_opened = true;
 	error = parse_global_options(argc, argv, &next_argv_index);
 	if (error < 0)
 		goto out;
@@ -683,6 +715,10 @@ int main(int argc, char *argv[])
 		if (restool.global_option_mask &
 		    ONE_BIT_MASK(GLOBAL_OPT_VERSION))
 			print_version();
+
+		if (restool.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_MC_VERSION))
+			print_mc_version();
 
 		if (restool.global_option_mask &
 		    ONE_BIT_MASK(GLOBAL_OPT_DEBUG)) {
@@ -753,4 +789,3 @@ out:
 
 	return error;
 }
-
