@@ -317,7 +317,7 @@ static int cmd_dpci_create(void)
 		"   specifies the number of priorities\n"
 		"   valid values are 1-2\n"
 		"   Default value is 1\n"
-		"   e.g. restool dpci create --num-priorities=8\n"
+		"   e.g. restool dpci create --num-priorities=2\n"
 		"\n";
 
 	int error;
