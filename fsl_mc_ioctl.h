@@ -37,14 +37,9 @@
 #define RESTOOL_IOCTL_TYPE   'R'
 
 #define RESTOOL_GET_ROOT_DPRC_INFO \
-	_IOR(RESTOOL_IOCTL_TYPE, 0x1, struct ioctl_dprc_info)
+	_IOR(RESTOOL_IOCTL_TYPE, 0x1, uint32_t)
 
 #define RESTOOL_SEND_MC_COMMAND \
 	_IOWR(RESTOOL_IOCTL_TYPE, 0x4, struct mc_command)
-
-struct ioctl_dprc_info {
-	uint32_t dprc_id;
-	uint16_t dprc_handle;
-};
 
 #endif /* _FSL_MC_IOCTL_H_ */

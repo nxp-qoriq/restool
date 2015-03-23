@@ -627,7 +627,7 @@ int main(int argc, char *argv[])
 	const char *cmd_name;
 	bool mc_io_initialized = false;
 	bool root_dprc_opened = false;
-	struct ioctl_dprc_info root_dprc_info = { 0 };
+	uint32_t root_dprc_id;
 	enum mc_cmd_status mc_status;
 	bool talk_to_mc = true;
 
@@ -682,18 +682,17 @@ int main(int argc, char *argv[])
 
 		DEBUG_PRINTF("calling ioctl(RESTOOL_GET_ROOT_DPRC_INFO)\n");
 		error = ioctl(restool.mc_io.fd, RESTOOL_GET_ROOT_DPRC_INFO,
-			      &root_dprc_info);
+			      &root_dprc_id);
 		if (error == -1) {
 			error = -errno;
 			goto out;
 		}
 
 		DEBUG_PRINTF(
-			"ioctl returned MC-bus's root_dprc_id: %#x, root_dprc_handle: %#x\n",
-			root_dprc_info.dprc_id,
-			root_dprc_info.dprc_handle);
+			"ioctl returned MC-bus's root_dprc_id: %#x\n",
+			root_dprc_id);
 
-		restool.root_dprc_id = root_dprc_info.dprc_id;
+		restool.root_dprc_id = root_dprc_id;
 		error = open_dprc(restool.root_dprc_id,
 				&restool.root_dprc_handle);
 		if (error < 0)
