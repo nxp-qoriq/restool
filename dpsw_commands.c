@@ -213,11 +213,12 @@ static void print_dpsw_options(uint64_t options)
 }
 
 static int print_dpsw_endpoint(uint32_t target_id,
-				uint16_t target_parent_dprc_handle,
+				uint32_t target_parent_dprc_id,
 				uint16_t num_ifs)
 {
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
+	uint16_t target_parent_dprc_handle;
 	int state;
 	int error = 0;
 	int k;
@@ -229,6 +230,14 @@ static int print_dpsw_endpoint(uint32_t target_id,
 		memcpy(endpoint1.type, "dpsw", 5);
 		endpoint1.id = target_id;
 		endpoint1.interface_id = k;
+		if (target_parent_dprc_id == restool.root_dprc_id)
+			target_parent_dprc_handle = restool.root_dprc_handle;
+		else {
+			error = open_dprc(target_parent_dprc_id,
+					&target_parent_dprc_handle);
+			if (error < 0)
+				return error;
+		}
 		error = dprc_get_connection(&restool.mc_io,
 					target_parent_dprc_handle,
 					&endpoint1,
@@ -261,6 +270,10 @@ static int print_dpsw_endpoint(uint32_t target_id,
 				mc_status_to_string(mc_status), mc_status);
 			return error;
 		}
+
+		if (target_parent_dprc_id != restool.root_dprc_id)
+			return dprc_close(&restool.mc_io,
+					target_parent_dprc_handle);
 	}
 
 	return 0;
@@ -268,7 +281,7 @@ static int print_dpsw_endpoint(uint32_t target_id,
 
 static int print_dpsw_attr(uint32_t dpsw_id,
 			struct dprc_obj_desc *target_obj_desc,
-			uint16_t target_parent_dprc_handle)
+			uint32_t target_parent_dprc_id)
 {
 	uint16_t dpsw_handle;
 	int error;
@@ -306,7 +319,7 @@ static int print_dpsw_attr(uint32_t dpsw_id,
 	printf("dpsw id: %d\n", dpsw_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpsw_endpoint(dpsw_id, target_parent_dprc_handle,
+	print_dpsw_endpoint(dpsw_id, target_parent_dprc_id,
 				dpsw_attr.num_ifs);
 	printf("dpsw_attr.options value is: %#llx\n",
 	       (unsigned long long)dpsw_attr.options);
@@ -342,13 +355,14 @@ static int print_dpsw_info(uint32_t dpsw_id)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
-	uint16_t target_parent_dprc_handle;
+	uint32_t target_parent_dprc_id;
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpsw_id,
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0, dpsw_id,
 				"dpsw", &target_obj_desc,
-				&target_parent_dprc_handle, &found);
+				&target_parent_dprc_id, &found);
 	if (error < 0)
 		goto out;
 
@@ -358,7 +372,7 @@ static int print_dpsw_info(uint32_t dpsw_id)
 	}
 
 	error = print_dpsw_attr(dpsw_id, &target_obj_desc,
-				target_parent_dprc_handle);
+				target_parent_dprc_id);
 	if (error < 0)
 		goto out;
 

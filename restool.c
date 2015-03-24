@@ -144,10 +144,11 @@ const char *mc_status_to_string(enum mc_cmd_status status)
 	return status_strings[status];
 }
 
-int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
+int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
+			int nesting_level,
 			uint32_t target_id, char *target_type,
 			struct dprc_obj_desc *target_obj_desc,
-			uint16_t *target_parent_dprc_handle, bool *found)
+			uint32_t *target_parent_dprc_id, bool *found)
 {
 	int num_child_devices;
 	int error = 0;
@@ -195,7 +196,9 @@ int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
 		if (strcmp(obj_desc.type, target_type) == 0 &&
 		    target_id == (uint32_t)obj_desc.id) {
 			*target_obj_desc = obj_desc;
-			*target_parent_dprc_handle = dprc_handle;
+			*target_parent_dprc_id = dprc_id;
+			DEBUG_PRINTF("target_parent_dprc_id: dprc.%d\n",
+					dprc_id);
 			DEBUG_PRINTF("object found\n");
 			*found = true;
 			goto out;
@@ -208,12 +211,13 @@ int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
 
 			DEBUG_PRINTF("entering %s.%u\n", obj_desc.type,
 					obj_desc.id);
-			error = find_target_obj_desc(child_dprc_handle,
+			error = find_target_obj_desc(obj_desc.id,
+					child_dprc_handle,
 					nesting_level + 1,
 					target_id,
 					target_type,
 					target_obj_desc,
-					target_parent_dprc_handle,
+					target_parent_dprc_id,
 					&found2);
 
 			error2 = dprc_close(&restool.mc_io, child_dprc_handle);
@@ -250,7 +254,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 	int error = 0;
 
 	if (strcmp(target_obj_desc->type, "dprc") == 0 &&
-	    target_obj_desc->id == restool.root_dprc_id) {
+	    target_obj_desc->id == (int)restool.root_dprc_id) {
 		printf("root dprc doesn't have verbose info to display\n");
 		return 0;
 	}
@@ -684,9 +688,10 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 
-		DEBUG_PRINTF("ioctl returned dprc_id: %#x, dprc_handle: %#x\n",
-			     root_dprc_info.dprc_id,
-			     root_dprc_info.dprc_handle);
+		DEBUG_PRINTF(
+			"ioctl returned MC-bus's root_dprc_id: %#x, root_dprc_handle: %#x\n",
+			root_dprc_info.dprc_id,
+			root_dprc_info.dprc_handle);
 
 		restool.root_dprc_id = root_dprc_info.dprc_id;
 		error = open_dprc(restool.root_dprc_id,
@@ -694,6 +699,8 @@ int main(int argc, char *argv[])
 		if (error < 0)
 			goto out;
 
+		DEBUG_PRINTF("newly opened restool's root_dprc_handle: %#x\n",
+			     restool.root_dprc_handle);
 		root_dprc_opened = true;
 	}
 

@@ -778,13 +778,14 @@ static int print_dprc_info(uint32_t dprc_id)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
-	uint16_t target_parent_dprc_handle;
+	uint32_t target_parent_dprc_id;
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_handle, 0, dprc_id,
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0, dprc_id,
 				"dprc", &target_obj_desc,
-				&target_parent_dprc_handle, &found);
+				&target_parent_dprc_id, &found);
 	if (error < 0)
 		goto out;
 
@@ -1033,6 +1034,7 @@ static int cmd_dprc_destroy_child(void)
 	int error;
 	uint32_t child_dprc_id;
 	struct dprc_obj_desc child_obj_desc;
+	uint32_t parent_dprc_id;
 	uint16_t parent_dprc_handle;
 	bool found = false;
 
@@ -1062,14 +1064,23 @@ static int cmd_dprc_destroy_child(void)
 	}
 
 	memset(&child_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_handle, 0,
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0,
 				child_dprc_id, "dprc", &child_obj_desc,
-				&parent_dprc_handle, &found);
+				&parent_dprc_id, &found);
 	if (error < 0) {
 		printf("destroy dprc.%u failed\n", child_dprc_id);
 		goto out;
 	}
 
+	if (parent_dprc_id == restool.root_dprc_id)
+		parent_dprc_handle = restool.root_dprc_handle;
+	else {
+		error = open_dprc(parent_dprc_id,
+				&parent_dprc_handle);
+		if (error < 0)
+			goto out;
+	}
 	/*
 	 * Destroy child container in the MC:
 	 */
@@ -1084,6 +1095,10 @@ static int cmd_dprc_destroy_child(void)
 	}
 
 	printf("dprc.%u object destroyed\n", child_dprc_id);
+
+	if (parent_dprc_id != restool.root_dprc_id)
+		error = dprc_close(&restool.mc_io, parent_dprc_handle);
+
 out:
 	return error;
 }

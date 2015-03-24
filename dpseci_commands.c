@@ -207,13 +207,14 @@ static int print_dpseci_info(uint32_t dpseci_id)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
-	uint16_t target_parent_dprc_handle;
+	uint32_t target_parent_dprc_id;
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpseci_id,
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0, dpseci_id,
 				"dpseci", &target_obj_desc,
-				&target_parent_dprc_handle, &found);
+				&target_parent_dprc_id, &found);
 	if (error < 0)
 		goto out;
 

@@ -154,7 +154,7 @@ struct restool {
 	/**
 	 * Id for the root DPRC in the system
 	 */
-	uint16_t root_dprc_id;
+	uint32_t root_dprc_id;
 
 	/**
 	 * Handle for the root DPRC in the system
@@ -209,10 +209,11 @@ void print_unexpected_options_error(uint32_t option_mask,
 
 enum mc_cmd_status flib_error_to_mc_status(int error);
 const char *mc_status_to_string(enum mc_cmd_status status);
-int find_target_obj_desc(uint16_t dprc_handle, int nesting_level,
+int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
+			int nesting_level,
 			uint32_t target_id, char *target_type,
 			struct dprc_obj_desc *target_obj_desc,
-			uint16_t *target_parent_dprc_handle, bool *found);
+			uint32_t *target_parent_dprc_id, bool *found);
 int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 			const struct flib_ops *ops);
 

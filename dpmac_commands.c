@@ -271,13 +271,14 @@ static int print_dpmac_info(uint32_t dpmac_id)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
-	uint16_t target_parent_dprc_handle;
+	uint32_t target_parent_dprc_id;
 	bool found = false;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_handle, 0, dpmac_id,
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0, dpmac_id,
 				"dpmac", &target_obj_desc,
-				&target_parent_dprc_handle, &found);
+				&target_parent_dprc_id, &found);
 	if (error < 0)
 		goto out;
 
