@@ -589,7 +589,7 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 			goto out;
 		}
 
-		if (!verbose) {
+		if (strcmp(obj_desc.type, "dprc") == 0 || !verbose) {
 			printf("%8s.%u\n", obj_desc.type, obj_desc.id);
 		} else {
 			printf("%8s.%u\t(%splugged)\n", obj_desc.type,
@@ -707,8 +707,7 @@ static void print_dprc_options(uint64_t options)
 		printf("\tDPRC_CFG_OPT_AIOP\n");
 }
 
-static int print_dprc_attr(uint32_t dprc_id,
-			struct dprc_obj_desc *target_obj_desc)
+static int print_dprc_attr(uint32_t dprc_id)
 {
 	uint16_t dprc_handle;
 	int error;
@@ -749,12 +748,6 @@ static int print_dprc_attr(uint32_t dprc_id,
 		(unsigned long long)dprc_attr.options);
 	print_dprc_options(dprc_attr.options);
 
-	if (dprc_id == restool.root_dprc_id)
-		printf("plugged state: plugged\n");
-	else
-		printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-
 	error = 0;
 
 out:
@@ -794,7 +787,7 @@ static int print_dprc_info(uint32_t dprc_id)
 		return -EINVAL;
 	}
 
-	error = print_dprc_attr(dprc_id, &target_obj_desc);
+	error = print_dprc_attr(dprc_id);
 	if (error < 0)
 		goto out;
 
@@ -1321,6 +1314,12 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				error = -EINVAL;
 				goto out;
 			}
+			if (strcmp(res_req.type, "dprc") == 0) {
+				ERROR_PRINTF(
+					"Cannot change plugged state of dprc\n");
+				error = -EINVAL;
+				goto out;
+			}
 
 			if (state == 1)
 				res_req.options |= DPRC_RES_REQ_OPT_PLUGGED;
@@ -1384,6 +1383,8 @@ static int cmd_dprc_assign(void)
 		"\n"
 		"Usage: restool dprc assign <parent-container> --object=<object> [--target=<container>] --plugged=<state>\n"
 		"	restool dprc assign <parent-container> --resource-type=<type> --count=<number> [--target=<container>]\n"
+		"Limit:	Cannot change plugged state of dprc\n"
+		"e.g.	\'restool dprc assign dprc.1 --target=dprc.1 --object=dprc.3 --plugged=1\' will not work\n"
 		"\n"
 		"--object=<object>\n"
 		"   Specifies the object to assign to the target container\n"
