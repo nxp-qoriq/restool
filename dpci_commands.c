@@ -355,7 +355,7 @@ static int cmd_dpci_create(void)
 			return -EINVAL;
 		}
 
-		dpci_cfg.num_of_priorities = val;
+		dpci_cfg.num_of_priorities = (uint8_t)val;
 	} else {
 		dpci_cfg.num_of_priorities = 1;
 	}

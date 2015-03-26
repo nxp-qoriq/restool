@@ -466,7 +466,7 @@ static int parse_dpsw_create_options(char *options_str, uint64_t *options)
 static int create_dpsw(const char *usage_msg)
 {
 	int error;
-	struct dpsw_cfg dpsw_cfg;
+	struct dpsw_cfg dpsw_cfg = {0};
 	uint16_t dpsw_handle;
 	long val;
 	char *str;
@@ -498,7 +498,7 @@ static int create_dpsw(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpsw_cfg.num_ifs = val;
+		dpsw_cfg.num_ifs = (uint16_t)val;
 	} else {
 		dpsw_cfg.num_ifs = 4; /* Todo: default value not defined */
 	}
@@ -530,7 +530,7 @@ static int create_dpsw(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpsw_cfg.adv.max_vlans = val;
+		dpsw_cfg.adv.max_vlans = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_vlans = 0;
 	}
@@ -549,7 +549,7 @@ static int create_dpsw(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpsw_cfg.adv.max_fdbs = val;
+		dpsw_cfg.adv.max_fdbs = (uint8_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdbs = 0;
 	}
@@ -568,7 +568,7 @@ static int create_dpsw(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpsw_cfg.adv.max_fdb_entries = val;
+		dpsw_cfg.adv.max_fdb_entries = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdb_entries = 0;
 	}
@@ -587,7 +587,7 @@ static int create_dpsw(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpsw_cfg.adv.fdb_aging_time = val;
+		dpsw_cfg.adv.fdb_aging_time = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.fdb_aging_time = 0;
 	}
@@ -607,7 +607,7 @@ static int create_dpsw(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpsw_cfg.adv.max_fdb_mc_groups = val;
+		dpsw_cfg.adv.max_fdb_mc_groups = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdb_mc_groups = 0;
 	}

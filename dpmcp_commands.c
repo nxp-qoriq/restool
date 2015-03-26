@@ -283,7 +283,7 @@ static int cmd_dpmcp_create(void)
 		"\n";
 
 	int error;
-	struct dpmcp_cfg dpmcp_cfg;
+	struct dpmcp_cfg dpmcp_cfg = {0};
 	uint16_t dpmcp_handle;
 	struct dpmcp_attr dpmcp_attr;
 

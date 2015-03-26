@@ -475,7 +475,7 @@ static int parse_dpdmux_method(char *method_str, enum dpdmux_method *method)
 static int create_dpdmux(const char *usage_msg)
 {
 	int error;
-	struct dpdmux_cfg dpdmux_cfg;
+	struct dpdmux_cfg dpdmux_cfg = {0};
 	uint16_t dpdmux_handle;
 	long val;
 	char *str;
@@ -554,7 +554,7 @@ static int create_dpdmux(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpdmux_cfg.num_ifs = val;
+		dpdmux_cfg.num_ifs = (uint16_t)val;
 	} else {
 		ERROR_PRINTF("--num-ifs option missing\n");
 		printf(usage_msg);
@@ -594,7 +594,7 @@ static int create_dpdmux(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpdmux_cfg.adv.max_dmat_entries = val;
+		dpdmux_cfg.adv.max_dmat_entries = (uint16_t)val;
 	} else {
 		dpdmux_cfg.adv.max_dmat_entries = 0;
 	}
@@ -614,7 +614,7 @@ static int create_dpdmux(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpdmux_cfg.adv.max_mc_groups = val;
+		dpdmux_cfg.adv.max_mc_groups = (uint16_t)val;
 	} else {
 		dpdmux_cfg.adv.max_mc_groups = 0;
 	}

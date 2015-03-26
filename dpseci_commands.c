@@ -298,7 +298,7 @@ static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities)
 			return -EINVAL;
 		}
 
-		priorities[i] = val;
+		priorities[i] = (uint8_t)val;
 		prio_str = strtok_r(NULL, ",", &cursor);
 		++i;
 	}

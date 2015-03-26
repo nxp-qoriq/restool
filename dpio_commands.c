@@ -367,7 +367,7 @@ static int cmd_dpio_create(void)
 			return -EINVAL;
 		}
 
-		dpio_cfg.num_priorities = val;
+		dpio_cfg.num_priorities = (uint8_t)val;
 	} else {
 		dpio_cfg.num_priorities = 8;
 	}

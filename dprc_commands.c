@@ -879,7 +879,6 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 		(unsigned int)MC_PORTAL_PADDR_TO_PORTAL_ID(mc_portal_phys_addr),
 		(unsigned long long)mc_portal_phys_addr);
 
-	return 0;
 error:
 	if (child_dprc_created) {
 		error2 = dprc_destroy_container(&restool.mc_io, dprc_handle,
@@ -1527,7 +1526,7 @@ static int cmd_dprc_set_quota(void)
 				   dprc_handle,
 				   child_dprc_id,
 				   res_type,
-				   quota);
+				   (uint16_t)quota);
 
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

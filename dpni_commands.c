@@ -602,7 +602,7 @@ static int parse_dpni_mac_addr(char *mac_addr_str, uint8_t *mac_addr)
 			return -EINVAL;
 		}
 
-		mac_addr[i] = val;
+		mac_addr[i] = (uint8_t)val;
 		mac_str = strtok_r(NULL, ":", &cursor);
 		++i;
 	}
@@ -643,7 +643,7 @@ static int parse_dpni_max_dist_per_tc(char *max_dist_per_tc_str,
 			return -EINVAL;
 		}
 
-		max_dist_per_tc[i] = val;
+		max_dist_per_tc[i] = (uint8_t)val;
 		max_dist_str = strtok_r(NULL, ",", &cursor);
 		++i;
 	}
@@ -728,7 +728,7 @@ static int create_dpni(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpni_cfg.adv.max_tcs = val;
+		dpni_cfg.adv.max_tcs = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_tcs = 1; /* set default value 1 */
 	}
@@ -770,7 +770,7 @@ static int create_dpni(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpni_cfg.adv.max_senders = val;
+		dpni_cfg.adv.max_senders = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_senders = 1;
 	}
@@ -789,7 +789,7 @@ static int create_dpni(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpni_cfg.adv.max_unicast_filters = val;
+		dpni_cfg.adv.max_unicast_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_unicast_filters = 0;
 	}
@@ -808,7 +808,7 @@ static int create_dpni(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpni_cfg.adv.max_multicast_filters = val;
+		dpni_cfg.adv.max_multicast_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_multicast_filters = 0;
 	}
@@ -827,7 +827,7 @@ static int create_dpni(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpni_cfg.adv.max_vlan_filters = val;
+		dpni_cfg.adv.max_vlan_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_vlan_filters = 0;
 	}
@@ -846,7 +846,7 @@ static int create_dpni(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpni_cfg.adv.max_qos_entries = val;
+		dpni_cfg.adv.max_qos_entries = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_qos_entries = 0;
 	}
@@ -865,7 +865,7 @@ static int create_dpni(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpni_cfg.adv.max_qos_key_size = val;
+		dpni_cfg.adv.max_qos_key_size = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_qos_key_size = 0;
 	}
@@ -874,7 +874,7 @@ static int create_dpni(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE);
-		dpni_cfg.adv.max_dist_key_size = strtol(
+		dpni_cfg.adv.max_dist_key_size = (uint8_t)strtol(
 			restool.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE],
 			(char **)NULL, 0);
 		errno = 0;
@@ -887,7 +887,7 @@ static int create_dpni(const char *usage_msg)
 			return -EINVAL;
 		}
 
-		dpni_cfg.adv.max_dist_key_size = val;
+		dpni_cfg.adv.max_dist_key_size = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_dist_key_size = 0;
 	}

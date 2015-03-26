@@ -327,7 +327,7 @@ static int cmd_dpcon_create(void)
 			return -EINVAL;
 		}
 
-		dpcon_cfg.num_priorities = val;
+		dpcon_cfg.num_priorities = (uint8_t)val;
 	} else {
 		dpcon_cfg.num_priorities = 1;
 	}

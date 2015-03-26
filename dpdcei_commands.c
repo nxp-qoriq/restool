@@ -380,7 +380,7 @@ static int cmd_dpdcei_create(void)
 			return -EINVAL;
 		}
 
-		dpdcei_cfg.priority = val;
+		dpdcei_cfg.priority = (uint8_t)val;
 	} else {
 		ERROR_PRINTF("--priority option missing\n");
 		printf(usage_msg);
