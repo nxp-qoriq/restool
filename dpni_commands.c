@@ -924,14 +924,13 @@ static int cmd_dpni_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dpni create [OPTIONS]\n"
+		"Usage: restool dpni create --mac-addr=<addr> [OPTIONS]\n"
+		"   --mac-addr=<addr>\n"
+		"	String specifying primary MAC address (e.g. 00:00:05:00:00:05). It is mandatory.\n"
 		"   e.g. create a DPNI object with all default options:\n"
-		"	restool dpni create\n"
+		"	restool dpni create --mac-addr=<addr>\n"
 		"\n"
 		"OPTIONS:\n"
-		"if options are not specified, create DPNI by default options\n"
-		"--mac-addr=<addr>\n"
-		"	String specifying primary MAC address (e.g. 00:00:05:00:00:05)\n"
 		"--max-senders=<number>\n"
 		"	maximum number of different senders;\n"
 		"	will be used as the number of dedicated TX flows;\n"
