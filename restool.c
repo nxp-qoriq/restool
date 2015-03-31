@@ -40,7 +40,7 @@
 #include "fsl_mc_cmd.h"
 #include "fsl_dprc.h"
 
-static const char restool_version[] = "0.6";
+static const char restool_version[] = "0.7";
 
 static struct option global_options[] = {
 	[GLOBAL_OPT_HELP] = {
