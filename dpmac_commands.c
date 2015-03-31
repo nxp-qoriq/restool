@@ -245,8 +245,8 @@ static int print_dpmac_attr(uint32_t dpmac_id,
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	print_dpmac_link_type(dpmac_attr.link_type);
 	print_dpmac_eth_if(dpmac_attr.eth_if);
-	printf("maximum supported rate %llu Mbps\n",
-			(unsigned long long)dpmac_attr.max_rate);
+	printf("maximum supported rate %lu Mbps\n",
+			(unsigned long)dpmac_attr.max_rate);
 
 	error = 0;
 

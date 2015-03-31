@@ -33,9 +33,10 @@
 #define _FSL_DPNI_CMD_H
 
 #define DPNI_CMD_EXTRACT_EXT_PARAMS		25
+#define DPNI_CMD_EARLY_DROP_EXT_PARAMS		13
 
 /* DPNI Version */
-#define DPNI_VER_MAJOR				4
+#define DPNI_VER_MAJOR				5
 #define DPNI_VER_MINOR				0
 
 /* Command IDs */
@@ -108,6 +109,8 @@
 #define DPNI_CMDID_GET_RX_ERR_QUEUE		0x23B
 #define DPNI_CMDID_SET_TX_CONF_ERR_QUEUE	0x23C
 #define DPNI_CMDID_GET_TX_CONF_ERR_QUEUE	0x23D
+#define DPNI_CMDID_SET_RX_TC_POLICING		0x23E
+#define DPNI_CMDID_SET_RX_TC_EARLY_DROP		0x23F
 
 #define DPNI_CMDID_SET_QOS_TBL			0x240
 #define DPNI_CMDID_ADD_QOS_ENT			0x241
@@ -136,7 +139,7 @@ do { \
 	MC_CMD_OP(cmd, 0, 40,	8,  uint8_t,  cfg->mac_addr[2]); \
 	MC_CMD_OP(cmd, 0, 48,	8,  uint8_t,  cfg->mac_addr[1]); \
 	MC_CMD_OP(cmd, 0, 56,	8,  uint8_t,  cfg->mac_addr[0]); \
-	MC_CMD_OP(cmd, 1, 0,	64, uint64_t, cfg->adv.options); \
+	MC_CMD_OP(cmd, 1, 0,	32, uint32_t, cfg->adv.options); \
 	MC_CMD_OP(cmd, 2, 0,	8,  uint8_t,  cfg->adv.max_unicast_filters); \
 	MC_CMD_OP(cmd, 2, 8,	8,  uint8_t,  cfg->adv.max_multicast_filters); \
 	MC_CMD_OP(cmd, 2, 16,	8,  uint8_t,  cfg->adv.max_vlan_filters); \
@@ -158,6 +161,8 @@ do { \
 				    cfg->adv.ipr_cfg.min_frag_size_ipv4); \
 	MC_CMD_OP(cmd, 4, 32,	16, uint16_t, \
 				    cfg->adv.ipr_cfg.min_frag_size_ipv6); \
+	MC_CMD_OP(cmd, 4, 48,	8,  uint8_t, cfg->adv.max_policers); \
+	MC_CMD_OP(cmd, 4, 56,	8,  uint8_t, cfg->adv.max_congestion_ctrl); \
 	MC_CMD_OP(cmd, 5, 0,	16, uint16_t, \
 				  cfg->adv.ipr_cfg.max_open_frames_ipv4); \
 	MC_CMD_OP(cmd, 5, 16,	16, uint16_t, \
@@ -264,7 +269,7 @@ do { \
 	MC_RSP_OP(cmd, 0, 32, 8,  uint8_t,  attr->max_tcs); \
 	MC_RSP_OP(cmd, 0, 40, 8,  uint8_t,  attr->max_senders); \
 	MC_RSP_OP(cmd, 0, 48, 8,  enum net_prot, attr->start_hdr); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->options); \
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, attr->options); \
 	MC_RSP_OP(cmd, 2, 0,  8,  uint8_t,  attr->max_unicast_filters); \
 	MC_RSP_OP(cmd, 2, 8,  8,  uint8_t,  attr->max_multicast_filters);\
 	MC_RSP_OP(cmd, 2, 16, 8,  uint8_t,  attr->max_vlan_filters); \
@@ -284,7 +289,9 @@ do { \
 	MC_RSP_OP(cmd, 4, 16,	16, uint16_t, \
 				    attr->ipr_cfg.min_frag_size_ipv4); \
 	MC_RSP_OP(cmd, 4, 32,	16, uint16_t, \
-				    attr->ipr_cfg.min_frag_size_ipv6); \
+				    attr->ipr_cfg.min_frag_size_ipv6);\
+	MC_RSP_OP(cmd, 4, 48,	8,  uint8_t, attr->max_policers); \
+	MC_RSP_OP(cmd, 4, 56,	8,  uint8_t, attr->max_congestion_ctrl); \
 	MC_RSP_OP(cmd, 5, 0,	16, uint16_t, \
 				  attr->ipr_cfg.max_open_frames_ipv4); \
 	MC_RSP_OP(cmd, 5, 16,	16, uint16_t, \
@@ -422,7 +429,7 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPNI_CMD_SET_LINK_CFG(cmd, cfg) \
 do { \
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->rate);\
+	MC_CMD_OP(cmd, 1, 0,  32, uint32_t, cfg->rate);\
 	MC_CMD_OP(cmd, 2, 0,  64, uint64_t, cfg->options);\
 } while (0)
 
@@ -430,7 +437,7 @@ do { \
 #define DPNI_RSP_GET_LINK_STATE(cmd, state) \
 do { \
 	MC_RSP_OP(cmd, 0, 32,  1, int,      state->up);\
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, state->rate);\
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, state->rate);\
 	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
 } while (0)
 
@@ -552,22 +559,22 @@ do { \
 #define DPNI_CMD_SET_TX_FLOW(cmd, flow_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  32, int,     \
-			   cfg->conf_err_cfg.queue_cfg.dest_cfg.dest_id);\
+		cfg->conf_err_cfg.queue_cfg.dest_cfg.dest_id);\
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t, \
-			   cfg->conf_err_cfg.queue_cfg.dest_cfg.priority);\
+		cfg->conf_err_cfg.queue_cfg.dest_cfg.priority);\
 	MC_CMD_OP(cmd, 0, 40, 2,  enum dpni_dest, \
-			   cfg->conf_err_cfg.queue_cfg.dest_cfg.dest_type);\
+		cfg->conf_err_cfg.queue_cfg.dest_cfg.dest_type);\
 	MC_CMD_OP(cmd, 0, 42, 1,  int,	    cfg->conf_err_cfg.errors_only);\
 	MC_CMD_OP(cmd, 0, 43, 1,  int,	    cfg->l3_chksum_gen);\
 	MC_CMD_OP(cmd, 0, 44, 1,  int,	    cfg->l4_chksum_gen);\
 	MC_CMD_OP(cmd, 0, 45, 1,  int,	    \
-			   cfg->conf_err_cfg.use_default_queue);\
+		cfg->conf_err_cfg.use_default_queue);\
 	MC_CMD_OP(cmd, 0, 48, 16, uint16_t, flow_id);\
 	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, \
-			   cfg->conf_err_cfg.queue_cfg.user_ctx);\
+		cfg->conf_err_cfg.queue_cfg.user_ctx);\
 	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->options);\
 	MC_CMD_OP(cmd, 2, 32,  32, uint32_t, \
-			   cfg->conf_err_cfg.queue_cfg.options);\
+		cfg->conf_err_cfg.queue_cfg.options);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -608,6 +615,13 @@ do { \
 	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->user_ctx); \
 	MC_CMD_OP(cmd, 2, 16, 8,  uint8_t,  tc_id); \
 	MC_CMD_OP(cmd, 2, 32,  32, uint32_t, cfg->options); \
+	MC_CMD_OP(cmd, 3, 0,  4,  enum dpni_flc_type, cfg->flc_cfg.flc_type); \
+	MC_CMD_OP(cmd, 3, 4,  4,  enum dpni_stash_size, \
+		cfg->flc_cfg.frame_data_size);\
+	MC_CMD_OP(cmd, 3, 8,  4,  enum dpni_stash_size, \
+		cfg->flc_cfg.flow_context_size);\
+	MC_CMD_OP(cmd, 3, 32, 32, uint32_t, cfg->flc_cfg.options);\
+	MC_CMD_OP(cmd, 4, 0,  64, uint64_t, cfg->flc_cfg.flow_context);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -625,6 +639,13 @@ do { \
 	MC_RSP_OP(cmd, 0, 40, 2,  enum dpni_dest, attr->dest_cfg.dest_type); \
 	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->user_ctx); \
 	MC_RSP_OP(cmd, 2, 32, 32, uint32_t, attr->fqid); \
+	MC_RSP_OP(cmd, 3, 0,  4,  enum dpni_flc_type, attr->flc_cfg.flc_type); \
+	MC_RSP_OP(cmd, 3, 4,  4,  enum dpni_stash_size, \
+		attr->flc_cfg.frame_data_size);\
+	MC_RSP_OP(cmd, 3, 8,  4,  enum dpni_stash_size, \
+		attr->flc_cfg.flow_context_size);\
+	MC_RSP_OP(cmd, 3, 32, 32, uint32_t, attr->flc_cfg.options);\
+	MC_RSP_OP(cmd, 4, 0,  64, uint64_t, attr->flc_cfg.flow_context);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -635,6 +656,13 @@ do { \
 	MC_CMD_OP(cmd, 0, 40, 2,  enum dpni_dest, cfg->dest_cfg.dest_type);\
 	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->user_ctx); \
 	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->options); \
+	MC_CMD_OP(cmd, 3, 0,  4,  enum dpni_flc_type, cfg->flc_cfg.flc_type); \
+	MC_CMD_OP(cmd, 3, 4,  4,  enum dpni_stash_size, \
+		cfg->flc_cfg.frame_data_size);\
+	MC_CMD_OP(cmd, 3, 8,  4,  enum dpni_stash_size, \
+		cfg->flc_cfg.flow_context_size);\
+	MC_CMD_OP(cmd, 3, 32, 32, uint32_t, cfg->flc_cfg.options);\
+	MC_CMD_OP(cmd, 4, 0,  64, uint64_t, cfg->flc_cfg.flow_context);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -645,6 +673,13 @@ do { \
 	MC_RSP_OP(cmd, 0, 40, 2,  enum dpni_dest, attr->dest_cfg.dest_type);\
 	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->user_ctx); \
 	MC_RSP_OP(cmd, 2, 32, 32, uint32_t, attr->fqid); \
+	MC_RSP_OP(cmd, 3, 0,  4,  enum dpni_flc_type, attr->flc_cfg.flc_type); \
+	MC_RSP_OP(cmd, 3, 4,  4,  enum dpni_stash_size, \
+		attr->flc_cfg.frame_data_size);\
+	MC_RSP_OP(cmd, 3, 8,  4,  enum dpni_stash_size, \
+		attr->flc_cfg.flow_context_size);\
+	MC_RSP_OP(cmd, 3, 32, 32, uint32_t, attr->flc_cfg.options);\
+	MC_RSP_OP(cmd, 4, 0,  64, uint64_t, attr->flc_cfg.flow_context);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -731,4 +766,42 @@ do { \
 #define DPNI_CMD_SET_IPF(cmd, en) \
 	MC_CMD_OP(cmd, 0, 0,  1,  int,	    en)
 
+/*                cmd, param, offset, width, type, arg_name */
+#define DPNI_CMD_SET_RX_TC_POLICING(cmd, tc_id, cfg) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  4, enum dpni_policer_mode, cfg->mode); \
+	MC_CMD_OP(cmd, 0, 4,  4, enum dpni_policer_color, cfg->default_color); \
+	MC_CMD_OP(cmd, 0, 8,  4, enum dpni_policer_unit, cfg->units); \
+	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  tc_id); \
+	MC_CMD_OP(cmd, 0, 32, 32, uint32_t,  cfg->options); \
+	MC_CMD_OP(cmd, 1, 0,  32, uint32_t, cfg->cir); \
+	MC_CMD_OP(cmd, 1, 32, 32, uint32_t, cfg->cbs); \
+	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->eir); \
+	MC_CMD_OP(cmd, 2, 32, 32, uint32_t, cfg->ebs);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPNI_EXT_SET_RX_TC_EARLY_DROP(ext, cfg) \
+do { \
+	MC_EXT_OP(ext, 0, 0,  2, enum dpni_early_drop_mode, cfg->mode); \
+	MC_EXT_OP(ext, 0, 2,  2, \
+		  enum dpni_early_drop_unit, cfg->units); \
+	MC_EXT_OP(ext, 0, 32, 32, uint32_t, cfg->tail_drop_threshold); \
+	MC_EXT_OP(ext, 1, 0,  8,  uint8_t,  cfg->green.drop_probability); \
+	MC_EXT_OP(ext, 2, 0,  64, uint64_t, cfg->green.max_threshold); \
+	MC_EXT_OP(ext, 3, 0,  64, uint64_t, cfg->green.min_threshold); \
+	MC_EXT_OP(ext, 5, 0,  8,  uint8_t,  cfg->yellow.drop_probability);\
+	MC_EXT_OP(ext, 6, 0,  64, uint64_t, cfg->yellow.max_threshold); \
+	MC_EXT_OP(ext, 7, 0,  64, uint64_t, cfg->yellow.min_threshold); \
+	MC_EXT_OP(ext, 9, 0,  8,  uint8_t,  cfg->red.drop_probability); \
+	MC_EXT_OP(ext, 10, 0,  64, uint64_t, cfg->red.max_threshold); \
+	MC_EXT_OP(ext, 11, 0,  64, uint64_t, cfg->red.min_threshold); \
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPNI_CMD_SET_RX_TC_EARLY_DROP(cmd, tc_id, early_drop_iova) \
+do { \
+	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  tc_id); \
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, early_drop_iova); \
+} while (0)
 #endif /* _FSL_DPNI_CMD_H */

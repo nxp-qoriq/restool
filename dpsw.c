@@ -392,36 +392,6 @@ int dpsw_get_attributes(struct fsl_mc_io *mc_io,
 	return 0;
 }
 
-int dpsw_set_policer(struct fsl_mc_io *mc_io,
-		     uint16_t token,
-		     const struct dpsw_policer_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_SET_POLICER,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_SET_POLICER(cmd, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
-}
-
-int dpsw_set_buffer_depletion(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      const struct dpsw_buffer_depletion_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_SET_BUFFER_DEPLETION,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_SET_BUFFER_DEPLETION(cmd, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
-}
-
 int dpsw_set_reflection_if(struct fsl_mc_io *mc_io,
 			   uint16_t token,
 			   uint16_t if_id)
@@ -472,22 +442,6 @@ int dpsw_get_ctrl_if(struct fsl_mc_io *mc_io,
 	DPSW_RSP_GET_CTRL_IF(cmd, *if_id);
 
 	return 0;
-}
-
-int dpsw_set_ptp_v2(struct fsl_mc_io *mc_io,
-		    uint16_t token,
-		    const struct dpsw_ptp_v2_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_SET_PTP_V2,
-					  MC_CMD_PRI_LOW,
-					  token);
-	DPSW_CMD_SET_PTP_V2(cmd, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
 }
 
 int dpsw_if_set_link_cfg(struct fsl_mc_io *mc_io,
@@ -760,18 +714,60 @@ int dpsw_if_remove_reflection(struct fsl_mc_io *mc_io,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpsw_if_tc_set_metering_marking(struct fsl_mc_io *mc_io,
-				    uint16_t token,
+int dpsw_if_set_flooding_metering(struct fsl_mc_io *mc_io,
+				  uint16_t token,
 				    uint16_t if_id,
-				    uint8_t tc_id,
 				    const struct dpsw_metering_cfg *cfg)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_TC_SET_METERING_MARKING,
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_SET_FLOODING_METERING,
 					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_TC_SET_METERING_MARKING(cmd, if_id, tc_id, cfg);
+	DPSW_CMD_IF_SET_FLOODING_METERING(cmd, if_id, cfg);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpsw_if_set_metering(struct fsl_mc_io *mc_io,
+			 uint16_t token,
+			 uint16_t if_id,
+			 uint8_t tc_id,
+			 const struct dpsw_metering_cfg *cfg)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_SET_METERING,
+					  MC_CMD_PRI_LOW, token);
+	DPSW_CMD_IF_SET_METERING(cmd, if_id, tc_id, cfg);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+void dpsw_prepare_early_drop(const struct dpsw_early_drop_cfg *cfg,
+			     uint8_t *early_drop_buf)
+{
+	uint64_t *ext_params = (uint64_t *)early_drop_buf;
+
+	DPSW_EXT_EARLY_DROP(ext_params, cfg);
+}
+
+int dpsw_if_set_early_drop(struct fsl_mc_io	*mc_io,
+			   uint16_t		token,
+			    uint16_t		if_id,
+			    uint8_t		tc_id,
+			    uint64_t		early_drop_iova)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_SET_EARLY_DROP,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPSW_CMD_IF_SET_EARLY_DROP(cmd, if_id, tc_id, early_drop_iova);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
@@ -802,39 +798,6 @@ int dpsw_remove_custom_tpid(struct fsl_mc_io *mc_io,
 	cmd.header = mc_encode_cmd_header(DPSW_CMDID_REMOVE_CUSTOM_TPID,
 					  MC_CMD_PRI_LOW, token);
 	DPSW_CMD_REMOVE_CUSTOM_TPID(cmd, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
-}
-
-int dpsw_if_set_transmit_rate(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      uint16_t if_id,
-			      const struct dpsw_transmit_rate_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_SET_TRANSMIT_RATE,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_SET_TRANSMIT_RATE(cmd, if_id, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
-}
-
-int dpsw_if_tc_set_bandwidth(struct fsl_mc_io *mc_io,
-			     uint16_t token,
-			     uint16_t if_id,
-			     uint8_t tc_id,
-			     const struct dpsw_bandwidth_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_TC_SET_BW,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_TC_SET_BANDWIDTH(cmd, if_id, tc_id, cfg);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
@@ -892,57 +855,6 @@ int dpsw_if_get_token(struct fsl_mc_io *mc_io,
 	return 0;
 }
 
-int dpsw_if_tc_set_queue_congestion(struct fsl_mc_io *mc_io,
-				    uint16_t token,
-				    uint16_t if_id,
-				    uint8_t tc_id,
-				    const struct dpsw_queue_congestion_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_TC_SET_Q_CONGESTION,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_TC_SET_Q_CONGESTION(cmd, if_id, tc_id, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
-}
-
-int dpsw_if_tc_set_pfc(struct fsl_mc_io *mc_io,
-		       uint16_t token,
-		       uint16_t if_id,
-		       uint8_t tc_id,
-		       struct dpsw_pfc_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_TC_SET_PFC,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_TC_SET_PFC(cmd, if_id, tc_id, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
-}
-
-int dpsw_if_tc_set_cn(struct fsl_mc_io *mc_io,
-		      uint16_t token,
-		      uint16_t if_id,
-		      uint8_t tc_id,
-		      const struct dpsw_cn_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_TC_SET_CN,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_TC_SET_CN(cmd, if_id, tc_id, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
-}
-
 int dpsw_if_get_attributes(struct fsl_mc_io *mc_io,
 			   uint16_t token,
 			   uint16_t if_id,
@@ -965,22 +877,6 @@ int dpsw_if_get_attributes(struct fsl_mc_io *mc_io,
 	DPSW_RSP_IF_GET_ATTR(cmd, attr);
 
 	return 0;
-}
-
-int dpsw_if_set_macsec(struct fsl_mc_io *mc_io,
-		       uint16_t token,
-		       uint16_t if_id,
-		       const struct dpsw_macsec_cfg *cfg)
-{
-	struct mc_command cmd = { 0 };
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_SET_MACSEC,
-					  MC_CMD_PRI_LOW, token);
-	DPSW_CMD_IF_SET_MACSEC(cmd, if_id, cfg);
-
-	/* send command to mc*/
-	return mc_send_command(mc_io, &cmd);
 }
 
 int dpsw_if_set_max_frame_length(struct fsl_mc_io *mc_io,

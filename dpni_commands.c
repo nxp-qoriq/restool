@@ -238,7 +238,7 @@ static int cmd_dpni_help(void)
 	return 0;
 }
 
-static void print_dpni_options(uint64_t options)
+static void print_dpni_options(uint32_t options)
 {
 	if (options == 0 || (options & ~ALL_DPNI_OPTS) != 0) {
 		printf("\tUnrecognized options found...\n");
@@ -415,8 +415,8 @@ static int print_dpni_attr(uint32_t dpni_id,
 	for (int j = 0; j < 5; ++j)
 		printf("%02x:", mac_addr[j]);
 	printf("%02x\n", mac_addr[5]);
-	printf("dpni_attr.options value is: %#llx\n",
-	       (unsigned long long)dpni_attr.options);
+	printf("dpni_attr.options value is: %#lx\n",
+	       (unsigned long)dpni_attr.options);
 	print_dpni_options(dpni_attr.options);
 	printf("max senders: %u\n", (uint32_t)dpni_attr.max_senders);
 	printf("max traffic classes: %u\n", (uint32_t)dpni_attr.max_tcs);
@@ -527,11 +527,11 @@ out:
 
 #define OPTION_MAP_ENTRY(_option)	{#_option, _option}
 
-static int parse_dpni_create_options(char *options_str, uint64_t *options)
+static int parse_dpni_create_options(char *options_str, uint32_t *options)
 {
 	static const struct {
 		const char *str;
-		uint64_t value;
+		uint32_t value;
 	} options_map[] = {
 		OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
 		OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
@@ -550,7 +550,7 @@ static int parse_dpni_create_options(char *options_str, uint64_t *options)
 
 	char *cursor = NULL;
 	char *opt_str = strtok_r(options_str, ",", &cursor);
-	uint64_t options_mask = 0;
+	uint32_t options_mask = 0;
 
 	while (opt_str != NULL) {
 		unsigned int i;

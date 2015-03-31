@@ -191,11 +191,11 @@ static int print_dpio_attr(uint32_t dpio_id,
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf(
-		"physical address of qbman software portal cache-enabled area: %#llx\n",
-		(unsigned long long)dpio_attr.qbman_portal_ce_paddr);
+		"offset of qbman software portal cache-enabled area: %#llx\n",
+		(unsigned long long)dpio_attr.qbman_portal_ce_offset);
 	printf(
-		"physical address of qbman software portal cache-inhibited area: %#llx\n",
-		(unsigned long long)dpio_attr.qbman_portal_ci_paddr);
+		"offset of qbman software portal cache-inhibited area: %#llx\n",
+		(unsigned long long)dpio_attr.qbman_portal_ci_offset);
 	printf("qbman software portal id: %#x\n",
 	       (unsigned int)dpio_attr.qbman_portal_id);
 	printf("dpio channel mode is: ");

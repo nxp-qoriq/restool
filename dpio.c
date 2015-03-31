@@ -348,3 +348,41 @@ int dpio_get_attributes(struct fsl_mc_io *mc_io,
 
 	return 0;
 }
+
+int dpio_set_stashing_destination(struct fsl_mc_io *mc_io,
+				  uint16_t token,
+				  uint8_t sdest)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPIO_CMDID_SET_STASHING_DEST,
+					  MC_CMD_PRI_LOW, token);
+	DPIO_CMD_SET_STASHING_DEST(cmd, sdest);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpio_get_stashing_destination(struct fsl_mc_io *mc_io,
+				  uint16_t token,
+				  uint8_t *sdest)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPIO_CMDID_GET_STASHING_DEST,
+					  MC_CMD_PRI_LOW,
+					  token);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPIO_RSP_GET_STASHING_DEST(cmd, *sdest);
+
+	return 0;
+}

@@ -33,8 +33,8 @@
 #define _FSL_DPIO_CMD_H
 
 /* DPIO Version */
-#define DPIO_VER_MAJOR				2
-#define DPIO_VER_MINOR				1
+#define DPIO_VER_MAJOR				3
+#define DPIO_VER_MINOR				0
 
 /* Command IDs */
 #define DPIO_CMDID_CLOSE				0x800
@@ -57,6 +57,8 @@
 #define DPIO_CMDID_GET_IRQ_STATUS			0x016
 #define DPIO_CMDID_CLEAR_IRQ_STATUS			0x017
 
+#define DPIO_CMDID_SET_STASHING_DEST		0x120
+#define DPIO_CMDID_GET_STASHING_DEST		0x121
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPIO_CMD_OPEN(cmd, dpio_id) \
@@ -148,9 +150,18 @@ do { \
 	MC_RSP_OP(cmd, 0, 32, 16, uint16_t, attr->qbman_portal_id);\
 	MC_RSP_OP(cmd, 0, 48, 8,  uint8_t,  attr->num_priorities);\
 	MC_RSP_OP(cmd, 0, 56, 4,  enum dpio_channel_mode, attr->channel_mode);\
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->qbman_portal_ce_paddr);\
-	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, attr->qbman_portal_ci_paddr);\
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->qbman_portal_ce_offset);\
+	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, attr->qbman_portal_ci_offset);\
 	MC_RSP_OP(cmd, 3, 0,  16, uint16_t, attr->version.major);\
 	MC_RSP_OP(cmd, 3, 16, 16, uint16_t, attr->version.minor);\
 } while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPIO_CMD_SET_STASHING_DEST(cmd, sdest) \
+	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  sdest)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPIO_RSP_GET_STASHING_DEST(cmd, sdest) \
+	MC_RSP_OP(cmd, 0, 0,  8,  uint8_t,  sdest)
+
 #endif /* _FSL_DPIO_CMD_H */

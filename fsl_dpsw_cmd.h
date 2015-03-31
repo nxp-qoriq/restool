@@ -33,9 +33,10 @@
 #define __FSL_DPSW_CMD_H
 
 #define DPSW_CMD_EXTRACT_EXT_PARAMS		10
+#define DPSW_CMD_EARLY_DROP_EXT_PARAMS		13
 
 /* DPSW Version */
-#define DPSW_VER_MAJOR				4
+#define DPSW_VER_MAJOR				5
 #define DPSW_VER_MINOR				0
 
 /* Command IDs */
@@ -59,10 +60,8 @@
 #define DPSW_CMDID_GET_IRQ_STATUS		0x016
 #define DPSW_CMDID_CLEAR_IRQ_STATUS		0x017
 
-#define DPSW_CMDID_SET_POLICER			0x020
-#define DPSW_CMDID_SET_BUFFER_DEPLETION		0x021
 #define DPSW_CMDID_SET_REFLECTION_IF		0x022
-#define DPSW_CMDID_SET_PTP_V2			0x023
+
 #define DPSW_CMDID_ADD_CUSTOM_TPID		0x024
 #define DPSW_CMDID_SET_CTRL_IF			0x025
 #define DPSW_CMDID_REMOVE_CUSTOM_TPID		0x026
@@ -77,17 +76,15 @@
 #define DPSW_CMDID_IF_SET_TC_MAP		0x036
 #define DPSW_CMDID_IF_ADD_REFLECTION		0x037
 #define DPSW_CMDID_IF_REMOVE_REFLECTION		0x038
-#define DPSW_CMDID_IF_TC_SET_METERING_MARKING	0x039
+#define DPSW_CMDID_IF_SET_FLOODING_METERING	0x039
+#define DPSW_CMDID_IF_SET_METERING		0x03A
+#define DPSW_CMDID_IF_SET_EARLY_DROP		0x03B
 
-#define DPSW_CMDID_IF_SET_TRANSMIT_RATE		0x03B
-#define DPSW_CMDID_IF_TC_SET_BW			0x03C
 #define DPSW_CMDID_IF_ENABLE			0x03D
 #define DPSW_CMDID_IF_DISABLE			0x03E
-#define DPSW_CMDID_IF_TC_SET_Q_CONGESTION	0x03F
-#define DPSW_CMDID_IF_TC_SET_PFC		0x040
-#define DPSW_CMDID_IF_TC_SET_CN			0x041
+
 #define DPSW_CMDID_IF_GET_ATTR			0x042
-#define DPSW_CMDID_IF_SET_MACSEC		0x043
+
 #define DPSW_CMDID_IF_SET_MAX_FRAME_LENGTH	0x044
 #define DPSW_CMDID_IF_GET_MAX_FRAME_LENGTH	0x045
 #define DPSW_CMDID_IF_GET_LINK_STATE		0x046
@@ -138,6 +135,7 @@
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, cfg->num_ifs);\
 	MC_CMD_OP(cmd, 0, 16,  8, uint8_t,  cfg->adv.max_fdbs);\
+	MC_CMD_OP(cmd, 0, 24,  8, uint8_t,  cfg->adv.max_meters_per_if);\
 	MC_CMD_OP(cmd, 0, 32, 16, uint16_t, cfg->adv.ctrl_if_id);\
 	MC_CMD_OP(cmd, 1, 0,  16, uint16_t, cfg->adv.max_vlans);\
 	MC_CMD_OP(cmd, 1, 16, 16, uint16_t, cfg->adv.max_fdb_entries);\
@@ -227,21 +225,13 @@ do { \
 	MC_RSP_OP(cmd, 0, 48, 16, uint16_t, attr->num_vlans);\
 	MC_RSP_OP(cmd, 1, 0,  16, uint16_t, attr->version.major);\
 	MC_RSP_OP(cmd, 1, 16, 16, uint16_t, attr->version.minor);\
+	MC_RSP_OP(cmd, 1, 32, 16, uint16_t, attr->max_fdb_entries);\
+	MC_RSP_OP(cmd, 1, 48, 16, uint16_t, attr->fdb_aging_time);\
 	MC_RSP_OP(cmd, 2, 0,  32, int,	 attr->id);\
 	MC_RSP_OP(cmd, 2, 32, 16, uint16_t, attr->mem_size);\
+	MC_RSP_OP(cmd, 2, 48, 16, uint16_t, attr->max_fdb_mc_groups);\
 	MC_RSP_OP(cmd, 3, 0,  64, uint64_t, attr->options);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_SET_POLICER(cmd, cfg) \
-	MC_CMD_OP(cmd, 0, 0,  1,  enum dpsw_policer_mode, cfg->mode)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_SET_BUFFER_DEPLETION(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, cfg->entrance_threshold);\
-	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, cfg->exit_threshold);\
-	MC_CMD_OP(cmd, 0, 0,  64, uint64_t, cfg->wr_addr);\
+	MC_RSP_OP(cmd, 4, 0,  8,  uint8_t, attr->max_meters_per_if);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -255,14 +245,6 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_RSP_GET_CTRL_IF(cmd, if_id) \
 	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, if_id)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_SET_PTP_V2(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, cfg->options);\
-	MC_CMD_OP(cmd, 0, 32, 16, uint16_t, cfg->time_offset);\
-	MC_CMD_OP(cmd, 0, 48, 1,  int,      cfg->enable);\
-} while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_IF_SET_FLOODING(cmd, if_id, en) \
@@ -381,16 +363,51 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_TC_SET_METERING_MARKING(cmd, if_id, tc_id, cfg) \
+#define DPSW_CMD_IF_SET_FLOODING_METERING(cmd, if_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  tc_id);\
-	MC_CMD_OP(cmd, 0, 24, 4,  enum dpsw_metering_algo, cfg->algo);\
-	MC_CMD_OP(cmd, 0, 28, 4,  enum dpsw_metering_mode, cfg->mode);\
+	MC_CMD_OP(cmd, 0, 24, 4,  enum dpsw_metering_mode, cfg->mode);\
+	MC_CMD_OP(cmd, 0, 28, 4,  enum dpsw_metering_unit, cfg->units);\
 	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, cfg->cir);\
 	MC_CMD_OP(cmd, 1, 0,  32, uint32_t, cfg->eir);\
 	MC_CMD_OP(cmd, 1, 32, 32, uint32_t, cfg->cbs);\
 	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->ebs);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_IF_SET_METERING(cmd, if_id, tc_id, cfg) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
+	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  tc_id);\
+	MC_CMD_OP(cmd, 0, 24, 4,  enum dpsw_metering_mode, cfg->mode);\
+	MC_CMD_OP(cmd, 0, 28, 4,  enum dpsw_metering_unit, cfg->units);\
+	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, cfg->cir);\
+	MC_CMD_OP(cmd, 1, 0,  32, uint32_t, cfg->eir);\
+	MC_CMD_OP(cmd, 1, 32, 32, uint32_t, cfg->cbs);\
+	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->ebs);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_EXT_EARLY_DROP(ext, cfg) \
+do { \
+	MC_EXT_OP(ext, 0, 0,  2, enum dpsw_early_drop_mode, cfg->drop_mode); \
+	MC_EXT_OP(ext, 0, 2,  2, \
+		  enum dpsw_early_drop_unit, cfg->units); \
+	MC_EXT_OP(ext, 0, 32, 32, uint32_t, cfg->tail_drop_threshold); \
+	MC_EXT_OP(ext, 1, 0,  8,  uint8_t,  cfg->green.drop_probability); \
+	MC_EXT_OP(ext, 2, 0,  64, uint64_t, cfg->green.max_threshold); \
+	MC_EXT_OP(ext, 3, 0,  64, uint64_t, cfg->green.min_threshold); \
+	MC_EXT_OP(ext, 5, 0,  8,  uint8_t,  cfg->yellow.drop_probability);\
+	MC_EXT_OP(ext, 6, 0,  64, uint64_t, cfg->yellow.max_threshold); \
+	MC_EXT_OP(ext, 7, 0,  64, uint64_t, cfg->yellow.min_threshold); \
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_IF_SET_EARLY_DROP(cmd, if_id, tc_id, early_drop_iova) \
+do { \
+	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  tc_id); \
+	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, if_id); \
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, early_drop_iova); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -400,22 +417,6 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_REMOVE_CUSTOM_TPID(cmd, cfg) \
 	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->tpid)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_SET_TRANSMIT_RATE(cmd, if_id, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->rate);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_TC_SET_BANDWIDTH(cmd, if_id, tc_id, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  tc_id);\
-	MC_CMD_OP(cmd, 0, 24, 8,  uint8_t,  cfg->delta_bandwidth);\
-	MC_CMD_OP(cmd, 0, 31, 4,  enum dpsw_bw_algo, cfg->algo);\
-} while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_IF_ENABLE(cmd, if_id) \
@@ -434,35 +435,6 @@ do { \
 	MC_RSP_OP(cmd, 0, 32,  16, uint16_t, if_token)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_TC_SET_Q_CONGESTION(cmd, if_id, tc_id, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  tc_id);\
-	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, cfg->exit_threshold);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->wr_addr);\
-	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->entrance_threshold);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_TC_SET_PFC(cmd, if_id, tc_id, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  tc_id);\
-	MC_CMD_OP(cmd, 0, 24, 1,  int,	 cfg->receiver);\
-	MC_CMD_OP(cmd, 0, 25, 1,  int,	 cfg->initiator);\
-	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, cfg->initiator_trig);\
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, cfg->pause_quanta);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_TC_SET_CN(cmd, if_id, tc_id, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  tc_id);\
-	MC_CMD_OP(cmd, 0, 24, 1,  int,	 cfg->enable);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_IF_GET_ATTR(cmd, if_id) \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
 
@@ -475,16 +447,7 @@ do { \
 	MC_RSP_OP(cmd, 0, 6,  1,  int,      attr->accept_all_vlan);\
 	MC_RSP_OP(cmd, 0, 16, 8,  uint8_t,  attr->num_tcs);\
 	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->options);\
-	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, attr->rate);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_SET_MACSEC(cmd, if_id, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 0, 16, 4,  enum dpsw_cipher_suite, cfg->cipher_suite);\
-	MC_CMD_OP(cmd, 0, 20, 1,  int,	 cfg->enable);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->sci);\
+	MC_RSP_OP(cmd, 2, 0,  32, uint32_t, attr->rate);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -506,7 +469,7 @@ do { \
 #define DPSW_CMD_IF_SET_LINK_CFG(cmd, if_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->rate);\
+	MC_CMD_OP(cmd, 1, 0,  32, uint32_t, cfg->rate);\
 	MC_CMD_OP(cmd, 2, 0,  64, uint64_t, cfg->options);\
 } while (0)
 
@@ -518,7 +481,7 @@ do { \
 #define DPSW_RSP_IF_GET_LINK_STATE(cmd, state) \
 do { \
 	MC_RSP_OP(cmd, 0, 32, 1,  int,      state->up);\
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, state->rate);\
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, state->rate);\
 	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
 } while (0)
 

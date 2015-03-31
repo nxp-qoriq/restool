@@ -159,6 +159,30 @@ int dpio_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en);
  */
 int dpio_reset(struct fsl_mc_io *mc_io, uint16_t token);
 
+/**
+ * dpio_set_stashing_destination() - Set the stashing destination.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @token:	Token of DPIO object
+ * @sdest:	stashing destination value
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpio_set_stashing_destination(struct fsl_mc_io *mc_io,
+				  uint16_t token,
+				  uint8_t sdest);
+
+/**
+ * dpio_get_stashing_destination() - Get the stashing destination..
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @token:	Token of DPIO object
+ * @sdest:	Returns the stashing destination value
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpio_get_stashing_destination(struct fsl_mc_io *mc_io,
+				  uint16_t token,
+				  uint8_t *sdest);
+
 /*!
  * @name DPIO IRQ Index and Events
  */
@@ -209,7 +233,7 @@ int dpio_get_irq(struct fsl_mc_io	*mc_io,
 		 int			*user_irq_id);
 
 /**
- * dpio_get_irq() - Set overall interrupt state.
+ * dpio_set_irq_enable() - Set overall interrupt state.
  * @mc_io:	Pointer to MC portal's I/O object
  * @token:	Token of DPIO object
  * @irq_index:	The interrupt index to configure
@@ -314,10 +338,8 @@ int dpio_clear_irq_status(struct fsl_mc_io	*mc_io,
  * struct dpio_attr - Structure representing DPIO attributes
  * @id: DPIO object ID
  * @version: DPIO version
- * @qbman_portal_ce_paddr: Physical address of the software portal
- *				cache-enabled area
- * @qbman_portal_ci_paddr: Physical address of the software portal
- *				cache-inhibited area
+ * @qbman_portal_ce_offset: offset of the software portal cache-enabled area
+ * @qbman_portal_ci_offset: offset of the software portal cache-inhibited area
  * @qbman_portal_id: Software portal ID
  * @channel_mode: Notification channel mode
  * @num_priorities: Number of priorities for the notification channel (1-8);
@@ -334,8 +356,8 @@ struct dpio_attr {
 		uint16_t major;
 		uint16_t minor;
 	} version;
-	uint64_t qbman_portal_ce_paddr;
-	uint64_t qbman_portal_ci_paddr;
+	uint64_t qbman_portal_ce_offset;
+	uint64_t qbman_portal_ci_offset;
 	uint16_t qbman_portal_id;
 	enum dpio_channel_mode channel_mode;
 	uint8_t num_priorities;

@@ -66,8 +66,8 @@
 #define MC_PORTAL_SIZE		64
 #define MAX_MC_PORTALS		512
 
-#define MC_PORTAL_PADDR_TO_PORTAL_ID(_portal_paddr) \
-	(((_portal_paddr) - MC_PORTALS_BASE_PADDR) / MC_PORTAL_STRIDE)
+#define MC_PORTAL_OFFSET_TO_PORTAL_ID(_portal_offset) \
+	((_portal_offset) / MC_PORTAL_STRIDE)
 
 struct restool;
 

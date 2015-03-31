@@ -33,8 +33,8 @@
 #define _FSL_DPDMUX_CMD_H
 
 /* DPDMUX Version */
-#define DPDMUX_VER_MAJOR				3
-#define DPDMUX_VER_MINOR				1
+#define DPDMUX_VER_MAJOR				4
+#define DPDMUX_VER_MINOR				0
 
 /* Command IDs */
 #define DPDMUX_CMDID_CLOSE				0x800
@@ -207,7 +207,7 @@ do { \
 					    attr->accept_frame_type);\
 	MC_RSP_OP(cmd, 0, 24,  1, int,	    attr->enabled);\
 	MC_RSP_OP(cmd, 0, 25,  1, int,	    attr->is_default);\
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->rate);\
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, attr->rate);\
 } while (0)
 
 #define DPDMUX_CMD_IF_REMOVE_L2_RULE(cmd, if_id, l2_rule) \
@@ -249,7 +249,7 @@ do { \
 #define DPDMUX_CMD_IF_SET_LINK_CFG(cmd, if_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->rate);\
+	MC_CMD_OP(cmd, 1, 0,  32, uint32_t, cfg->rate);\
 	MC_CMD_OP(cmd, 2, 0,  64, uint64_t, cfg->options);\
 } while (0)
 
@@ -261,7 +261,7 @@ do { \
 #define DPDMUX_RSP_IF_GET_LINK_STATE(cmd, state) \
 do { \
 	MC_RSP_OP(cmd, 0, 32, 1,  int,      state->up);\
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, state->rate);\
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, state->rate);\
 	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
 } while (0)
 

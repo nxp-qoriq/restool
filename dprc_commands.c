@@ -851,7 +851,7 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	int error2;
 	struct dprc_cfg cfg;
 	int child_dprc_id;
-	uint64_t mc_portal_phys_addr;
+	uint64_t mc_portal_offset;
 	bool child_dprc_created = false;
 
 	assert(dprc_handle != 0);
@@ -859,12 +859,13 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	cfg.icid = DPRC_GET_ICID_FROM_POOL;
 	cfg.portal_id = DPRC_GET_PORTAL_ID_FROM_POOL;
 	cfg.options = options;
+	cfg.label[0] = '\0';
 	error = dprc_create_container(
 			&restool.mc_io,
 			dprc_handle,
 			&cfg,
 			&child_dprc_id,
-			&mc_portal_phys_addr);
+			&mc_portal_offset);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -876,8 +877,8 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	printf(
 		"dprc.%u object created (using MC portal id %u, portal addr %#llx)\n",
 		child_dprc_id,
-		(unsigned int)MC_PORTAL_PADDR_TO_PORTAL_ID(mc_portal_phys_addr),
-		(unsigned long long)mc_portal_phys_addr);
+		(unsigned int)MC_PORTAL_OFFSET_TO_PORTAL_ID(mc_portal_offset),
+		(unsigned long long)mc_portal_offset + MC_PORTALS_BASE_PADDR);
 
 	return 0;
 error:

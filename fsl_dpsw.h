@@ -85,6 +85,10 @@ int dpsw_close(struct fsl_mc_io *mc_io, uint16_t token);
 #define DPSW_OPT_MULTICAST_DIS	0x0000000000000004ULL
 /* Support control interface */
 #define DPSW_OPT_CTRL		0x0000000000000010ULL
+/* Disable flooding metering */
+#define DPSW_OPT_FLOODING_METERING_DIS  0x0000000000000020ULL
+/* Enable metering */
+#define DPSW_OPT_METERING_EN            0x0000000000000040ULL
 
 /**
  * struct dpsw_cfg - DPSW configuration
@@ -98,6 +102,7 @@ struct dpsw_cfg {
 	 * struct adv - Advanced parameters
 	 * @options: Enable/Disable DPSW features (bitmap)
 	 * @max_vlans: Maximum Number of VLAN's; 0 - indicates default 16
+	 * @max_meters_per_if: Number of meters per interface
 	 * @max_fdbs: Maximum Number of FDB's; 0 - indicates default 16
 	 * @max_fdb_entries: Number of FDB entries for default FDB table;
 	 *			0 - indicates default 1024 entries.
@@ -110,6 +115,7 @@ struct dpsw_cfg {
 	struct {
 		uint64_t options;
 		uint16_t max_vlans;
+		uint8_t max_meters_per_if;
 		uint8_t max_fdbs;
 		uint16_t max_fdb_entries;
 		uint16_t fdb_aging_time;
@@ -347,7 +353,14 @@ int dpsw_clear_irq_status(struct fsl_mc_io *mc_io,
  * @version: DPSW version
  * @options: Enable/Disable DPSW features
  * @max_vlans: Maximum Number of VLANs
+ * @max_meters_per_if:  Number of meters per interface
  * @max_fdbs: Maximum Number of FDBs
+ * @max_fdb_entries: Number of FDB entries for default FDB table;
+ *			0 - indicates default 1024 entries.
+ * @fdb_aging_time: Default FDB aging time for default FDB table;
+ *			0 - indicates default 300 seconds
+ * @max_fdb_mc_groups: Number of multicast groups in each FDB table;
+ *			0 - indicates default 32
  * @mem_size: DPSW frame storage memory size
  * @num_ifs: Number of interfaces
  * @num_vlans: Current number of VLANs
@@ -366,9 +379,13 @@ struct dpsw_attr {
 	} version;
 	uint64_t options;
 	uint16_t max_vlans;
+	uint8_t max_meters_per_if;
 	uint8_t max_fdbs;
-	uint16_t mem_size;
+	uint16_t max_fdb_entries;
+	uint16_t fdb_aging_time;
+	uint16_t max_fdb_mc_groups;
 	uint16_t num_ifs;
+	uint16_t mem_size;
 	uint16_t num_vlans;
 	uint8_t num_fdbs;
 };
@@ -384,72 +401,6 @@ struct dpsw_attr {
 int dpsw_get_attributes(struct fsl_mc_io *mc_io,
 			uint16_t token,
 			struct dpsw_attr *attr);
-
-/**
- * enum dpsw_policer_mode - Policer configuration mode
- * @DPSW_POLICER_DIS: Disable Policer
- * @DPSW_POLICER_EN: Enable Policer
- */
-enum dpsw_policer_mode {
-	DPSW_POLICER_DIS = 0,
-	DPSW_POLICER_EN = 1
-};
-
-/**
- * struct dpsw_policer_cfg - Policer configuration
- * @mode: Enables/Disables policer (Ingress)
- */
-struct dpsw_policer_cfg {
-	enum dpsw_policer_mode mode;
-};
-
-/**
- * dpsw_set_policer() - Enable/disable policer for DPSW
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @cfg:		Configuration parameters
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_set_policer(struct fsl_mc_io *mc_io,
-		     uint16_t token,
-		     const struct dpsw_policer_cfg *cfg);
-
-/**
- * struct dpsw_buffer_depletion_cfg - buffer depletion configuration parameters.
- *			Assuming only one buffer pool exist per switch.
- * @entrance_threshold: Entrance threshold, the number of buffers in a pool
- *			falls below a programmable depletion entry threshold
- * @exit_threshold: Exit threshold. When the buffer pool's occupancy rises above
- *			a programmable depletion exit threshold, the buffer pool
- *			exits depletion
- * @wr_addr: Address in GPP to write buffer depletion State Change Notification
- *			Message
- */
-struct dpsw_buffer_depletion_cfg {
-	uint32_t entrance_threshold;
-	uint32_t exit_threshold;
-	uint64_t wr_addr;
-};
-
-/**
- * dpsw_set_buffer_depletion() - Configure thresholds for buffer depletion state
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @cfg:		Configuration parameters
- *
- * Configure thresholds for buffer depletion state
- * and establish buffer depletion State Change Notification Message
- * (CSCNM) from Congestion Point (CP) to GPP trusted software
- * This configuration is used to trigger PFC request or congestion
- * notification if enabled. It is assumed one buffer pool defined
- * per switch.
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_set_buffer_depletion(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      const struct dpsw_buffer_depletion_cfg *cfg);
 
 /**
  * dpsw_set_reflection_if() - Set target interface for reflected interfaces.
@@ -500,43 +451,14 @@ enum dpsw_action {
 	DPSW_ACTION_REDIRECT = 1
 };
 
-/* Precision Time Protocol (PTP) options */
-
-/* Indicate the need for UDP checksum update after PTP time correction
- * field has been filled in
- */
-#define DPSW_PTP_OPT_UPDATE_FCV	0x1
-
-/**
- * struct dpsw_ptp_v2_cfg - Precision Time Protocol (PTP) configuration
- * @enable: Enable updating Correction time field in IEEE1588 V2 messages
- * @time_offset: Time correction field offset inside PTP from L2 start of the
- *			frame; PTP messages can be transported over different
- *			underlying protocols IEEE802.3, IPv4/UDP, Ipv6/UDP and
- *			others
- * @options: Bitmap of additional options along with time correction;
- *		 Select from 'DPSW_PTP_OPT_<X>'
- */
-struct dpsw_ptp_v2_cfg {
-	int enable;
-	uint16_t time_offset;
-	uint32_t options;
-};
-
-/**
- * dpsw_set_ptp_v2() - Define IEEE1588 V2 Precision Time Protocol
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @cfg:		IEEE1588 V2 Configuration parameters
- *
- * (PTP) parameters for time correction
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_set_ptp_v2(struct fsl_mc_io *mc_io,
-		    uint16_t token,
-		    const struct dpsw_ptp_v2_cfg *cfg);
-
+/* Enable auto-negotiation */
+#define DPSW_LINK_OPT_AUTONEG		0x0000000000000001ULL
+/* Enable half-duplex mode */
+#define DPSW_LINK_OPT_HALF_DUPLEX	0x0000000000000002ULL
+/* Enable pause frames */
+#define DPSW_LINK_OPT_PAUSE		0x0000000000000004ULL
+/* Enable a-symmetric pause frames */
+#define DPSW_LINK_OPT_ASYM_PAUSE	0x0000000000000008ULL
 
 /**
  * struct dpsw_link_cfg - Structure representing DPSW link configuration
@@ -544,7 +466,7 @@ int dpsw_set_ptp_v2(struct fsl_mc_io *mc_io,
  * @options: Mask of available options; use 'DPSW_LINK_OPT_<X>' values
  */
 struct dpsw_link_cfg {
-	uint64_t rate;
+	uint32_t rate;
 	uint64_t options;
 };
 
@@ -568,7 +490,7 @@ int dpsw_if_set_link_cfg(struct fsl_mc_io *mc_io,
  * @up: 0 - covers two cases: down and disconnected, 1 - up
  */
 struct dpsw_link_state {
-	uint64_t rate;
+	uint32_t rate;
 	uint64_t options;
 	int      up;
 };
@@ -940,62 +862,162 @@ int dpsw_if_remove_reflection(struct fsl_mc_io *mc_io,
 			      const struct dpsw_reflection_cfg *cfg);
 
 /**
- * enum dpsw_metering_algo - Metering and marking algorithms
- * @DPSW_METERING_ALGO_RFC2698: RFC 2698
- * @DPSW_METERING_ALGO_RFC4115: RFC 4115
- */
-enum dpsw_metering_algo {
-	DPSW_METERING_ALGO_RFC2698 = 0,
-	DPSW_METERING_ALGO_RFC4115 = 1
-};
-
-/**
- * enum dpsw_metering_mode - Metering and marking modes
- * @DPSW_METERING_MODE_COLOR_BLIND: Color blind mode
- * @DPSW_METERING_MODE_COLOR_AWARE: Color aware mode
+ * enum dpsw_metering_mode - Metering modes
+ * @DPSW_METERING_MODE_NONE: metering disabled
+ * @DPSW_METERING_MODE_RFC2698: RFC 2698
+ * @DPSW_METERING_MODE_RFC4115: RFC 4115
  */
 enum dpsw_metering_mode {
-	DPSW_METERING_MODE_COLOR_BLIND = 0,
-	DPSW_METERING_MODE_COLOR_AWARE = 1
+	DPSW_METERING_MODE_NONE = 0,
+	DPSW_METERING_MODE_RFC2698,
+	DPSW_METERING_MODE_RFC4115
 };
 
 /**
- * struct dpsw_metering_cfg - Metering and marking configuration
- * @algo: Implementation based on Metering and marking algorithm
- * @cir: Committed information rate (CIR) in bits/s
- * @eir: Excess information rate (EIR) in bits/s
+ * enum dpsw_metering_unit - Metering count
+ * @DPSW_METERING_UNIT_BYTES: bytes units
+ * @DPSW_METERING_UNIT_PACKETS: packets units
+ */
+enum dpsw_metering_unit {
+	DPSW_METERING_UNIT_BYTES = 0,
+	DPSW_METERING_UNIT_PACKETS
+};
+
+/**
+ * struct dpsw_metering_cfg - Metering configuration
+ * @mode: metering modes
+ * @units: Bytes or frame units
+ * @cir: Committed information rate (CIR) in Kbits/s
+ * @eir: Peak information rate (PIR) Kbit/s  rfc2698
+ *	 Excess information rate (EIR) Kbit/s rfc4115
  * @cbs: Committed burst size (CBS) in bytes
- * @ebs: Excess bust size (EBS) in bytes
- * @mode: Color awareness mode
+ * @ebs: Peak burst size (PBS) in bytes for rfc2698
+ *       Excess bust size (EBS) in bytes rfc4115
  *
  */
 struct dpsw_metering_cfg {
-	enum dpsw_metering_algo algo;
+	enum dpsw_metering_mode mode;
+	enum dpsw_metering_unit units;
 	uint32_t cir;
 	uint32_t eir;
 	uint32_t cbs;
 	uint32_t ebs;
-	enum dpsw_metering_mode mode;
 };
 
 /**
- * dpsw_if_tc_set_metering_marking() - Set metering and marking algorithm
+ * dpsw_if_set_flooding_metering() - Set flooding metering
  * @mc_io:		Pointer to MC portal's I/O object
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
- * @tc_id:		Traffic class selection (1-8)
- * @cfg:		Metering and marking parameters
- *
- * Set metering and marking algorithm (coloring) and provides
- * corresponding parameters
+ * @cfg:		Metering parameters
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_tc_set_metering_marking(struct fsl_mc_io *mc_io,
-				    uint16_t token,
+int dpsw_if_set_flooding_metering(struct fsl_mc_io *mc_io,
+				  uint16_t token,
 				    uint16_t if_id,
-				    uint8_t tc_id,
 				    const struct dpsw_metering_cfg *cfg);
+
+/**
+ * dpsw_if_set_metering() - Set interface metering for flooding
+ * @mc_io:		Pointer to MC portal's I/O object
+ * @token:		Token of DPSW object
+ * @if_id:		Interface Identifier
+ * @cfg:		Metering parameters
+ *
+ * Return:	Completion status. '0' on Success; Error code otherwise.
+ */
+int dpsw_if_set_metering(struct fsl_mc_io *mc_io,
+			 uint16_t token,
+			    uint16_t if_id,
+			    uint8_t tc_id,
+			    const struct dpsw_metering_cfg *cfg);
+
+/**
+ * enum dpsw_early_drop_unit - DPSW early drop unit
+ * @DPSW_EARLY_DROP_UNIT_BYTE: count bytes
+ * @DPSW_EARLY_DROP_UNIT_PACKETS: count frames
+ */
+enum dpsw_early_drop_unit {
+	DPSW_EARLY_DROP_UNIT_BYTE = 0,
+	DPSW_EARLY_DROP_UNIT_PACKETS
+};
+
+/**
+ * enum dpsw_early_drop_mode - DPSW early drop mode
+ * @DPSW_EARLY_DROP_MODE_NONE: early drop is disabled
+ * @DPSW_EARLY_DROP_MODE_TAIL: early drop in taildrop mode
+ * @DPSW_EARLY_DROP_MODE_WRED: early drop in WRED mode
+ */
+enum dpsw_early_drop_mode {
+	DPSW_EARLY_DROP_MODE_NONE = 0,
+	DPSW_EARLY_DROP_MODE_TAIL,
+	DPSW_EARLY_DROP_MODE_WRED
+};
+
+/**
+ * struct dpsw_wred_cfg - WRED configuration
+ * @max_threshold: maximum threshold that packets may be discarded. Above this
+ *	  threshold all packets are discarded; must be less than 2^39;
+ *	  approximated to be expressed as (x+256)*2^(y-1) due to HW
+ *	    implementation.
+ * @min_threshold: minimum threshold that packets may be discarded at
+ * @drop_probability: probability that a packet will be discarded (1-100,
+ *	associated with the maximum threshold)
+ */
+struct dpsw_wred_cfg {
+	uint64_t                min_threshold;
+	uint64_t                max_threshold;
+	uint8_t                 drop_probability;
+};
+
+/**
+ * struct dpsw_early_drop_cfg - early-drop configuration
+ * @drop_mode: drop mode
+ * @units: count units
+ * @yellow: WRED - 'yellow' configuration
+ * @green: WRED - 'green' configuration
+ * @tail_drop_threshold: tail drop threshold
+ */
+struct dpsw_early_drop_cfg {
+	enum dpsw_early_drop_mode       drop_mode;
+	enum dpsw_early_drop_unit	units;
+	struct dpsw_wred_cfg	        yellow;
+	struct dpsw_wred_cfg	green;
+	uint32_t			tail_drop_threshold;
+};
+
+/**
+ * dpsw_prepare_early_drop() - Prepare an early drop for setting in to interface
+ * @cfg:	Early-drop configuration
+ * @early_drop_buf: Zeroed 256 bytes of memory before mapping it to DMA
+ *
+ * This function has to be called before dpsw_if_tc_set_early_drop
+ *
+ */
+void dpsw_prepare_early_drop(const struct dpsw_early_drop_cfg *cfg,
+			     uint8_t *early_drop_buf);
+
+/**
+ * dpsw_if_set_early_drop() - Set interface traffic class early-drop
+ *				configuration
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @token:	Token of DPSW object
+ * @if_id:		Interface Identifier
+ * @tc_id:	Traffic class selection (0-7)
+ * @early_drop_iova:  I/O virtual address of 64 bytes;
+ * Must be cacheline-aligned and DMA-able memory
+ *
+ * warning: Before calling this function, call dpsw_prepare_if_tc_early_drop()
+ *		to prepare the early_drop_iova parameter
+ *
+ * Return:	'0' on Success; error code otherwise.
+ */
+int dpsw_if_set_early_drop(struct fsl_mc_io	*mc_io,
+			   uint16_t		token,
+			    uint16_t		if_id,
+			    uint8_t		tc_id,
+			    uint64_t		early_drop_iova);
 
 /**
  * struct dpsw_custom_tpid_cfg - Structure representing tag Protocol identifier
@@ -1035,79 +1057,6 @@ int dpsw_remove_custom_tpid(struct fsl_mc_io *mc_io,
 			    const struct dpsw_custom_tpid_cfg *cfg);
 
 /**
- * struct dpsw_transmit_rate_cfg - Transmit rate configuration
- * @rate: Interface Transmit rate in bits per second
- *
- */
-struct dpsw_transmit_rate_cfg {
-	uint64_t rate;
-};
-
-/**
- * dpsw_if_set_transmit_rate() - API sets interface transmit rate.
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @if_id:		Interface Identifier
- * @cfg:		Transmit rate configuration
- *
- * The setting mechanism is the same for internal and
- * external (physical) interfaces.
- * The rate set explicitly in bits per second.
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_if_set_transmit_rate(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      uint16_t if_id,
-			      const struct dpsw_transmit_rate_cfg *cfg);
-
-/**
- * enum dpsw_bw_algo - Transmission selection algorithm
- * @DPSW_BW_ALGO_STRICT_PRIORITY: Strict priority algorithm
- * @DPSW_BW_ALGO_CREDIT_BASED: Credit based shaper algorithm
- */
-enum dpsw_bw_algo {
-	DPSW_BW_ALGO_STRICT_PRIORITY = 0,
-	DPSW_BW_ALGO_CREDIT_BASED = 1
-};
-
-/**
- * struct dpsw_bandwidth_cfg - Class bandwidth configuration
- * @algo: Transmission selection algorithm
- * @delta_bandwidth: A percentage of the interface transmit rate; applied only
- *			when using credit-based shaper algorithm otherwise best
- *			effort algorithm is applied
- */
-struct dpsw_bandwidth_cfg {
-	enum dpsw_bw_algo algo;
-	uint8_t delta_bandwidth;
-};
-
-/**
- * dpsw_if_tc_set_bandwidth() - Set a percentage of the interface transmit rate
- * @mc_io		Pointer to MC portal's I/O object
- * @token		Token of DPSW object
- * @if_id		Interface Identifier
- * @tc_id		Traffic class selection (1-8)
- * @cfg		Traffic class bandwidth configuration
- *
- *
- * API sets a percentage of the interface transmit rate;
- * this is the bandwidth that can be reserved for use by the queue
- * associated with traffic class. A percentage is relevant
- * only when credit based shaping algorithm is selected for
- * traffic class otherwise best effort (strict priority)
- * algorithm is in place
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_if_tc_set_bandwidth(struct fsl_mc_io *mc_io,
-			     uint16_t token,
-			     uint16_t if_id,
-			     uint8_t tc_id,
-			     const struct dpsw_bandwidth_cfg *cfg);
-
-/**
  * dpsw_if_enable() - Enable Interface
  * @mc_io:		Pointer to MC portal's I/O object
  * @token:		Token of DPSW object
@@ -1142,122 +1091,6 @@ int dpsw_if_get_token(struct fsl_mc_io *mc_io,
 		      uint16_t *if_token);
 
 /**
- * struct dpsw_queue_congestion_cfg  - Congestion queue configuration
- * @entrance_threshold: Entrance threshold
- * @exit_threshold: Exit threshold
- * @wr_addr: Address to write Congestion State Change Notification Message
- */
-struct dpsw_queue_congestion_cfg {
-	uint32_t entrance_threshold;
-	uint32_t exit_threshold;
-	uint64_t wr_addr;
-};
-
-/* PFC source trigger */
-
-/* Trigger for PFC initiation is traffic class queue congestion */
-#define DPSW_PFC_TRIG_QUEUE_CNG		0x01
-/* Trigger for PFC initiation is buffer depletion */
-#define DPSW_PFC_TRIG_BUFFER_DPL	0x02
-
-/**
- * dpsw_if_tc_set_queue_congestion() - Configure thresholds for traffic class
- *					queue
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @if_id:		Interface Identifier
- * @tc_id:		Traffic class Identifier
- * @cfg:		Queue congestion configuration
- *
- * Configure thresholds for traffic class queue
- * congestion state and to establish Congestion State Change
- * Notification Message (CSCNM) from Congestion Point (CP) to GPP
- * trusted software This configuration is used to trigger PFC
- * request or congestion notification if enabled
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_if_tc_set_queue_congestion(struct fsl_mc_io *mc_io,
-				    uint16_t token,
-				    uint16_t if_id,
-				    uint8_t tc_id,
-				    const struct dpsw_queue_congestion_cfg
-					*cfg);
-
-/**
- * struct dpsw_pfc_cfg - Structure representing Priority Flow Control (PFC)
- *				configuration
- * @receiver: Enable/Disable PFC receiver;
- *				PFC receiver is responsible for accepting
- *				PFC PAUSE messages and pausing transmission
- *				for indicated in message PFC quanta
- * @initiator: Enable/Disable PFC initiator;
- *				PFC initiator is responsible for sending
- *				PFC request message when congestion has been
- *				detected on specified TC queue
- * @initiator_trig: Bitmap defining Trigger source or sources
- *			for sending PFC request message out;
- *			DPSW_PFC_TRIG_QUEUE_CNG or DPSW_PFC_TRIG_BUFFER_DPL
- *			should be used
- * @pause_quanta: Pause Quanta to indicate in PFC request
- *				message the amount of quanta time to pause
- *
- */
-struct dpsw_pfc_cfg {
-	int receiver;
-	int initiator;
-	uint32_t initiator_trig;
-	uint16_t pause_quanta;
-};
-
-/**
- * dpsw_if_tc_set_pfc() - Handles Priority Flow Control (PFC) configuration per
- *							Traffic Class (TC)
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @if_id:		Interface Identifier
- * @tc_id:		Traffic class Identifier
- * @cfg:		PFC configuration
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_if_tc_set_pfc(struct fsl_mc_io *mc_io,
-		       uint16_t token,
-		       uint16_t if_id,
-		       uint8_t tc_id,
-		       struct dpsw_pfc_cfg *cfg);
-
-/**
- * struct dpsw_cn_cfg - Structure representing Congestion Notification (CN)
- *		configuration
- * @enable: Enable/disable Congestion State Change Notification
- *			Message (CSCNM) from Congestion Point (CP) to GPP
- *			trusted software
- */
-struct dpsw_cn_cfg {
-	int enable;
-};
-
-/**
- * dpsw_if_tc_set_cn() - Enable/disable Congestion State Change Notification
- * @mc_io		Pointer to MC portal's I/O object
- * @token		Token of DPSW object
- * @if_id		Interface Identifier
- * @tc_id		Traffic class Identifier
- * @cfg		Congestion notification description
- *
- * Enable/disable Congestion State Change Notification
- * Message (CSCNM) from Congestion Point (CP) to GPP trusted software
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_if_tc_set_cn(struct fsl_mc_io *mc_io,
-		      uint16_t token,
-		      uint16_t if_id,
-		      uint8_t tc_id,
-		      const struct dpsw_cn_cfg *cfg);
-
-/**
  * struct dpsw_if_attr - Structure representing DPSW interface attributes
  * @num_tcs: Number of traffic classes
  * @rate: Transmit rate in bits per second
@@ -1273,7 +1106,7 @@ int dpsw_if_tc_set_cn(struct fsl_mc_io *mc_io,
  */
 struct dpsw_if_attr {
 	uint8_t num_tcs;
-	uint64_t rate;
+	uint32_t rate;
 	uint64_t options;
 	int enabled;
 	int accept_all_vlan;
@@ -1293,45 +1126,6 @@ int dpsw_if_get_attributes(struct fsl_mc_io *mc_io,
 			   uint16_t token,
 			   uint16_t if_id,
 			   struct dpsw_if_attr *attr);
-
-/**
- * enum dpsw_cipher_suite - Cipher Suite for MACSec
- * @DPSW_MACSEC_GCM_AES_128: 128 bit
- * @DPSW_MACSEC_GCM_AES_256: 256 bit
- */
-enum dpsw_cipher_suite {
-	DPSW_MACSEC_GCM_AES_128 = 0,
-	DPSW_MACSEC_GCM_AES_256 = 1
-};
-
-/**
- * struct dpsw_macsec_cfg - MACSec Configuration
- * @enable: Enable MACSec
- * @sci: Secure Channel ID
- * @cipher_suite: Cipher Suite
- *
- */
-struct dpsw_macsec_cfg {
-	int enable;
-	uint64_t sci;
-	enum dpsw_cipher_suite cipher_suite;
-};
-
-/**
- * dpsw_if_set_macsec() - Set MACSec configuration for physical port.
- * @mc_io:	Pointer to MC portal's I/O object
- * @token:	Token of DPSW object
- * @if_id:	Interface Identifier
- * @cfg:	MACSec configuration
- *
- * Only point to point MACSec is supported
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_if_set_macsec(struct fsl_mc_io *mc_io,
-		       uint16_t token,
-		       uint16_t if_id,
-		       const struct dpsw_macsec_cfg *cfg);
 
 /**
  * dpsw_if_set_max_frame_length() - Set Maximum Receive frame length.

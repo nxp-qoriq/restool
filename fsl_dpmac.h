@@ -109,20 +109,6 @@ enum dpmac_eth_if {
 };
 
 /**
- * enum dpmac_speed - DPMAC speed
- *	DPMAC_SPEED_10: 10Mbps
- *	DPMAC_SPEED_100: 100Mbps
- *	DPMAC_SPEED_1000: 1Gbps
- *	DPMAC_SPEED_10000: 10Gpbs
- */
-enum dpmac_speed {
-	DPMAC_SPEED_10		= 10,
-	DPMAC_SPEED_100		= 100,
-	DPMAC_SPEED_1000	= 1000,
-	DPMAC_SPEED_10000	= 10000,
-};
-
-/**
  * struct dpmac_cfg() - Structure representing DPMAC configuration
  * @mac_id:	Represents the Hardware MAC ID; in case of multiple WRIOP,
  *		the MAC IDs are continuous.
@@ -335,7 +321,7 @@ struct dpmac_attr {
 	int phy_id;
 	enum dpmac_link_type link_type;
 	enum dpmac_eth_if eth_if;
-	uint64_t max_rate;
+	uint32_t max_rate;
 	/**
 	 * struct version - Structure representing DPMAC version
 	 * @major:	DPMAC major version
@@ -396,19 +382,16 @@ int dpmac_mdio_read(struct fsl_mc_io *mc_io, uint16_t token,
 int dpmac_mdio_write(struct fsl_mc_io *mc_io, uint16_t token,
 		     struct dpmac_mdio_cfg *cfg);
 
-/* DPMAC link configuration options */
-
-/* Enable TX pause frames */
-#define DPMAC_LINK_OPT_TX_PAUSE		0x0000000000000001ULL
-
-/* Enable RX pause frames */
-#define DPMAC_LINK_OPT_RX_PAUSE		0x0000000000000002ULL
-
-/* Enable half-duplex mode */
-#define DPMAC_LINK_OPT_HALF_DUPLEX	0x0000000000000004ULL
+/* DPMAC link configuration/state options */
 
 /* Enable auto-negotiation */
-#define DPMAC_LINK_OPT_AUTONEG		0x0000000000000008ULL
+#define DPMAC_LINK_OPT_AUTONEG		0x0000000000000001ULL
+/* Enable half-duplex mode */
+#define DPMAC_LINK_OPT_HALF_DUPLEX	0x0000000000000002ULL
+/* Enable pause frames */
+#define DPMAC_LINK_OPT_PAUSE		0x0000000000000004ULL
+/* Enable a-symmetric pause frames */
+#define DPMAC_LINK_OPT_ASYM_PAUSE	0x0000000000000008ULL
 
 /**
  * struct dpmac_link_cfg - Structure representing DPMAC link configuration
@@ -416,7 +399,7 @@ int dpmac_mdio_write(struct fsl_mc_io *mc_io, uint16_t token,
  * @options: Enable/Disable DPMAC link cfg features (bitmap)
  */
 struct dpmac_link_cfg {
-	uint64_t rate;
+	uint32_t rate;
 	uint64_t options;
 };
 
@@ -431,11 +414,6 @@ struct dpmac_link_cfg {
 int dpmac_get_link_cfg(struct fsl_mc_io *mc_io, uint16_t token,
 		       struct dpmac_link_cfg *cfg);
 
-/* DPMAC link state options */
-
-/* Enable half-duplex mode */
-#define DPMAC_LINK_STATE_HALF_DUPLEX    0x0000000000000004ULL
-
 /**
  * struct dpmac_link_state - DPMAC link configuration request
  * @rate: Rate in Mbps
@@ -443,7 +421,7 @@ int dpmac_get_link_cfg(struct fsl_mc_io *mc_io, uint16_t token,
  * @up: Link state
  */
 struct dpmac_link_state {
-	uint64_t rate;
+	uint32_t rate;
 	uint64_t options;
 	int up;
 };

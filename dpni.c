@@ -761,7 +761,7 @@ int dpni_set_counter(struct fsl_mc_io *mc_io,
 
 int dpni_set_link_cfg(struct fsl_mc_io *mc_io,
 		      uint16_t token,
-		     struct dpni_link_cfg *cfg)
+		     const struct dpni_link_cfg *cfg)
 {
 	struct mc_command cmd = { 0 };
 
@@ -1422,6 +1422,48 @@ int dpni_set_ipf(struct fsl_mc_io *mc_io, uint16_t token, int en)
 					  MC_CMD_PRI_LOW,
 					  token);
 	DPNI_CMD_SET_IPF(cmd, en);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+int dpni_set_rx_tc_policing(struct fsl_mc_io	*mc_io,
+			    uint16_t		token,
+			    uint8_t		tc_id,
+			    const struct dpni_rx_tc_policing_cfg *cfg)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_SET_RX_TC_POLICING,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPNI_CMD_SET_RX_TC_POLICING(cmd, tc_id, cfg);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+void dpni_prepare_rx_tc_early_drop(const struct dpni_rx_tc_early_drop_cfg *cfg,
+				   uint8_t *early_drop_buf)
+{
+	uint64_t *ext_params = (uint64_t *)early_drop_buf;
+
+	DPNI_EXT_SET_RX_TC_EARLY_DROP(ext_params, cfg);
+}
+
+int dpni_set_rx_tc_early_drop(struct fsl_mc_io	*mc_io,
+			      uint16_t		token,
+			    uint8_t		tc_id,
+			    uint64_t		early_drop_iova)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_SET_RX_TC_EARLY_DROP,
+					  MC_CMD_PRI_LOW,
+					  token);
+	DPNI_CMD_SET_RX_TC_EARLY_DROP(cmd, tc_id, early_drop_iova);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);

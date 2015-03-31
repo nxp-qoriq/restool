@@ -33,8 +33,8 @@
 #define _FSL_DPMAC_CMD_H
 
 /* DPMAC Version */
-#define DPMAC_VER_MAJOR				2
-#define DPMAC_VER_MINOR				1
+#define DPMAC_VER_MAJOR				3
+#define DPMAC_VER_MINOR				0
 
 /* Command IDs */
 #define DPMAC_CMDID_CLOSE			0x800
@@ -144,7 +144,7 @@ do { \
 	MC_RSP_OP(cmd, 1, 16, 16, uint16_t,		attr->version.minor);\
 	MC_RSP_OP(cmd, 1, 32,  8, enum dpmac_link_type,	attr->link_type);\
 	MC_RSP_OP(cmd, 1, 40,  8, enum dpmac_eth_if,	attr->eth_if);\
-	MC_RSP_OP(cmd, 2, 0,  64, uint64_t,		attr->max_rate);\
+	MC_RSP_OP(cmd, 2, 0,  32, uint32_t,		attr->max_rate);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -170,14 +170,14 @@ do { \
 #define DPMAC_RSP_GET_LINK_CFG(cmd, cfg) \
 do { \
 	MC_RSP_OP(cmd, 0, 0,  64, uint64_t, cfg->options); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, cfg->rate); \
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, cfg->rate); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPMAC_CMD_SET_LINK_STATE(cmd, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  64, uint64_t, cfg->options); \
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->rate); \
+	MC_CMD_OP(cmd, 1, 0,  32, uint32_t, cfg->rate); \
 	MC_CMD_OP(cmd, 2, 0,  1,  int,      cfg->up); \
 } while (0)
 

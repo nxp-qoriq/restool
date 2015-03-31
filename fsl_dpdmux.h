@@ -534,7 +534,7 @@ int dpdmux_if_set_accepted_frames(struct fsl_mc_io			*mc_io,
  * @is_default: Indicates if configured as default interface
  */
 struct dpdmux_if_attr {
-	uint64_t rate;
+	uint32_t rate;
 	int enabled;
 	enum dpdmux_accepted_frames_type accept_frame_type;
 	int is_default;
@@ -623,13 +623,22 @@ int dpdmux_if_get_counter(struct fsl_mc_io		*mc_io,
 */
 int dpdmux_ul_reset_counters(struct fsl_mc_io *mc_io, uint16_t token);
 
+/* Enable auto-negotiation */
+#define DPDMUX_LINK_OPT_AUTONEG		0x0000000000000001ULL
+/* Enable half-duplex mode */
+#define DPDMUX_LINK_OPT_HALF_DUPLEX	0x0000000000000002ULL
+/* Enable pause frames */
+#define DPDMUX_LINK_OPT_PAUSE		0x0000000000000004ULL
+/* Enable a-symmetric pause frames */
+#define DPDMUX_LINK_OPT_ASYM_PAUSE	0x0000000000000008ULL
+
 /**
  * struct dpdmux_link_cfg - Structure representing DPDMUX link configuration
  * @rate: Rate
  * @options: Mask of available options; use 'DPDMUX_LINK_OPT_<X>' values
  */
 struct dpdmux_link_cfg {
-	uint64_t rate;
+	uint32_t rate;
 	uint64_t options;
 };
 
@@ -653,7 +662,7 @@ int dpdmux_if_set_link_cfg(struct fsl_mc_io *mc_io,
  * @up: 0 - down, 1 - up
  */
 struct dpdmux_link_state {
-	uint64_t rate;
+	uint32_t rate;
 	uint64_t options;
 	int      up;
 };
