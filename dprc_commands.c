@@ -879,6 +879,7 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 		(unsigned int)MC_PORTAL_PADDR_TO_PORTAL_ID(mc_portal_phys_addr),
 		(unsigned long long)mc_portal_phys_addr);
 
+	return 0;
 error:
 	if (child_dprc_created) {
 		error2 = dprc_destroy_container(&restool.mc_io, dprc_handle,
@@ -983,6 +984,7 @@ static int cmd_dprc_create_child(void)
 	} else {
 		dprc_handle = restool.root_dprc_handle;
 	}
+	DEBUG_PRINTF("dprc.%d's handle is: %#x\n", dprc_id, dprc_handle);
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
