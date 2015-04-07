@@ -124,6 +124,7 @@ C_ASSERT(ARRAY_SIZE(dprc_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 enum dprc_create_child_options {
 	CREATE_OPT_HELP = 0,
 	CREATE_OPT_OPTIONS,
+	CREATE_OPT_LABEL,
 };
 
 static struct option dprc_create_child_options[] = {
@@ -133,6 +134,11 @@ static struct option dprc_create_child_options[] = {
 
 	[CREATE_OPT_OPTIONS] = {
 		.name = "options",
+		.has_arg = 1,
+	},
+
+	[CREATE_OPT_LABEL] = {
+		.name = "label",
 		.has_arg = 1,
 	},
 
@@ -711,7 +717,8 @@ static void print_dprc_options(uint64_t options)
 		printf("\tDPRC_CFG_OPT_IRQ_CFG_ALLOWED\n");
 }
 
-static int print_dprc_attr(uint32_t dprc_id)
+static int print_dprc_attr(uint32_t dprc_id,
+			   struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dprc_handle;
 	int error;
@@ -752,6 +759,11 @@ static int print_dprc_attr(uint32_t dprc_id)
 		(unsigned long long)dprc_attr.options);
 	print_dprc_options(dprc_attr.options);
 
+	assert(strlen(target_obj_desc->label) <= MC_OBJ_LABEL_MAX_LENGTH);
+	if (dprc_id != restool.root_dprc_id &&
+	    strlen(target_obj_desc->label) > 0)
+		printf("object label: %s\n", target_obj_desc->label);
+
 	error = 0;
 
 out:
@@ -791,7 +803,7 @@ static int print_dprc_info(uint32_t dprc_id)
 		return -EINVAL;
 	}
 
-	error = print_dprc_attr(dprc_id);
+	error = print_dprc_attr(dprc_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -849,7 +861,8 @@ out:
  * Create a DPRC object in the MC, as a child of the container
  * referred by 'dprc_handle'.
  */
-static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
+static int create_child_dprc(uint16_t dprc_handle, uint64_t options,
+			     bool has_label)
 {
 	int error;
 	int error2;
@@ -863,7 +876,13 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options)
 	cfg.icid = DPRC_GET_ICID_FROM_POOL;
 	cfg.portal_id = DPRC_GET_PORTAL_ID_FROM_POOL;
 	cfg.options = options;
-	cfg.label[0] = '\0';
+	if (has_label) {
+		strncpy(cfg.label,
+			restool.cmd_option_args[CREATE_OPT_LABEL],
+			MC_OBJ_LABEL_MAX_LENGTH);
+		cfg.label[15] = '\0';
+	} else
+		cfg.label[0] = '\0';
 	error = dprc_create_container(
 			&restool.mc_io,
 			dprc_handle,
@@ -911,6 +930,7 @@ static int parse_create_options(char *options_str, uint64_t *options)
 		OPTION_MAP_ENTRY(DPRC_CFG_OPT_ALLOC_ALLOWED),
 		OPTION_MAP_ENTRY(DPRC_CFG_OPT_OBJ_CREATE_ALLOWED),
 		OPTION_MAP_ENTRY(DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED),
+		OPTION_MAP_ENTRY(DPRC_CFG_OPT_IOMMU_BYPASS),
 		OPTION_MAP_ENTRY(DPRC_CFG_OPT_AIOP),
 		OPTION_MAP_ENTRY(DPRC_CFG_OPT_IRQ_CFG_ALLOWED),
 	};
@@ -945,7 +965,7 @@ static int cmd_dprc_create_child(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprc create <parent-container> [--options=<options-mask>]\n"
+		"Usage: restool dprc create <parent-container> [--options=<options-mask>] [--label=<object's-label>]\n"
 		"\n"
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma separated list of DPRC options:\n"
@@ -953,8 +973,25 @@ static int cmd_dprc_create_child(void)
 		"	DPRC_CFG_OPT_ALLOC_ALLOWED\n"
 		"	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED\n"
 		"	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED\n"
+		"	DPRC_CFG_OPT_IOMMU_BYPASS\n"
 		"	DPRC_CFG_OPT_AIOP\n"
 		"	DPRC_CFG_OPT_IRQ_CFG_ALLOWED\n"
+		"\n"
+		"--label=<object's-label>\n"
+		"   Specify a label for the newly created object.\n"
+		"   It is kind of an alias for that object.\n"
+		"   Length of the string is 15 characters maximum.\n"
+		"   Say --label=\"nadk's dprc\", --label=\'nadk dprc\',--lable=blah\n"
+		"\n"
+		"e.g.\n"
+		"Create a child DPRC under parent dprc.1 with default options:\n"
+		"   $ restool dprc create dprc.1\n"
+		"   dprc.9 is created under dprc.1\n"
+		"Create a child DPRC under parent dprc.1,\n"
+		"with default options,\n"
+		"with label \"nadk's dprc\":\n"
+		"   $ restool dprc create dprc.1 --label=\"nadk's dprc\"\n"
+		"   dprc.11 is created under dprc.1\n"
 		"\n";
 
 	uint16_t dprc_handle;
@@ -962,6 +999,7 @@ static int cmd_dprc_create_child(void)
 	bool dprc_opened = false;
 	uint32_t dprc_id;
 	uint64_t options = 0;
+	bool has_label = false;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
@@ -1007,7 +1045,24 @@ static int cmd_dprc_create_child(void)
 			  DPRC_CFG_OPT_IRQ_CFG_ALLOWED;
 	}
 
-	error = create_child_dprc(dprc_handle, options);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_LABEL)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_LABEL);
+		has_label = true;
+		DEBUG_PRINTF("Object label length: %d\n",
+		(int)strlen(restool.cmd_option_args[CREATE_OPT_LABEL]));
+		if (strlen(restool.cmd_option_args[CREATE_OPT_LABEL]) >
+		    MC_OBJ_LABEL_MAX_LENGTH) {
+			ERROR_PRINTF("object label length exceeding %d\n",
+					MC_OBJ_LABEL_MAX_LENGTH);
+			error = -EINVAL;
+			printf(usage_msg);
+			goto out;
+		}
+	} else {
+		has_label = false;
+	}
+
+	error = create_child_dprc(dprc_handle, options, has_label);
 out:
 	if (dprc_opened) {
 		int error2;

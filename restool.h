@@ -51,12 +51,17 @@
 /**
  * Maximum number of command line options
  */
-#define MAX_NUM_CMD_LINE_OPTIONS    (sizeof(uint32_t) * 8)
+#define MAX_NUM_CMD_LINE_OPTIONS	(sizeof(uint32_t) * 8)
 
 /**
  * Maximum level of nesting of DPRCs
  */
-#define MAX_DPRC_NESTING	    16
+#define MAX_DPRC_NESTING	16
+
+/**
+ * Maximum length of object label
+ */
+#define MC_OBJ_LABEL_MAX_LENGTH 15
 
 /*
  * TODO: Obtain the following constants from the fsl-mc bus driver via an ioctl
