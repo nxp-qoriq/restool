@@ -45,7 +45,8 @@
 	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED |	\
 	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED |	\
 	DPRC_CFG_OPT_IOMMU_BYPASS |		\
-	DPRC_CFG_OPT_AIOP)
+	DPRC_CFG_OPT_AIOP |			\
+	DPRC_CFG_OPT_IRQ_CFG_ALLOWED)
 
 enum mc_cmd_status mc_status;
 
@@ -705,6 +706,9 @@ static void print_dprc_options(uint64_t options)
 
 	if (options & DPRC_CFG_OPT_AIOP)
 		printf("\tDPRC_CFG_OPT_AIOP\n");
+
+	if (options & DPRC_CFG_OPT_IRQ_CFG_ALLOWED)
+		printf("\tDPRC_CFG_OPT_IRQ_CFG_ALLOWED\n");
 }
 
 static int print_dprc_attr(uint32_t dprc_id)
@@ -908,6 +912,7 @@ static int parse_create_options(char *options_str, uint64_t *options)
 		OPTION_MAP_ENTRY(DPRC_CFG_OPT_OBJ_CREATE_ALLOWED),
 		OPTION_MAP_ENTRY(DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED),
 		OPTION_MAP_ENTRY(DPRC_CFG_OPT_AIOP),
+		OPTION_MAP_ENTRY(DPRC_CFG_OPT_IRQ_CFG_ALLOWED),
 	};
 
 	char *cursor = NULL;
@@ -949,6 +954,7 @@ static int cmd_dprc_create_child(void)
 		"	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED\n"
 		"	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED\n"
 		"	DPRC_CFG_OPT_AIOP\n"
+		"	DPRC_CFG_OPT_IRQ_CFG_ALLOWED\n"
 		"\n";
 
 	uint16_t dprc_handle;
