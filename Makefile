@@ -50,7 +50,7 @@ HEADER_DEPENDENCIES = $(subst .o,.d,$(OBJS))
 all: restool
 
 restool: $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $(OBJS)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS) -lm
 	file $@
 
 clean:

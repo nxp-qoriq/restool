@@ -35,6 +35,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <getopt.h>
+#include <math.h>
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
@@ -70,7 +71,6 @@ enum dprc_show_options {
 	SHOW_OPT_HELP = 0,
 	SHOW_OPT_RESOURCES,
 	SHOW_OPT_RES_TYPE,
-	SHOW_OPT_VERBOSE,
 };
 
 static struct option dprc_show_options[] = {
@@ -85,10 +85,6 @@ static struct option dprc_show_options[] = {
 	[SHOW_OPT_RES_TYPE] = {
 		.name = "resource-type",
 		.has_arg = 1,
-	},
-
-	[SHOW_OPT_VERBOSE] = {
-		.name = "verbose",
 	},
 
 	{ 0 },
@@ -562,12 +558,10 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 {
 	int num_child_devices;
 	int error;
-	bool verbose = false;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_VERBOSE)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_VERBOSE);
-		verbose = true;
-	}
+	int width;
+	int labelen;
+	char plug_stat[10] = {'\0'};
+	struct dprc_obj_desc obj_desc;
 
 	error = dprc_get_obj_count(&restool.mc_io,
 				   dprc_handle,
@@ -581,10 +575,11 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 
 	printf("%s contains %u objects%c\n", dprc_name, num_child_devices,
 	       num_child_devices == 0 ? '.' : ':');
+	printf("object\t\tlabel\t\tplugged-state\n");
 
 	for (int i = 0; i < num_child_devices; i++) {
-		struct dprc_obj_desc obj_desc;
-
+		plug_stat[0] = '\0';
+		memset(&obj_desc, 0, sizeof(obj_desc));
 		error = dprc_get_obj(&restool.mc_io,
 				     dprc_handle,
 				     i,
@@ -595,15 +590,43 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 				i, error);
 			goto out;
 		}
+		assert(strlen(obj_desc.label) <= MC_OBJ_LABEL_MAX_LENGTH);
 
-		if (strcmp(obj_desc.type, "dprc") == 0 || !verbose) {
-			printf("%8s.%u\n", obj_desc.type, obj_desc.id);
-		} else {
-			printf("%8s.%u\t(%splugged)\n", obj_desc.type,
-			       obj_desc.id,
-			       (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) ?
-					"" : "un");
-		}
+		if (obj_desc.id < 0)
+			width = strlen(obj_desc.type) + 1 +
+				(2 + (int)log10(0 - obj_desc.id));
+		else if (obj_desc.id == 0)
+			width = strlen(obj_desc.type) + 1 + 1;
+		else
+			width = strlen(obj_desc.type) + 1 +
+				(1 + (int)log10(obj_desc.id));
+
+		labelen = strlen(obj_desc.label);
+
+		DEBUG_PRINTF("%s.%d name length=%d\n",
+				obj_desc.type, obj_desc.id, width);
+		DEBUG_PRINTF("label \"%s\" length=%d\n",
+				obj_desc.label, labelen);
+
+		if (strcmp(obj_desc.label, "dprc") == 0)
+			plug_stat[0] = '\0';
+		else if (obj_desc.state & DPRC_OBJ_STATE_PLUGGED)
+			strncpy(plug_stat, "plugged", 9);
+		else
+			strncpy(plug_stat, "unplugged", 9);
+
+		if (width < 8 && labelen < 8)
+			printf("%s.%d\t\t%s\t\t%s\n",
+			obj_desc.type, obj_desc.id, obj_desc.label, plug_stat);
+		else if (width < 8 && labelen >= 8)
+			printf("%s.%d\t\t%s\t%s\n",
+			obj_desc.type, obj_desc.id, obj_desc.label, plug_stat);
+		else if (width >= 8 && labelen < 8)
+			printf("%s.%d\t%s\t\t%s\n",
+			obj_desc.type, obj_desc.id, obj_desc.label, plug_stat);
+		else
+			printf("%s.%d\t%s\t%s\n",
+			obj_desc.type, obj_desc.id, obj_desc.label, plug_stat);
 	}
 
 	error = 0;
