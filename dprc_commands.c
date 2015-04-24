@@ -1454,9 +1454,9 @@ static int cmd_dprc_set_quota(void)
 	char *res_type;
 	int quota;
 
-	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_HELP)) {
 		printf(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_HELP);
 		error = 0;
 		goto out;
 	}
