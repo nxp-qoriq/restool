@@ -249,6 +249,7 @@ static int print_dpaiop_attr(uint32_t dpaiop_id,
 		goto out;
 	}
 	print_dpaiop_state(state);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

@@ -811,11 +811,7 @@ static int print_dprc_attr(uint32_t dprc_id,
 		dprc_attr.version.minor,
 		(unsigned long long)dprc_attr.options);
 	print_dprc_options(dprc_attr.options);
-
-	assert(strlen(target_obj_desc->label) <= MC_OBJ_LABEL_MAX_LENGTH);
-	if (dprc_id != restool.root_dprc_id &&
-	    strlen(target_obj_desc->label) > 0)
-		printf("object label: %s\n", target_obj_desc->label);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

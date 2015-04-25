@@ -207,6 +207,7 @@ static int print_dpdcei_attr(uint32_t dpdcei_id,
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	print_dpdcei_engine(dpdcei_attr.engine);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

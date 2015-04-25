@@ -185,6 +185,7 @@ static int print_dpcon_attr(uint32_t dpcon_id,
 		dpcon_attr.qbman_ch_id);
 	printf("number of priorities for the DPCON channel: %u\n",
 		dpcon_attr.num_priorities);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

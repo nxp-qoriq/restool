@@ -183,6 +183,7 @@ static int print_dpbp_attr(uint32_t dpbp_id,
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf("buffer pool id: %u\n", (unsigned int)dpbp_attr.bpid);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 out:

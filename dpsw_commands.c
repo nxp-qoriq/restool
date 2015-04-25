@@ -331,6 +331,7 @@ static int print_dpsw_attr(uint32_t dpsw_id,
 	printf("number of interfaces: %u\n", (uint32_t)dpsw_attr.num_ifs);
 	printf("current number of VLANs: %u\n", (uint32_t)dpsw_attr.num_vlans);
 	printf("current number of FDBs: %u\n", (uint32_t)dpsw_attr.num_fdbs);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

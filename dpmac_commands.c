@@ -247,6 +247,7 @@ static int print_dpmac_attr(uint32_t dpmac_id,
 	print_dpmac_eth_if(dpmac_attr.eth_if);
 	printf("maximum supported rate %lu Mbps\n",
 			(unsigned long)dpmac_attr.max_rate);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

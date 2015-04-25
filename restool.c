@@ -244,6 +244,15 @@ out:
 	return error;
 }
 
+void print_obj_label(struct dprc_obj_desc *target_obj_desc)
+{
+	assert(strlen(target_obj_desc->label) <= MC_OBJ_LABEL_MAX_LENGTH);
+	if (!(target_obj_desc->id == (int)restool.root_dprc_id &&
+	    strcmp(target_obj_desc->type, "dprc") == 0) &&
+	    strlen(target_obj_desc->label) > 0)
+		printf("object label: %s\n", target_obj_desc->label);
+}
+
 int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 			const struct flib_ops *ops)
 {

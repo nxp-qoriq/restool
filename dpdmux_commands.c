@@ -295,6 +295,7 @@ static int print_dpdmux_attr(uint32_t dpdmux_id,
 		(uint32_t)dpdmux_attr.mem_size);
 	printf("control interface ID: %u\n",
 	       (uint32_t)dpdmux_attr.control_if);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

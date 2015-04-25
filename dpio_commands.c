@@ -204,6 +204,7 @@ static int print_dpio_attr(uint32_t dpio_id,
 	printf("wrong mode\n");
 	printf("number of priorities is: %#x\n",
 	       (unsigned int)dpio_attr.num_priorities);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

@@ -173,6 +173,7 @@ static int print_dpmcp_attr(uint32_t dpmcp_id,
 	printf("dpmcp object id/portal id: %d\n", dpmcp_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

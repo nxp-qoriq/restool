@@ -183,6 +183,7 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf("number of priorities: %u\n", dpseci_attr.num_of_priorities);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

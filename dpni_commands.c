@@ -433,6 +433,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	printf("max QoS key size: %u\n", (uint32_t)dpni_attr.max_qos_key_size);
 	printf("max distribution key size: %u\n",
 	       (uint32_t)dpni_attr.max_dist_key_size);
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 

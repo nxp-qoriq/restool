@@ -213,6 +213,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 	printf("link status: %d - ", link_state);
 	link_state == 0 ? printf("down\n") :
 	link_state == 1 ? printf("up\n") : printf("error state\n");
+	print_obj_label(target_obj_desc);
 
 	error = 0;
 
