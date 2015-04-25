@@ -62,7 +62,11 @@ static struct option dprc_list_options[] = {
 	[LIST_OPT_HELP] = {
 		.name = "help",
 	},
+
+	{ 0 },
 };
+
+C_ASSERT(ARRAY_SIZE(dprc_list_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 /**
  * dprc show command options
@@ -154,6 +158,8 @@ static struct option dprc_destroy_options[] = {
 	[DESTROY_OPT_HELP] = {
 		.name = "help",
 	},
+
+	{ 0 },
 };
 
 C_ASSERT(ARRAY_SIZE(dprc_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
@@ -241,6 +247,29 @@ static struct option dprc_set_quota_options[] = {
 C_ASSERT(ARRAY_SIZE(dprc_set_quota_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 /**
+ * dprc set-label command options
+ */
+enum dprc_set_label_options {
+	SET_LABEL_OPT_HELP = 0,
+	SET_LABEL_OPT_LABEL,
+};
+
+static struct option dprc_set_label_options[] = {
+	[SET_LABEL_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[SET_LABEL_OPT_LABEL] = {
+		.name = "label",
+		.has_arg = 1,
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dprc_set_label_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+/**
  * dprc connect command options
  */
 enum dprc_connect_options {
@@ -314,6 +343,7 @@ static int cmd_dprc_help(void)
 		"   unassign - moves an object or resource from a target container to a parent container.\n"
 		"   set-quota - sets quota policies for a child container, specifying the number of\n"
 		"		resources a child may allocate from its parent container\n"
+		"   set-label - sets label/alias for any objects except root container, i.e dprc.1\n"
 		"   connect - connects 2 objects, creating a link between them.\n"
 		"   disconnect - removes the link between two objects. Either endpoint can be specified\n"
 		"		 as the target of the operation.\n"
@@ -1647,6 +1677,154 @@ out:
 	return error;
 }
 
+static int cmd_dprc_set_label(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dprc set-label <object> --label=<label>\n"
+		"\n"
+		"NOTE: <object> cannot be the root container i.e. dprc.1\n"
+		"--label=<label>\n"
+		"   maximum length of label is 15 characters\n"
+		"e.g. restool dprc set-label dprc.4 --label=\"mountain\"\n"
+		"\n";
+
+	int error;
+	int n;
+	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
+	uint32_t obj_id;
+	bool target_parent_dprc_opened = false;
+	struct dprc_obj_desc target_obj_desc;
+	struct dprc_obj_desc obj_desc;
+	uint32_t target_parent_dprc_id;
+	uint16_t target_parent_dprc_handle;
+	bool found;
+	int num_child;
+
+	memset(&target_obj_desc, 0, sizeof(target_obj_desc));
+	memset(&obj_desc, 0, sizeof(obj_desc));
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SET_LABEL_OPT_HELP)) {
+		printf(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_LABEL_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
+	if (restool.obj_name == NULL) {
+		ERROR_PRINTF("<object> argument missing\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	n = sscanf(restool.obj_name, "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH)
+		   "[a-z].%u", obj_type, &obj_id);
+	if (n != 2) {
+		ERROR_PRINTF("Invalid MC object name: %s\n", restool.obj_name);
+		return -EINVAL;
+	}
+
+	if (strcmp(obj_type, "dprc") == 0 && obj_id == restool.root_dprc_id) {
+		ERROR_PRINTF("CANNOT set label for root dprc, i.e. dprc.1\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SET_LABEL_OPT_LABEL)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_LABEL_OPT_LABEL);
+		if (strlen(restool.cmd_option_args[SET_LABEL_OPT_LABEL]) >
+		    MC_OBJ_LABEL_MAX_LENGTH) {
+			ERROR_PRINTF("label length > %d characters\n",
+					MC_OBJ_LABEL_MAX_LENGTH);
+			printf(usage_msg);
+			error = -EINVAL;
+			goto out;
+		}
+		if (strlen(restool.cmd_option_args[SET_LABEL_OPT_LABEL]) == 0) {
+			ERROR_PRINTF("label length = 0 charcter\n");
+			printf(usage_msg);
+			error = -EINVAL;
+			goto out;
+		}
+	} else {
+		ERROR_PRINTF("missing --label option\n");
+		printf(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	error = find_target_obj_desc(restool.root_dprc_id,
+			restool.root_dprc_handle, 0, obj_id, obj_type,
+			&target_obj_desc, &target_parent_dprc_id, &found);
+	if (error < 0)
+		goto out;
+	if (target_parent_dprc_id == restool.root_dprc_id)
+		target_parent_dprc_handle = restool.root_dprc_handle;
+	else {
+		error = open_dprc(target_parent_dprc_id,
+				&target_parent_dprc_handle);
+		if (error < 0)
+			goto out;
+		target_parent_dprc_opened = true;
+	}
+
+	error = dprc_get_obj_count(&restool.mc_io,
+				target_parent_dprc_handle,
+				&num_child);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	DEBUG_PRINTF("num_child=%d\n", num_child);
+	for (int i = 0; i < num_child; ++i) {
+		DEBUG_PRINTF("i=%d\n", i);
+		memset(&obj_desc, 0 , sizeof(obj_desc));
+		error = dprc_get_obj(&restool.mc_io, target_parent_dprc_handle,
+					i, &obj_desc);
+		if (error < 0) {
+			DEBUG_PRINTF(
+				"dprc_get_object(%u) failed with error %d\n",
+				i, error);
+			goto out;
+		}
+		if (strcmp(obj_desc.type, obj_type) == 0 &&
+		    obj_id == (uint32_t)obj_desc.id) {
+			error = dprc_set_obj_label(&restool.mc_io,
+				target_parent_dprc_handle, i,
+				restool.cmd_option_args[SET_LABEL_OPT_LABEL]);
+			if (error < 0) {
+				mc_status = flib_error_to_mc_status(error);
+				ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+				goto out;
+			}
+			break;
+		}
+	}
+
+out:
+	DEBUG_PRINTF("target_parent_dprc_opened=%d\n",
+			(int)target_parent_dprc_opened);
+	if (target_parent_dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&restool.mc_io, target_parent_dprc_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int parse_endpoint(char *endpoint_str, struct dprc_endpoint *endpoint)
 {
 	int n;
@@ -1923,6 +2101,11 @@ struct object_command dprc_commands[] = {
 	{ .cmd_name = "set-quota",
 	  .options = dprc_set_quota_options,
 	  .cmd_func = cmd_dprc_set_quota },
+
+	{ .cmd_name = "set-label",
+	  .options = dprc_set_label_options,
+	  .cmd_func = cmd_dprc_set_label },
+
 
 	{ .cmd_name = "connect",
 	  .options = dprc_connect_options,
