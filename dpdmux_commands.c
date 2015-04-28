@@ -214,7 +214,7 @@ static void print_dpdmux_method(enum dpdmux_method method)
 		printf("DPDMUX_METHOD_C_VLAN_MAC\n");
 		break;
 	case DPDMUX_METHOD_MAC:
-		printf("DPDMUX_METHOD_MAX\n");
+		printf("DPDMUX_METHOD_MAC\n");
 		break;
 	case DPDMUX_METHOD_C_VLAN:
 		printf("DPDMUX_METHOD_C_VLAN\n");
