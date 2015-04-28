@@ -1002,7 +1002,9 @@ static int cmd_dprc_create_child(void)
 			goto out;
 	} else {
 		options = DPRC_CFG_OPT_SPAWN_ALLOWED |
-			  DPRC_CFG_OPT_ALLOC_ALLOWED;
+			  DPRC_CFG_OPT_ALLOC_ALLOWED |
+			  DPRC_CFG_OPT_OBJ_CREATE_ALLOWED |
+			  DPRC_CFG_OPT_IRQ_CFG_ALLOWED;
 	}
 
 	error = create_child_dprc(dprc_handle, options);
