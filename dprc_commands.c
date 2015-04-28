@@ -1443,6 +1443,11 @@ static int cmd_dprc_set_quota(void)
 {
 	static const char usage_msg[] =
 		"\n"
+		"The set-quota command sets quota policies for a child container, specifying the number of resources a child may take from its parent container.\n"
+		"But remember a parent can assign any number of resource to its child if it wants to, and if it has enough resources to assign.\n"
+		"So the quota is effective only when the child dprc does have enough resource and it wants to borrow resource from its parent.\n"
+		"It could only borrow the quota number of resources from its parent.\n"
+		"\n"
 		"Usage: restool dprc set-quota <parent-container> --resource-type=<type> --count=<number>\n"
 		"						 --child-container=<container>\n"
 		"\n"
