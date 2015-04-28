@@ -75,20 +75,12 @@ C_ASSERT(ARRAY_SIZE(dpmcp_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  */
 enum dpmcp_create_options {
 	CREATE_OPT_HELP = 0,
-	CREATE_OPT_PORTAL_ID,
 };
 
 static struct option dpmcp_create_options[] = {
 	[CREATE_OPT_HELP] = {
 		.name = "help",
 		.has_arg = 0,
-		.flag = NULL,
-		.val = 0,
-	},
-
-	[CREATE_OPT_PORTAL_ID] = {
-		.name = "portal-id",
-		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
 	},
@@ -300,11 +292,7 @@ static int cmd_dpmcp_create(void)
 		return -EINVAL;
 	}
 
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PORTAL_ID)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_PORTAL_ID);
-		dpmcp_cfg.portal_id = -1;
-	}
+	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
 
 	error = dpmcp_create(&restool.mc_io, &dpmcp_cfg, &dpmcp_handle);
 	if (error < 0) {
