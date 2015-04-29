@@ -946,8 +946,9 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options,
 	}
 
 	child_dprc_created = true;
-	printf(
-		"dprc.%u object created (using MC portal id %u, portal addr %#llx)\n",
+	printf("dprc.%u is created under %s\n",
+		child_dprc_id, restool.obj_name);
+	DEBUG_PRINTF("dprc.%u's MC portal id %u, portal addr %#llx\n",
 		child_dprc_id,
 		(unsigned int)MC_PORTAL_OFFSET_TO_PORTAL_ID(mc_portal_offset),
 		(unsigned long long)mc_portal_offset + MC_PORTALS_BASE_PADDR);

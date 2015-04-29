@@ -637,7 +637,7 @@ static int create_dpdmux(const char *usage_msg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpdmux.%d is created in dprc.1\n", dpdmux_attr.id);
+	printf("dpdmux.%d is created under dprc.1\n", dpdmux_attr.id);
 
 	error = dpdmux_close(&restool.mc_io, dpdmux_handle);
 	if (error < 0) {

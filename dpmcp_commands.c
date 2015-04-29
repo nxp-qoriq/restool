@@ -311,7 +311,7 @@ static int cmd_dpmcp_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpmcp.%d is created in dprc.1\n", dpmcp_attr.id);
+	printf("dpmcp.%d is created under dprc.1\n", dpmcp_attr.id);
 
 	error = dpmcp_close(&restool.mc_io, dpmcp_handle);
 	if (error < 0) {

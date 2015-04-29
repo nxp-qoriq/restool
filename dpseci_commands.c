@@ -382,7 +382,7 @@ static int cmd_dpseci_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpseci.%d is created in dprc.1\n", dpseci_attr.id);
+	printf("dpseci.%d is created under dprc.1\n", dpseci_attr.id);
 
 	error = dpseci_close(&restool.mc_io, dpseci_handle);
 	if (error < 0) {

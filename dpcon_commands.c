@@ -349,7 +349,7 @@ static int cmd_dpcon_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpcon.%d is created in dprc.1\n", dpcon_attr.id);
+	printf("dpcon.%d is created under dprc.1\n", dpcon_attr.id);
 
 	error = dpcon_close(&restool.mc_io, dpcon_handle);
 	if (error < 0) {

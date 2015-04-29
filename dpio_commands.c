@@ -389,7 +389,7 @@ static int cmd_dpio_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpio.%d is created in dprc.1\n", dpio_attr.id);
+	printf("dpio.%d is created under dprc.1\n", dpio_attr.id);
 
 	error = dpio_close(&restool.mc_io, dpio_handle);
 	if (error < 0) {
