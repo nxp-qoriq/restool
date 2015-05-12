@@ -113,7 +113,6 @@ enum mc_cmd_status flib_error_to_mc_status(int error)
 	case -ENODEV:
 		return MC_CMD_STATUS_INVALID_STATE;
 	default:
-		assert(false);
 		break;
 	}
 
