@@ -1202,7 +1202,7 @@ static int cmd_dprc_destroy_child(void)
 		goto out;
 	}
 
-	printf("dprc.%u object destroyed\n", child_dprc_id);
+	printf("dprc.%u is destroyed\n", child_dprc_id);
 
 	if (parent_dprc_id != restool.root_dprc_id)
 		error = dprc_close(&restool.mc_io, parent_dprc_handle);
@@ -1525,7 +1525,7 @@ static int cmd_dprc_unassign(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dprc unassign <container> --object=<object> [--target=<container>]\n"
-		"	restool dprc unassign <container> --resource-type <type> --count <number> --target <container>\n"
+		"	restool dprc unassign <container> --resource-type <type> --count <number> [--target <container>]\n"
 		"\n"
 		"--object=<object>\n"
 		"   Specifies the object to unassign from the target container\n"

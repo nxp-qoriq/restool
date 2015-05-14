@@ -505,6 +505,7 @@ static int cmd_dpaiop_destroy(void)
 		goto out;
 	}
 	dpaiop_opened = false;
+	printf("dpaiop.%u is destroyed\n", dpaiop_id);
 
 out:
 	if (dpaiop_opened) {

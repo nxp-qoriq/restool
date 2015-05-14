@@ -475,6 +475,7 @@ static int cmd_dpmac_destroy(void)
 		goto out;
 	}
 	dpmac_opened = false;
+	printf("dpmac.%u is destroyed\n", dpmac_id);
 
 out:
 	if (dpmac_opened) {

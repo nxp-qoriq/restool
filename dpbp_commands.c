@@ -411,6 +411,7 @@ static int cmd_dpbp_destroy(void)
 		goto out;
 	}
 	dpbp_opened = false;
+	printf("dpbp.%u is destroyed\n", dpbp_id);
 
 out:
 	if (dpbp_opened) {

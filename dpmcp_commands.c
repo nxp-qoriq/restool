@@ -379,6 +379,7 @@ static int cmd_dpmcp_destroy(void)
 		goto out;
 	}
 	dpmcp_opened = false;
+	printf("dpmcp.%u is destroyed\n", dpmcp_id);
 
 out:
 	if (dpmcp_opened) {

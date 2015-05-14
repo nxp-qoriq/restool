@@ -728,6 +728,7 @@ static int cmd_dpsw_destroy(void)
 		goto out;
 	}
 	dpsw_opened = false;
+	printf("dpsw.%u is destroyed\n", dpsw_id);
 
 out:
 	if (dpsw_opened) {

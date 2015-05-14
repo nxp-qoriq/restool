@@ -450,6 +450,7 @@ static int cmd_dpseci_destroy(void)
 		goto out;
 	}
 	dpseci_opened = false;
+	printf("dpseci.%u is destroyed\n", dpseci_id);
 
 out:
 	if (dpseci_opened) {

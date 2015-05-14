@@ -1036,6 +1036,7 @@ static int cmd_dpni_destroy(void)
 		goto out;
 	}
 	dpni_opened = false;
+	printf("dpni.%u is destroyed\n", dpni_id);
 
 out:
 	if (dpni_opened) {

@@ -444,6 +444,7 @@ static int cmd_dpci_destroy(void)
 		goto out;
 	}
 	dpci_opened = false;
+	printf("dpci.%u is destroyed\n", dpci_id);
 
 out:
 	if (dpci_opened) {

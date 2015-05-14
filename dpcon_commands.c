@@ -417,6 +417,7 @@ static int cmd_dpcon_destroy(void)
 		goto out;
 	}
 	dpcon_opened = false;
+	printf("dpcon.%u is destroyed\n", dpcon_id);
 
 out:
 	if (dpcon_opened) {

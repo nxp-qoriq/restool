@@ -457,6 +457,7 @@ static int cmd_dpio_destroy(void)
 		goto out;
 	}
 	dpio_opened = false;
+	printf("dpio.%u is destroyed\n", dpio_id);
 
 out:
 	if (dpio_opened) {

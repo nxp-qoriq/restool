@@ -746,6 +746,7 @@ static int cmd_dpdmux_destroy(void)
 		goto out;
 	}
 	dpdmux_opened = false;
+	printf("dpdmux.%u is destroyed\n", dpdmux_id);
 
 out:
 	if (dpdmux_opened) {

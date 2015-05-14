@@ -473,6 +473,7 @@ static int cmd_dpdcei_destroy(void)
 		goto out;
 	}
 	dpdcei_opened = false;
+	printf("dpdcei.%u is destroyed\n", dpdcei_id);
 
 out:
 	if (dpdcei_opened) {
