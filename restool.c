@@ -263,7 +263,27 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 
 	if (strcmp(target_obj_desc->type, "dprc") == 0 &&
 	    target_obj_desc->id == (int)restool.root_dprc_id) {
-		printf("root dprc doesn't have verbose info to display\n");
+		printf("number of mappable regions: 1\n");
+		printf("number of interrupts: 1\n");
+		error = dprc_get_irq_mask(&restool.mc_io,
+				restool.root_dprc_handle, 0, &irq_mask);
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
+		return error;
+		}
+		printf("interrupt 0's mask: %#x\n", irq_mask);
+		error = dprc_get_irq_status(&restool.mc_io,
+				restool.root_dprc_handle, 0, &irq_status);
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
+		return error;
+		}
+
+		printf("interrupt 0's status: %#x\n", irq_status);
 		return 0;
 	}
 
