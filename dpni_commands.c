@@ -297,7 +297,8 @@ static int print_dpni_endpoint(uint32_t target_id,
 	memset(&endpoint1, 0, sizeof(struct dprc_endpoint));
 	memset(&endpoint2, 0, sizeof(struct dprc_endpoint));
 
-	memcpy(endpoint1.type, "dpni", 5);
+	strncpy(endpoint1.type, "dpni", EP_OBJ_TYPE_MAX_LEN);
+	endpoint1.type[EP_OBJ_TYPE_MAX_LEN] = '\0';
 	endpoint1.id = target_id;
 	endpoint1.interface_id = 0;
 
@@ -311,6 +312,7 @@ static int print_dpni_endpoint(uint32_t target_id,
 	}
 	error = dprc_get_connection(&restool.mc_io, target_parent_dprc_handle,
 					&endpoint1, &endpoint2, &state);
+	printf("endpoint state: %d\n", state);
 
 	if (error == 0 && state == -1) {
 		printf("endpoint: No object associated\n");
@@ -320,14 +322,14 @@ static int print_dpni_endpoint(uint32_t target_id,
 			printf("endpoint: %s.%d.%d",
 				endpoint2.type, endpoint2.id,
 				endpoint2.interface_id);
-		} else if (0 == endpoint2.interface_id) {
+		} else if (endpoint2.interface_id == 0) {
 			printf("endpoint: %s.%d",
 				endpoint2.type, endpoint2.id);
 		}
 
-		if (1 == state)
+		if (state == 1)
 			printf(", link is up\n");
-		else if (0 == state)
+		else if (state == 0)
 			printf(", link is down\n");
 		else
 			printf(", link is in error state\n");

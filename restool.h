@@ -59,9 +59,14 @@
 #define MAX_DPRC_NESTING	16
 
 /**
- * Maximum length of object label
+ * Maximum length of object label (without including the null terminator)
  */
 #define MC_OBJ_LABEL_MAX_LENGTH 15
+
+/**
+ * MC endpoint object type max length (without including the null terminator)
+ */
+#define EP_OBJ_TYPE_MAX_LEN 15
 
 /*
  * TODO: Obtain the following constants from the fsl-mc bus driver via an ioctl

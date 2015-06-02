@@ -644,6 +644,7 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 			strncpy(plug_stat, "plugged", 9);
 		else
 			strncpy(plug_stat, "unplugged", 9);
+		plug_stat[9] = '\0';
 
 		if (width < 8 && labelen < 8)
 			printf("%s.%d\t\t%s\t\t%s\n",

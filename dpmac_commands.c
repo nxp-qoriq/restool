@@ -142,6 +142,68 @@ static int cmd_dpmac_help(void)
 	return 0;
 }
 
+static int print_dpmac_endpoint(uint32_t target_id,
+				uint32_t target_parent_dprc_id)
+{
+	struct dprc_endpoint endpoint1;
+	struct dprc_endpoint endpoint2;
+	uint16_t target_parent_dprc_handle;
+	int state;
+	int error = 0;
+
+	memset(&endpoint1, 0, sizeof(struct dprc_endpoint));
+	memset(&endpoint2, 0, sizeof(struct dprc_endpoint));
+
+	strncpy(endpoint1.type, "dpmac", EP_OBJ_TYPE_MAX_LEN);
+	endpoint1.type[EP_OBJ_TYPE_MAX_LEN] = '\0';
+	endpoint1.id = target_id;
+	endpoint1.interface_id = 0;
+
+	if (target_parent_dprc_id == restool.root_dprc_id)
+		target_parent_dprc_handle = restool.root_dprc_handle;
+	else {
+		error = open_dprc(target_parent_dprc_id,
+				&target_parent_dprc_handle);
+		if (error < 0)
+			return error;
+	}
+	error = dprc_get_connection(&restool.mc_io, target_parent_dprc_handle,
+					&endpoint1, &endpoint2, &state);
+	printf("endpoint state: %d\n", state);
+
+	if (error == 0 && state == -1) {
+		printf("endpoint: No object associated\n");
+	} else if (error == 0) {
+		if (strcmp(endpoint2.type, "dpsw") == 0 ||
+		    strcmp(endpoint2.type, "dpdmux") == 0) {
+			printf("endpoint: %s.%d.%d",
+				endpoint2.type, endpoint2.id,
+				endpoint2.interface_id);
+		} else if (endpoint2.interface_id == 0) {
+			printf("endpoint: %s.%d",
+				endpoint2.type, endpoint2.id);
+		}
+
+		if (state == 1)
+			printf(", link is up\n");
+		else if (state == 0)
+			printf(", link is down\n");
+		else
+			printf(", link is in error state\n");
+
+	} else {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	if (target_parent_dprc_id != restool.root_dprc_id)
+		return dprc_close(&restool.mc_io, target_parent_dprc_handle);
+
+	return 0;
+}
+
 static void print_dpmac_link_type(enum dpmac_link_type link_type)
 {
 	printf("DPMAC link type: ");
@@ -205,7 +267,8 @@ static void print_dpmac_eth_if(enum dpmac_eth_if eth_if)
 }
 
 static int print_dpmac_attr(uint32_t dpmac_id,
-			struct dprc_obj_desc *target_obj_desc)
+			struct dprc_obj_desc *target_obj_desc,
+			uint32_t target_parent_dprc_id)
 {
 	uint16_t dpmac_handle;
 	int error;
@@ -243,6 +306,7 @@ static int print_dpmac_attr(uint32_t dpmac_id,
 	printf("dpmac object id/portal id: %d\n", dpmac_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_dpmac_endpoint(dpmac_id, target_parent_dprc_id);
 	print_dpmac_link_type(dpmac_attr.link_type);
 	print_dpmac_eth_if(dpmac_attr.eth_if);
 	printf("maximum supported rate %lu Mbps\n",
@@ -288,7 +352,8 @@ static int print_dpmac_info(uint32_t dpmac_id)
 		return -EINVAL;
 	}
 
-	error = print_dpmac_attr(dpmac_id, &target_obj_desc);
+	error = print_dpmac_attr(dpmac_id, &target_obj_desc,
+				 target_parent_dprc_id);
 	if (error < 0)
 		goto out;
 

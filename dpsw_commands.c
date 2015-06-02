@@ -227,7 +227,8 @@ static int print_dpsw_endpoint(uint32_t target_id,
 	for (k = 0; k < num_ifs; ++k) {
 		memset(&endpoint1, 0, sizeof(struct dprc_endpoint));
 		memset(&endpoint2, 0, sizeof(struct dprc_endpoint));
-		memcpy(endpoint1.type, "dpsw", 5);
+		strncpy(endpoint1.type, "dpsw", EP_OBJ_TYPE_MAX_LEN);
+		endpoint1.type[EP_OBJ_TYPE_MAX_LEN] = '\0';
 		endpoint1.id = target_id;
 		endpoint1.interface_id = k;
 		if (target_parent_dprc_id == restool.root_dprc_id)
@@ -243,6 +244,7 @@ static int print_dpsw_endpoint(uint32_t target_id,
 					&endpoint1,
 					&endpoint2,
 					&state);
+		printf("endpoint state: %d\n", state);
 
 		if (error == 0 && state == -1) {
 			printf("\tinterface %d: No object associated\n", k);
@@ -252,14 +254,14 @@ static int print_dpsw_endpoint(uint32_t target_id,
 				printf("\tinterface %d: %s.%d.%d",
 					k, endpoint2.type, endpoint2.id,
 					endpoint2.interface_id);
-			} else if (0 == endpoint2.interface_id) {
+			} else if (endpoint2.interface_id == 0) {
 				printf("\tinterface %d: %s.%d",
 					k, endpoint2.type, endpoint2.id);
 			}
 
-			if (1 == state)
+			if (state == 1)
 				printf(", link is up\n");
-			else if (0 == state)
+			else if (state == 0)
 				printf(", link is down\n");
 			else
 				printf(", link is in error state\n");
