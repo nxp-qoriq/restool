@@ -718,6 +718,12 @@ static int cmd_dprc_show(void)
 		error = show_mc_resources(dprc_handle);
 	} else if (restool.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_RES_TYPE)) {
 		assert(restool.cmd_option_args[SHOW_OPT_RES_TYPE] != NULL);
+		error = check_resource_type(
+			restool.cmd_option_args[SHOW_OPT_RES_TYPE]);
+		if (error < 0) {
+			printf(usage_msg);
+			goto out;
+		}
 		res_type = restool.cmd_option_args[SHOW_OPT_RES_TYPE];
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_RES_TYPE);
 		error = show_one_resource_type(dprc_handle, res_type);
@@ -1340,6 +1346,12 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE);
 		assert(restool.cmd_option_args[ASSIGN_OPT_RES_TYPE] != NULL);
+		error = check_resource_type(
+			restool.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
+		if (error < 0) {
+			printf(usage_msg);
+			goto out;
+		}
 		strcpy(res_req.type,
 		       restool.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
 
@@ -1613,6 +1625,12 @@ static int cmd_dprc_set_quota(void)
 
 	restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_QUOTA_OPT_RES_TYPE);
 	assert(restool.cmd_option_args[SET_QUOTA_OPT_RES_TYPE] != NULL);
+	error = check_resource_type(
+			restool.cmd_option_args[SET_QUOTA_OPT_RES_TYPE]);
+	if (error < 0) {
+		printf(usage_msg);
+		goto out;
+	}
 	res_type = restool.cmd_option_args[SET_QUOTA_OPT_RES_TYPE];
 
 	if (!(restool.cmd_option_mask & ONE_BIT_MASK(SET_QUOTA_OPT_COUNT))) {

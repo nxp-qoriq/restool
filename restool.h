@@ -223,6 +223,7 @@ int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
 void print_obj_label(struct dprc_obj_desc *target_obj_desc);
 int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 			const struct flib_ops *ops);
+int check_resource_type(char *res_type);
 
 extern struct restool restool;
 extern struct object_command dprc_commands[];

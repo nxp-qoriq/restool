@@ -317,6 +317,24 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 	return error;
 }
 
+int check_resource_type(char *res_type)
+{
+	if (strcmp(res_type, "bp") == 0 ||
+	    strcmp(res_type, "cg") == 0 ||
+	    strcmp(res_type, "fq") == 0 ||
+	    strcmp(res_type, "mcp") == 0 ||
+	    strcmp(res_type, "qpr") == 0 ||
+	    strcmp(res_type, "qd") == 0 ||
+	    strcmp(res_type, "rplr") == 0)
+		return 0;
+
+	ERROR_PRINTF(
+		"Entered resource type: %s.\n"
+		"It should be within \"bp, cg, fq, mcp, qpr, qd, rplr\"\n",
+		res_type);
+	return -EINVAL;
+}
+
 void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options)
 {
