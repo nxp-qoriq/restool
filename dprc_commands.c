@@ -1393,7 +1393,14 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			error = -EINVAL;
 			goto out;
 		}
-
+		if (strcmp(res_req.type, "dprc") == 0) {
+				ERROR_PRINTF(
+					"Cannot change plugged state of dprc\n"
+					"Cannot move dprc from one container to another\n");
+				printf(usage_msg);
+				error = -EINVAL;
+				goto out;
+		}
 		if (target_dprc_id != parent_dprc_id) {
 			struct dprc_obj_desc obj_desc;
 
@@ -1442,19 +1449,14 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				error = -EINVAL;
 				goto out;
 			}
-			if (strcmp(res_req.type, "dprc") == 0) {
-				ERROR_PRINTF(
-					"Cannot change plugged state of dprc\n");
-				error = -EINVAL;
-				goto out;
-			}
 
 			if (state == 1)
 				res_req.options |= DPRC_RES_REQ_OPT_PLUGGED;
 		} else {
 			if (target_dprc_id == parent_dprc_id) {
 				ERROR_PRINTF(
-				    "--plugged option required in this case\n");
+					"change plugged state? --plugged option required\n"
+					"move objects? target-container should be different from parent-container\n");
 				printf(usage_msg);
 				error = -EINVAL;
 				goto out;
@@ -1509,14 +1511,31 @@ static int cmd_dprc_assign(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprc assign <parent-container> --object=<object> [--target=<container>] --plugged=<state>\n"
-		"	restool dprc assign <parent-container> --resource-type=<type> --count=<number> [--target=<container>]\n"
-		"Limit:	Cannot change plugged state of dprc\n"
+		"Usage:\n"
+		"restool dprc assign <parent-container> [--target=<tareget-container>] --object=<object> --plugged=<state>\n"
+		"	This syntax changes the plugged state.\n"
+		"	The target-container must be the same as parent-container,\n"
+		"	or omit --target option.\n"
+		"Limit:	Cannot change plugged state of dprc, i.e. --object cannot be dprc\n"
 		"e.g.	\'restool dprc assign dprc.1 --target=dprc.1 --object=dprc.3 --plugged=1\' will not work\n"
+		"\n"
+		"restool dprc assign <parent-container> --target=<target-container> --object=<object>\n"
+		"	This syntax moves one object from parent-container to target-container,\n"
+		"	so the target-container must be any child container of the parent-container.\n"
+		"Limit:	Cannot move dprc from one container to another, i.e. --object cannot be dprc\n"
+		"e.g.	\'restool dprc assign dprc.1 --target=dprc.4 --object=dprc.2\' will not work\n"
+		"\n"
+		"restool dprc assign <parent-container> [--target=<target-container>] --resource-type=<type> --count=<number>\n"
+		"	This syntax moves resource from parent-container to target-container.\n"
+		"	target-container could be the same as parent-container,\n"
+		"	or any child container of parent-container.\n"
+		"	If target-container is the same as parent-container,\n"
+		"	it will borrow resource from the parent of parent-container\n"
+		"	and move it to parent-container/target-container.\n"
 		"\n"
 		"--object=<object>\n"
 		"   Specifies the object to assign to the target container\n"
-		"--target=<container>\n"
+		"--target=<target-container>\n"
 		"   Specifies the destination container for the operation.\n"
 		"   Valid values are any child container. The target container\n"
 		"   may be the same as the parent container, allowing assign to self.\n"
