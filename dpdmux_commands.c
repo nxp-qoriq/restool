@@ -634,8 +634,10 @@ static int create_dpdmux(const char *usage_msg)
 		val = strtol(str, &endptr, 0);
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid control interface\n");
+		    (val < 0 || val > UINT8_MAX) ||
+		    (val > dpdmux_cfg.num_ifs - 1)) {
+			ERROR_PRINTF("Invalid control interface\n"
+				"control interface range from 0 to [num-ifs - 1]\n");
 			return -EINVAL;
 		}
 
@@ -725,6 +727,8 @@ static int cmd_dpdmux_create(void)
 		"   Number of virtual interfaces (include the uplink interface)\n"
 		"--control-if=<interface-num>\n"
 		"   The initial control interface\n"
+		"   Ranges from 0 to [number-1].\n"
+		"   If --num-ifs=5, --control-ifs could be 0, 1, 2, 3, 4\n"
 		"\n"
 		"OPTIONS:\n"
 		"--method=<dmat-method>\n"
