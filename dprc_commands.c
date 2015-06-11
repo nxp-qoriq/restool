@@ -170,7 +170,7 @@ C_ASSERT(ARRAY_SIZE(dprc_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 enum dprc_assign_options {
 	ASSIGN_OPT_HELP = 0,
 	ASSIGN_OPT_OBJECT,
-	ASSIGN_OPT_TARGET,
+	ASSIGN_OPT_CHILD,
 	ASSIGN_OPT_RES_TYPE,
 	ASSIGN_OPT_COUNT,
 	ASSIGN_OPT_PLUGGED,
@@ -186,8 +186,8 @@ static struct option dprc_assign_options[] = {
 		.has_arg = 1,
 	},
 
-	[ASSIGN_OPT_TARGET] = {
-		.name = "target",
+	[ASSIGN_OPT_CHILD] = {
+		.name = "child",
 		.has_arg = 1,
 	},
 
@@ -339,8 +339,9 @@ static int cmd_dprc_help(void)
 		"   info - displays detailed information about a DPRC object.\n"
 		"   create - creates a new child DPRC under the specified parent.\n"
 		"   destroy - destroys a child DPRC under the specified parent.\n"
-		"   assign - moves an object or resource from a parent container to a target container.\n"
-		"   unassign - moves an object or resource from a target container to a parent container.\n"
+		"   assign - moves an object or resource from a parent container to a child container.\n"
+		"	     change an object's plugged state\n"
+		"   unassign - moves an object or resource from a child container to a parent container.\n"
 		"   set-quota - sets quota policies for a child container, specifying the number of\n"
 		"		resources a child may allocate from its parent container\n"
 		"   set-label - sets label/alias for any objects except root container, i.e dprc.1\n"
@@ -1304,7 +1305,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	int error;
 	bool dprc_opened = false;
 	uint32_t parent_dprc_id;
-	uint32_t target_dprc_id;
+	uint32_t child_dprc_id;
 	struct dprc_res_req res_req;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
@@ -1337,16 +1338,16 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		dprc_handle = restool.root_dprc_handle;
 	}
 
-	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_TARGET)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_TARGET);
-		assert(restool.cmd_option_args[ASSIGN_OPT_TARGET] != NULL);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_CHILD)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_CHILD);
+		assert(restool.cmd_option_args[ASSIGN_OPT_CHILD] != NULL);
 		error = parse_object_name(
-				restool.cmd_option_args[ASSIGN_OPT_TARGET],
-				"dprc", &target_dprc_id);
+				restool.cmd_option_args[ASSIGN_OPT_CHILD],
+				"dprc", &child_dprc_id);
 		if (error < 0)
 			goto out;
 	} else {
-		target_dprc_id = parent_dprc_id;
+		child_dprc_id = parent_dprc_id;
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE)) {
@@ -1372,6 +1373,14 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 
 		assert(restool.cmd_option_args[ASSIGN_OPT_COUNT] != NULL);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_COUNT);
+
+		if (parent_dprc_id == child_dprc_id && !do_assign) {
+			ERROR_PRINTF(
+				"using unassign command to move resource?\n"
+				"child-container must be different from grandparent\n");
+			error = -EINVAL;
+			goto out;
+		}
 		res_req.num = atoi(restool.cmd_option_args[ASSIGN_OPT_COUNT]);
 		if (res_req.num <= 0) {
 			ERROR_PRINTF("Invalid --count arg: %s\n",
@@ -1444,10 +1453,10 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			if (state == 1)
 				res_req.options |= DPRC_RES_REQ_OPT_PLUGGED;
 		} else { /* moving object case */
-			if (target_dprc_id == parent_dprc_id) {
+			if (child_dprc_id == parent_dprc_id) {
 				ERROR_PRINTF(
 					"change plugged state? --plugged option required\n"
-					"move objects? target-container should be different from parent-container\n");
+					"move objects? child-container should be different from parent-container\n");
 				printf(usage_msg);
 				error = -EINVAL;
 				goto out;
@@ -1461,7 +1470,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			struct dprc_obj_desc obj_desc;
 
 			error = lookup_obj_desc(do_assign ? parent_dprc_id :
-							    target_dprc_id,
+							    child_dprc_id,
 						res_req.type,
 						res_req.id_base_align,
 						&obj_desc);
@@ -1487,7 +1496,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	if (do_assign) {
 		error = dprc_assign(&restool.mc_io,
 				    dprc_handle,
-				    target_dprc_id,
+				    child_dprc_id,
 				    &res_req);
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
@@ -1497,7 +1506,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	} else {
 		error = dprc_unassign(&restool.mc_io,
 				      dprc_handle,
-				      target_dprc_id,
+				      child_dprc_id,
 				      &res_req);
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
@@ -1527,34 +1536,35 @@ static int cmd_dprc_assign(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage:\n"
-		"restool dprc assign <parent-container> [--target=<tareget-container>] --object=<object> --plugged=<state>\n"
+		"restool dprc assign <parent-container> [--child=<child-container>] --object=<object> --plugged=<state>\n"
 		"	This syntax changes the plugged state.\n"
-		"	The target-container must be the same as parent-container,\n"
-		"	or omit --target option.\n"
+		"	The child-container must be the same as parent-container,\n"
+		"	or omit --child option.\n"
 		"Limit:	Cannot change plugged state of dprc, i.e. --object cannot be dprc\n"
-		"e.g.	\'restool dprc assign dprc.1 --target=dprc.1 --object=dprc.3 --plugged=1\' will not work\n"
+		"e.g.	\'restool dprc assign dprc.1 --child=dprc.1 --object=dprc.3 --plugged=1\' will not work\n"
 		"\n"
-		"restool dprc assign <parent-container> --target=<target-container> --object=<object>\n"
-		"	This syntax moves one object from parent-container to target-container,\n"
-		"	so the target-container must be any child container of the parent-container.\n"
+		"restool dprc assign <parent-container> --child=<child-container> --object=<object>\n"
+		"	This syntax moves one object from parent-container to child-container,\n"
+		"	so the child-container must be any child container of the parent-container.\n"
+		"	child-container must be different from parent-container\n"
 		"Limit:	Cannot move dprc from one container to another, i.e. --object cannot be dprc\n"
-		"e.g.	\'restool dprc assign dprc.1 --target=dprc.4 --object=dprc.2\' will not work\n"
+		"e.g.	\'restool dprc assign dprc.1 --child=dprc.4 --object=dprc.2\' will not work\n"
 		"\n"
-		"restool dprc assign <parent-container> [--target=<target-container>] --resource-type=<type> --count=<number>\n"
-		"	This syntax moves resource from parent-container to target-container.\n"
-		"	target-container could be the same as parent-container,\n"
+		"restool dprc assign <parent-container> [--child=<child-container>] --resource-type=<type> --count=<number>\n"
+		"	This syntax moves resource from parent-container to child-container.\n"
+		"	child-container could be the same as parent-container,\n"
 		"	or any child container of parent-container.\n"
-		"	If target-container is the same as parent-container,\n"
+		"	If child-container is the same as parent-container,\n"
 		"	it will borrow resource from the parent of parent-container\n"
-		"	and move it to parent-container/target-container.\n"
+		"	and move it to parent-container/child-container.\n"
 		"\n"
 		"--object=<object>\n"
-		"   Specifies the object to assign to the target container\n"
-		"--target=<target-container>\n"
+		"   Specifies the object to assign to the child container from parent container\n"
+		"--child=<child-container>\n"
 		"   Specifies the destination container for the operation.\n"
-		"   Valid values are any child container. The target container\n"
+		"   Valid values are any child container. The child container\n"
 		"   may be the same as the parent container, allowing assign to self.\n"
-		"   Indeed, if this option is not specified, the default target is\n"
+		"   Indeed, if this option is not specified, the default child is\n"
 		"   <parent-container> itself.\n"
 		"--plugged=<state>\n"
 		"   Specifies the plugged state of the object (valid values are 0 or 1)\n"
@@ -1571,17 +1581,30 @@ static int cmd_dprc_unassign(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprc unassign <container> --object=<object> [--target=<container>]\n"
-		"	restool dprc unassign <container> --resource-type <type> --count <number> [--target <container>]\n"
+		"Usage:\n"
+		"restool dprc unassign <parent-container> --child=<child-container> --object=<object>\n"
+		"	This syntax moves one object from child-container to parent-container,\n"
+		"	so the child-container must be any child container of the parent-container.\n"
+		"	child-container must be different from parent-container.\n"
+		"Limit:	Cannot move dprc from one container to another, i.e. --object cannot be dprc\n"
+		"e.g.	\'restool dprc unassign dprc.1 --child=dprc.4 --object=dprc.2\' will not work\n"
+		"\n"
+		"restool dprc unassign <parent-container> [--child=<child-container>] --resource-type=<type> --count=<number>\n"
+		"	This syntax moves resource from child-container to parent-container.\n"
+		"	child-container must be any child container of parent-container.\n"
+		"	child-container must be different from parent-container.\n"
+		"	If child-container were the same as parent-container,\n"
+		"	it would not return resource from the child-container/parent-container\n"
+		"	to parent of parent-container\n"
 		"\n"
 		"--object=<object>\n"
-		"   Specifies the object to unassign from the target container\n"
-		"--target=<container>\n"
-		"   Specifies the destination container for the operation.\n"
-		"   Valid values are any child container. The target container\n"
-		"   may be the same as the parent container, allowing unassign to self.\n"
-		"   Indeed, if this option is not specified, the default target is\n"
-		"   <parent-container> itself.\n"
+		"   Specifies the object to unassign to the parent container from child container\n"
+		"--child=<child-container>\n"
+		"   Specifies the origin container for the operation.\n"
+		"   Valid values are any child container. The child container\n"
+		"   must be different from the parent container.\n"
+		"--plugged=<state>\n"
+		"   Specifies the plugged state of the object (valid values are 0 or 1)\n"
 		"--resource-type=<type>\n"
 		"   String specifying the resource type to unassign (e.g, \'mcp\', \'fq\', \'cg\', etc)\n"
 		"--count=<number>\n"
@@ -1922,7 +1945,7 @@ static int cmd_dprc_connect(void)
 		"restool dprc disconnect dprc.4 --endpoint=dpni.8\n"
 		"restool dprc disconnect dprc.1 --endpoint=dpsw.1.0\n"
 		"restool dprc assign dprc.4 --object=dpni.8 --plugged=0\n"
-		"restool dprc unassign dprc.1 --object=dpni.8 --target=dprc.4\n"
+		"restool dprc unassign dprc.1 --child=dprc.4 --object=dpni.8\n"
 		"restool dprc connect dprc.1 --endpoint1=dpni.8 --endpoint2=dpsw.1.0\n"
 		"\n";
 
