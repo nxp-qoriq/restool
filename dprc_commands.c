@@ -1166,6 +1166,11 @@ static int cmd_dprc_destroy_child(void)
 		goto out;
 	}
 
+	if (in_use(restool.obj_name, "destroyed")) {
+		error = -EBUSY;
+		goto out;
+	}
+
 	error = parse_object_name(restool.obj_name,
 				  "dprc", &child_dprc_id);
 	if (error < 0)
@@ -1345,6 +1350,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE)) {
+		/* moving resource case */
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_RES_TYPE);
 		assert(restool.cmd_option_args[ASSIGN_OPT_RES_TYPE] != NULL);
 		error = check_resource_type(
@@ -1377,6 +1383,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		res_req.options = 0;
 		res_req.id_base_align = 0;
 	} else if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_OBJECT)) {
+		/* changing plugged state, moving object case */
 		int n;
 		int state;
 
@@ -1397,43 +1404,27 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				ERROR_PRINTF(
 					"Cannot change plugged state of dprc\n"
 					"Cannot move dprc from one container to another\n");
-				printf(usage_msg);
 				error = -EINVAL;
 				goto out;
-		}
-		if (target_dprc_id != parent_dprc_id) {
-			struct dprc_obj_desc obj_desc;
-
-			error = lookup_obj_desc(do_assign ? parent_dprc_id :
-							    target_dprc_id,
-						res_req.type,
-						res_req.id_base_align,
-						&obj_desc);
-			if (error < 0)
-				goto out;
-
-			if (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) {
-				ERROR_PRINTF(
-				    "%s cannot be %s because it is currently in plugged state\n",
-				    restool.cmd_option_args[ASSIGN_OPT_OBJECT],
-				    do_assign ? "assigned" : "unassigned");
-
-				error = -EBUSY;
-				goto out;
-			}
 		}
 
 		res_req.options = DPRC_RES_REQ_OPT_EXPLICIT;
 
 		if (restool.cmd_option_mask &
 		    ONE_BIT_MASK(ASSIGN_OPT_PLUGGED)) {
+			/* changing plugged state case*/
 			restool.cmd_option_mask &=
 				~ONE_BIT_MASK(ASSIGN_OPT_PLUGGED);
 
-			if (do_assign == false) {
+			if (!do_assign) {
 				ERROR_PRINTF(
 					"Cannot change plugged state via \'dprc unassign\'\nPlease try \'restool dprc assign --help\'\n");
 				error = -EINVAL;
+				goto out;
+			}
+			if (in_use(restool.cmd_option_args[ASSIGN_OPT_OBJECT],
+			    "changed plugged state")) {
+				error = -EBUSY;
 				goto out;
 			}
 
@@ -1452,7 +1443,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 
 			if (state == 1)
 				res_req.options |= DPRC_RES_REQ_OPT_PLUGGED;
-		} else {
+		} else { /* moving object case */
 			if (target_dprc_id == parent_dprc_id) {
 				ERROR_PRINTF(
 					"change plugged state? --plugged option required\n"
@@ -1461,8 +1452,32 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				error = -EINVAL;
 				goto out;
 			}
+			if (in_use(restool.cmd_option_args[ASSIGN_OPT_OBJECT],
+			    "moved"))  {
+				error = -EBUSY;
+				goto out;
+			}
+
+			struct dprc_obj_desc obj_desc;
+
+			error = lookup_obj_desc(do_assign ? parent_dprc_id :
+							    target_dprc_id,
+						res_req.type,
+						res_req.id_base_align,
+						&obj_desc);
+			if (error < 0)
+				goto out;
+			if (obj_desc.state & DPRC_OBJ_STATE_PLUGGED) {
+				ERROR_PRINTF(
+				"%s cannot be moved because it is currently in plugged state\n"
+				"unplug it first\n",
+				restool.cmd_option_args[ASSIGN_OPT_OBJECT]);
+
+				error = -EBUSY;
+				goto out;
+			}
 		}
-	} else {
+	} else { /* invalid command case */
 		ERROR_PRINTF("Invalid command line\n");
 		printf(usage_msg);
 		error = -EINVAL;

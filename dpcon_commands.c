@@ -29,7 +29,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <limits.h>
 #include <string.h>
 #include <stdint.h>
 #include <errno.h>
@@ -386,6 +385,11 @@ static int cmd_dpcon_destroy(void)
 		ERROR_PRINTF("<object> argument missing\n");
 		printf(usage_msg);
 		error = -EINVAL;
+		goto out;
+	}
+
+	if (in_use(restool.obj_name, "destroyed")) {
+		error = -EBUSY;
 		goto out;
 	}
 

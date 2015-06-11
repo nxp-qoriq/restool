@@ -33,6 +33,8 @@
 
 #include <stdint.h>
 #include <stdbool.h>
+#include <unistd.h>
+#include <limits.h>
 #include "fsl_mc_sys.h"
 #include "fsl_dpmng.h"
 #include "fsl_dprc.h"
@@ -229,6 +231,7 @@ void print_obj_label(struct dprc_obj_desc *target_obj_desc);
 int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 			const struct flib_ops *ops);
 int check_resource_type(char *res_type);
+bool in_use(const char *obj, const char *situation);
 
 extern struct restool restool;
 extern struct object_command dprc_commands[];

@@ -347,6 +347,35 @@ void diff_time(struct timespec *start, struct timespec *end,
 	}
 }
 
+bool in_use(const char *obj, const char *situation)
+{
+	ssize_t r;
+	int n;
+	char symbolic[PATH_MAX] = {'\0'};
+	char linkname[PATH_MAX] = {'\0'};
+
+	n = snprintf(symbolic, PATH_MAX,
+			"/sys/bus/fsl-mc/devices/%s/driver", obj);
+	DEBUG_PRINTF("n = %d\n", n);
+	if (n < 0 || n > PATH_MAX - 1)
+		ERROR_PRINTF("symbolic link copy error.\n");
+	DEBUG_PRINTF("symbolic=%s\n", symbolic);
+	r = readlink(symbolic, linkname, PATH_MAX - 1);
+	if (r != -1)
+		linkname[r] = '\0';
+	DEBUG_PRINTF("linkname=%s\n", linkname);
+	DEBUG_PRINTF("r = %d\n", (int)r);
+	if (r > 0) {
+		ERROR_PRINTF(
+			"%s cannot be %s because it is bound to driver:\n"
+			"%s -> %s\n"
+			"unbind it first\n",
+			obj, situation, symbolic, linkname);
+		return true;
+	}
+	return false;
+}
+
 void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options)
 {
