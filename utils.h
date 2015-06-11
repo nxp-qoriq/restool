@@ -72,4 +72,6 @@ do { \
 	|| ((_endptr) == (_str)) \
 	|| (*(_endptr) != '\0'))
 
+void diff_time(struct timespec *, struct timespec *, struct timespec *);
+
 #endif /* _UTILS_H */

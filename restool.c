@@ -335,6 +335,18 @@ int check_resource_type(char *res_type)
 	return -EINVAL;
 }
 
+void diff_time(struct timespec *start, struct timespec *end,
+		struct timespec *latency)
+{
+	if (end->tv_nsec - start->tv_nsec < 0) {
+		latency->tv_sec = end->tv_sec - start->tv_sec - 1;
+		latency->tv_nsec = 1000000000UL + end->tv_nsec - start->tv_nsec;
+	} else {
+		latency->tv_sec = end->tv_sec - start->tv_sec;
+		latency->tv_nsec = end->tv_nsec - start->tv_nsec;
+	}
+}
+
 void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options)
 {
@@ -573,6 +585,9 @@ static int parse_obj_command(const char *obj_type,
 	const struct object_cmd_parser *obj_cmd_parser = NULL;
 	struct object_command *obj_commands;
 	struct object_command *obj_cmd = NULL;
+	struct timespec start_time = { 0 };
+	struct timespec end_time = { 0 };
+	struct timespec latency = { 0 };
 
 	assert(argv[0] == cmd_name);
 
@@ -652,10 +667,17 @@ static int parse_obj_command(const char *obj_type,
 	/*
 	 * Execute object-level command:
 	 */
+	clock_gettime(CLOCK_REALTIME, &start_time);
+
 	error = obj_cmd->cmd_func();
+
+	clock_gettime(CLOCK_REALTIME, &end_time);
+	diff_time(&start_time, &end_time, &latency);
+	printf("\nIt takes %ld.%ld seconds to run command\n",
+		latency.tv_sec, latency.tv_nsec);
+
 	if (error < 0)
 		goto out;
-
 	if (restool.cmd_option_mask != 0) {
 		print_unexpected_options_error(restool.cmd_option_mask,
 					       obj_cmd->options);
