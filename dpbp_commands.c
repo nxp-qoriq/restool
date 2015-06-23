@@ -150,7 +150,7 @@ static int print_dpbp_attr(uint32_t dpbp_id,
 	struct dpbp_attr dpbp_attr;
 	bool dpbp_opened = false;
 
-	error = dpbp_open(&restool.mc_io, dpbp_id, &dpbp_handle);
+	error = dpbp_open(&restool.mc_io, 0, dpbp_id, &dpbp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -167,7 +167,7 @@ static int print_dpbp_attr(uint32_t dpbp_id,
 	}
 
 	memset(&dpbp_attr, 0, sizeof(dpbp_attr));
-	error = dpbp_get_attributes(&restool.mc_io, dpbp_handle, &dpbp_attr);
+	error = dpbp_get_attributes(&restool.mc_io, 0, dpbp_handle, &dpbp_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -189,7 +189,7 @@ out:
 	if (dpbp_opened) {
 		int error2;
 
-		error2 = dpbp_close(&restool.mc_io, dpbp_handle);
+		error2 = dpbp_close(&restool.mc_io, 0, dpbp_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -327,7 +327,7 @@ static int cmd_dpbp_create(void)
 		dpbp_cfg.options = 512;
 	}
 
-	error = dpbp_create(&restool.mc_io, &dpbp_cfg, &dpbp_handle);
+	error = dpbp_create(&restool.mc_io, 0, &dpbp_cfg, &dpbp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -336,7 +336,7 @@ static int cmd_dpbp_create(void)
 	}
 
 	memset(&dpbp_attr, 0, sizeof(struct dpbp_attr));
-	error = dpbp_get_attributes(&restool.mc_io, dpbp_handle, &dpbp_attr);
+	error = dpbp_get_attributes(&restool.mc_io, 0, dpbp_handle, &dpbp_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -345,7 +345,7 @@ static int cmd_dpbp_create(void)
 	}
 	printf("dpbp.%d is created under dprc.1\n", dpbp_attr.id);
 
-	error = dpbp_close(&restool.mc_io, dpbp_handle);
+	error = dpbp_close(&restool.mc_io, 0, dpbp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -391,7 +391,7 @@ static int cmd_dpbp_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpbp_open(&restool.mc_io, dpbp_id, &dpbp_handle);
+	error = dpbp_open(&restool.mc_io, 0, dpbp_id, &dpbp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -407,7 +407,7 @@ static int cmd_dpbp_destroy(void)
 		goto out;
 	}
 
-	error = dpbp_destroy(&restool.mc_io, dpbp_handle);
+	error = dpbp_destroy(&restool.mc_io, 0, dpbp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -419,7 +419,7 @@ static int cmd_dpbp_destroy(void)
 
 out:
 	if (dpbp_opened) {
-		error2 = dpbp_close(&restool.mc_io, dpbp_handle);
+		error2 = dpbp_close(&restool.mc_io, 0, dpbp_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

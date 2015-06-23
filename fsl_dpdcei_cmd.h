@@ -34,19 +34,19 @@
 
 /* DPDCEI Version */
 #define DPDCEI_VER_MAJOR				1
-#define DPDCEI_VER_MINOR				0
+#define DPDCEI_VER_MINOR				1
 
 /* Command IDs */
 #define DPDCEI_CMDID_CLOSE				0x800
 #define DPDCEI_CMDID_OPEN				0x80D
 #define DPDCEI_CMDID_CREATE				0x90D
-#define DPDCEI_CMDID_DESTROY			0x900
+#define DPDCEI_CMDID_DESTROY				0x900
 
 #define DPDCEI_CMDID_ENABLE				0x002
-#define DPDCEI_CMDID_DISABLE			0x003
-#define DPDCEI_CMDID_GET_ATTR			0x004
+#define DPDCEI_CMDID_DISABLE				0x003
+#define DPDCEI_CMDID_GET_ATTR				0x004
 #define DPDCEI_CMDID_RESET				0x005
-#define DPDCEI_CMDID_IS_ENABLED			0x006
+#define DPDCEI_CMDID_IS_ENABLED				0x006
 
 #define DPDCEI_CMDID_SET_IRQ				0x010
 #define DPDCEI_CMDID_GET_IRQ				0x011
@@ -55,7 +55,7 @@
 #define DPDCEI_CMDID_SET_IRQ_MASK			0x014
 #define DPDCEI_CMDID_GET_IRQ_MASK			0x015
 #define DPDCEI_CMDID_GET_IRQ_STATUS			0x016
-#define DPDCEI_CMDID_CLEAR_IRQ_STATUS		0x017
+#define DPDCEI_CMDID_CLEAR_IRQ_STATUS			0x017
 
 #define DPDCEI_CMDID_SET_RX_QUEUE			0x1B0
 #define DPDCEI_CMDID_GET_RX_QUEUE			0x1B1
@@ -77,12 +77,12 @@ do { \
 	MC_RSP_OP(cmd, 0, 0,  1,  int,	    en)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPDCEI_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id) \
+#define DPDCEI_CMD_SET_IRQ(cmd, irq_index, irq_cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  irq_index);\
-	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_val);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_CMD_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_cfg->val);\
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_CMD_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -90,11 +90,11 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPDCEI_RSP_GET_IRQ(cmd, type, irq_addr, irq_val, user_irq_id) \
+#define DPDCEI_RSP_GET_IRQ(cmd, type, irq_cfg) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_RSP_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_cfg->val); \
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_RSP_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 	MC_RSP_OP(cmd, 2, 32, 32, int,	    type); \
 } while (0)
 

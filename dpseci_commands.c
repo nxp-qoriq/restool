@@ -149,7 +149,7 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 	struct dpseci_attr dpseci_attr;
 	bool dpseci_opened = false;
 
-	error = dpseci_open(&restool.mc_io, dpseci_id, &dpseci_handle);
+	error = dpseci_open(&restool.mc_io, 0, dpseci_id, &dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -166,7 +166,7 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 	}
 
 	memset(&dpseci_attr, 0, sizeof(dpseci_attr));
-	error = dpseci_get_attributes(&restool.mc_io, dpseci_handle,
+	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle,
 					&dpseci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -181,7 +181,8 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 	printf("dpseci id: %d\n", dpseci_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	printf("number of priorities: %u\n", dpseci_attr.num_of_priorities);
+	printf("number of transmit queues: %u\n", dpseci_attr.num_tx_queues);
+	printf("number of receive queues: %u\n", dpseci_attr.num_rx_queues);
 	print_obj_label(target_obj_desc);
 
 	error = 0;
@@ -190,7 +191,7 @@ out:
 	if (dpseci_opened) {
 		int error2;
 
-		error2 = dpseci_close(&restool.mc_io, dpseci_handle);
+		error2 = dpseci_close(&restool.mc_io, 0, dpseci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -364,7 +365,7 @@ static int cmd_dpseci_create(void)
 		dpseci_cfg.priorities[1] = 1;
 	}
 
-	error = dpseci_create(&restool.mc_io, &dpseci_cfg, &dpseci_handle);
+	error = dpseci_create(&restool.mc_io, 0, &dpseci_cfg, &dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -373,7 +374,7 @@ static int cmd_dpseci_create(void)
 	}
 
 	memset(&dpseci_attr, 0, sizeof(struct dpseci_attr));
-	error = dpseci_get_attributes(&restool.mc_io, dpseci_handle,
+	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle,
 					&dpseci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -383,7 +384,7 @@ static int cmd_dpseci_create(void)
 	}
 	printf("dpseci.%d is created under dprc.1\n", dpseci_attr.id);
 
-	error = dpseci_close(&restool.mc_io, dpseci_handle);
+	error = dpseci_close(&restool.mc_io, 0, dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -430,7 +431,7 @@ static int cmd_dpseci_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpseci_open(&restool.mc_io, dpseci_id, &dpseci_handle);
+	error = dpseci_open(&restool.mc_io, 0, dpseci_id, &dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -446,7 +447,7 @@ static int cmd_dpseci_destroy(void)
 		goto out;
 	}
 
-	error = dpseci_destroy(&restool.mc_io, dpseci_handle);
+	error = dpseci_destroy(&restool.mc_io, 0, dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -458,7 +459,7 @@ static int cmd_dpseci_destroy(void)
 
 out:
 	if (dpseci_opened) {
-		error2 = dpseci_close(&restool.mc_io, dpseci_handle);
+		error2 = dpseci_close(&restool.mc_io, 0, dpseci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

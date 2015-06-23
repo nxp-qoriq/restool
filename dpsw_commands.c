@@ -42,7 +42,7 @@
 #define ALL_DPSW_OPTS (			\
 	DPSW_OPT_FLOODING_DIS |		\
 	DPSW_OPT_MULTICAST_DIS |	\
-	DPSW_OPT_CTRL)
+	DPSW_OPT_CTRL_IF_DIS)
 
 enum mc_cmd_status mc_status;
 
@@ -207,8 +207,8 @@ static void print_dpsw_options(uint64_t options)
 	if (options & DPSW_OPT_MULTICAST_DIS)
 		printf("\tDPSW_OPT_MULTICAST_DIS\n");
 
-	if (options & DPSW_OPT_CTRL)
-		printf("\tDPSW_OPT_CTRL\n");
+	if (options & DPSW_OPT_CTRL_IF_DIS)
+		printf("\tDPSW_OPT_CTRL_IF_DIS\n");
 }
 
 static int print_dpsw_endpoint(uint32_t target_id,
@@ -229,7 +229,7 @@ static int print_dpsw_endpoint(uint32_t target_id,
 		strncpy(endpoint1.type, "dpsw", EP_OBJ_TYPE_MAX_LEN);
 		endpoint1.type[EP_OBJ_TYPE_MAX_LEN] = '\0';
 		endpoint1.id = target_id;
-		endpoint1.interface_id = k;
+		endpoint1.if_id = k;
 		if (target_parent_dprc_id == restool.root_dprc_id)
 			target_parent_dprc_handle = restool.root_dprc_handle;
 		else {
@@ -238,7 +238,7 @@ static int print_dpsw_endpoint(uint32_t target_id,
 			if (error < 0)
 				return error;
 		}
-		error = dprc_get_connection(&restool.mc_io,
+		error = dprc_get_connection(&restool.mc_io, 0,
 					target_parent_dprc_handle,
 					&endpoint1,
 					&endpoint2,
@@ -252,8 +252,8 @@ static int print_dpsw_endpoint(uint32_t target_id,
 			    strcmp(endpoint2.type, "dpdmux") == 0) {
 				printf("\tinterface %d: %s.%d.%d",
 					k, endpoint2.type, endpoint2.id,
-					endpoint2.interface_id);
-			} else if (endpoint2.interface_id == 0) {
+					endpoint2.if_id);
+			} else if (endpoint2.if_id == 0) {
 				printf("\tinterface %d: %s.%d",
 					k, endpoint2.type, endpoint2.id);
 			}
@@ -273,7 +273,7 @@ static int print_dpsw_endpoint(uint32_t target_id,
 		}
 
 		if (target_parent_dprc_id != restool.root_dprc_id)
-			return dprc_close(&restool.mc_io,
+			return dprc_close(&restool.mc_io, 0,
 					target_parent_dprc_handle);
 	}
 
@@ -289,7 +289,7 @@ static int print_dpsw_attr(uint32_t dpsw_id,
 	struct dpsw_attr dpsw_attr;
 	bool dpsw_opened = false;
 
-	error = dpsw_open(&restool.mc_io, dpsw_id, &dpsw_handle);
+	error = dpsw_open(&restool.mc_io, 0, dpsw_id, &dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -306,7 +306,7 @@ static int print_dpsw_attr(uint32_t dpsw_id,
 	}
 
 	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
-	error = dpsw_get_attributes(&restool.mc_io, dpsw_handle, &dpsw_attr);
+	error = dpsw_get_attributes(&restool.mc_io, 0, dpsw_handle, &dpsw_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -340,7 +340,7 @@ out:
 	if (dpsw_opened) {
 		int error2;
 
-		error2 = dpsw_close(&restool.mc_io, dpsw_handle);
+		error2 = dpsw_close(&restool.mc_io, 0, dpsw_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -435,7 +435,7 @@ static int parse_dpsw_create_options(char *options_str, uint64_t *options)
 	} options_map[] = {
 		OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_DIS),
 		OPTION_MAP_ENTRY(DPSW_OPT_MULTICAST_DIS),
-		OPTION_MAP_ENTRY(DPSW_OPT_CTRL),
+		OPTION_MAP_ENTRY(DPSW_OPT_CTRL_IF_DIS),
 	};
 
 	char *cursor = NULL;
@@ -614,7 +614,7 @@ static int create_dpsw(const char *usage_msg)
 		dpsw_cfg.adv.max_fdb_mc_groups = 0;
 	}
 
-	error = dpsw_create(&restool.mc_io, &dpsw_cfg, &dpsw_handle);
+	error = dpsw_create(&restool.mc_io, 0, &dpsw_cfg, &dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -623,7 +623,7 @@ static int create_dpsw(const char *usage_msg)
 	}
 
 	memset(&dpsw_attr, 0, sizeof(struct dpsw_attr));
-	error = dpsw_get_attributes(&restool.mc_io, dpsw_handle, &dpsw_attr);
+	error = dpsw_get_attributes(&restool.mc_io, 0, dpsw_handle, &dpsw_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -632,7 +632,7 @@ static int create_dpsw(const char *usage_msg)
 	}
 	printf("dpsw.%d is created under dprc.1\n", dpsw_attr.id);
 
-	error = dpsw_close(&restool.mc_io, dpsw_handle);
+	error = dpsw_close(&restool.mc_io, 0, dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -658,7 +658,7 @@ static int cmd_dpsw_create(void)
 		"   Where <options-mask> is a comma separated list of DPSW options:\n"
 		"	DPSW_OPT_FLOODING_DIS\n"
 		"	DPSW_OPT_MULTICAST_DIS\n"
-		"	DPSW_OPT_CTRL\n"
+		"	DPSW_OPT_CTRL_IF_DIS\n"
 		"--max-vlans=<number>\n"
 		"	Maximum number of VLAN's. Default is 16.\n"
 		"--max-fdbs=<number>\n"
@@ -710,7 +710,7 @@ static int cmd_dpsw_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpsw_open(&restool.mc_io, dpsw_id, &dpsw_handle);
+	error = dpsw_open(&restool.mc_io, 0, dpsw_id, &dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -726,7 +726,7 @@ static int cmd_dpsw_destroy(void)
 		goto out;
 	}
 
-	error = dpsw_destroy(&restool.mc_io, dpsw_handle);
+	error = dpsw_destroy(&restool.mc_io, 0, dpsw_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -738,7 +738,7 @@ static int cmd_dpsw_destroy(void)
 
 out:
 	if (dpsw_opened) {
-		error2 = dpsw_close(&restool.mc_io, dpsw_handle);
+		error2 = dpsw_close(&restool.mc_io, 0, dpsw_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

@@ -39,6 +39,7 @@
 #include "fsl_dpmng.h"
 #include "fsl_dprc.h"
 #include "fsl_mc_ioctl.h"
+#include "fsl_mc_cmd.h"
 
 /**
  * MC object type string max length (without including the null terminator)
@@ -69,6 +70,25 @@
  * MC endpoint object type max length (without including the null terminator)
  */
 #define EP_OBJ_TYPE_MAX_LEN 15
+
+/**
+ * MC command high priority flag, original definition is too long
+ * to be an appropriate pass-in parameter for each flib API
+ */
+#define PRI MC_CMD_FLAG_PRI
+
+/**
+ * MC command command completion flag, original definition is too long
+ * to be an appropriate pass-in parameter for each flib API
+ */
+#define INTR MC_CMD_FLAG_INTR_DIS
+
+/**
+ * MC command high priority and command completion flag,
+ * original definition is too long
+ * to be an appropriate pass-in parameter for each flib API
+ */
+#define PRINTR (MC_CMD_FLAG_PRI | INTR MC_CMD_FLAG_INTR_DIS)
 
 /*
  * TODO: Obtain the following constants from the fsl-mc bus driver via an ioctl
@@ -192,14 +212,20 @@ enum global_options {
 /**
  * define generic flib operations
  */
-typedef int flib_obj_open_t(struct fsl_mc_io *mc_io, int obj_id,
-				uint16_t *token);
-typedef int flib_obj_close_t(struct fsl_mc_io *mc_io, uint16_t token);
+typedef int flib_obj_open_t(struct fsl_mc_io	*mc_io,
+				uint32_t	cmd_flags,
+				int		obj_id,
+				uint16_t	*token);
+typedef int flib_obj_close_t(struct fsl_mc_io	*mc_io,
+				uint32_t	cmd_flags,
+				uint16_t	token);
 typedef int flib_obj_get_irq_mask_t(struct fsl_mc_io	*mc_io,
+				uint32_t	cmd_flags,
 				uint16_t	token,
 				uint8_t		irq_index,
 				uint32_t	*mask);
 typedef int flib_obj_get_irq_status_t(struct fsl_mc_io	*mc_io,
+					uint32_t	cmd_flags,
 					uint16_t	token,
 					uint8_t		irq_index,
 					uint32_t	*status);

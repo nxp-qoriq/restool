@@ -34,14 +34,18 @@
 #include "fsl_dpdmux.h"
 #include "fsl_dpdmux_cmd.h"
 
-int dpdmux_open(struct fsl_mc_io *mc_io, int dpdmux_id, uint16_t *token)
+int dpdmux_open(struct fsl_mc_io *mc_io,
+		uint32_t cmd_flags,
+		int dpdmux_id,
+		uint16_t *token)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_OPEN,
-					  MC_CMD_PRI_LOW, 0);
+					  cmd_flags,
+					  0);
 	DPDMUX_CMD_OPEN(cmd, dpdmux_id);
 
 	/* send command to mc*/
@@ -55,13 +59,15 @@ int dpdmux_open(struct fsl_mc_io *mc_io, int dpdmux_id, uint16_t *token)
 	return 0;
 }
 
-int dpdmux_close(struct fsl_mc_io *mc_io, uint16_t token)
+int dpdmux_close(struct fsl_mc_io *mc_io,
+		 uint32_t cmd_flags,
+		 uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_CLOSE,
-					  MC_CMD_PRI_HIGH,
+					  cmd_flags,
 					  token);
 
 	/* send command to mc*/
@@ -69,6 +75,7 @@ int dpdmux_close(struct fsl_mc_io *mc_io, uint16_t token)
 }
 
 int dpdmux_create(struct fsl_mc_io *mc_io,
+		  uint32_t cmd_flags,
 		  const struct dpdmux_cfg *cfg,
 		  uint16_t *token)
 {
@@ -77,7 +84,8 @@ int dpdmux_create(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_CREATE,
-					  MC_CMD_PRI_LOW, 0);
+					  cmd_flags,
+					  0);
 	DPDMUX_CMD_CREATE(cmd, cfg);
 
 	/* send command to mc*/
@@ -91,49 +99,61 @@ int dpdmux_create(struct fsl_mc_io *mc_io,
 	return 0;
 }
 
-int dpdmux_destroy(struct fsl_mc_io *mc_io, uint16_t token)
+int dpdmux_destroy(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_DESTROY,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpdmux_enable(struct fsl_mc_io *mc_io, uint16_t token)
+int dpdmux_enable(struct fsl_mc_io *mc_io,
+		  uint32_t cmd_flags,
+		  uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_ENABLE,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpdmux_disable(struct fsl_mc_io *mc_io, uint16_t token)
+int dpdmux_disable(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_DISABLE,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpdmux_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en)
+int dpdmux_is_enabled(struct fsl_mc_io *mc_io,
+		      uint32_t cmd_flags,
+		      uint16_t token,
+		      int *en)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IS_ENABLED,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 
 	/* send command to mc*/
@@ -147,51 +167,52 @@ int dpdmux_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en)
 	return 0;
 }
 
-int dpdmux_reset(struct fsl_mc_io *mc_io, uint16_t token)
+int dpdmux_reset(struct fsl_mc_io *mc_io,
+		 uint32_t cmd_flags,
+		 uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_RESET,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpdmux_set_irq(struct fsl_mc_io *mc_io,
-		   uint16_t token,
-		   uint8_t irq_index,
-		   uint64_t irq_addr,
-		   uint32_t irq_val,
-		   int user_irq_id)
+int dpdmux_set_irq(struct fsl_mc_io	*mc_io,
+		   uint32_t		cmd_flags,
+		   uint16_t		token,
+		   uint8_t		irq_index,
+		   struct dpdmux_irq_cfg *irq_cfg)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_SET_IRQ,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
-	DPDMUX_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id);
+	DPDMUX_CMD_SET_IRQ(cmd, irq_index, irq_cfg);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 int dpdmux_get_irq(struct fsl_mc_io *mc_io,
-		   uint16_t token,
-		   uint8_t irq_index,
-		   int *type,
-		   uint64_t *irq_addr,
-		   uint32_t *irq_val,
-		   int *user_irq_id)
+		   uint32_t cmd_flags,
+		   uint16_t		token,
+		   uint8_t		irq_index,
+		   int			*type,
+		   struct dpdmux_irq_cfg *irq_cfg)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_IRQ,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_GET_IRQ(cmd, irq_index);
 
@@ -201,12 +222,13 @@ int dpdmux_get_irq(struct fsl_mc_io *mc_io,
 		return err;
 
 	/* retrieve response parameters */
-	DPDMUX_RSP_GET_IRQ(cmd, *type, *irq_addr, *irq_val, *user_irq_id);
+	DPDMUX_RSP_GET_IRQ(cmd, *type, irq_cfg);
 
 	return 0;
 }
 
 int dpdmux_set_irq_enable(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
 			  uint16_t token,
 			  uint8_t irq_index,
 			  uint8_t en)
@@ -215,7 +237,8 @@ int dpdmux_set_irq_enable(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_SET_IRQ_ENABLE,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 	DPDMUX_CMD_SET_IRQ_ENABLE(cmd, irq_index, en);
 
 	/* send command to mc*/
@@ -223,6 +246,7 @@ int dpdmux_set_irq_enable(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_get_irq_enable(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
 			  uint16_t token,
 			  uint8_t irq_index,
 			  uint8_t *en)
@@ -232,7 +256,8 @@ int dpdmux_get_irq_enable(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_IRQ_ENABLE,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 	DPDMUX_CMD_GET_IRQ_ENABLE(cmd, irq_index);
 
 	/* send command to mc*/
@@ -247,6 +272,7 @@ int dpdmux_get_irq_enable(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_set_irq_mask(struct fsl_mc_io *mc_io,
+			uint32_t cmd_flags,
 			uint16_t token,
 			uint8_t irq_index,
 			uint32_t mask)
@@ -255,7 +281,8 @@ int dpdmux_set_irq_mask(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_SET_IRQ_MASK,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 	DPDMUX_CMD_SET_IRQ_MASK(cmd, irq_index, mask);
 
 	/* send command to mc*/
@@ -263,6 +290,7 @@ int dpdmux_set_irq_mask(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_get_irq_mask(struct fsl_mc_io *mc_io,
+			uint32_t cmd_flags,
 			uint16_t token,
 			uint8_t irq_index,
 			uint32_t *mask)
@@ -272,7 +300,8 @@ int dpdmux_get_irq_mask(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_IRQ_MASK,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 	DPDMUX_CMD_GET_IRQ_MASK(cmd, irq_index);
 
 	/* send command to mc*/
@@ -287,6 +316,7 @@ int dpdmux_get_irq_mask(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_get_irq_status(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
 			  uint16_t token,
 			  uint8_t irq_index,
 			  uint32_t *status)
@@ -296,7 +326,8 @@ int dpdmux_get_irq_status(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_IRQ_STATUS,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 	DPDMUX_CMD_GET_IRQ_STATUS(cmd, irq_index);
 
 	/* send command to mc*/
@@ -311,6 +342,7 @@ int dpdmux_get_irq_status(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_clear_irq_status(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
 			    uint16_t token,
 			    uint8_t irq_index,
 			    uint32_t status)
@@ -319,7 +351,8 @@ int dpdmux_clear_irq_status(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_CLEAR_IRQ_STATUS,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 	DPDMUX_CMD_CLEAR_IRQ_STATUS(cmd, irq_index, status);
 
 	/* send command to mc*/
@@ -327,6 +360,7 @@ int dpdmux_clear_irq_status(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_get_attributes(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
 			  uint16_t token,
 			  struct dpdmux_attr *attr)
 {
@@ -335,7 +369,8 @@ int dpdmux_get_attributes(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_ATTR,
-					  MC_CMD_PRI_LOW, token);
+					  cmd_flags,
+					  token);
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -349,14 +384,15 @@ int dpdmux_get_attributes(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_ul_set_max_frame_length(struct fsl_mc_io *mc_io,
+				   uint32_t cmd_flags,
 				   uint16_t token,
-				uint16_t max_frame_length)
+				   uint16_t max_frame_length)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_UL_SET_MAX_FRAME_LENGTH,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_UL_SET_MAX_FRAME_LENGTH(cmd, max_frame_length);
 
@@ -365,6 +401,7 @@ int dpdmux_ul_set_max_frame_length(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_set_default_if(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
 			  uint16_t token,
 			  uint16_t if_id,
 			  int no_default_if)
@@ -373,7 +410,7 @@ int dpdmux_set_default_if(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_SET_DEFAULT_IF,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_SET_DEFAULT_IF(cmd, if_id, no_default_if);
 
@@ -381,7 +418,9 @@ int dpdmux_set_default_if(struct fsl_mc_io *mc_io,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpdmux_get_default_if(struct fsl_mc_io *mc_io, uint16_t token,
+int dpdmux_get_default_if(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
 			  uint16_t *if_id)
 {
 	struct mc_command cmd = { 0 };
@@ -389,7 +428,7 @@ int dpdmux_get_default_if(struct fsl_mc_io *mc_io, uint16_t token,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_DEFAULT_IF,
-						  MC_CMD_PRI_LOW,
+						  cmd_flags,
 						  token);
 
 	/* send command to mc*/
@@ -404,13 +443,14 @@ int dpdmux_get_default_if(struct fsl_mc_io *mc_io, uint16_t token,
 }
 
 int dpdmux_ul_reset_counters(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
 			     uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_UL_RESET_COUNTERS,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 
 	/* send command to mc*/
@@ -418,6 +458,7 @@ int dpdmux_ul_reset_counters(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_if_set_accepted_frames(struct fsl_mc_io *mc_io,
+				  uint32_t cmd_flags,
 				  uint16_t token,
 				  uint16_t if_id,
 				  const struct dpdmux_accepted_frames *cfg)
@@ -426,7 +467,7 @@ int dpdmux_if_set_accepted_frames(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_SET_ACCEPTED_FRAMES,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_IF_SET_ACCEPTED_FRAMES(cmd, if_id, cfg);
 
@@ -435,6 +476,7 @@ int dpdmux_if_set_accepted_frames(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_if_get_attributes(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
 			     uint16_t token,
 			     uint16_t if_id,
 			     struct dpdmux_if_attr *attr)
@@ -444,7 +486,7 @@ int dpdmux_if_get_attributes(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_GET_ATTR,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_IF_GET_ATTR(cmd, if_id);
 
@@ -459,7 +501,9 @@ int dpdmux_if_get_attributes(struct fsl_mc_io *mc_io,
 	return 0;
 }
 
-int dpdmux_if_remove_l2_rule(struct fsl_mc_io *mc_io, uint16_t token,
+int dpdmux_if_remove_l2_rule(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t token,
 			     uint16_t if_id,
 			     const struct dpdmux_l2_rule *rule)
 {
@@ -467,7 +511,7 @@ int dpdmux_if_remove_l2_rule(struct fsl_mc_io *mc_io, uint16_t token,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_REMOVE_L2_RULE,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_IF_REMOVE_L2_RULE(cmd, if_id, rule);
 
@@ -475,7 +519,9 @@ int dpdmux_if_remove_l2_rule(struct fsl_mc_io *mc_io, uint16_t token,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpdmux_if_add_l2_rule(struct fsl_mc_io *mc_io, uint16_t token,
+int dpdmux_if_add_l2_rule(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
 			  uint16_t if_id,
 			  const struct dpdmux_l2_rule *rule)
 {
@@ -483,7 +529,7 @@ int dpdmux_if_add_l2_rule(struct fsl_mc_io *mc_io, uint16_t token,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_ADD_L2_RULE,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_IF_ADD_L2_RULE(cmd, if_id, rule);
 
@@ -492,6 +538,7 @@ int dpdmux_if_add_l2_rule(struct fsl_mc_io *mc_io, uint16_t token,
 }
 
 int dpdmux_if_get_counter(struct fsl_mc_io		*mc_io,
+			  uint32_t			cmd_flags,
 			  uint16_t			token,
 			  uint16_t			if_id,
 			  enum dpdmux_counter_type	counter_type,
@@ -502,7 +549,7 @@ int dpdmux_if_get_counter(struct fsl_mc_io		*mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_GET_COUNTER,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_IF_GET_COUNTER(cmd, if_id, counter_type);
 
@@ -518,6 +565,7 @@ int dpdmux_if_get_counter(struct fsl_mc_io		*mc_io,
 }
 
 int dpdmux_if_set_link_cfg(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
 			   uint16_t token,
 			   uint16_t if_id,
 			   struct dpdmux_link_cfg *cfg)
@@ -526,7 +574,7 @@ int dpdmux_if_set_link_cfg(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_SET_LINK_CFG,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_IF_SET_LINK_CFG(cmd, if_id, cfg);
 
@@ -535,6 +583,7 @@ int dpdmux_if_set_link_cfg(struct fsl_mc_io *mc_io,
 }
 
 int dpdmux_if_get_link_state(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
 			     uint16_t token,
 			     uint16_t if_id,
 			     struct dpdmux_link_state *state)
@@ -544,7 +593,7 @@ int dpdmux_if_get_link_state(struct fsl_mc_io *mc_io,
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_GET_LINK_STATE,
-					  MC_CMD_PRI_LOW,
+					  cmd_flags,
 					  token);
 	DPDMUX_CMD_IF_GET_LINK_STATE(cmd, if_id);
 

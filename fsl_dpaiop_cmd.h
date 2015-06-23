@@ -34,7 +34,7 @@
 
 /* DPAIOP Version */
 #define DPAIOP_VER_MAJOR				1
-#define DPAIOP_VER_MINOR				0
+#define DPAIOP_VER_MINOR				1
 
 /* Command IDs */
 #define DPAIOP_CMDID_CLOSE				0x800
@@ -52,12 +52,14 @@
 #define DPAIOP_CMDID_SET_IRQ_MASK			0x014
 #define DPAIOP_CMDID_GET_IRQ_MASK			0x015
 #define DPAIOP_CMDID_GET_IRQ_STATUS			0x016
-#define DPAIOP_CMDID_CLEAR_IRQ_STATUS			0x017
+#define DPAIOP_CMDID_CLEAR_IRQ_STATUS		0x017
 
-#define DPAIOP_CMDID_LOAD				0x280
-#define DPAIOP_CMDID_RUN				0x281
+#define DPAIOP_CMDID_LOAD					0x280
+#define DPAIOP_CMDID_RUN					0x281
 #define DPAIOP_CMDID_GET_SL_VERSION			0x282
 #define DPAIOP_CMDID_GET_STATE				0x283
+#define DPAIOP_CMDID_SET_TIME_OF_DAY		0x284
+#define DPAIOP_CMDID_GET_TIME_OF_DAY		0x285
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPAIOP_CMD_OPEN(cmd, dpaiop_id) \
@@ -71,12 +73,12 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPAIOP_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id) \
+#define DPAIOP_CMD_SET_IRQ(cmd, irq_index, irq_cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  irq_index);\
-	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_val);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_addr); \
-	MC_CMD_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_cfg->val);\
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr); \
+	MC_CMD_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -84,11 +86,11 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPAIOP_RSP_GET_IRQ(cmd, type, irq_addr, irq_val, user_irq_id) \
+#define DPAIOP_RSP_GET_IRQ(cmd, type, irq_cfg) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_addr); \
-	MC_RSP_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_cfg->val); \
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr); \
+	MC_RSP_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 	MC_RSP_OP(cmd, 2, 32, 32, int,	    type); \
 } while (0)
 
@@ -173,5 +175,13 @@ do { \
 /*                cmd, param, offset, width, type,	arg_name */
 #define DPAIOP_RSP_GET_STATE(cmd, state) \
 	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, state)
+
+/*                cmd, param, offset, width, type,	arg_name */
+#define DPAIOP_CMD_SET_TIME_OF_DAY(cmd, time_of_day) \
+	MC_CMD_OP(cmd, 0, 0,  64, uint64_t, time_of_day)
+
+/*                cmd, param, offset, width, type,	arg_name */
+#define DPAIOP_RSP_GET_TIME_OF_DAY(cmd, time_of_day) \
+	MC_RSP_OP(cmd, 0, 0,  64, uint64_t, time_of_day)
 
 #endif /* _FSL_DPAIOP_CMD_H */

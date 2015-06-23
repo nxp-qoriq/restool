@@ -156,7 +156,7 @@ static int print_dpmac_endpoint(uint32_t target_id,
 	strncpy(endpoint1.type, "dpmac", EP_OBJ_TYPE_MAX_LEN);
 	endpoint1.type[EP_OBJ_TYPE_MAX_LEN] = '\0';
 	endpoint1.id = target_id;
-	endpoint1.interface_id = 0;
+	endpoint1.if_id = 0;
 
 	if (target_parent_dprc_id == restool.root_dprc_id)
 		target_parent_dprc_handle = restool.root_dprc_handle;
@@ -166,7 +166,8 @@ static int print_dpmac_endpoint(uint32_t target_id,
 		if (error < 0)
 			return error;
 	}
-	error = dprc_get_connection(&restool.mc_io, target_parent_dprc_handle,
+	error = dprc_get_connection(&restool.mc_io, 0,
+					target_parent_dprc_handle,
 					&endpoint1, &endpoint2, &state);
 	printf("endpoint state: %d\n", state);
 
@@ -177,8 +178,8 @@ static int print_dpmac_endpoint(uint32_t target_id,
 		    strcmp(endpoint2.type, "dpdmux") == 0) {
 			printf("endpoint: %s.%d.%d",
 				endpoint2.type, endpoint2.id,
-				endpoint2.interface_id);
-		} else if (endpoint2.interface_id == 0) {
+				endpoint2.if_id);
+		} else if (endpoint2.if_id == 0) {
 			printf("endpoint: %s.%d",
 				endpoint2.type, endpoint2.id);
 		}
@@ -198,7 +199,7 @@ static int print_dpmac_endpoint(uint32_t target_id,
 	}
 
 	if (target_parent_dprc_id != restool.root_dprc_id)
-		return dprc_close(&restool.mc_io, target_parent_dprc_handle);
+		return dprc_close(&restool.mc_io, 0, target_parent_dprc_handle);
 
 	return 0;
 }
@@ -247,9 +248,6 @@ static void print_dpmac_eth_if(enum dpmac_eth_if eth_if)
 	case DPMAC_ETH_IF_SGMII:
 		printf("DPMAC_ETH_IF_SGMII\n");
 		break;
-	case DPMAC_ETH_IF_XGMII:
-		printf("DPMAC_ETH_IF_XGMII\n");
-		break;
 	case DPMAC_ETH_IF_QSGMII:
 		printf("DPMAC_ETH_IF_QSGMII\n");
 		break;
@@ -258,7 +256,7 @@ static void print_dpmac_eth_if(enum dpmac_eth_if eth_if)
 		break;
 	case DPMAC_ETH_IF_XFI:
 		printf("DPMAC_ETH_IF_XFI\n");
-
+		break;
 	default:
 		assert(false);
 		break;
@@ -274,7 +272,7 @@ static int print_dpmac_attr(uint32_t dpmac_id,
 	struct dpmac_attr dpmac_attr;
 	bool dpmac_opened = false;
 
-	error = dpmac_open(&restool.mc_io, dpmac_id, &dpmac_handle);
+	error = dpmac_open(&restool.mc_io, 0, dpmac_id, &dpmac_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -291,7 +289,8 @@ static int print_dpmac_attr(uint32_t dpmac_id,
 	}
 
 	memset(&dpmac_attr, 0, sizeof(dpmac_attr));
-	error = dpmac_get_attributes(&restool.mc_io, dpmac_handle, &dpmac_attr);
+	error = dpmac_get_attributes(&restool.mc_io, 0,
+					dpmac_handle, &dpmac_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -318,7 +317,7 @@ out:
 	if (dpmac_opened) {
 		int error2;
 
-		error2 = dpmac_close(&restool.mc_io, dpmac_handle);
+		error2 = dpmac_close(&restool.mc_io, 0, dpmac_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -455,7 +454,7 @@ static int cmd_dpmac_create(void)
 		return -EINVAL;
 	}
 
-	error = dpmac_create(&restool.mc_io, &dpmac_cfg, &dpmac_handle);
+	error = dpmac_create(&restool.mc_io, 0, &dpmac_cfg, &dpmac_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -464,7 +463,8 @@ static int cmd_dpmac_create(void)
 	}
 
 	memset(&dpmac_attr, 0, sizeof(struct dpmac_attr));
-	error = dpmac_get_attributes(&restool.mc_io, dpmac_handle, &dpmac_attr);
+	error = dpmac_get_attributes(&restool.mc_io, 0, dpmac_handle,
+					&dpmac_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -473,7 +473,7 @@ static int cmd_dpmac_create(void)
 	}
 	printf("dpmac.%d is created under dprc.1\n", dpmac_attr.id);
 
-	error = dpmac_close(&restool.mc_io, dpmac_handle);
+	error = dpmac_close(&restool.mc_io, 0, dpmac_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -520,7 +520,7 @@ static int cmd_dpmac_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpmac_open(&restool.mc_io, dpmac_id, &dpmac_handle);
+	error = dpmac_open(&restool.mc_io, 0, dpmac_id, &dpmac_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -536,7 +536,7 @@ static int cmd_dpmac_destroy(void)
 		goto out;
 	}
 
-	error = dpmac_destroy(&restool.mc_io, dpmac_handle);
+	error = dpmac_destroy(&restool.mc_io, 0, dpmac_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -548,7 +548,7 @@ static int cmd_dpmac_destroy(void)
 
 out:
 	if (dpmac_opened) {
-		error2 = dpmac_close(&restool.mc_io, dpmac_handle);
+		error2 = dpmac_close(&restool.mc_io, 0, dpmac_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

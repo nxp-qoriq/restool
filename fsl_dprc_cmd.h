@@ -2,14 +2,14 @@
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
- * * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
  * * Neither the name of the above-listed copyright holders nor the
  * names of any contributors may be used to endorse or promote products
- * derived from this software without specific prior written permission.
+ *       derived from this software without specific prior written permission.
  *
  *
  * ALTERNATIVELY, this software may be distributed under the terms of the
@@ -33,7 +33,7 @@
 #define _FSL_DPRC_CMD_H
 
 /* DPRC Version */
-#define DPRC_VER_MAJOR				4
+#define DPRC_VER_MAJOR				5
 #define DPRC_VER_MINOR				0
 
 /* Command IDs */
@@ -65,9 +65,10 @@
 #define DPRC_CMDID_GET_RES_COUNT		0x15B
 #define DPRC_CMDID_GET_RES_IDS			0x15C
 #define DPRC_CMDID_GET_OBJ_REG			0x15E
-#define DPRC_CMDID_OBJ_SET_IRQ			0x15F
-#define DPRC_CMDID_OBJ_GET_IRQ			0x160
+#define DPRC_CMDID_SET_OBJ_IRQ			0x15F
+#define DPRC_CMDID_GET_OBJ_IRQ			0x160
 #define DPRC_CMDID_SET_OBJ_LABEL		0x161
+#define DPRC_CMDID_GET_OBJ_DESC			0x162
 
 #define DPRC_CMDID_CONNECT			0x167
 #define DPRC_CMDID_DISCONNECT			0x168
@@ -123,14 +124,13 @@ do { \
 #define DPRC_CMD_RESET_CONTAINER(cmd, child_container_id) \
 	MC_CMD_OP(cmd, 0, 0,  32, int,	    child_container_id)
 
-
 /*                cmd, param, offset, width, type, arg_name */
-#define DPRC_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id) \
+#define DPRC_CMD_SET_IRQ(cmd, irq_index, irq_cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index); \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_CMD_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, irq_cfg->val); \
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_CMD_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -138,11 +138,11 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPRC_RSP_GET_IRQ(cmd, type, irq_addr, irq_val, user_irq_id) \
+#define DPRC_RSP_GET_IRQ(cmd, type, irq_cfg) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_RSP_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_cfg->val); \
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_RSP_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 	MC_RSP_OP(cmd, 2, 32, 32, int,      type); \
 } while (0)
 
@@ -190,7 +190,6 @@ do { \
 	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, status); \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index);\
 } while (0)
-
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPRC_RSP_GET_ATTRIBUTES(cmd, attr) \
@@ -383,6 +382,72 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
+#define DPRC_CMD_GET_OBJ_DESC(cmd, obj_type, obj_id) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  32, int,	    obj_id);\
+	MC_CMD_OP(cmd, 1, 0,  8,  char,     obj_type[0]);\
+	MC_CMD_OP(cmd, 1, 8,  8,  char,	    obj_type[1]);\
+	MC_CMD_OP(cmd, 1, 16, 8,  char,	    obj_type[2]);\
+	MC_CMD_OP(cmd, 1, 24, 8,  char,	    obj_type[3]);\
+	MC_CMD_OP(cmd, 1, 32, 8,  char,	    obj_type[4]);\
+	MC_CMD_OP(cmd, 1, 40, 8,  char,	    obj_type[5]);\
+	MC_CMD_OP(cmd, 1, 48, 8,  char,	    obj_type[6]);\
+	MC_CMD_OP(cmd, 1, 56, 8,  char,	    obj_type[7]);\
+	MC_CMD_OP(cmd, 2, 0,  8,  char,	    obj_type[8]);\
+	MC_CMD_OP(cmd, 2, 8,  8,  char,	    obj_type[9]);\
+	MC_CMD_OP(cmd, 2, 16, 8,  char,	    obj_type[10]);\
+	MC_CMD_OP(cmd, 2, 24, 8,  char,	    obj_type[11]);\
+	MC_CMD_OP(cmd, 2, 32, 8,  char,	    obj_type[12]);\
+	MC_CMD_OP(cmd, 2, 40, 8,  char,	    obj_type[13]);\
+	MC_CMD_OP(cmd, 2, 48, 8,  char,     obj_type[14]);\
+	MC_CMD_OP(cmd, 2, 56, 8,  char,	    obj_type[15]);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPRC_RSP_GET_OBJ_DESC(cmd, obj_desc) \
+do { \
+	MC_RSP_OP(cmd, 0, 32, 32, int,	    obj_desc->id); \
+	MC_RSP_OP(cmd, 1, 0,  16, uint16_t, obj_desc->vendor); \
+	MC_RSP_OP(cmd, 1, 16, 8,  uint8_t,  obj_desc->irq_count); \
+	MC_RSP_OP(cmd, 1, 24, 8,  uint8_t,  obj_desc->region_count); \
+	MC_RSP_OP(cmd, 1, 32, 32, uint32_t, obj_desc->state);\
+	MC_RSP_OP(cmd, 2, 0,  16, uint16_t, obj_desc->ver_major);\
+	MC_RSP_OP(cmd, 2, 16, 16, uint16_t, obj_desc->ver_minor);\
+	MC_RSP_OP(cmd, 3, 0,  8,  char,	    obj_desc->type[0]);\
+	MC_RSP_OP(cmd, 3, 8,  8,  char,	    obj_desc->type[1]);\
+	MC_RSP_OP(cmd, 3, 16, 8,  char,	    obj_desc->type[2]);\
+	MC_RSP_OP(cmd, 3, 24, 8,  char,	    obj_desc->type[3]);\
+	MC_RSP_OP(cmd, 3, 32, 8,  char,	    obj_desc->type[4]);\
+	MC_RSP_OP(cmd, 3, 40, 8,  char,	    obj_desc->type[5]);\
+	MC_RSP_OP(cmd, 3, 48, 8,  char,	    obj_desc->type[6]);\
+	MC_RSP_OP(cmd, 3, 56, 8,  char,	    obj_desc->type[7]);\
+	MC_RSP_OP(cmd, 4, 0,  8,  char,	    obj_desc->type[8]);\
+	MC_RSP_OP(cmd, 4, 8,  8,  char,	    obj_desc->type[9]);\
+	MC_RSP_OP(cmd, 4, 16, 8,  char,	    obj_desc->type[10]);\
+	MC_RSP_OP(cmd, 4, 24, 8,  char,	    obj_desc->type[11]);\
+	MC_RSP_OP(cmd, 4, 32, 8,  char,	    obj_desc->type[12]);\
+	MC_RSP_OP(cmd, 4, 40, 8,  char,	    obj_desc->type[13]);\
+	MC_RSP_OP(cmd, 4, 48, 8,  char,	    obj_desc->type[14]);\
+	MC_RSP_OP(cmd, 4, 56, 8,  char,	    obj_desc->type[15]);\
+	MC_RSP_OP(cmd, 5, 0,  8,  char,	    obj_desc->label[0]);\
+	MC_RSP_OP(cmd, 5, 8,  8,  char,	    obj_desc->label[1]);\
+	MC_RSP_OP(cmd, 5, 16, 8,  char,	    obj_desc->label[2]);\
+	MC_RSP_OP(cmd, 5, 24, 8,  char,	    obj_desc->label[3]);\
+	MC_RSP_OP(cmd, 5, 32, 8,  char,	    obj_desc->label[4]);\
+	MC_RSP_OP(cmd, 5, 40, 8,  char,	    obj_desc->label[5]);\
+	MC_RSP_OP(cmd, 5, 48, 8,  char,	    obj_desc->label[6]);\
+	MC_RSP_OP(cmd, 5, 56, 8,  char,	    obj_desc->label[7]);\
+	MC_RSP_OP(cmd, 6, 0,  8,  char,	    obj_desc->label[8]);\
+	MC_RSP_OP(cmd, 6, 8,  8,  char,	    obj_desc->label[9]);\
+	MC_RSP_OP(cmd, 6, 16, 8,  char,	    obj_desc->label[10]);\
+	MC_RSP_OP(cmd, 6, 24, 8,  char,	    obj_desc->label[11]);\
+	MC_RSP_OP(cmd, 6, 32, 8,  char,	    obj_desc->label[12]);\
+	MC_RSP_OP(cmd, 6, 40, 8,  char,	    obj_desc->label[13]);\
+	MC_RSP_OP(cmd, 6, 48, 8,  char,	    obj_desc->label[14]);\
+	MC_RSP_OP(cmd, 6, 56, 8,  char,	    obj_desc->label[15]);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
 #define DPRC_CMD_GET_RES_COUNT(cmd, type) \
 do { \
 	MC_CMD_OP(cmd, 1, 0,  8,  char,	    type[0]);\
@@ -467,14 +532,16 @@ do { \
 /*	param, offset, width,	type,		arg_name */
 #define DPRC_RSP_GET_OBJ_REGION(cmd, region_desc) \
 do { \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, region_desc->base_offset);\
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, region_desc->base_offset);\
 	MC_RSP_OP(cmd, 2, 0,  32, uint32_t, region_desc->size); \
+	MC_RSP_OP(cmd, 2, 32, 4,  enum dprc_region_type, region_desc->type);\
+	MC_RSP_OP(cmd, 3, 0,  32, uint32_t, region_desc->flags);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPRC_CMD_SET_OBJ_LABEL(cmd, obj_index, label) \
+#define DPRC_CMD_SET_OBJ_LABEL(cmd, obj_type, obj_id, label) \
 do { \
-	MC_CMD_OP(cmd, 0, 0,  32, int,      obj_index); \
+	MC_CMD_OP(cmd, 0, 0,  32, int,      obj_id); \
 	MC_CMD_OP(cmd, 1, 0,  8,  char,	    label[0]);\
 	MC_CMD_OP(cmd, 1, 8,  8,  char,	    label[1]);\
 	MC_CMD_OP(cmd, 1, 16, 8,  char,	    label[2]);\
@@ -491,43 +558,89 @@ do { \
 	MC_CMD_OP(cmd, 2, 40, 8,  char,	    label[13]);\
 	MC_CMD_OP(cmd, 2, 48, 8,  char,	    label[14]);\
 	MC_CMD_OP(cmd, 2, 56, 8,  char,	    label[15]);\
+	MC_CMD_OP(cmd, 3, 0,  8,  char,	    obj_type[0]);\
+	MC_CMD_OP(cmd, 3, 8,  8,  char,	    obj_type[1]);\
+	MC_CMD_OP(cmd, 3, 16, 8,  char,	    obj_type[2]);\
+	MC_CMD_OP(cmd, 3, 24, 8,  char,	    obj_type[3]);\
+	MC_CMD_OP(cmd, 3, 32, 8,  char,	    obj_type[4]);\
+	MC_CMD_OP(cmd, 3, 40, 8,  char,	    obj_type[5]);\
+	MC_CMD_OP(cmd, 3, 48, 8,  char,	    obj_type[6]);\
+	MC_CMD_OP(cmd, 3, 56, 8,  char,	    obj_type[7]);\
+	MC_CMD_OP(cmd, 4, 0,  8,  char,	    obj_type[8]);\
+	MC_CMD_OP(cmd, 4, 8,  8,  char,	    obj_type[9]);\
+	MC_CMD_OP(cmd, 4, 16, 8,  char,	    obj_type[10]);\
+	MC_CMD_OP(cmd, 4, 24, 8,  char,	    obj_type[11]);\
+	MC_CMD_OP(cmd, 4, 32, 8,  char,	    obj_type[12]);\
+	MC_CMD_OP(cmd, 4, 40, 8,  char,	    obj_type[13]);\
+	MC_CMD_OP(cmd, 4, 48, 8,  char,	    obj_type[14]);\
+	MC_CMD_OP(cmd, 4, 56, 8,  char,	    obj_type[15]);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPRC_CMD_OBJ_SET_IRQ(cmd, irq_index, obj_index, irq_addr, irq_val, \
-			     user_irq_id) \
+#define DPRC_CMD_SET_OBJ_IRQ(cmd, obj_type, obj_id, irq_index, irq_cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index); \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_CMD_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
-	MC_CMD_OP(cmd, 2, 32, 32, int,	    obj_index); \
+	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, irq_cfg->val); \
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_CMD_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
+	MC_CMD_OP(cmd, 2, 32, 32, int,	    obj_id); \
+	MC_CMD_OP(cmd, 3, 0,  8,  char,	    obj_type[0]);\
+	MC_CMD_OP(cmd, 3, 8,  8,  char,	    obj_type[1]);\
+	MC_CMD_OP(cmd, 3, 16, 8,  char,	    obj_type[2]);\
+	MC_CMD_OP(cmd, 3, 24, 8,  char,	    obj_type[3]);\
+	MC_CMD_OP(cmd, 3, 32, 8,  char,	    obj_type[4]);\
+	MC_CMD_OP(cmd, 3, 40, 8,  char,	    obj_type[5]);\
+	MC_CMD_OP(cmd, 3, 48, 8,  char,	    obj_type[6]);\
+	MC_CMD_OP(cmd, 3, 56, 8,  char,	    obj_type[7]);\
+	MC_CMD_OP(cmd, 4, 0,  8,  char,	    obj_type[8]);\
+	MC_CMD_OP(cmd, 4, 8,  8,  char,	    obj_type[9]);\
+	MC_CMD_OP(cmd, 4, 16, 8,  char,	    obj_type[10]);\
+	MC_CMD_OP(cmd, 4, 24, 8,  char,	    obj_type[11]);\
+	MC_CMD_OP(cmd, 4, 32, 8,  char,	    obj_type[12]);\
+	MC_CMD_OP(cmd, 4, 40, 8,  char,	    obj_type[13]);\
+	MC_CMD_OP(cmd, 4, 48, 8,  char,	    obj_type[14]);\
+	MC_CMD_OP(cmd, 4, 56, 8,  char,	    obj_type[15]);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPRC_CMD_OBJ_GET_IRQ(cmd, irq_index, obj_index) \
+#define DPRC_CMD_GET_OBJ_IRQ(cmd, obj_type, obj_id, irq_index) \
 do { \
-	MC_CMD_OP(cmd, 0, 0,  32, int,	    obj_index); \
+	MC_CMD_OP(cmd, 0, 0,  32, int,	    obj_id); \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index); \
+	MC_CMD_OP(cmd, 1, 0,  8,  char,	    obj_type[0]);\
+	MC_CMD_OP(cmd, 1, 8,  8,  char,	    obj_type[1]);\
+	MC_CMD_OP(cmd, 1, 16, 8,  char,	    obj_type[2]);\
+	MC_CMD_OP(cmd, 1, 24, 8,  char,	    obj_type[3]);\
+	MC_CMD_OP(cmd, 1, 32, 8,  char,	    obj_type[4]);\
+	MC_CMD_OP(cmd, 1, 40, 8,  char,	    obj_type[5]);\
+	MC_CMD_OP(cmd, 1, 48, 8,  char,	    obj_type[6]);\
+	MC_CMD_OP(cmd, 1, 56, 8,  char,	    obj_type[7]);\
+	MC_CMD_OP(cmd, 2, 0,  8,  char,	    obj_type[8]);\
+	MC_CMD_OP(cmd, 2, 8,  8,  char,	    obj_type[9]);\
+	MC_CMD_OP(cmd, 2, 16, 8,  char,	    obj_type[10]);\
+	MC_CMD_OP(cmd, 2, 24, 8,  char,	    obj_type[11]);\
+	MC_CMD_OP(cmd, 2, 32, 8,  char,	    obj_type[12]);\
+	MC_CMD_OP(cmd, 2, 40, 8,  char,	    obj_type[13]);\
+	MC_CMD_OP(cmd, 2, 48, 8,  char,	    obj_type[14]);\
+	MC_CMD_OP(cmd, 2, 56, 8,  char,	    obj_type[15]);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPRC_RSP_OBJ_GET_IRQ(cmd, type, irq_addr, irq_val, user_irq_id) \
+#define DPRC_RSP_GET_OBJ_IRQ(cmd, type, irq_cfg) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_RSP_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_cfg->val); \
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_RSP_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 	MC_RSP_OP(cmd, 2, 32, 32, int,      type); \
 } while (0)
 
-
 /*                cmd, param, offset, width, type, arg_name */
-#define DPRC_CMD_CONNECT(cmd, endpoint1, endpoint2) \
+#define DPRC_CMD_CONNECT(cmd, endpoint1, endpoint2, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  32, int,      endpoint1->id); \
-	MC_CMD_OP(cmd, 0, 32, 32, int,	    endpoint1->interface_id); \
+	MC_CMD_OP(cmd, 0, 32, 16, uint16_t, endpoint1->if_id); \
 	MC_CMD_OP(cmd, 1, 0,  32, int,	    endpoint2->id); \
-	MC_CMD_OP(cmd, 1, 32, 32, int,	    endpoint2->interface_id); \
+	MC_CMD_OP(cmd, 1, 32, 16, uint16_t, endpoint2->if_id); \
 	MC_CMD_OP(cmd, 2, 0,  8,  char,     endpoint1->type[0]); \
 	MC_CMD_OP(cmd, 2, 8,  8,  char,	    endpoint1->type[1]); \
 	MC_CMD_OP(cmd, 2, 16, 8,  char,	    endpoint1->type[2]); \
@@ -544,6 +657,8 @@ do { \
 	MC_CMD_OP(cmd, 3, 40, 8,  char,	    endpoint1->type[13]); \
 	MC_CMD_OP(cmd, 3, 48, 8,  char,	    endpoint1->type[14]); \
 	MC_CMD_OP(cmd, 3, 56, 8,  char,	    endpoint1->type[15]); \
+	MC_CMD_OP(cmd, 4, 0,  32, uint32_t, cfg->max_rate); \
+	MC_CMD_OP(cmd, 4, 32, 32, uint32_t, cfg->committed_rate); \
 	MC_CMD_OP(cmd, 5, 0,  8,  char,	    endpoint2->type[0]); \
 	MC_CMD_OP(cmd, 5, 8,  8,  char,	    endpoint2->type[1]); \
 	MC_CMD_OP(cmd, 5, 16, 8,  char,	    endpoint2->type[2]); \
@@ -566,7 +681,7 @@ do { \
 #define DPRC_CMD_DISCONNECT(cmd, endpoint) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  32, int,	    endpoint->id); \
-	MC_CMD_OP(cmd, 0, 32, 32, int,	    endpoint->interface_id); \
+	MC_CMD_OP(cmd, 0, 32, 16, uint16_t, endpoint->if_id); \
 	MC_CMD_OP(cmd, 1, 0,  8,  char,	    endpoint->type[0]); \
 	MC_CMD_OP(cmd, 1, 8,  8,  char,	    endpoint->type[1]); \
 	MC_CMD_OP(cmd, 1, 16, 8,  char,	    endpoint->type[2]); \
@@ -589,7 +704,7 @@ do { \
 #define DPRC_CMD_GET_CONNECTION(cmd, endpoint1) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  32, int,      endpoint1->id); \
-	MC_CMD_OP(cmd, 0, 32, 32, int,	    endpoint1->interface_id); \
+	MC_CMD_OP(cmd, 0, 32, 16, uint16_t, endpoint1->if_id); \
 	MC_CMD_OP(cmd, 1, 0,  8,  char,     endpoint1->type[0]); \
 	MC_CMD_OP(cmd, 1, 8,  8,  char,	    endpoint1->type[1]); \
 	MC_CMD_OP(cmd, 1, 16, 8,  char,	    endpoint1->type[2]); \
@@ -608,12 +723,11 @@ do { \
 	MC_CMD_OP(cmd, 2, 56, 8,  char,	    endpoint1->type[15]); \
 } while (0)
 
-
 /*                cmd, param, offset, width, type, arg_name */
 #define DPRC_RSP_GET_CONNECTION(cmd, endpoint2, state) \
 do { \
 	MC_RSP_OP(cmd, 3, 0,  32, int,	    endpoint2->id); \
-	MC_RSP_OP(cmd, 3, 32, 32, int,	    endpoint2->interface_id); \
+	MC_RSP_OP(cmd, 3, 32, 16, uint16_t, endpoint2->if_id); \
 	MC_RSP_OP(cmd, 4, 0,  8,  char,	    endpoint2->type[0]); \
 	MC_RSP_OP(cmd, 4, 8,  8,  char,	    endpoint2->type[1]); \
 	MC_RSP_OP(cmd, 4, 16, 8,  char,	    endpoint2->type[2]); \

@@ -141,7 +141,7 @@ static int print_dpmcp_attr(uint32_t dpmcp_id,
 	struct dpmcp_attr dpmcp_attr;
 	bool dpmcp_opened = false;
 
-	error = dpmcp_open(&restool.mc_io, dpmcp_id, &dpmcp_handle);
+	error = dpmcp_open(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -158,7 +158,8 @@ static int print_dpmcp_attr(uint32_t dpmcp_id,
 	}
 
 	memset(&dpmcp_attr, 0, sizeof(dpmcp_attr));
-	error = dpmcp_get_attributes(&restool.mc_io, dpmcp_handle, &dpmcp_attr);
+	error = dpmcp_get_attributes(&restool.mc_io, 0, dpmcp_handle,
+					&dpmcp_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -180,7 +181,7 @@ out:
 	if (dpmcp_opened) {
 		int error2;
 
-		error2 = dpmcp_close(&restool.mc_io, dpmcp_handle);
+		error2 = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -294,7 +295,7 @@ static int cmd_dpmcp_create(void)
 
 	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
 
-	error = dpmcp_create(&restool.mc_io, &dpmcp_cfg, &dpmcp_handle);
+	error = dpmcp_create(&restool.mc_io, 0, &dpmcp_cfg, &dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -303,7 +304,8 @@ static int cmd_dpmcp_create(void)
 	}
 
 	memset(&dpmcp_attr, 0, sizeof(struct dpmcp_attr));
-	error = dpmcp_get_attributes(&restool.mc_io, dpmcp_handle, &dpmcp_attr);
+	error = dpmcp_get_attributes(&restool.mc_io, 0, dpmcp_handle,
+					&dpmcp_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -312,7 +314,7 @@ static int cmd_dpmcp_create(void)
 	}
 	printf("dpmcp.%d is created under dprc.1\n", dpmcp_attr.id);
 
-	error = dpmcp_close(&restool.mc_io, dpmcp_handle);
+	error = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -359,7 +361,7 @@ static int cmd_dpmcp_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpmcp_open(&restool.mc_io, dpmcp_id, &dpmcp_handle);
+	error = dpmcp_open(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -375,7 +377,7 @@ static int cmd_dpmcp_destroy(void)
 		goto out;
 	}
 
-	error = dpmcp_destroy(&restool.mc_io, dpmcp_handle);
+	error = dpmcp_destroy(&restool.mc_io, 0, dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -387,7 +389,7 @@ static int cmd_dpmcp_destroy(void)
 
 out:
 	if (dpmcp_opened) {
-		error2 = dpmcp_close(&restool.mc_io, dpmcp_handle);
+		error2 = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

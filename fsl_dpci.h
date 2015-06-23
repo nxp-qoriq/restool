@@ -52,6 +52,7 @@ struct fsl_mc_io;
 /**
  * dpci_open() - Open a control session for the specified object
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpci_id:	DPCI unique ID
  * @token:	Returned token; use in subsequent API calls
  *
@@ -65,11 +66,15 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_open(struct fsl_mc_io *mc_io, int dpci_id, uint16_t *token);
+int dpci_open(struct fsl_mc_io *mc_io,
+	      uint32_t		cmd_flags,
+	      int		dpci_id,
+	      uint16_t		*token);
 
 /**
  * dpci_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  *
  * After this function is called, no further operations are
@@ -77,7 +82,9 @@ int dpci_open(struct fsl_mc_io *mc_io, int dpci_id, uint16_t *token);
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_close(struct fsl_mc_io *mc_io, uint16_t token);
+int dpci_close(struct fsl_mc_io *mc_io,
+	       uint32_t	cmd_flags,
+	       uint16_t	token);
 
 /**
  * struct dpci_cfg - Structure representing DPCI configuration
@@ -93,6 +100,7 @@ struct dpci_cfg {
 /**
  * dpci_create() - Create the DPCI object.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
  * @token:	Returned token; use in subsequent API calls
  *
@@ -112,54 +120,71 @@ struct dpci_cfg {
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_create(struct fsl_mc_io	*mc_io,
+		uint32_t		cmd_flags,
 		const struct dpci_cfg	*cfg,
 		uint16_t		*token);
 
 /**
  * dpci_destroy() - Destroy the DPCI object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpci_destroy(struct fsl_mc_io *mc_io, uint16_t token);
+int dpci_destroy(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
 
 /**
  * dpci_enable() - Enable the DPCI, allow sending and receiving frames.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_enable(struct fsl_mc_io *mc_io, uint16_t token);
+int dpci_enable(struct fsl_mc_io *mc_io,
+		uint32_t	cmd_flags,
+		uint16_t	token);
 
 /**
  * dpci_disable() - Disable the DPCI, stop sending and receiving frames.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_disable(struct fsl_mc_io *mc_io, uint16_t token);
+int dpci_disable(struct fsl_mc_io *mc_io,
+		 uint32_t	cmd_flags,
+		 uint16_t	token);
 
 /**
  * dpci_is_enabled() - Check if the DPCI is enabled.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @en:		Returns '1' if object is enabled; '0' otherwise
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en);
+int dpci_is_enabled(struct fsl_mc_io	*mc_io,
+		    uint32_t		cmd_flags,
+		    uint16_t		token,
+		    int		*en);
 
 /**
  * dpci_reset() - Reset the DPCI, returns the object to initial state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_reset(struct fsl_mc_io *mc_io, uint16_t token);
+int dpci_reset(struct fsl_mc_io *mc_io,
+	       uint32_t	cmd_flags,
+	       uint16_t	token);
 
 /* DPCI IRQ Index and Events */
 
@@ -168,51 +193,62 @@ int dpci_reset(struct fsl_mc_io *mc_io, uint16_t token);
 
 /* IRQ event - indicates a change in link state */
 #define DPCI_IRQ_EVENT_LINK_CHANGED		0x00000001
+/* IRQ event - indicates a connection event */
+#define DPCI_IRQ_EVENT_CONNECTED                0x00000002
+/* IRQ event - indicates a disconnection event */
+#define DPCI_IRQ_EVENT_DISCONNECTED             0x00000004
+
+/**
+ * struct dpci_irq_cfg - IRQ configuration
+ * @addr:	Address that must be written to signal a message-based interrupt
+ * @val:	Value to write into irq_addr address
+ * @user_irq_id: A user defined number associated with this IRQ
+ */
+struct dpci_irq_cfg {
+	     uint64_t		addr;
+	     uint32_t		val;
+	     int		user_irq_id;
+};
 
 /**
  * dpci_set_irq() - Set IRQ information for the DPCI to trigger an interrupt.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @irq_index:	Identifies the interrupt index to configure
- * @irq_addr:	Address that must be written to
- *		signal a message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ * @irq_cfg:	IRQ configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_set_irq(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
 		 uint16_t		token,
 		 uint8_t		irq_index,
-		 uint64_t		irq_addr,
-		 uint32_t		irq_val,
-		 int			user_irq_id);
+		 struct dpci_irq_cfg	*irq_cfg);
 
 /**
  * dpci_get_irq() - Get IRQ information from the DPCI.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @irq_index:	The interrupt index to configure
- * @type:	Returned interrupt type: 0 represents message interrupt
+ * @type:	Interrupt type: 0 represents message interrupt
  *		type (both irq_addr and irq_val are valid)
- * @irq_addr:	Returned address that must be written to
- *		signal the message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ * @irq_cfg:	IRQ attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_get_irq(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
 		 uint16_t		token,
 		 uint8_t		irq_index,
 		 int			*type,
-		 uint64_t		*irq_addr,
-		 uint32_t		*irq_val,
-		 int			*user_irq_id);
+		 struct dpci_irq_cfg	*irq_cfg);
 
 /**
  * dpci_set_irq_enable() - Set overall interrupt state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @en:		Interrupt state - enable = 1, disable = 0
@@ -225,6 +261,7 @@ int dpci_get_irq(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_set_irq_enable(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
 			uint16_t		token,
 			uint8_t			irq_index,
 			uint8_t			en);
@@ -232,6 +269,7 @@ int dpci_set_irq_enable(struct fsl_mc_io	*mc_io,
 /**
  * dpci_get_irq_enable() - Get overall interrupt state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @en:		Returned interrupt state - enable = 1, disable = 0
@@ -239,6 +277,7 @@ int dpci_set_irq_enable(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_get_irq_enable(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
 			uint16_t		token,
 			uint8_t			irq_index,
 			uint8_t			*en);
@@ -246,6 +285,7 @@ int dpci_get_irq_enable(struct fsl_mc_io	*mc_io,
 /**
  * dpci_set_irq_mask() - Set interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @mask:	event mask to trigger interrupt;
@@ -258,7 +298,8 @@ int dpci_get_irq_enable(struct fsl_mc_io	*mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_set_irq_mask(struct fsl_mc_io	*mc_io,
+int dpci_set_irq_mask(struct fsl_mc_io *mc_io,
+		      uint32_t		cmd_flags,
 		      uint16_t		token,
 		      uint8_t		irq_index,
 		      uint32_t		mask);
@@ -266,6 +307,7 @@ int dpci_set_irq_mask(struct fsl_mc_io	*mc_io,
 /**
  * dpci_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @mask:	Returned event mask to trigger interrupt
@@ -275,7 +317,8 @@ int dpci_set_irq_mask(struct fsl_mc_io	*mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_get_irq_mask(struct fsl_mc_io	*mc_io,
+int dpci_get_irq_mask(struct fsl_mc_io *mc_io,
+		      uint32_t		cmd_flags,
 		      uint16_t		token,
 		      uint8_t		irq_index,
 		      uint32_t		*mask);
@@ -283,6 +326,7 @@ int dpci_get_irq_mask(struct fsl_mc_io	*mc_io,
 /**
  * dpci_get_irq_status() - Get the current status of any pending interrupts.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @status:	Returned interrupts status - one bit per cause:
@@ -292,6 +336,7 @@ int dpci_get_irq_mask(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_get_irq_status(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
 			uint16_t		token,
 			uint8_t			irq_index,
 			uint32_t		*status);
@@ -299,6 +344,7 @@ int dpci_get_irq_status(struct fsl_mc_io	*mc_io,
 /**
  * dpci_clear_irq_status() - Clear a pending interrupt's status
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @status:	bits to clear (W1C) - one bit per cause:
@@ -308,6 +354,7 @@ int dpci_get_irq_status(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_clear_irq_status(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
 			  uint8_t		irq_index,
 			  uint32_t		status);
@@ -335,12 +382,14 @@ struct dpci_attr {
 /**
  * dpci_get_attributes() - Retrieve DPCI attributes.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @attr:	Returned object's attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_get_attributes(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
 			uint16_t		token,
 			struct dpci_attr	*attr);
 
@@ -358,18 +407,21 @@ struct dpci_peer_attr {
 /**
  * dpci_get_peer_attributes() - Retrieve peer DPCI attributes.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @attr:	Returned peer attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_get_peer_attributes(struct fsl_mc_io		*mc_io,
+			     uint32_t			cmd_flags,
 			     uint16_t			token,
 			     struct dpci_peer_attr	*attr);
 
 /**
  * dpci_get_link_state() - Retrieve the DPCI link state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @up:		Returned link state; returns '1' if link is up, '0' otherwise
  *
@@ -379,7 +431,10 @@ int dpci_get_peer_attributes(struct fsl_mc_io		*mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_get_link_state(struct fsl_mc_io *mc_io, uint16_t token, int *up);
+int dpci_get_link_state(struct fsl_mc_io *mc_io,
+			uint32_t	cmd_flags,
+			uint16_t	token,
+			int		*up);
 
 /**
  * enum dpci_dest - DPCI destination types
@@ -444,6 +499,7 @@ struct dpci_rx_queue_cfg {
 /**
  * dpci_set_rx_queue() - Set Rx queue configuration
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @priority:	Select the queue relative to number of
  *			priorities configured at DPCI creation; use
@@ -454,6 +510,7 @@ struct dpci_rx_queue_cfg {
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_set_rx_queue(struct fsl_mc_io			*mc_io,
+		      uint32_t				cmd_flags,
 		      uint16_t				token,
 		      uint8_t				priority,
 		      const struct dpci_rx_queue_cfg	*cfg);
@@ -466,14 +523,15 @@ int dpci_set_rx_queue(struct fsl_mc_io			*mc_io,
  * @fqid:	Virtual FQID value to be used for dequeue operations
  */
 struct dpci_rx_queue_attr {
-	uint64_t user_ctx;
-	struct dpci_dest_cfg dest_cfg;
-	uint32_t fqid;
+	uint64_t		user_ctx;
+	struct dpci_dest_cfg	dest_cfg;
+	uint32_t		fqid;
 };
 
 /**
  * dpci_get_rx_queue() - Retrieve Rx queue attributes.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPCI object
  * @priority:		Select the queue relative to number of
  *			priorities configured at DPCI creation
@@ -482,6 +540,7 @@ struct dpci_rx_queue_attr {
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_get_rx_queue(struct fsl_mc_io		*mc_io,
+		      uint32_t			cmd_flags,
 		      uint16_t			token,
 		      uint8_t			priority,
 		      struct dpci_rx_queue_attr	*attr);
@@ -500,6 +559,7 @@ struct dpci_tx_queue_attr {
 /**
  * dpci_get_tx_queue() - Retrieve Tx queue attributes.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCI object
  * @priority:	Select the queue relative to number of
  *				priorities of the peer DPCI object
@@ -508,6 +568,7 @@ struct dpci_tx_queue_attr {
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpci_get_tx_queue(struct fsl_mc_io		*mc_io,
+		      uint32_t			cmd_flags,
 		      uint16_t			token,
 		      uint8_t			priority,
 		      struct dpci_tx_queue_attr	*attr);

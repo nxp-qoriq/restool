@@ -33,7 +33,7 @@
 #define _FSL_DPSECI_CMD_H
 
 /* DPSECI Version */
-#define DPSECI_VER_MAJOR				2
+#define DPSECI_VER_MAJOR				3
 #define DPSECI_VER_MINOR				0
 
 /* Command IDs */
@@ -68,8 +68,16 @@
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSECI_CMD_CREATE(cmd, cfg) \
 do { \
-	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  cfg->priorities[0]);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  cfg->priorities[1]);\
+	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->priorities[0]);\
+	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  cfg->priorities[1]);\
+	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  cfg->priorities[2]);\
+	MC_CMD_OP(cmd, 0, 24, 8,  uint8_t,  cfg->priorities[3]);\
+	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  cfg->priorities[4]);\
+	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  cfg->priorities[5]);\
+	MC_CMD_OP(cmd, 0, 48, 8,  uint8_t,  cfg->priorities[6]);\
+	MC_CMD_OP(cmd, 0, 56, 8,  uint8_t,  cfg->priorities[7]);\
+	MC_CMD_OP(cmd, 1, 0,  8,  uint8_t,  cfg->num_tx_queues);\
+	MC_CMD_OP(cmd, 1, 8,  8,  uint8_t,  cfg->num_rx_queues);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -77,12 +85,12 @@ do { \
 	MC_RSP_OP(cmd, 0, 0,  1,  int,	    en)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id) \
+#define DPSECI_CMD_SET_IRQ(cmd, irq_index, irq_cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  irq_index);\
-	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_val);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_CMD_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_cfg->val);\
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_CMD_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -90,11 +98,11 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_RSP_GET_IRQ(cmd, type, irq_addr, irq_val, user_irq_id) \
+#define DPSECI_RSP_GET_IRQ(cmd, type, irq_cfg) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_RSP_OP(cmd, 2, 0,  32, int,	    user_irq_id); \
+	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_cfg->val); \
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_RSP_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 	MC_RSP_OP(cmd, 2, 32, 32, int,	    type); \
 } while (0)
 
@@ -147,25 +155,27 @@ do { \
 #define DPSECI_RSP_GET_ATTR(cmd, attr) \
 do { \
 	MC_RSP_OP(cmd, 0, 0,  32, int,	    attr->id); \
-	MC_RSP_OP(cmd, 1, 0,  8,  uint8_t,  attr->num_of_priorities); \
+	MC_RSP_OP(cmd, 1, 0,  8,  uint8_t,  attr->num_tx_queues); \
+	MC_RSP_OP(cmd, 1, 8,  8,  uint8_t,  attr->num_rx_queues); \
 	MC_RSP_OP(cmd, 5, 0,  16, uint16_t, attr->version.major);\
 	MC_RSP_OP(cmd, 5, 16, 16, uint16_t, attr->version.minor);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_CMD_SET_RX_QUEUE(cmd, priority, cfg) \
+#define DPSECI_CMD_SET_RX_QUEUE(cmd, queue, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  32, int,      cfg->dest_cfg.dest_id); \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  cfg->dest_cfg.priority); \
-	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  priority); \
+	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  queue); \
 	MC_CMD_OP(cmd, 0, 48, 4,  enum dpseci_dest, cfg->dest_cfg.dest_type); \
 	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, cfg->user_ctx); \
 	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->options);\
+	MC_CMD_OP(cmd, 2, 32, 32, int,		cfg->order_preservation_en);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_CMD_GET_RX_QUEUE(cmd, priority) \
-	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  priority)
+#define DPSECI_CMD_GET_RX_QUEUE(cmd, queue) \
+	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  queue)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSECI_RSP_GET_RX_QUEUE(cmd, attr) \
@@ -175,6 +185,7 @@ do { \
 	MC_RSP_OP(cmd, 0, 48, 4,  enum dpseci_dest, attr->dest_cfg.dest_type);\
 	MC_RSP_OP(cmd, 1, 0,  8,  uint64_t,  attr->user_ctx);\
 	MC_RSP_OP(cmd, 2, 0,  32, uint32_t,  attr->fqid);\
+	MC_RSP_OP(cmd, 2, 32, 32, int,		 attr->order_preservation_en);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -183,6 +194,9 @@ do { \
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSECI_RSP_GET_TX_QUEUE(cmd, attr) \
-	MC_RSP_OP(cmd, 0, 32, 32, uint32_t,  attr->fqid)
+do { \
+	MC_RSP_OP(cmd, 0, 32, 32, uint32_t,  attr->fqid);\
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t,  attr->priority);\
+} while (0)
 
 #endif /* _FSL_DPSECI_CMD_H */

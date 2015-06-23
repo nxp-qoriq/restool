@@ -173,7 +173,7 @@ static int print_dpdcei_attr(uint32_t dpdcei_id,
 	struct dpdcei_attr dpdcei_attr;
 	bool dpdcei_opened = false;
 
-	error = dpdcei_open(&restool.mc_io, dpdcei_id, &dpdcei_handle);
+	error = dpdcei_open(&restool.mc_io, 0, dpdcei_id, &dpdcei_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -190,7 +190,7 @@ static int print_dpdcei_attr(uint32_t dpdcei_id,
 	}
 
 	memset(&dpdcei_attr, 0, sizeof(dpdcei_attr));
-	error = dpdcei_get_attributes(&restool.mc_io, dpdcei_handle,
+	error = dpdcei_get_attributes(&restool.mc_io, 0, dpdcei_handle,
 					&dpdcei_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -214,7 +214,7 @@ out:
 	if (dpdcei_opened) {
 		int error2;
 
-		error2 = dpdcei_close(&restool.mc_io, dpdcei_handle);
+		error2 = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -387,7 +387,7 @@ static int cmd_dpdcei_create(void)
 		return -EINVAL;
 	}
 
-	error = dpdcei_create(&restool.mc_io, &dpdcei_cfg, &dpdcei_handle);
+	error = dpdcei_create(&restool.mc_io, 0, &dpdcei_cfg, &dpdcei_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -396,7 +396,7 @@ static int cmd_dpdcei_create(void)
 	}
 
 	memset(&dpdcei_attr, 0, sizeof(struct dpdcei_attr));
-	error = dpdcei_get_attributes(&restool.mc_io, dpdcei_handle,
+	error = dpdcei_get_attributes(&restool.mc_io, 0, dpdcei_handle,
 					&dpdcei_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -406,7 +406,7 @@ static int cmd_dpdcei_create(void)
 	}
 	printf("dpdcei.%d is created under dprc.1\n", dpdcei_attr.id);
 
-	error = dpdcei_close(&restool.mc_io, dpdcei_handle);
+	error = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -453,7 +453,7 @@ static int cmd_dpdcei_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpdcei_open(&restool.mc_io, dpdcei_id, &dpdcei_handle);
+	error = dpdcei_open(&restool.mc_io, 0, dpdcei_id, &dpdcei_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -469,7 +469,7 @@ static int cmd_dpdcei_destroy(void)
 		goto out;
 	}
 
-	error = dpdcei_destroy(&restool.mc_io, dpdcei_handle);
+	error = dpdcei_destroy(&restool.mc_io, 0, dpdcei_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -481,7 +481,7 @@ static int cmd_dpdcei_destroy(void)
 
 out:
 	if (dpdcei_opened) {
-		error2 = dpdcei_close(&restool.mc_io, dpdcei_handle);
+		error2 = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

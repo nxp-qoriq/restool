@@ -299,7 +299,7 @@ static int print_dpni_endpoint(uint32_t target_id,
 	strncpy(endpoint1.type, "dpni", EP_OBJ_TYPE_MAX_LEN);
 	endpoint1.type[EP_OBJ_TYPE_MAX_LEN] = '\0';
 	endpoint1.id = target_id;
-	endpoint1.interface_id = 0;
+	endpoint1.if_id = 0;
 
 	if (target_parent_dprc_id == restool.root_dprc_id)
 		target_parent_dprc_handle = restool.root_dprc_handle;
@@ -309,7 +309,8 @@ static int print_dpni_endpoint(uint32_t target_id,
 		if (error < 0)
 			return error;
 	}
-	error = dprc_get_connection(&restool.mc_io, target_parent_dprc_handle,
+	error = dprc_get_connection(&restool.mc_io, 0,
+					target_parent_dprc_handle,
 					&endpoint1, &endpoint2, &state);
 	printf("endpoint state: %d\n", state);
 
@@ -320,8 +321,8 @@ static int print_dpni_endpoint(uint32_t target_id,
 		    strcmp(endpoint2.type, "dpdmux") == 0) {
 			printf("endpoint: %s.%d.%d",
 				endpoint2.type, endpoint2.id,
-				endpoint2.interface_id);
-		} else if (endpoint2.interface_id == 0) {
+				endpoint2.if_id);
+		} else if (endpoint2.if_id == 0) {
 			printf("endpoint: %s.%d",
 				endpoint2.type, endpoint2.id);
 		}
@@ -341,7 +342,7 @@ static int print_dpni_endpoint(uint32_t target_id,
 	}
 
 	if (target_parent_dprc_id != restool.root_dprc_id)
-		return dprc_close(&restool.mc_io, target_parent_dprc_handle);
+		return dprc_close(&restool.mc_io, 0, target_parent_dprc_handle);
 
 	return 0;
 }
@@ -357,7 +358,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	bool dpni_opened = false;
 	struct dpni_link_state link_state;
 
-	error = dpni_open(&restool.mc_io, dpni_id, &dpni_handle);
+	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -374,7 +375,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	}
 
 	memset(&dpni_attr, 0, sizeof(dpni_attr));
-	error = dpni_get_attributes(&restool.mc_io, dpni_handle, &dpni_attr);
+	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle, &dpni_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -384,7 +385,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	assert(dpni_id == (uint32_t)dpni_attr.id);
 	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
 
-	error = dpni_get_primary_mac_addr(&restool.mc_io,
+	error = dpni_get_primary_mac_addr(&restool.mc_io, 0,
 					dpni_handle, mac_addr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -394,7 +395,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	}
 
 	memset(&link_state, 0, sizeof(link_state));
-	error = dpni_get_link_state(&restool.mc_io, dpni_handle,
+	error = dpni_get_link_state(&restool.mc_io, 0, dpni_handle,
 					&link_state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -442,7 +443,7 @@ out:
 	if (dpni_opened) {
 		int error2;
 
-		error2 = dpni_close(&restool.mc_io, dpni_handle);
+		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -894,7 +895,7 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.adv.max_dist_key_size = 0;
 	}
 
-	error = dpni_create(&restool.mc_io, &dpni_cfg, &dpni_handle);
+	error = dpni_create(&restool.mc_io, 0, &dpni_cfg, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -903,7 +904,7 @@ static int create_dpni(const char *usage_msg)
 	}
 
 	memset(&dpni_attr, 0, sizeof(struct dpni_attr));
-	error = dpni_get_attributes(&restool.mc_io, dpni_handle, &dpni_attr);
+	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle, &dpni_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -912,7 +913,7 @@ static int create_dpni(const char *usage_msg)
 	}
 	printf("dpni.%d is created under dprc.1\n", dpni_attr.id);
 
-	error = dpni_close(&restool.mc_io, dpni_handle);
+	error = dpni_close(&restool.mc_io, 0, dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1018,7 +1019,7 @@ static int cmd_dpni_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpni_open(&restool.mc_io, dpni_id, &dpni_handle);
+	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1034,7 +1035,7 @@ static int cmd_dpni_destroy(void)
 		goto out;
 	}
 
-	error = dpni_destroy(&restool.mc_io, dpni_handle);
+	error = dpni_destroy(&restool.mc_io, 0, dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1046,7 +1047,7 @@ static int cmd_dpni_destroy(void)
 
 out:
 	if (dpni_opened) {
-		error2 = dpni_close(&restool.mc_io, dpni_handle);
+		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

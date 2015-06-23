@@ -41,6 +41,7 @@ struct fsl_mc_io;
 /**
  * dpaiop_open() - Open a control session for the specified object.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpaiop_id:	DPAIOP unique ID
  * @token:	Returned token; use in subsequent API calls
  *
@@ -54,11 +55,15 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpaiop_open(struct fsl_mc_io *mc_io, int dpaiop_id, uint16_t *token);
+int dpaiop_open(struct fsl_mc_io *mc_io,
+		uint32_t cmd_flags,
+		int dpaiop_id,
+		uint16_t *token);
 
 /**
  * dpaiop_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  *
  * After this function is called, no further operations are
@@ -66,10 +71,10 @@ int dpaiop_open(struct fsl_mc_io *mc_io, int dpaiop_id, uint16_t *token);
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpaiop_close(struct fsl_mc_io *mc_io, uint16_t token);
+int dpaiop_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
- * struct dpaiop_cfg() - Structure representing DPAIOP configuration
+ * struct dpaiop_cfg - Structure representing DPAIOP configuration
  * @aiop_id:		AIOP ID
  * @aiop_container_id:	AIOP container ID
  */
@@ -81,6 +86,7 @@ struct dpaiop_cfg {
 /**
  * dpaiop_create() - Create the DPAIOP object.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
  * @token:	Returned token; use in subsequent API calls
  *
@@ -99,71 +105,81 @@ struct dpaiop_cfg {
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_create(struct fsl_mc_io	*mc_io,
+		  uint32_t		cmd_flags,
 		  const struct dpaiop_cfg	*cfg,
 		uint16_t		*token);
 
 /**
  * dpaiop_destroy() - Destroy the DPAIOP object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpaiop_destroy(struct fsl_mc_io *mc_io, uint16_t token);
+int dpaiop_destroy(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
  * dpaiop_reset() - Reset the DPAIOP, returns the object to initial state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpaiop_reset(struct fsl_mc_io *mc_io, uint16_t token);
+int dpaiop_reset(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
+
+/**
+ * struct dpaiop_irq_cfg - IRQ configuration
+ * @addr:	Address that must be written to signal a message-based interrupt
+ * @val:	Value to write into irq_addr address
+ * @user_irq_id: A user defined number associated with this IRQ
+ */
+struct dpaiop_irq_cfg {
+	     uint64_t		addr;
+	     uint32_t		val;
+	     int		user_irq_id;
+};
 
 /**
  * dpaiop_set_irq() - Set IRQ information for the DPAIOP to trigger an interrupt.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @irq_index:	Identifies the interrupt index to configure
- * @irq_addr:	Address that must be written to
- *				signal a message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ * @irq_cfg:	IRQ configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpaiop_set_irq(struct fsl_mc_io	*mc_io,
-		   uint16_t		token,
-		 uint8_t		irq_index,
-		 uint64_t		irq_addr,
-		 uint32_t		irq_val,
-		 int			user_irq_id);
+int dpaiop_set_irq(struct fsl_mc_io		*mc_io,
+		   uint32_t			cmd_flags,
+		   uint16_t			token,
+		   uint8_t			irq_index,
+		   struct dpaiop_irq_cfg	*irq_cfg);
 
 /**
  * dpaiop_get_irq() - Get IRQ information from the DPAIOP.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @irq_index:	The interrupt index to configure
  * @type:	Interrupt type: 0 represents message interrupt
- *				type (both irq_addr and irq_val are valid)
- * @irq_addr:	Returned address that must be written to
- *				signal the message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ *		type (both irq_addr and irq_val are valid)
+ * @irq_cfg:	IRQ attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpaiop_get_irq(struct fsl_mc_io	*mc_io,
-		   uint16_t		token,
-		 uint8_t		irq_index,
-		 int			*type,
-		 uint64_t		*irq_addr,
-		 uint32_t		*irq_val,
-		 int			*user_irq_id);
+int dpaiop_get_irq(struct fsl_mc_io		*mc_io,
+		   uint32_t			cmd_flags,
+		   uint16_t			token,
+		   uint8_t			irq_index,
+		   int				*type,
+		   struct dpaiop_irq_cfg	*irq_cfg);
 
 /**
  * dpaiop_set_irq_enable() - Set overall interrupt state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @irq_index:	The interrupt index to configure
  * @en:	Interrupt state - enable = 1, disable = 0
@@ -176,13 +192,15 @@ int dpaiop_get_irq(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_set_irq_enable(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
-			uint8_t			irq_index,
-			uint8_t			en);
+			  uint8_t		irq_index,
+			  uint8_t		en);
 
 /**
  * dpaiop_get_irq_enable() - Get overall interrupt state
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @irq_index:	The interrupt index to configure
  * @en:		Returned interrupt state - enable = 1, disable = 0
@@ -190,13 +208,15 @@ int dpaiop_set_irq_enable(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_get_irq_enable(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
-			uint8_t			irq_index,
-			uint8_t			*en);
+			  uint8_t		irq_index,
+			  uint8_t		*en);
 
 /**
  * dpaiop_set_irq_mask() - Set interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @irq_index:	The interrupt index to configure
  * @mask:	Event mask to trigger interrupt;
@@ -210,13 +230,15 @@ int dpaiop_get_irq_enable(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_set_irq_mask(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
 			uint16_t		token,
-		      uint8_t		irq_index,
-		      uint32_t		mask);
+			uint8_t			irq_index,
+			uint32_t		mask);
 
 /**
  * dpaiop_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @irq_index:	The interrupt index to configure
  * @mask:	Returned event mask to trigger interrupt
@@ -227,14 +249,16 @@ int dpaiop_set_irq_mask(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_get_irq_mask(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
 			uint16_t		token,
-		      uint8_t		irq_index,
-		      uint32_t		*mask);
+			uint8_t			irq_index,
+			uint32_t		*mask);
 
 /**
  * dpaiop_get_irq_status() - Get the current status of any pending interrupts.
  *
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @irq_index:	The interrupt index to configure
  * @status:	Returned interrupts status - one bit per cause:
@@ -244,14 +268,16 @@ int dpaiop_get_irq_mask(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_get_irq_status(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
-			uint8_t			irq_index,
-			uint32_t		*status);
+			  uint8_t		irq_index,
+			  uint32_t		*status);
 
 /**
  * dpaiop_clear_irq_status() - Clear a pending interrupt's status
  *
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @irq_index:	The interrupt index to configure
  * @status:	Bits to clear (W1C) - one bit per cause:
@@ -261,13 +287,14 @@ int dpaiop_get_irq_status(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_clear_irq_status(struct fsl_mc_io	*mc_io,
+			    uint32_t		cmd_flags,
 			    uint16_t		token,
-			  uint8_t		irq_index,
-			  uint32_t		status);
+			    uint8_t		irq_index,
+			    uint32_t		status);
 
 /**
  * struct dpaiop_attr - Structure representing DPAIOP attributes
- * @aiop_id:	AIOP ID
+ * @id:	AIOP ID
  * @version:	DPAIOP version
  */
 struct dpaiop_attr {
@@ -287,14 +314,16 @@ struct dpaiop_attr {
  * dpaiop_get_attributes - Retrieve DPAIOP attributes.
  *
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @attr:	Returned object's attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_get_attributes(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
-			struct dpaiop_attr	*attr);
+			  struct dpaiop_attr	*attr);
 
 /**
  * struct dpaiop_load_cfg - AIOP load configuration
@@ -307,17 +336,18 @@ struct dpaiop_load_cfg {
 	uint64_t img_iova;
 	uint32_t img_size;
 };
+
 /**
  * dpaiop_load_aiop() - Loads an image to AIOP tile
- * @mc_io:	Pointer to opaque I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @cfg:	AIOP load configurations
- * @img_size:	Size of AIOP ELF image in memory (in bytes)
- * @img_iova:	I/O virtual address of AIOP ELF image
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_load(struct fsl_mc_io *mc_io,
+		uint32_t cmd_flags,
 		uint16_t token,
 		struct dpaiop_load_cfg *cfg);
 
@@ -340,13 +370,15 @@ struct dpaiop_run_cfg {
 /**
  * dpaiop_run_aiop() - Starts AIOP tile execution
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @cfg:	AIOP run configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_run(struct fsl_mc_io			*mc_io,
-	       uint16_t			token,
+	       uint32_t				cmd_flags,
+	       uint16_t				token,
 	       const struct dpaiop_run_cfg	*cfg);
 
 /**
@@ -364,14 +396,16 @@ struct dpaiop_sl_version {
 /**
  * dpaiop_get_sl_version() - Get AIOP SL (Service Layer) version
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
- * @cfg:	AIOP SL version number
+ * @version:	AIOP SL version number
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpaiop_get_sl_version(struct fsl_mc_io	*mc_io,
+int dpaiop_get_sl_version(struct fsl_mc_io		*mc_io,
+			  uint32_t			cmd_flags,
 			  uint16_t			token,
-	       struct dpaiop_sl_version		*version);
+			  struct dpaiop_sl_version	*version);
 
 #define DPAIOP_STATE_RESET_DONE      0x00000000
 #define DPAIOP_STATE_RESET_ONGOING   0x00000001
@@ -387,13 +421,43 @@ int dpaiop_get_sl_version(struct fsl_mc_io	*mc_io,
 /**
  * dpaiop_get_state() - Get AIOP state
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPAIOP object
  * @state:	AIOP state
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpaiop_get_state(struct fsl_mc_io	*mc_io,
-		     uint16_t			token,
-	       uint32_t				*state);
+		     uint32_t		cmd_flags,
+		     uint16_t		token,
+		     uint32_t		*state);
+
+/**
+ * dpaiop_set_time_of_day() - Set AIOP internal time-of-day
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:  Token of DPAIOP object
+ * @time_of_day:  Current number of milliseconds since the Epoch
+ *
+ * Return:  '0' on Success; Error code otherwise.
+ */
+int dpaiop_set_time_of_day(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
+			   uint16_t token,
+			   uint64_t time_of_day);
+
+/**
+ * dpaiop_get_time_of_day() - Get AIOP internal time-of-day
+ * @mc_io:  Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:  Token of DPAIOP object
+ * @time_of_day:  Current number of milliseconds since the Epoch
+ *
+ * Return:  '0' on Success; Error code otherwise.
+ */
+int dpaiop_get_time_of_day(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
+			   uint16_t token,
+			   uint64_t *time_of_day);
 
 #endif /* __FSL_DPAIOP_H */

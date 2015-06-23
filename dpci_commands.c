@@ -151,7 +151,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 	bool dpci_opened = false;
 	int link_state;
 
-	error = dpci_open(&restool.mc_io, dpci_id, &dpci_handle);
+	error = dpci_open(&restool.mc_io, 0, dpci_id, &dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -168,7 +168,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 	}
 
 	memset(&dpci_attr, 0, sizeof(dpci_attr));
-	error = dpci_get_attributes(&restool.mc_io, dpci_handle, &dpci_attr);
+	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -177,7 +177,7 @@ static int print_dpci_attr(uint32_t dpci_id,
 	}
 	assert(dpci_id == (uint32_t)dpci_attr.id);
 
-	error = dpci_get_peer_attributes(&restool.mc_io, dpci_handle,
+	error = dpci_get_peer_attributes(&restool.mc_io, 0, dpci_handle,
 					 &dpci_peer_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -186,7 +186,8 @@ static int print_dpci_attr(uint32_t dpci_id,
 		goto out;
 	}
 
-	error = dpci_get_link_state(&restool.mc_io, dpci_handle, &link_state);
+	error = dpci_get_link_state(&restool.mc_io, 0, dpci_handle,
+					&link_state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -220,7 +221,7 @@ out:
 	if (dpci_opened) {
 		int error2;
 
-		error2 = dpci_close(&restool.mc_io, dpci_handle);
+		error2 = dpci_close(&restool.mc_io, 0, dpci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -360,7 +361,7 @@ static int cmd_dpci_create(void)
 		dpci_cfg.num_of_priorities = 1;
 	}
 
-	error = dpci_create(&restool.mc_io, &dpci_cfg, &dpci_handle);
+	error = dpci_create(&restool.mc_io, 0, &dpci_cfg, &dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -369,7 +370,7 @@ static int cmd_dpci_create(void)
 	}
 
 	memset(&dpci_attr, 0, sizeof(struct dpci_attr));
-	error = dpci_get_attributes(&restool.mc_io, dpci_handle, &dpci_attr);
+	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -378,7 +379,7 @@ static int cmd_dpci_create(void)
 	}
 	printf("dpci.%d is created under dprc.1\n", dpci_attr.id);
 
-	error = dpci_close(&restool.mc_io, dpci_handle);
+	error = dpci_close(&restool.mc_io, 0, dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -424,7 +425,7 @@ static int cmd_dpci_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpci_open(&restool.mc_io, dpci_id, &dpci_handle);
+	error = dpci_open(&restool.mc_io, 0, dpci_id, &dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -440,7 +441,7 @@ static int cmd_dpci_destroy(void)
 		goto out;
 	}
 
-	error = dpci_destroy(&restool.mc_io, dpci_handle);
+	error = dpci_destroy(&restool.mc_io, 0, dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -452,7 +453,7 @@ static int cmd_dpci_destroy(void)
 
 out:
 	if (dpci_opened) {
-		error2 = dpci_close(&restool.mc_io, dpci_handle);
+		error2 = dpci_close(&restool.mc_io, 0, dpci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

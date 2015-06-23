@@ -50,6 +50,7 @@ struct fsl_mc_io;
 /**
  * dpsw_open() - Open a control session for the specified object
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpsw_id:	DPSW unique ID
  * @token:	Returned token; use in subsequent API calls
  *
@@ -63,28 +64,34 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_open(struct fsl_mc_io *mc_io, int dpsw_id, uint16_t *token);
+int dpsw_open(struct fsl_mc_io	*mc_io,
+	      uint32_t		cmd_flags,
+	      int		dpsw_id,
+	      uint16_t		*token);
 
 /**
  * dpsw_close() - Close the control session of the object
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPSW object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
  *
  * After this function is called, no further operations are
  * allowed on the object without opening a new control session.
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_close(struct fsl_mc_io *mc_io, uint16_t token);
+int dpsw_close(struct fsl_mc_io *mc_io,
+	       uint32_t	cmd_flags,
+	       uint16_t	token);
 
 /* DPSW options */
 
 /* Disable flooding */
-#define DPSW_OPT_FLOODING_DIS	0x0000000000000001ULL
+#define DPSW_OPT_FLOODING_DIS		0x0000000000000001ULL
 /* Disable Multicast */
-#define DPSW_OPT_MULTICAST_DIS	0x0000000000000004ULL
+#define DPSW_OPT_MULTICAST_DIS		0x0000000000000004ULL
 /* Support control interface */
-#define DPSW_OPT_CTRL		0x0000000000000010ULL
+#define DPSW_OPT_CTRL_IF_DIS		0x0000000000000010ULL
 /* Disable flooding metering */
 #define DPSW_OPT_FLOODING_METERING_DIS  0x0000000000000020ULL
 /* Enable metering */
@@ -97,7 +104,7 @@ int dpsw_close(struct fsl_mc_io *mc_io, uint16_t token);
  *		 use this structure to change default settings
  */
 struct dpsw_cfg {
-	uint16_t num_ifs;
+	uint16_t		num_ifs;
 	/**
 	 * struct adv - Advanced parameters
 	 * @options: Enable/Disable DPSW features (bitmap)
@@ -110,23 +117,22 @@ struct dpsw_cfg {
 	 *			0 - indicates default 300 seconds
 	 * @max_fdb_mc_groups: Number of multicast groups in each FDB table;
 	 *			0 - indicates default 32
-	 * @ctrl_if_id: Control interface
 	 */
 	struct {
-		uint64_t options;
-		uint16_t max_vlans;
-		uint8_t max_meters_per_if;
-		uint8_t max_fdbs;
-		uint16_t max_fdb_entries;
-		uint16_t fdb_aging_time;
-		uint16_t max_fdb_mc_groups;
-		uint16_t ctrl_if_id;
+		uint64_t	options;
+		uint16_t	max_vlans;
+		uint8_t	max_meters_per_if;
+		uint8_t	max_fdbs;
+		uint16_t	max_fdb_entries;
+		uint16_t	fdb_aging_time;
+		uint16_t	max_fdb_mc_groups;
 	} adv;
 };
 
 /**
  * dpsw_create() - Create the DPSW object.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
  * @token:	Returned token; use in subsequent API calls
  *
@@ -145,56 +151,73 @@ struct dpsw_cfg {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_create(struct fsl_mc_io *mc_io,
-		const struct dpsw_cfg *cfg,
-		uint16_t *token);
+int dpsw_create(struct fsl_mc_io	*mc_io,
+		uint32_t		cmd_flags,
+		const struct dpsw_cfg	*cfg,
+		uint16_t		*token);
 
 /**
  * dpsw_destroy() - Destroy the DPSW object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpsw_destroy(struct fsl_mc_io *mc_io, uint16_t token);
+int dpsw_destroy(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
 
 /**
  * dpsw_enable() - Enable DPSW functionality
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_enable(struct fsl_mc_io *mc_io, uint16_t token);
+int dpsw_enable(struct fsl_mc_io	*mc_io,
+		uint32_t		cmd_flags,
+		uint16_t		token);
 
 /**
  * dpsw_disable() - Disable DPSW functionality
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_disable(struct fsl_mc_io *mc_io, uint16_t token);
+int dpsw_disable(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
 
 /**
  * dpsw_is_enabled() - Check if the DPSW is enabled
  *
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @en:		Returns '1' if object is enabled; '0' otherwise
  *
  * Return:	'0' on Success; Error code otherwise
  */
-int dpsw_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en);
+int dpsw_is_enabled(struct fsl_mc_io	*mc_io,
+		    uint32_t		cmd_flags,
+		    uint16_t		token,
+		    int		*en);
 
 /**
  * dpsw_reset() - Reset the DPSW, returns the object to initial state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_reset(struct fsl_mc_io *mc_io, uint16_t token);
+int dpsw_reset(struct fsl_mc_io *mc_io,
+	       uint32_t	cmd_flags,
+	       uint16_t	token);
 
 /* DPSW IRQ Index and Events */
 
@@ -205,50 +228,57 @@ int dpsw_reset(struct fsl_mc_io *mc_io, uint16_t token);
 #define DPSW_IRQ_EVENT_LINK_CHANGED	0x0001
 
 /**
- * dpsw_set_irq() - Set IRQ information for the DPSW to trigger an interrupt.
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @irq_index:	Identifies the interrupt index to configure
- * @irq_addr:	Address that must be written to
- *				signal a message-based interrupt
- * @irq_val:	Value to write into irq_addr address
+ * struct dpsw_irq_cfg - IRQ configuration
+ * @addr:	Address that must be written to signal a message-based interrupt
+ * @val:	Value to write into irq_addr address
  * @user_irq_id: A user defined number associated with this IRQ
- *
- * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_set_irq(struct fsl_mc_io *mc_io,
-		 uint16_t token,
-		 uint8_t irq_index,
-		 uint64_t irq_addr,
-		 uint32_t irq_val,
-		 int user_irq_id);
+struct dpsw_irq_cfg {
+	     uint64_t		addr;
+	     uint32_t		val;
+	     int		user_irq_id;
+};
 
 /**
- * @dpsw_get_irq() - Get IRQ information from the DPSW
- *
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @irq_index:	The interrupt index to configure
- * @type:		Returned interrupt type: 0 represents message interrupt
- *				type (both irq_addr and irq_val are valid)
- * @irq_addr:	Returned address that must be written to
- *				signal the message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ * dpsw_set_irq() - Set IRQ information for the DPSW to trigger an interrupt.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @irq_index:	Identifies the interrupt index to configure
+ * @irq_cfg:	IRQ configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_get_irq(struct fsl_mc_io *mc_io,
-		 uint16_t token,
-		 uint8_t irq_index,
-		 int *type,
-		 uint64_t *irq_addr,
-		 uint32_t *irq_val,
-		 int *user_irq_id);
+int dpsw_set_irq(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token,
+		 uint8_t		irq_index,
+		 struct dpsw_irq_cfg	*irq_cfg);
+
+/**
+ * dpsw_get_irq() - Get IRQ information from the DPSW
+ *
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @irq_index:	The interrupt index to configure
+ * @type:	Interrupt type: 0 represents message interrupt
+ *		type (both irq_addr and irq_val are valid)
+ * @irq_cfg:	IRQ attributes
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpsw_get_irq(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token,
+		 uint8_t		irq_index,
+		 int			*type,
+		 struct dpsw_irq_cfg	*irq_cfg);
 
 /**
  * dpsw_set_irq_enable() - Set overall interrupt state.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @en:			Interrupt state - enable = 1, disable = 0
@@ -260,28 +290,32 @@ int dpsw_get_irq(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_set_irq_enable(struct fsl_mc_io *mc_io,
-			uint16_t token,
-			uint8_t irq_index,
-			uint8_t en);
+int dpsw_set_irq_enable(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint8_t		irq_index,
+			uint8_t		en);
 
 /**
  * dpsw_get_irq_enable() - Get overall interrupt state
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @irq_index:	The interrupt index to configure
  * @en:			Returned Interrupt state - enable = 1, disable = 0
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_get_irq_enable(struct fsl_mc_io *mc_io,
-			uint16_t token,
-			uint8_t irq_index,
-			uint8_t *en);
+int dpsw_get_irq_enable(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint8_t		irq_index,
+			uint8_t		*en);
 
 /**
  * dpsw_set_irq_mask() - Set interrupt mask.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @mask:		event mask to trigger interrupt;
@@ -294,14 +328,16 @@ int dpsw_get_irq_enable(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_set_irq_mask(struct fsl_mc_io *mc_io,
-		      uint16_t token,
-		      uint8_t irq_index,
-		      uint32_t mask);
+int dpsw_set_irq_mask(struct fsl_mc_io	*mc_io,
+		      uint32_t		cmd_flags,
+		      uint16_t		token,
+		      uint8_t		irq_index,
+		      uint32_t		mask);
 
 /**
  * dpsw_get_irq_mask() - Get interrupt mask.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @irq_index:	The interrupt index to configure
  * @mask:		Returned event mask to trigger interrupt
@@ -311,14 +347,16 @@ int dpsw_set_irq_mask(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_get_irq_mask(struct fsl_mc_io *mc_io,
-		      uint16_t token,
-		      uint8_t irq_index,
-		      uint32_t *mask);
+int dpsw_get_irq_mask(struct fsl_mc_io	*mc_io,
+		      uint32_t		cmd_flags,
+		      uint16_t		token,
+		      uint8_t		irq_index,
+		      uint32_t		*mask);
 
 /**
  * dpsw_get_irq_status() - Get the current status of any pending interrupts
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @irq_index:	The interrupt index to configure
  * @status:		Returned interrupts status - one bit per cause:
@@ -327,26 +365,29 @@ int dpsw_get_irq_mask(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_get_irq_status(struct fsl_mc_io *mc_io,
-			uint16_t token,
-			uint8_t irq_index,
-			uint32_t *status);
+int dpsw_get_irq_status(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint8_t		irq_index,
+			uint32_t		*status);
 
 /**
  * dpsw_clear_irq_status() - Clear a pending interrupt's status
- * @mc_io		Pointer to MC portal's I/O object
- * @token		Token of DPCI object
- * @irq_index	The interrupt index to configure
- * @status		bits to clear (W1C) - one bit per cause:
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPCI object
+ * @irq_index:	The interrupt index to configure
+ * @status:		bits to clear (W1C) - one bit per cause:
  *					0 = don't change
  *					1 = clear status bit
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_clear_irq_status(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			  uint8_t irq_index,
-			  uint32_t status);
+int dpsw_clear_irq_status(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
+			  uint16_t		token,
+			  uint8_t		irq_index,
+			  uint32_t		status);
 /**
  * struct dpsw_attr - Structure representing DPSW attributes
  * @id: DPSW object ID
@@ -367,7 +408,7 @@ int dpsw_clear_irq_status(struct fsl_mc_io *mc_io,
  * @num_fdbs: Current number of FDBs
  */
 struct dpsw_attr {
-	int id;
+	int		id;
 	/**
 	 * struct version - DPSW version
 	 * @major: DPSW major version
@@ -377,34 +418,37 @@ struct dpsw_attr {
 		uint16_t major;
 		uint16_t minor;
 	} version;
-	uint64_t options;
-	uint16_t max_vlans;
-	uint8_t max_meters_per_if;
-	uint8_t max_fdbs;
-	uint16_t max_fdb_entries;
-	uint16_t fdb_aging_time;
-	uint16_t max_fdb_mc_groups;
-	uint16_t num_ifs;
-	uint16_t mem_size;
-	uint16_t num_vlans;
-	uint8_t num_fdbs;
+	uint64_t	options;
+	uint16_t	max_vlans;
+	uint8_t	max_meters_per_if;
+	uint8_t	max_fdbs;
+	uint16_t	max_fdb_entries;
+	uint16_t	fdb_aging_time;
+	uint16_t	max_fdb_mc_groups;
+	uint16_t	num_ifs;
+	uint16_t	mem_size;
+	uint16_t	num_vlans;
+	uint8_t		num_fdbs;
 };
 
 /**
  * dpsw_get_attributes() - Retrieve DPSW attributes
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @attr:		Returned DPSW attributes
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_get_attributes(struct fsl_mc_io *mc_io,
-			uint16_t token,
-			struct dpsw_attr *attr);
+int dpsw_get_attributes(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			struct dpsw_attr	*attr);
 
 /**
  * dpsw_set_reflection_if() - Set target interface for reflected interfaces.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Id
  *
@@ -412,34 +456,10 @@ int dpsw_get_attributes(struct fsl_mc_io *mc_io,
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_set_reflection_if(struct fsl_mc_io *mc_io,
-			   uint16_t token,
-			   uint16_t if_id);
-
-/**
- * dpsw_set_ctrl_if() - Set control interface id
- * @mc_io:	Pointer to MC portal's I/O object
- * @token:	Token of DPSW object
- * @if_id:	Interface Id
-
- * Return:      Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_set_ctrl_if(struct fsl_mc_io *mc_io,
-		     uint16_t token,
-		     uint16_t if_id);
-
-/**
- * dpsw_get_ctrl_if - Get control interface id
- * @mc_io:	Pointer to MC portal's I/O object
- * @token:	Token of DPSW object
- * @if_id:	Returned interface ID
- *
- * Return:      Completion status. '0' on Success; Error - when control
- *		interface disabled
- */
-int dpsw_get_ctrl_if(struct fsl_mc_io *mc_io,
-		     uint16_t token,
-		     uint16_t *if_id);
+int dpsw_set_reflection_if(struct fsl_mc_io	*mc_io,
+			   uint32_t		cmd_flags,
+			   uint16_t		token,
+			   uint16_t		if_id);
 
 /**
  * enum dpsw_action - Action selection for special/control frames
@@ -472,17 +492,19 @@ struct dpsw_link_cfg {
 
 /**
  * dpsw_if_set_link_cfg() - set the link configuration.
- * @mc_io: Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token: Token of DPSW object
  * @if_id: interface id
  * @cfg: Link configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_if_set_link_cfg(struct fsl_mc_io *mc_io,
-			 uint16_t token,
-			 uint16_t if_id,
-			 struct dpsw_link_cfg *cfg);
+int dpsw_if_set_link_cfg(struct fsl_mc_io	*mc_io,
+			 uint32_t		cmd_flags,
+			 uint16_t		token,
+			 uint16_t		if_id,
+			 struct dpsw_link_cfg	*cfg);
 /**
  * struct dpsw_link_state - Structure representing DPSW link state
  * @rate: Rate
@@ -497,59 +519,67 @@ struct dpsw_link_state {
 
 /**
  * dpsw_if_get_link_state - Return the link state
- * @mc_io: Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token: Token of DPSW object
  * @if_id: interface id
- * @state: link state
+ * @state: link state	1 - linkup, 0 - link down or disconnected
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpsw_if_get_link_state(struct fsl_mc_io *mc_io,
-			   uint16_t token,
-			   uint16_t if_id,
-			   struct dpsw_link_state *state);
+int dpsw_if_get_link_state(struct fsl_mc_io		*mc_io,
+			   uint32_t			cmd_flags,
+			   uint16_t			token,
+			   uint16_t			if_id,
+			   struct dpsw_link_state	*state);
 
 /**
  * dpsw_if_set_flooding() - Enable Disable flooding for particular interface
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @if_id:		Interface Identifier
- * @en:			1 - enable, 0 - disable
-
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_if_set_flooding(struct fsl_mc_io *mc_io,
-			 uint16_t token,
-			 uint16_t if_id,
-			 int en);
-
-/**
- * dpsw_if_set_broadcast() - Enable/disable broadcast for particular interface
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @if_id:		Interface Identifier
- * @en:			1 - enable, 0 - disable
-
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
-int dpsw_if_set_broadcast(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			  uint16_t if_id,
-			  int en);
-
-/**
- * dpsw_if_set_multicast() - Enable/disable multicast for particular interface
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @en:			1 - enable, 0 - disable
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_multicast(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			  uint16_t if_id,
-			  int en);
+int dpsw_if_set_flooding(struct fsl_mc_io	*mc_io,
+			 uint32_t		cmd_flags,
+			 uint16_t		token,
+			 uint16_t		if_id,
+			 int			en);
+
+/**
+ * dpsw_if_set_broadcast() - Enable/disable broadcast for particular interface
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPSW object
+ * @if_id:		Interface Identifier
+ * @en:			1 - enable, 0 - disable
+ *
+ * Return:	Completion status. '0' on Success; Error code otherwise.
+ */
+int dpsw_if_set_broadcast(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
+			  uint16_t		token,
+			  uint16_t		if_id,
+			  int			en);
+
+/**
+ * dpsw_if_set_multicast() - Enable/disable multicast for particular interface
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPSW object
+ * @if_id:		Interface Identifier
+ * @en:			1 - enable, 0 - disable
+ *
+ * Return:	Completion status. '0' on Success; Error code otherwise.
+ */
+int dpsw_if_set_multicast(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
+			  uint16_t		token,
+			  uint16_t		if_id,
+			  int			en);
 
 /**
  * struct dpsw_tci_cfg - Tag Contorl Information (TCI) configuration
@@ -565,37 +595,41 @@ int dpsw_if_set_multicast(struct fsl_mc_io *mc_io,
  *			allowing up to 4,094 VLANs
  */
 struct dpsw_tci_cfg {
-	uint8_t pcp;
-	uint8_t dei;
-	uint16_t vlan_id;
+	uint8_t	pcp;
+	uint8_t	dei;
+	uint16_t	vlan_id;
 };
 
 /**
  * dpsw_if_set_tci() - Set default VLAN Tag Control Information (TCI)
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @cfg:		Tag Control Information Configuration
-
+ *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_tci(struct fsl_mc_io *mc_io,
-		    uint16_t token,
-		    uint16_t if_id,
-		    const struct dpsw_tci_cfg *cfg);
+int dpsw_if_set_tci(struct fsl_mc_io		*mc_io,
+		    uint32_t			cmd_flags,
+		    uint16_t			token,
+		    uint16_t			if_id,
+		    const struct dpsw_tci_cfg	*cfg);
 
 /**
  * dpsw_if_get_tci() - Get default VLAN Tag Control Information (TCI)
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @cfg:		Tag Control Information Configuration
-
+ *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_get_tci(struct fsl_mc_io *mc_io,
-		    uint16_t token,
-		    uint16_t if_id,
+int dpsw_if_get_tci(struct fsl_mc_io	*mc_io,
+		    uint32_t		cmd_flags,
+		    uint16_t		token,
+		    uint16_t		if_id,
 		    struct dpsw_tci_cfg *cfg);
 
 /**
@@ -619,13 +653,14 @@ enum dpsw_stp_state {
  * @state: STP state
  */
 struct dpsw_stp_cfg {
-	uint16_t vlan_id;
-	enum dpsw_stp_state state;
+	uint16_t		vlan_id;
+	enum dpsw_stp_state	state;
 };
 
 /**
  * dpsw_if_set_stp() - Function sets Spanning Tree Protocol (STP) state.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @cfg:		STP State configuration parameters
@@ -635,10 +670,11 @@ struct dpsw_stp_cfg {
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_stp(struct fsl_mc_io *mc_io,
-		    uint16_t token,
-		    uint16_t if_id,
-		    const struct dpsw_stp_cfg *cfg);
+int dpsw_if_set_stp(struct fsl_mc_io		*mc_io,
+		    uint32_t			cmd_flags,
+		    uint16_t			token,
+		    uint16_t			if_id,
+		    const struct dpsw_stp_cfg	*cfg);
 
 /**
  * enum dpsw_accepted_frames - Types of frames to accept
@@ -660,13 +696,14 @@ enum dpsw_accepted_frames {
  *			redirected to control interface depending on this mode
  */
 struct dpsw_accepted_frames_cfg {
-	enum dpsw_accepted_frames type;
-	enum dpsw_action unaccept_act;
+	enum dpsw_accepted_frames	type;
+	enum dpsw_action		unaccept_act;
 };
 
 /**
  * dpsw_if_set_accepted_frames()
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @cfg:		Frame types configuration
@@ -679,17 +716,19 @@ struct dpsw_accepted_frames_cfg {
  * When admit_all - the device will accept VLAN tagged, untagged
  * and priority tagged frames.
  * The default is admit_all
-
+ *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_accepted_frames(struct fsl_mc_io *mc_io,
-				uint16_t token,
-				uint16_t if_id,
+int dpsw_if_set_accepted_frames(struct fsl_mc_io		*mc_io,
+				uint32_t			cmd_flags,
+				uint16_t			token,
+				uint16_t			if_id,
 				const struct dpsw_accepted_frames_cfg *cfg);
 
 /**
  * dpsw_if_set_accept_all_vlan()
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @accept_all:	Accept or drop frames having different VLAN
@@ -700,10 +739,11 @@ int dpsw_if_set_accepted_frames(struct fsl_mc_io *mc_io,
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_accept_all_vlan(struct fsl_mc_io *mc_io,
-				uint16_t token,
-				uint16_t if_id,
-				int accept_all);
+int dpsw_if_set_accept_all_vlan(struct fsl_mc_io	*mc_io,
+				uint32_t		cmd_flags,
+				uint16_t		token,
+				uint16_t		if_id,
+				int			accept_all);
 
 /**
  * enum dpsw_counter  - Counters types
@@ -718,7 +758,7 @@ int dpsw_if_set_accept_all_vlan(struct fsl_mc_io *mc_io,
  * @DPSW_CNT_EGR_FRAME: Counts egress frames
  * @DPSW_CNT_EGR_BYTE: Counts eEgress bytes
  * @DPSW_CNT_EGR_FRAME_DISCARD: Counts discarded egress frames
- *
+ * @DPSW_CNT_EGR_STP_FRAME_DISCARD: Counts egress STP discarded frames
  */
 enum dpsw_counter {
 	DPSW_CNT_ING_FRAME = 0x0,
@@ -731,12 +771,14 @@ enum dpsw_counter {
 	DPSW_CNT_ING_BCAST_BYTES = 0x7,
 	DPSW_CNT_EGR_FRAME = 0x8,
 	DPSW_CNT_EGR_BYTE = 0x9,
-	DPSW_CNT_EGR_FRAME_DISCARD = 0xa
+	DPSW_CNT_EGR_FRAME_DISCARD = 0xa,
+	DPSW_CNT_EGR_STP_FRAME_DISCARD = 0xb
 };
 
 /**
  * dpsw_if_get_counter() - Get specific counter of particular interface
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @type:		Counter type
@@ -744,15 +786,17 @@ enum dpsw_counter {
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_get_counter(struct fsl_mc_io *mc_io,
-			uint16_t token,
-			uint16_t if_id,
-			enum dpsw_counter type,
-			uint64_t *counter);
+int dpsw_if_get_counter(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint16_t		if_id,
+			enum dpsw_counter	type,
+			uint64_t		*counter);
 
 /**
  * dpsw_if_set_counter() - Set specific counter of particular interface
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @type:		Counter type
@@ -760,11 +804,15 @@ int dpsw_if_get_counter(struct fsl_mc_io *mc_io,
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_counter(struct fsl_mc_io *mc_io,
-			uint16_t token,
-			uint16_t if_id,
-			enum dpsw_counter type,
-			uint64_t counter);
+int dpsw_if_set_counter(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint16_t		if_id,
+			enum dpsw_counter	type,
+			uint64_t		counter);
+
+/* Maximum number of TC */
+#define DPSW_MAX_TC             8
 
 /**
  * enum dpsw_priority_selector - User priority
@@ -780,21 +828,44 @@ enum dpsw_priority_selector {
 };
 
 /**
- * struct dpsw_tc_map_cfg - Mapping user priority into traffic class
- *				configuration
- * @priority_selector: Source for user priority regeneration
- * @tc_id: The Regenerated User priority that the incoming
- *				User Priority is mapped to for this interface
- *
+ * enum dpsw_schedule_mode - Traffic classes scheduling
+ * @DPSW_SCHED_STRICT_PRIORITY: schedule strict priority
+ * @DPSW_SCHED_WEIGHTED: schedule based on token bucket created algorithm
  */
-struct dpsw_tc_map_cfg {
-	enum dpsw_priority_selector priority_selector;
-	uint8_t tc_id[DPSW_MAX_PRIORITIES];
+enum dpsw_schedule_mode {
+	DPSW_SCHED_STRICT_PRIORITY,
+	DPSW_SCHED_WEIGHTED
 };
 
 /**
- * dpsw_if_set_tc_map() - Function is used for mapping variety of frame fields
- * @mc_io:		Pointer to MC portal's I/O object
+ * struct dpsw_tx_schedule_cfg - traffic class configuration
+ * @mode: Strict or weight-based scheduling
+ * @delta_bandwidth: weighted Bandwidth in range from 100 to 10000
+ */
+struct dpsw_tx_schedule_cfg {
+	enum dpsw_schedule_mode	mode;
+	uint16_t		delta_bandwidth;
+};
+
+/**
+ * struct dpsw_tx_selection_cfg - Mapping user priority into traffic
+ *					class configuration
+ * @priority_selector: Source for user priority regeneration
+ * @tc_id: The Regenerated User priority that the incoming
+ *				User Priority is mapped to for this interface
+ * @tc_sched: Traffic classes configuration
+ */
+struct dpsw_tx_selection_cfg {
+	enum dpsw_priority_selector	priority_selector;
+	uint8_t			tc_id[DPSW_MAX_PRIORITIES];
+	struct dpsw_tx_schedule_cfg	tc_sched[DPSW_MAX_TC];
+};
+
+/**
+ * dpsw_if_set_tx_selection() - Function is used for mapping variety
+ *				of frame fields
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @cfg:		Traffic class mapping configuration
@@ -805,15 +876,16 @@ struct dpsw_tc_map_cfg {
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_tc_map(struct fsl_mc_io *mc_io,
-		       uint16_t token,
-		       uint16_t if_id,
-		       const struct dpsw_tc_map_cfg *cfg);
+int dpsw_if_set_tx_selection(struct fsl_mc_io			*mc_io,
+			     uint32_t				cmd_flags,
+			     uint16_t				token,
+			     uint16_t				if_id,
+			     const struct dpsw_tx_selection_cfg	*cfg);
 
 /**
  * enum dpsw_reflection_filter - Filter type for frames to reflect
- * @DPSW_REFLECTION_FILTER_INGRESS_ALL - Reflect all frames
- * @DPSW_REFLECTION_FILTER_INGRESS_VLAN - Reflect only frames belong to
+ * @DPSW_REFLECTION_FILTER_INGRESS_ALL: Reflect all frames
+ * @DPSW_REFLECTION_FILTER_INGRESS_VLAN: Reflect only frames belong to
  *			particular VLAN defined by vid parameter
  *
  */
@@ -829,37 +901,41 @@ enum dpsw_reflection_filter {
  *		DPSW_INGRESS_VLAN
  */
 struct dpsw_reflection_cfg {
-	enum dpsw_reflection_filter filter;
-	uint16_t vlan_id;
+	enum dpsw_reflection_filter	filter;
+	uint16_t			vlan_id;
 };
 
 /**
  * dpsw_if_add_reflection() - Identify interface to be reflected or mirrored
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @cfg:		Reflection configuration
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_add_reflection(struct fsl_mc_io *mc_io,
-			   uint16_t token,
-			   uint16_t if_id,
-			   const struct dpsw_reflection_cfg *cfg);
+int dpsw_if_add_reflection(struct fsl_mc_io			*mc_io,
+			   uint32_t				cmd_flags,
+			   uint16_t				token,
+			   uint16_t				if_id,
+			   const struct dpsw_reflection_cfg	*cfg);
 
 /**
  * dpsw_if_remove_reflection() - Remove interface to be reflected or mirrored
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  * @cfg:		Reflection configuration
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_remove_reflection(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      uint16_t if_id,
-			      const struct dpsw_reflection_cfg *cfg);
+int dpsw_if_remove_reflection(struct fsl_mc_io			*mc_io,
+			      uint32_t				cmd_flags,
+			      uint16_t				token,
+			      uint16_t				if_id,
+			      const struct dpsw_reflection_cfg	*cfg);
 
 /**
  * enum dpsw_metering_mode - Metering modes
@@ -898,40 +974,45 @@ enum dpsw_metering_unit {
 struct dpsw_metering_cfg {
 	enum dpsw_metering_mode mode;
 	enum dpsw_metering_unit units;
-	uint32_t cir;
-	uint32_t eir;
-	uint32_t cbs;
-	uint32_t ebs;
+	uint32_t		cir;
+	uint32_t		eir;
+	uint32_t		cbs;
+	uint32_t		ebs;
 };
 
 /**
  * dpsw_if_set_flooding_metering() - Set flooding metering
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @if_id:		Interface Identifier
- * @cfg:		Metering parameters
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @if_id:	Interface Identifier
+ * @cfg:	Metering parameters
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_flooding_metering(struct fsl_mc_io *mc_io,
-				  uint16_t token,
-				    uint16_t if_id,
-				    const struct dpsw_metering_cfg *cfg);
+int dpsw_if_set_flooding_metering(struct fsl_mc_io		*mc_io,
+				  uint32_t			cmd_flags,
+				  uint16_t			token,
+				  uint16_t			if_id,
+				  const struct dpsw_metering_cfg *cfg);
 
 /**
  * dpsw_if_set_metering() - Set interface metering for flooding
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPSW object
- * @if_id:		Interface Identifier
- * @cfg:		Metering parameters
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @if_id:	Interface Identifier
+ * @tc_id:	Traffic class ID
+ * @cfg:	Metering parameters
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_metering(struct fsl_mc_io *mc_io,
-			 uint16_t token,
-			    uint16_t if_id,
-			    uint8_t tc_id,
-			    const struct dpsw_metering_cfg *cfg);
+int dpsw_if_set_metering(struct fsl_mc_io			*mc_io,
+			 uint32_t				cmd_flags,
+			 uint16_t				token,
+			 uint16_t				if_id,
+			 uint8_t				tc_id,
+			 const struct dpsw_metering_cfg	*cfg);
 
 /**
  * enum dpsw_early_drop_unit - DPSW early drop unit
@@ -983,7 +1064,7 @@ struct dpsw_early_drop_cfg {
 	enum dpsw_early_drop_mode       drop_mode;
 	enum dpsw_early_drop_unit	units;
 	struct dpsw_wred_cfg	        yellow;
-	struct dpsw_wred_cfg	green;
+	struct dpsw_wred_cfg		green;
 	uint32_t			tail_drop_threshold;
 };
 
@@ -996,12 +1077,13 @@ struct dpsw_early_drop_cfg {
  *
  */
 void dpsw_prepare_early_drop(const struct dpsw_early_drop_cfg *cfg,
-			     uint8_t *early_drop_buf);
+			     uint8_t			*early_drop_buf);
 
 /**
  * dpsw_if_set_early_drop() - Set interface traffic class early-drop
  *				configuration
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @if_id:		Interface Identifier
  * @tc_id:	Traffic class selection (0-7)
@@ -1014,10 +1096,11 @@ void dpsw_prepare_early_drop(const struct dpsw_early_drop_cfg *cfg,
  * Return:	'0' on Success; error code otherwise.
  */
 int dpsw_if_set_early_drop(struct fsl_mc_io	*mc_io,
+			   uint32_t		cmd_flags,
 			   uint16_t		token,
-			    uint16_t		if_id,
-			    uint8_t		tc_id,
-			    uint64_t		early_drop_iova);
+			   uint16_t		if_id,
+			   uint8_t		tc_id,
+			   uint64_t		early_drop_iova);
 
 /**
  * struct dpsw_custom_tpid_cfg - Structure representing tag Protocol identifier
@@ -1029,7 +1112,8 @@ struct dpsw_custom_tpid_cfg {
 
 /**
  * dpsw_add_custom_tpid() - API Configures a distinct Ethernet type value
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @cfg:		Tag Protocol identifier
  *
@@ -1040,55 +1124,68 @@ struct dpsw_custom_tpid_cfg {
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_add_custom_tpid(struct fsl_mc_io *mc_io,
-			 uint16_t token,
-			 const struct dpsw_custom_tpid_cfg *cfg);
+int dpsw_add_custom_tpid(struct fsl_mc_io			*mc_io,
+			 uint32_t				cmd_flags,
+			 uint16_t				token,
+			 const struct dpsw_custom_tpid_cfg	*cfg);
 
 /**
  * dpsw_remove_custom_tpid - API removes a distinct Ethernet type value
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @cfg:		Tag Protocol identifier
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_remove_custom_tpid(struct fsl_mc_io *mc_io,
-			    uint16_t token,
-			    const struct dpsw_custom_tpid_cfg *cfg);
+int dpsw_remove_custom_tpid(struct fsl_mc_io			*mc_io,
+			    uint32_t				cmd_flags,
+			    uint16_t				token,
+			    const struct dpsw_custom_tpid_cfg	*cfg);
 
 /**
  * dpsw_if_enable() - Enable Interface
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_enable(struct fsl_mc_io *mc_io, uint16_t token, uint16_t if_id);
+int dpsw_if_enable(struct fsl_mc_io	*mc_io,
+		   uint32_t		cmd_flags,
+		   uint16_t		token,
+		   uint16_t		if_id);
 
 /**
  * dpsw_if_disable() - Disable Interface
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPSW object
  * @if_id:		Interface Identifier
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_disable(struct fsl_mc_io *mc_io, uint16_t token, uint16_t if_id);
+int dpsw_if_disable(struct fsl_mc_io	*mc_io,
+		    uint32_t		cmd_flags,
+		    uint16_t		token,
+		    uint16_t		if_id);
 
 /**
  * dpsw_if_get_token - Obtains interface token
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @if_id:	Interface id
  * @if_token:	Interface token
  *
  * @returns      Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_get_token(struct fsl_mc_io *mc_io,
-		      uint16_t token,
-		      uint16_t if_id,
-		      uint16_t *if_token);
+int dpsw_if_get_token(struct fsl_mc_io	*mc_io,
+		      uint32_t		cmd_flags,
+		      uint16_t		token,
+		      uint16_t		if_id,
+		      uint16_t		*if_token);
 
 /**
  * struct dpsw_if_attr - Structure representing DPSW interface attributes
@@ -1103,57 +1200,65 @@ int dpsw_if_get_token(struct fsl_mc_io *mc_io,
  *		this interface;
  *		When set to 'DPSW_ADMIT_ALL', untagged frames or priority-
  *		tagged frames received on this interface are accepted
+ * @tx_fqid Transmit FQID
  */
 struct dpsw_if_attr {
-	uint8_t num_tcs;
-	uint32_t rate;
-	uint64_t options;
-	int enabled;
-	int accept_all_vlan;
-	enum dpsw_accepted_frames admit_untagged;
+	uint8_t				num_tcs;
+	uint32_t			rate;
+	uint32_t			options;
+	int				enabled;
+	int				accept_all_vlan;
+	enum dpsw_accepted_frames	admit_untagged;
+	uint32_t			tx_fqid;
 };
 
 /**
  * dpsw_if_get_attributes() - Function obtains attributes of interface
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @if_id:	Interface Identifier
  * @attr:	Returned interface attributes
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_get_attributes(struct fsl_mc_io *mc_io,
-			   uint16_t token,
-			   uint16_t if_id,
-			   struct dpsw_if_attr *attr);
+int dpsw_if_get_attributes(struct fsl_mc_io	*mc_io,
+			   uint32_t		cmd_flags,
+			   uint16_t		token,
+			   uint16_t		if_id,
+			   struct dpsw_if_attr	*attr);
 
 /**
  * dpsw_if_set_max_frame_length() - Set Maximum Receive frame length.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @if_id:	Interface Identifier
  * @frame_length: Maximum Frame Length
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_set_max_frame_length(struct fsl_mc_io *mc_io,
-				 uint16_t token,
-				 uint16_t if_id,
-				 uint16_t frame_length);
+int dpsw_if_set_max_frame_length(struct fsl_mc_io	*mc_io,
+				 uint32_t		cmd_flags,
+				 uint16_t		token,
+				 uint16_t		if_id,
+				 uint16_t		frame_length);
 
 /**
  * dpsw_if_get_max_frame_length() - Get Maximum Receive frame length.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @if_id:	Interface Identifier
  * @frame_length: Returned maximum Frame Length
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_if_get_max_frame_length(struct fsl_mc_io *mc_io,
-				 uint16_t token,
-				 uint16_t if_id,
-				 uint16_t *frame_length);
+int dpsw_if_get_max_frame_length(struct fsl_mc_io	*mc_io,
+				 uint32_t		cmd_flags,
+				 uint16_t		token,
+				 uint16_t		if_id,
+				 uint16_t		*frame_length);
 
 /**
  * struct dpsw_vlan_cfg - VLAN Configuration
@@ -1166,6 +1271,7 @@ struct dpsw_vlan_cfg {
 /**
  * dpsw_vlan_add() - Adding new VLAN to DPSW.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	VLAN configuration
@@ -1179,10 +1285,11 @@ struct dpsw_vlan_cfg {
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_add(struct fsl_mc_io *mc_io,
-		  uint16_t token,
-		  uint16_t vlan_id,
-		  const struct dpsw_vlan_cfg *cfg);
+int dpsw_vlan_add(struct fsl_mc_io		*mc_io,
+		  uint32_t			cmd_flags,
+		  uint16_t			token,
+		  uint16_t			vlan_id,
+		  const struct dpsw_vlan_cfg	*cfg);
 
 /**
  * struct dpsw_vlan_if_cfg - Set of VLAN Interfaces
@@ -1199,6 +1306,7 @@ struct dpsw_vlan_if_cfg {
 /**
  * dpsw_vlan_add_if() - Adding a set of interfaces to an existing VLAN.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	Set of interfaces to add
@@ -1210,15 +1318,17 @@ struct dpsw_vlan_if_cfg {
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_add_if(struct fsl_mc_io *mc_io,
-		     uint16_t token,
-		     uint16_t vlan_id,
-		     const struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_add_if(struct fsl_mc_io			*mc_io,
+		     uint32_t				cmd_flags,
+		     uint16_t				token,
+		     uint16_t				vlan_id,
+		     const struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * dpsw_vlan_add_if_untagged() - Defining a set of interfaces that should be
  *				transmitted as untagged.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	set of interfaces that should be transmitted as untagged
@@ -1231,16 +1341,18 @@ int dpsw_vlan_add_if(struct fsl_mc_io *mc_io,
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_add_if_untagged(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      uint16_t vlan_id,
-			      const struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_add_if_untagged(struct fsl_mc_io			*mc_io,
+			      uint32_t				cmd_flags,
+			      uint16_t				token,
+			      uint16_t				vlan_id,
+			      const struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * dpsw_vlan_add_if_flooding() - Define a set of interfaces that should be
  *			included in flooding when frame with unknown destination
  *			unicast MAC arrived.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	Set of interfaces that should be used for flooding
@@ -1253,14 +1365,16 @@ int dpsw_vlan_add_if_untagged(struct fsl_mc_io *mc_io,
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_add_if_flooding(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      uint16_t vlan_id,
-			      const struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_add_if_flooding(struct fsl_mc_io			*mc_io,
+			      uint32_t				cmd_flags,
+			      uint16_t				token,
+			      uint16_t				vlan_id,
+			      const struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * dpsw_vlan_remove_if() - Remove interfaces from an existing VLAN.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	Set of interfaces that should be removed
@@ -1270,15 +1384,17 @@ int dpsw_vlan_add_if_flooding(struct fsl_mc_io *mc_io,
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_remove_if(struct fsl_mc_io *mc_io,
-			uint16_t token,
-			uint16_t vlan_id,
-			const struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_remove_if(struct fsl_mc_io		*mc_io,
+			uint32_t			cmd_flags,
+			uint16_t			token,
+			uint16_t			vlan_id,
+			const struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * dpsw_vlan_remove_if_untagged() - Define a set of interfaces that should be
  *		converted from transmitted as untagged to transmit as tagged.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	set of interfaces that should be removed
@@ -1289,35 +1405,42 @@ int dpsw_vlan_remove_if(struct fsl_mc_io *mc_io,
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_remove_if_untagged(struct fsl_mc_io *mc_io,
-				 uint16_t token,
-				 uint16_t vlan_id,
-				 const struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_remove_if_untagged(struct fsl_mc_io		*mc_io,
+				 uint32_t			cmd_flags,
+				 uint16_t			token,
+				 uint16_t			vlan_id,
+				 const struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * dpsw_vlan_remove_if_flooding() - Define a set of interfaces that should be
  *			removed from the flooding list.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	set of interfaces used for flooding
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_remove_if_flooding(struct fsl_mc_io *mc_io,
-				 uint16_t token,
-				 uint16_t vlan_id,
-				 const struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_remove_if_flooding(struct fsl_mc_io		*mc_io,
+				 uint32_t			cmd_flags,
+				 uint16_t			token,
+				 uint16_t			vlan_id,
+				 const struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * dpsw_vlan_remove() - Remove an entire VLAN
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_remove(struct fsl_mc_io *mc_io, uint16_t token, uint16_t vlan_id);
+int dpsw_vlan_remove(struct fsl_mc_io	*mc_io,
+		     uint32_t		cmd_flags,
+		     uint16_t		token,
+		     uint16_t		vlan_id);
 
 /**
  * struct dpsw_vlan_attr - VLAN attributes
@@ -1336,59 +1459,67 @@ struct dpsw_vlan_attr {
 /**
  * dpsw_vlan_get_attributes() - Get VLAN attributes
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @attr:	Returned DPSW attributes
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_get_attributes(struct fsl_mc_io *mc_io,
-			     uint16_t token,
-			     uint16_t vlan_id,
-			     struct dpsw_vlan_attr *attr);
+int dpsw_vlan_get_attributes(struct fsl_mc_io		*mc_io,
+			     uint32_t			cmd_flags,
+			     uint16_t			token,
+			     uint16_t			vlan_id,
+			     struct dpsw_vlan_attr	*attr);
 
 /**
  * dpsw_vlan_get_if() - Get interfaces belong to this VLAN
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	Returned set of interfaces belong to this VLAN
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_get_if(struct fsl_mc_io *mc_io,
-		     uint16_t token,
-		     uint16_t vlan_id,
-		     struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_get_if(struct fsl_mc_io		*mc_io,
+		     uint32_t			cmd_flags,
+		     uint16_t			token,
+		     uint16_t			vlan_id,
+		     struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * dpsw_vlan_get_if_flooding() - Get interfaces used in flooding for this VLAN
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @vlan_id:	VLAN Identifier
  * @cfg:	Returned set of flooding interfaces
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_get_if_flooding(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      uint16_t vlan_id,
-			      struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_get_if_flooding(struct fsl_mc_io		*mc_io,
+			      uint32_t			cmd_flags,
+			      uint16_t			token,
+			      uint16_t			vlan_id,
+			      struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * dpsw_vlan_get_if_untagged() - Get interfaces that should be transmitted as
  *				untagged
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPSW object
- * @vlan_id	VLAN Identifier
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @vlan_id:	VLAN Identifier
  * @cfg:	Returned set of untagged interfaces
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_vlan_get_if_untagged(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      uint16_t vlan_id,
-			      struct dpsw_vlan_if_cfg *cfg);
+int dpsw_vlan_get_if_untagged(struct fsl_mc_io		*mc_io,
+			      uint32_t			cmd_flags,
+			      uint16_t			token,
+			      uint16_t			vlan_id,
+			      struct dpsw_vlan_if_cfg	*cfg);
 
 /**
  * struct dpsw_fdb_cfg  - FDB Configuration
@@ -1404,26 +1535,32 @@ struct dpsw_fdb_cfg {
  * dpsw_fdb_add() - Add FDB to switch and Returns handle to FDB table for
  *		the reference
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Returned Forwarding Database Identifier
  * @cfg:	FDB Configuration
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_add(struct fsl_mc_io *mc_io,
-		 uint16_t token,
-		 uint16_t *fdb_id,
-		 const struct dpsw_fdb_cfg *cfg);
+int dpsw_fdb_add(struct fsl_mc_io		*mc_io,
+		 uint32_t			cmd_flags,
+		 uint16_t			token,
+		 uint16_t			*fdb_id,
+		 const struct dpsw_fdb_cfg	*cfg);
 
 /**
  * dpsw_fdb_remove() - Remove FDB from switch
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Forwarding Database Identifier
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_remove(struct fsl_mc_io *mc_io, uint16_t token, uint16_t fdb_id);
+int dpsw_fdb_remove(struct fsl_mc_io	*mc_io,
+		    uint32_t		cmd_flags,
+		    uint16_t		token,
+		    uint16_t		fdb_id);
 
 /**
  * enum dpsw_fdb_entry_type - FDB Entry type - Static/Dynamic
@@ -1442,53 +1579,59 @@ enum dpsw_fdb_entry_type {
  * @if_egress: Egress interface ID
  */
 struct dpsw_fdb_unicast_cfg {
-	enum dpsw_fdb_entry_type type;
-	uint8_t mac_addr[6];
-	uint16_t if_egress;
+	enum dpsw_fdb_entry_type	type;
+	uint8_t			mac_addr[6];
+	uint16_t			if_egress;
 };
 
 /**
  * dpsw_fdb_add_unicast() - Function adds an unicast entry into MAC lookup table
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Forwarding Database Identifier
  * @cfg:	Unicast entry configuration
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_add_unicast(struct fsl_mc_io *mc_io,
-			 uint16_t token,
-			 uint16_t fdb_id,
-			 const struct dpsw_fdb_unicast_cfg *cfg);
+int dpsw_fdb_add_unicast(struct fsl_mc_io			*mc_io,
+			 uint32_t				cmd_flags,
+			 uint16_t				token,
+			 uint16_t				fdb_id,
+			 const struct dpsw_fdb_unicast_cfg	*cfg);
 
 /**
  * dpsw_fdb_get_unicast() - Get unicast entry from MAC lookup table by
  *		unicast Ethernet address
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPSW object
- * @fdb_id	Forwarding Database Identifier
- * @cfg		Returned unicast entry configuration
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @fdb_id:	Forwarding Database Identifier
+ * @cfg:	Returned unicast entry configuration
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_get_unicast(struct fsl_mc_io *mc_io,
-			 uint16_t token,
-			 uint16_t fdb_id,
-			 struct dpsw_fdb_unicast_cfg *cfg);
+int dpsw_fdb_get_unicast(struct fsl_mc_io		*mc_io,
+			 uint32_t			cmd_flags,
+			 uint16_t			token,
+			 uint16_t			fdb_id,
+			 struct dpsw_fdb_unicast_cfg	*cfg);
 
 /**
  * dpsw_fdb_remove_unicast() - removes an entry from MAC lookup table
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Forwarding Database Identifier
  * @cfg:	Unicast entry configuration
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_remove_unicast(struct fsl_mc_io *mc_io,
-			    uint16_t token,
-			    uint16_t fdb_id,
-			    const struct dpsw_fdb_unicast_cfg *cfg);
+int dpsw_fdb_remove_unicast(struct fsl_mc_io			*mc_io,
+			    uint32_t				cmd_flags,
+			    uint16_t				token,
+			    uint16_t				fdb_id,
+			    const struct dpsw_fdb_unicast_cfg	*cfg);
 
 /**
  * struct dpsw_fdb_multicast_cfg - Multi-cast entry configuration
@@ -1498,15 +1641,16 @@ int dpsw_fdb_remove_unicast(struct fsl_mc_io *mc_io,
  * @if_id: Egress interface IDs
  */
 struct dpsw_fdb_multicast_cfg {
-	enum dpsw_fdb_entry_type type;
-	uint8_t mac_addr[6];
-	uint16_t num_ifs;
-	uint16_t if_id[DPSW_MAX_IF];
+	enum dpsw_fdb_entry_type	type;
+	uint8_t			mac_addr[6];
+	uint16_t			num_ifs;
+	uint16_t			if_id[DPSW_MAX_IF];
 };
 
 /**
  * dpsw_fdb_add_multicast() - Add a set of egress interfaces to multi-cast group
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Forwarding Database Identifier
  * @cfg:	Multicast entry configuration
@@ -1520,30 +1664,34 @@ struct dpsw_fdb_multicast_cfg {
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_add_multicast(struct fsl_mc_io *mc_io,
-			   uint16_t token,
-			   uint16_t fdb_id,
-			   const struct dpsw_fdb_multicast_cfg *cfg);
+int dpsw_fdb_add_multicast(struct fsl_mc_io			*mc_io,
+			   uint32_t				cmd_flags,
+			   uint16_t				token,
+			   uint16_t				fdb_id,
+			   const struct dpsw_fdb_multicast_cfg	*cfg);
 
 /**
  * dpsw_fdb_get_multicast() - Reading multi-cast group by multi-cast Ethernet
  *				address.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Forwarding Database Identifier
  * @cfg:	Returned multicast entry configuration
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_get_multicast(struct fsl_mc_io *mc_io,
-			   uint16_t token,
-			   uint16_t fdb_id,
-			   struct dpsw_fdb_multicast_cfg *cfg);
+int dpsw_fdb_get_multicast(struct fsl_mc_io			*mc_io,
+			   uint32_t				cmd_flags,
+			   uint16_t				token,
+			   uint16_t				fdb_id,
+			   struct dpsw_fdb_multicast_cfg	*cfg);
 
 /**
  * dpsw_fdb_remove_multicast() - Removing interfaces from an existing multicast
  *				group.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Forwarding Database Identifier
  * @cfg:	Multicast entry configuration
@@ -1555,9 +1703,10 @@ int dpsw_fdb_get_multicast(struct fsl_mc_io *mc_io,
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_remove_multicast(struct fsl_mc_io *mc_io,
-			      uint16_t token,
-			      uint16_t fdb_id,
+int dpsw_fdb_remove_multicast(struct fsl_mc_io			*mc_io,
+			      uint32_t				cmd_flags,
+			      uint16_t				token,
+			      uint16_t				fdb_id,
 			      const struct dpsw_fdb_multicast_cfg *cfg);
 
 /**
@@ -1600,16 +1749,18 @@ enum dpsw_fdb_learning_mode {
 /**
  * dpsw_fdb_set_learning_mode() - Define FDB learning mode
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Forwarding Database Identifier
  * @mode:	learning mode
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_set_learning_mode(struct fsl_mc_io *mc_io,
-			       uint16_t token,
-			       uint16_t fdb_id,
-			       enum dpsw_fdb_learning_mode mode);
+int dpsw_fdb_set_learning_mode(struct fsl_mc_io		*mc_io,
+			       uint32_t			cmd_flags,
+			       uint16_t			token,
+			       uint16_t			fdb_id,
+			       enum dpsw_fdb_learning_mode	mode);
 
 /**
  * struct dpsw_fdb_attr - FDB Attributes
@@ -1620,26 +1771,28 @@ int dpsw_fdb_set_learning_mode(struct fsl_mc_io *mc_io,
  * @max_fdb_mc_groups: Maximum number of multicast groups
  */
 struct dpsw_fdb_attr {
-	uint16_t max_fdb_entries;
-	uint16_t fdb_aging_time;
-	enum dpsw_fdb_learning_mode learning_mode;
-	uint16_t num_fdb_mc_groups;
-	uint16_t max_fdb_mc_groups;
+	uint16_t			max_fdb_entries;
+	uint16_t			fdb_aging_time;
+	enum dpsw_fdb_learning_mode	learning_mode;
+	uint16_t			num_fdb_mc_groups;
+	uint16_t			max_fdb_mc_groups;
 };
 
 /**
  * dpsw_fdb_get_attributes() - Get FDB attributes
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @fdb_id:	Forwarding Database Identifier
  * @attr:	Returned FDB attributes
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_fdb_get_attributes(struct fsl_mc_io *mc_io,
-			    uint16_t token,
-			    uint16_t fdb_id,
-			    struct dpsw_fdb_attr *attr);
+int dpsw_fdb_get_attributes(struct fsl_mc_io		*mc_io,
+			    uint32_t			cmd_flags,
+			    uint16_t			token,
+			    uint16_t			fdb_id,
+			    struct dpsw_fdb_attr	*attr);
 
 /**
  * struct dpsw_acl_cfg - ACL Configuration
@@ -1700,11 +1853,13 @@ struct dpsw_acl_key {
  * @DPSW_ACL_ACTION_DROP: Drop frame
  * @DPSW_ACL_ACTION_REDIRECT: Redirect to certain port
  * @DPSW_ACL_ACTION_ACCEPT: Accept frame
+ * @DPSW_ACL_ACTION_REDIRECT_TO_CTRL_IF: Redirect to control interface
  */
 enum dpsw_acl_action {
-	DPSW_ACL_ACTION_DROP,            /*! Drop frame */
-	DPSW_ACL_ACTION_REDIRECT,        /*! Redirect to certain port */
-	DPSW_ACL_ACTION_ACCEPT           /*! Accept frame */
+	DPSW_ACL_ACTION_DROP,
+	DPSW_ACL_ACTION_REDIRECT,
+	DPSW_ACL_ACTION_ACCEPT,
+	DPSW_ACL_ACTION_REDIRECT_TO_CTRL_IF
 };
 
 /**
@@ -1728,38 +1883,43 @@ struct dpsw_acl_result {
  *		space the priorities according to consequent rule additions.
  */
 struct dpsw_acl_entry_cfg {
-	uint64_t			key_iova;
+	uint64_t		key_iova;
 	struct dpsw_acl_result  result;
 	int                     precedence;
 };
+
 /**
  * dpsw_acl_add() - Adds ACL to L2 switch.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
- * @acl_id	Returned ACL ID, for the future reference
- * @cfg		ACL configuration
+ * @acl_id:	Returned ACL ID, for the future reference
+ * @cfg:	ACL configuration
  *
  * Create Access Control List. Multiple ACLs can be created and
  * co-exist in L2 switch
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_acl_add(struct fsl_mc_io *mc_io,
-		 uint16_t token,
-		 uint16_t *acl_id,
-		 const struct dpsw_acl_cfg  *cfg);
+int dpsw_acl_add(struct fsl_mc_io		*mc_io,
+		 uint32_t			cmd_flags,
+		 uint16_t			token,
+		 uint16_t			*acl_id,
+		 const struct dpsw_acl_cfg	*cfg);
 
 /**
  * dpsw_acl_remove() - Removes ACL from L2 switch.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @acl_id:	ACL ID
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_acl_remove(struct fsl_mc_io *mc_io,
-		    uint16_t token,
-		    uint16_t acl_id);
+int dpsw_acl_remove(struct fsl_mc_io	*mc_io,
+		    uint32_t		cmd_flags,
+		    uint16_t		token,
+		    uint16_t		acl_id);
 
 /**
  * dpsw_acl_prepare_entry_cfg() - Set an entry to ACL.
@@ -1769,12 +1929,13 @@ int dpsw_acl_remove(struct fsl_mc_io *mc_io,
  * This function has to be called before adding or removing acl_entry
  *
  */
-void dpsw_acl_prepare_entry_cfg(const struct dpsw_acl_key *key,
-				uint8_t *entry_cfg_buf);
+void dpsw_acl_prepare_entry_cfg(const struct dpsw_acl_key	*key,
+				uint8_t			*entry_cfg_buf);
 
 /**
  * dpsw_acl_add_entry() - Adds an entry to ACL.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @acl_id:	ACL ID
  * @cfg:	entry configuration
@@ -1783,14 +1944,16 @@ void dpsw_acl_prepare_entry_cfg(const struct dpsw_acl_key *key,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_acl_add_entry(struct fsl_mc_io *mc_io,
-		       uint16_t token,
-		       uint16_t acl_id,
-		       const struct dpsw_acl_entry_cfg *cfg);
+int dpsw_acl_add_entry(struct fsl_mc_io		*mc_io,
+		       uint32_t			cmd_flags,
+		       uint16_t			token,
+		       uint16_t			acl_id,
+		       const struct dpsw_acl_entry_cfg	*cfg);
 
 /**
  * dpsw_acl_remove_entry() - Removes an entry from ACL.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @acl_id:	ACL ID
  * @cfg:	entry configuration
@@ -1799,10 +1962,11 @@ int dpsw_acl_add_entry(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_acl_remove_entry(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			  uint16_t acl_id,
-			  const struct dpsw_acl_entry_cfg *cfg);
+int dpsw_acl_remove_entry(struct fsl_mc_io			*mc_io,
+			  uint32_t				cmd_flags,
+			  uint16_t				token,
+			  uint16_t				acl_id,
+			  const struct dpsw_acl_entry_cfg	*cfg);
 
 /**
  * struct dpsw_acl_if_cfg - List of interfaces to Associate with ACL
@@ -1813,31 +1977,152 @@ struct dpsw_acl_if_cfg {
 	uint16_t	num_ifs;
 	uint16_t	if_id[DPSW_MAX_IF];
 };
+
 /**
  * dpsw_acl_add_if() - Associate interface/interfaces with ACL.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @acl_id:	ACL ID
  * @cfg:	interfaces list
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_acl_add_if(struct fsl_mc_io *mc_io,
-		    uint16_t token,
-		    uint16_t acl_id,
+int dpsw_acl_add_if(struct fsl_mc_io			*mc_io,
+		    uint32_t				cmd_flags,
+		    uint16_t				token,
+		    uint16_t				acl_id,
 		    const struct dpsw_acl_if_cfg	*cfg);
 
 /**
  * dpsw_acl_remove_if() - De-associate interface/interfaces from ACL.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSW object
  * @acl_id:	ACL ID
  * @cfg:	interfaces list
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_acl_remove_if(struct fsl_mc_io *mc_io,
-		       uint16_t token,
-		       uint16_t acl_id,
+int dpsw_acl_remove_if(struct fsl_mc_io		*mc_io,
+		       uint32_t			cmd_flags,
+		       uint16_t			token,
+		       uint16_t			acl_id,
 		       const struct dpsw_acl_if_cfg	*cfg);
+
+/**
+ * struct dpsw_acl_attr -  ACL Attributes
+ * @max_entries: Max number of ACL entries
+ * @num_entries: Number of used ACL entries
+ * @num_ifs: Number of interfaces associated with ACL
+ */
+struct dpsw_acl_attr {
+	uint16_t max_entries;
+	uint16_t num_entries;
+	uint16_t num_ifs;
+};
+
+/**
+* dpsw_acl_get_attributes() - Get specific counter of particular interface
+* @mc_io:	Pointer to MC portal's I/O object
+* @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+* @token:	Token of DPSW object
+* @acl_id:      ACL Identifier
+* @attr:        Returned ACL attributes
+*
+* Return:	'0' on Success; Error code otherwise.
+*/
+int dpsw_acl_get_attributes(struct fsl_mc_io		*mc_io,
+			    uint32_t			cmd_flags,
+			    uint16_t			token,
+			    uint16_t			acl_id,
+			    struct dpsw_acl_attr	*attr);
+/**
+* struct dpsw_ctrl_if_attr - Control interface attributes
+* @rx_fqid:		Receive FQID
+* @rx_err_fqid:		Receive error FQID
+* @tx_err_conf_fqid:	Transmit error and confirmation FQID
+*/
+struct dpsw_ctrl_if_attr {
+	uint32_t	rx_fqid;
+	uint32_t	rx_err_fqid;
+	uint32_t	tx_err_conf_fqid;
+};
+
+/**
+* dpsw_ctrl_if_get_attributes() - Obtain control interface attributes
+* @mc_io:	Pointer to MC portal's I/O object
+* @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+* @token:	Token of DPSW object
+* @attr:        Returned control interface attributes
+*
+* Return:	'0' on Success; Error code otherwise.
+*/
+int dpsw_ctrl_if_get_attributes(struct fsl_mc_io		*mc_io,
+				uint32_t			cmd_flags,
+				uint16_t			token,
+				struct dpsw_ctrl_if_attr	*attr);
+
+/* Maximum number of DPBP */
+#define DPSW_MAX_DPBP     8
+
+/**
+ * struct dpsw_ctrl_if_pools_cfg - Control interface buffer pools configuration
+ * @num_dpbp: Number of DPBPs
+ * @pools: Array of buffer pools parameters; The number of valid entries
+ *	must match 'num_dpbp' value
+ */
+struct dpsw_ctrl_if_pools_cfg {
+	uint8_t num_dpbp;
+	/**
+	* struct pools - Buffer pools parameters
+	* @dpbp_id: DPBP object ID
+	* @buffer_size: Buffer size
+	* @backup_pool: Backup pool
+	*/
+	struct {
+		int dpbp_id;
+		uint16_t buffer_size;
+		int backup_pool;
+	} pools[DPSW_MAX_DPBP];
+};
+
+/**
+* dpsw_ctrl_if_set_pools() - Set control interface buffer pools
+* @mc_io:	Pointer to MC portal's I/O object
+* @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+* @token:	Token of DPSW object
+* @cfg:         buffer pools configuration
+*
+* Return:	'0' on Success; Error code otherwise.
+*/
+int dpsw_ctrl_if_set_pools(struct fsl_mc_io			*mc_io,
+			   uint32_t				cmd_flags,
+			   uint16_t				token,
+			   const struct dpsw_ctrl_if_pools_cfg *cfg);
+
+/**
+* dpsw_ctrl_if_enable() - Enable control interface
+* @mc_io:	Pointer to MC portal's I/O object
+* @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+* @token:	Token of DPSW object
+*
+* Return:	'0' on Success; Error code otherwise.
+*/
+int dpsw_ctrl_if_enable(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token);
+
+/**
+* @brief    Function disables control interface
+* @mc_io:	Pointer to MC portal's I/O object
+* @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+* @token:	Token of DPSW object
+*
+* Return:	'0' on Success; Error code otherwise.
+*/
+int dpsw_ctrl_if_disable(struct fsl_mc_io	*mc_io,
+			 uint32_t		cmd_flags,
+			 uint16_t		token);
+
 #endif /* __FSL_DPSW_H */

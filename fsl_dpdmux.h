@@ -42,7 +42,8 @@ struct fsl_mc_io;
 
 /**
  * dpdmux_open() - Open a control session for the specified object
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpdmux_id:		DPDMUX unique ID
  * @token:		Returned token; use in subsequent API calls
  *
@@ -56,11 +57,15 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_open(struct fsl_mc_io *mc_io, int dpdmux_id, uint16_t *token);
+int dpdmux_open(struct fsl_mc_io	 *mc_io,
+		uint32_t		 cmd_flags,
+		int			 dpdmux_id,
+		uint16_t		 *token);
 
 /**
  * dpdmux_close() - Close the control session of the object
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPDMUX object
  *
  * After this function is called, no further operations are
@@ -68,7 +73,9 @@ int dpdmux_open(struct fsl_mc_io *mc_io, int dpdmux_id, uint16_t *token);
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_close(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdmux_close(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
 
 /*!
  * @name DPDMUX general options
@@ -76,6 +83,12 @@ int dpdmux_close(struct fsl_mc_io *mc_io, uint16_t token);
 #define DPDMUX_OPT_BRIDGE_EN		0x0000000000000002ULL
 /*!< Enable bridging between internal interfaces */
 /* @} */
+
+#define DPDMUX_IRQ_INDEX_IF			0x0000
+#define DPDMUX_IRQ_INDEX		0x0001
+
+/*!< IRQ event - Indicates that the link state changed */
+#define DPDMUX_IRQ_EVENT_LINK_CHANGED	0x0001
 
 /**
  * enum dpdmux_manip - DPDMUX manipulation operations
@@ -113,10 +126,10 @@ enum dpdmux_method {
  *	 use this structure to change default settings
  */
 struct dpdmux_cfg {
-	enum dpdmux_method method;
-	enum dpdmux_manip manip;
-	int control_if;
-	uint16_t num_ifs;
+	enum dpdmux_method	method;
+	enum dpdmux_manip	manip;
+	int			control_if;
+	uint16_t		num_ifs;
 	/**
 	 * struct adv - Advanced parameters
 	 * @options: DPDMUX options - combination of 'DPDMUX_OPT_<X>' flags
@@ -139,6 +152,7 @@ struct dpdmux_cfg {
 /**
  * dpdmux_create() - Create the DPDMUX object
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
  * @token:	Returned token; use in subsequent API calls
  *
@@ -157,100 +171,124 @@ struct dpdmux_cfg {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_create(struct fsl_mc_io *mc_io, const struct dpdmux_cfg *cfg,
-		  uint16_t *token);
+int dpdmux_create(struct fsl_mc_io		*mc_io,
+		  uint32_t			cmd_flags,
+		  const struct dpdmux_cfg	*cfg,
+		  uint16_t			*token);
 
 /**
  * dpdmux_destroy() - Destroy the DPDMUX object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpdmux_destroy(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdmux_destroy(struct fsl_mc_io	*mc_io,
+		   uint32_t		cmd_flags,
+		   uint16_t		token);
 
 /**
  * dpdmux_enable() - Enable DPDMUX functionality
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_enable(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdmux_enable(struct fsl_mc_io	*mc_io,
+		  uint32_t		cmd_flags,
+		  uint16_t		token);
 
 /**
  * dpdmux_disable() - Disable DPDMUX functionality
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_disable(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdmux_disable(struct fsl_mc_io	*mc_io,
+		   uint32_t		cmd_flags,
+		   uint16_t		token);
 
 /**
  * dpdmux_is_enabled() - Check if the DPDMUX is enabled.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @en:		Returns '1' if object is enabled; '0' otherwise
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en);
+int dpdmux_is_enabled(struct fsl_mc_io	*mc_io,
+		      uint32_t		cmd_flags,
+		      uint16_t		token,
+		      int		*en);
 
 /**
  * dpdmux_reset() - Reset the DPDMUX, returns the object to initial state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_reset(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdmux_reset(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
 
+/**
+ * struct dpdmux_irq_cfg - IRQ configuration
+ * @addr:	Address that must be written to signal a message-based interrupt
+ * @val:	Value to write into irq_addr address
+ * @user_irq_id: A user defined number associated with this IRQ
+ */
+struct dpdmux_irq_cfg {
+	     uint64_t		addr;
+	     uint32_t		val;
+	     int		user_irq_id;
+};
 
 /**
  * dpdmux_set_irq() - Set IRQ information for the DPDMUX to trigger an interrupt.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @irq_index:	Identifies the interrupt index to configure
- * @irq_addr:	Address that must be written to
- *		signal a message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ * @irq_cfg:	IRQ configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_set_irq(struct fsl_mc_io	*mc_io,
-		   uint16_t		token,
-		   uint8_t		irq_index,
-		   uint64_t		irq_addr,
-		   uint32_t		irq_val,
-		   int			user_irq_id);
+int dpdmux_set_irq(struct fsl_mc_io		*mc_io,
+		   uint32_t			cmd_flags,
+		   uint16_t			token,
+		   uint8_t			irq_index,
+		   struct dpdmux_irq_cfg	*irq_cfg);
 
 /**
  * dpdmux_get_irq() - Get IRQ information from the DPDMUX.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @irq_index:	The interrupt index to configure
- * @type:	Returned interrupt type: 0 represents message interrupt
+ * @type:	Interrupt type: 0 represents message interrupt
  *		type (both irq_addr and irq_val are valid)
- * @irq_addr:	Returned address that must be written to
- *		signal the message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ * @irq_cfg:	IRQ attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_get_irq(struct fsl_mc_io	*mc_io,
-		   uint16_t		token,
-		   uint8_t		irq_index,
-		   int			*type,
-		   uint64_t		*irq_addr,
-		   uint32_t		*irq_val,
-		   int			*user_irq_id);
+int dpdmux_get_irq(struct fsl_mc_io		*mc_io,
+		   uint32_t			cmd_flags,
+		   uint16_t			token,
+		   uint8_t			irq_index,
+		   int				*type,
+		   struct dpdmux_irq_cfg	*irq_cfg);
 
 /**
  * dpdmux_set_irq_enable() - Set overall interrupt state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @irq_index:	The interrupt index to configure
  * @en:		Interrupt state - enable = 1, disable = 0
@@ -263,6 +301,7 @@ int dpdmux_get_irq(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_set_irq_enable(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
 			  uint8_t		irq_index,
 			  uint8_t		en);
@@ -270,6 +309,7 @@ int dpdmux_set_irq_enable(struct fsl_mc_io	*mc_io,
 /**
  * dpdmux_get_irq_enable() - Get overall interrupt state.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @irq_index:	The interrupt index to configure
  * @en:		Returned interrupt state - enable = 1, disable = 0
@@ -277,6 +317,7 @@ int dpdmux_set_irq_enable(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_get_irq_enable(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
 			  uint8_t		irq_index,
 			  uint8_t		*en);
@@ -284,6 +325,7 @@ int dpdmux_get_irq_enable(struct fsl_mc_io	*mc_io,
 /**
  * dpdmux_set_irq_mask() - Set interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @irq_index:	The interrupt index to configure
  * @mask:	event mask to trigger interrupt;
@@ -297,6 +339,7 @@ int dpdmux_get_irq_enable(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_set_irq_mask(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
 			uint16_t		token,
 			uint8_t			irq_index,
 			uint32_t		mask);
@@ -304,6 +347,7 @@ int dpdmux_set_irq_mask(struct fsl_mc_io	*mc_io,
 /**
  * dpdmux_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @irq_index:	The interrupt index to configure
  * @mask:	Returned event mask to trigger interrupt
@@ -314,6 +358,7 @@ int dpdmux_set_irq_mask(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_get_irq_mask(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
 			uint16_t		token,
 			uint8_t			irq_index,
 			uint32_t		*mask);
@@ -321,15 +366,17 @@ int dpdmux_get_irq_mask(struct fsl_mc_io	*mc_io,
 /**
  * dpdmux_get_irq_status() - Get the current status of any pending interrupts.
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @irq_index:	The interrupt index to configure
- * @status	Returned interrupts status - one bit per cause:
+ * @status:	Returned interrupts status - one bit per cause:
  *			0 = no interrupt pending
  *			1 = interrupt pending
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_get_irq_status(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
 			  uint8_t		irq_index,
 			  uint32_t		*status);
@@ -337,6 +384,7 @@ int dpdmux_get_irq_status(struct fsl_mc_io	*mc_io,
 /**
  * dpdmux_clear_irq_status() - Clear a pending interrupt's status
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @irq_index:	The interrupt index to configure
  * @status:	bits to clear (W1C) - one bit per cause:
@@ -346,6 +394,7 @@ int dpdmux_get_irq_status(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_clear_irq_status(struct fsl_mc_io	*mc_io,
+			    uint32_t		cmd_flags,
 			    uint16_t		token,
 			    uint8_t		irq_index,
 			    uint32_t		status);
@@ -362,53 +411,56 @@ int dpdmux_clear_irq_status(struct fsl_mc_io	*mc_io,
  * @control_if: Control interface ID
  */
 struct dpdmux_attr {
-	int id;
+	int			id;
 	/**
 	 * struct version - DPDMUX version
 	 * @major: DPDMUX major version
 	 * @minor: DPDMUX minor version
 	 */
 	struct {
-		uint16_t major;
-		uint16_t minor;
+		uint16_t	major;
+		uint16_t	minor;
 	} version;
-	uint64_t options;
-	enum dpdmux_method method;
-	enum dpdmux_manip manip;
-	uint16_t num_ifs;
-	uint16_t mem_size;
-	int control_if;
+	uint64_t		options;
+	enum dpdmux_method	method;
+	enum dpdmux_manip	manip;
+	uint16_t		num_ifs;
+	uint16_t		mem_size;
+	int			control_if;
 };
 
 /**
  * dpdmux_get_attributes() - Retrieve DPDMUX attributes
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @attr:	Returned object's attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_get_attributes(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
 			  struct dpdmux_attr	*attr);
 
 /**
- *
  * dpdmux_ul_set_max_frame_length() - Set the maximum frame length in DPDMUX
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPDMUX object
  * @max_frame_length:	The required maximum frame length
  *
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_ul_set_max_frame_length(struct fsl_mc_io	*mc_io,
+				   uint32_t		cmd_flags,
 				   uint16_t		token,
 				   uint16_t		max_frame_length);
 
 /**
- *
  * dpdmux_set_default_if() - Set the interface to be the default interface
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @if_id:	Interface ID (0 for uplink, or 1-num_ifs);
  *		Ignored if 'no_default_if = 1'
@@ -423,6 +475,7 @@ int dpdmux_ul_set_max_frame_length(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_set_default_if(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
 			  uint16_t		if_id,
 			  int			no_default_if);
@@ -430,6 +483,7 @@ int dpdmux_set_default_if(struct fsl_mc_io	*mc_io,
 /**
  * dpdmux_get_default_if() - Get the default interface
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @if_id:	Returns default interface ID (0 for uplink,
  *		or 1-num_ifs);
@@ -437,6 +491,7 @@ int dpdmux_set_default_if(struct fsl_mc_io	*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_get_default_if(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
 			  uint16_t		token,
 			  uint16_t		*if_id);
 
@@ -501,13 +556,14 @@ enum dpdmux_action {
  * @unaccept_act: Defines action on frames not accepted
  */
 struct dpdmux_accepted_frames {
-	enum dpdmux_accepted_frames_type type;
-	enum dpdmux_action unaccept_act;
+	enum dpdmux_accepted_frames_type	type;
+	enum dpdmux_action			unaccept_act;
 };
 
 /**
  * dpdmux_if_set_accepted_frames() - Set the accepted frame types
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @if_id:	Interface ID (0 for uplink, or 1-num_ifs);
  * @cfg:	Frame types configuration
@@ -521,10 +577,11 @@ struct dpdmux_accepted_frames {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_if_set_accepted_frames(struct fsl_mc_io			*mc_io,
-				  uint16_t				token,
-				  uint16_t				if_id,
-				  const struct dpdmux_accepted_frames	*cfg);
+int dpdmux_if_set_accepted_frames(struct fsl_mc_io		      *mc_io,
+				  uint32_t			      cmd_flags,
+				  uint16_t			      token,
+				  uint16_t			      if_id,
+				  const struct dpdmux_accepted_frames *cfg);
 
 /**
  * struct dpdmux_if_attr - Structure representing frame types configuration
@@ -534,15 +591,16 @@ int dpdmux_if_set_accepted_frames(struct fsl_mc_io			*mc_io,
  * @is_default: Indicates if configured as default interface
  */
 struct dpdmux_if_attr {
-	uint32_t rate;
-	int enabled;
-	enum dpdmux_accepted_frames_type accept_frame_type;
-	int is_default;
+	uint32_t				rate;
+	int					enabled;
+	enum dpdmux_accepted_frames_type	accept_frame_type;
+	int					is_default;
 };
 
 /**
  * dpdmux_if_get_attributes() - Obtain DPDMUX interface attributes
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @if_id:	Interface ID (0 for uplink, or 1-num_ifs);
  * @attr:	Interface attributes
@@ -550,6 +608,7 @@ struct dpdmux_if_attr {
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_if_get_attributes(struct fsl_mc_io		*mc_io,
+			     uint32_t			cmd_flags,
 			     uint16_t			token,
 			     uint16_t			if_id,
 			     struct dpdmux_if_attr	*attr);
@@ -560,13 +619,14 @@ int dpdmux_if_get_attributes(struct fsl_mc_io		*mc_io,
  * @vlan_id: VLAN ID
  */
 struct dpdmux_l2_rule {
-	uint8_t mac_addr[6];
-	uint16_t vlan_id;
+	uint8_t	mac_addr[6];
+	uint16_t	vlan_id;
 };
 
 /**
  * dpdmux_if_remove_l2_rule() - Remove L2 rule from DPDMUX table
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @if_id:	Destination interface ID
  * @rule:	L2 rule
@@ -577,6 +637,7 @@ struct dpdmux_l2_rule {
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_if_remove_l2_rule(struct fsl_mc_io			*mc_io,
+			     uint32_t				cmd_flags,
 			     uint16_t				token,
 			     uint16_t				if_id,
 			     const struct dpdmux_l2_rule	*rule);
@@ -584,6 +645,7 @@ int dpdmux_if_remove_l2_rule(struct fsl_mc_io			*mc_io,
 /**
  * dpdmux_if_add_l2_rule() - Add L2 rule into DPDMUX table
  * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
  * @if_id:	Destination interface ID
  * @rule:	L2 rule
@@ -594,14 +656,16 @@ int dpdmux_if_remove_l2_rule(struct fsl_mc_io			*mc_io,
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_if_add_l2_rule(struct fsl_mc_io		*mc_io,
+			  uint32_t			cmd_flags,
 			  uint16_t			token,
 			  uint16_t			if_id,
 			  const struct dpdmux_l2_rule	*rule);
 
 /**
-* @dpdmux_if_get_counter() - Functions obtains specific counter of an interface
-* @mc_io:	Pointer to MC portal's I/O object
-* @token:	Token of DPDMUX object
+* dpdmux_if_get_counter() - Functions obtains specific counter of an interface
+* @mc_io: Pointer to MC portal's I/O object
+* @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+* @token: Token of DPDMUX object
 * @if_id:  Interface Id
 * @counter_type: counter type
 * @counter: Returned specific counter information
@@ -609,6 +673,7 @@ int dpdmux_if_add_l2_rule(struct fsl_mc_io		*mc_io,
 * Return:	'0' on Success; Error code otherwise.
 */
 int dpdmux_if_get_counter(struct fsl_mc_io		*mc_io,
+			  uint32_t			cmd_flags,
 			  uint16_t			token,
 			  uint16_t			if_id,
 			  enum dpdmux_counter_type	counter_type,
@@ -617,11 +682,14 @@ int dpdmux_if_get_counter(struct fsl_mc_io		*mc_io,
 /**
 * dpdmux_ul_reset_counters() - Function resets the uplink counter
 * @mc_io:	Pointer to MC portal's I/O object
+* @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
 * @token:	Token of DPDMUX object
 *
 * Return:	'0' on Success; Error code otherwise.
 */
-int dpdmux_ul_reset_counters(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdmux_ul_reset_counters(struct fsl_mc_io	*mc_io,
+			     uint32_t		cmd_flags,
+			     uint16_t		token);
 
 /* Enable auto-negotiation */
 #define DPDMUX_LINK_OPT_AUTONEG		0x0000000000000001ULL
@@ -644,17 +712,19 @@ struct dpdmux_link_cfg {
 
 /**
  * dpdmux_if_set_link_cfg() - set the link configuration.
- * @mc_io: Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token: Token of DPSW object
  * @if_id: interface id
  * @cfg: Link configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_if_set_link_cfg(struct fsl_mc_io *mc_io,
-			   uint16_t token,
-			   uint16_t if_id,
-			   struct dpdmux_link_cfg *cfg);
+int dpdmux_if_set_link_cfg(struct fsl_mc_io		*mc_io,
+			   uint32_t			cmd_flags,
+			   uint16_t			token,
+			   uint16_t			if_id,
+			   struct dpdmux_link_cfg	*cfg);
 /**
  * struct dpdmux_link_state - Structure representing DPDMUX link state
  * @rate: Rate
@@ -669,16 +739,18 @@ struct dpdmux_link_state {
 
 /**
  * dpdmux_if_get_link_state - Return the link state
- * @mc_io: Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token: Token of DPSW object
  * @if_id: interface id
  * @state: link state
  *
  * @returns	'0' on Success; Error code otherwise.
  */
-int dpdmux_if_get_link_state(struct fsl_mc_io *mc_io,
-			     uint16_t token,
-			     uint16_t if_id,
-			     struct dpdmux_link_state *state);
+int dpdmux_if_get_link_state(struct fsl_mc_io		*mc_io,
+			     uint32_t			cmd_flags,
+			     uint16_t			token,
+			     uint16_t			if_id,
+			     struct dpdmux_link_state	*state);
 
 #endif /* __FSL_DPDMUX_H */

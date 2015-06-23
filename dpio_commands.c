@@ -158,7 +158,7 @@ static int print_dpio_attr(uint32_t dpio_id,
 	struct dpio_attr dpio_attr;
 	bool dpio_opened = false;
 
-	error = dpio_open(&restool.mc_io, dpio_id, &dpio_handle);
+	error = dpio_open(&restool.mc_io, 0, dpio_id, &dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -175,7 +175,7 @@ static int print_dpio_attr(uint32_t dpio_id,
 	}
 
 	memset(&dpio_attr, 0, sizeof(dpio_attr));
-	error = dpio_get_attributes(&restool.mc_io, dpio_handle, &dpio_attr);
+	error = dpio_get_attributes(&restool.mc_io, 0, dpio_handle, &dpio_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -211,7 +211,7 @@ out:
 	if (dpio_opened) {
 		int error2;
 
-		error2 = dpio_close(&restool.mc_io, dpio_handle);
+		error2 = dpio_close(&restool.mc_io, 0, dpio_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -372,7 +372,7 @@ static int cmd_dpio_create(void)
 		dpio_cfg.num_priorities = 8;
 	}
 
-	error = dpio_create(&restool.mc_io, &dpio_cfg, &dpio_handle);
+	error = dpio_create(&restool.mc_io, 0, &dpio_cfg, &dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -381,7 +381,7 @@ static int cmd_dpio_create(void)
 	}
 
 	memset(&dpio_attr, 0, sizeof(struct dpio_attr));
-	error = dpio_get_attributes(&restool.mc_io, dpio_handle, &dpio_attr);
+	error = dpio_get_attributes(&restool.mc_io, 0, dpio_handle, &dpio_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -390,7 +390,7 @@ static int cmd_dpio_create(void)
 	}
 	printf("dpio.%d is created under dprc.1\n", dpio_attr.id);
 
-	error = dpio_close(&restool.mc_io, dpio_handle);
+	error = dpio_close(&restool.mc_io, 0, dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -437,7 +437,7 @@ static int cmd_dpio_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpio_open(&restool.mc_io, dpio_id, &dpio_handle);
+	error = dpio_open(&restool.mc_io, 0, dpio_id, &dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -453,7 +453,7 @@ static int cmd_dpio_destroy(void)
 		goto out;
 	}
 
-	error = dpio_destroy(&restool.mc_io, dpio_handle);
+	error = dpio_destroy(&restool.mc_io, 0, dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -465,7 +465,7 @@ static int cmd_dpio_destroy(void)
 
 out:
 	if (dpio_opened) {
-		error2 = dpio_close(&restool.mc_io, dpio_handle);
+		error2 = dpio_close(&restool.mc_io, 0, dpio_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

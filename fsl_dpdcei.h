@@ -46,7 +46,7 @@ struct fsl_mc_io;
 #define DPDCEI_FQID_NOT_VALID	(uint32_t)(-1)
 
 /**
- * enum dpdcei_ngine - DCE engine block
+ * enum dpdcei_engine - DCE engine block
  * @DPDCEI_ENGINE_COMPRESSION: Engine compression
  * @DPDCEI_ENGINE_DECOMPRESSION: Engine decompression
  */
@@ -57,8 +57,9 @@ enum dpdcei_engine {
 
 /**
  * dpdcei_open() - Open a control session for the specified object
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  * @dpdcei_id: DPDCEI unique ID
  *
  * This function can be used to open a control session for an
@@ -71,19 +72,25 @@ enum dpdcei_engine {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_open(struct fsl_mc_io *mc_io, int dpdcei_id, uint16_t *token);
+int dpdcei_open(struct fsl_mc_io	*mc_io,
+		uint32_t		cmd_flags,
+		int			dpdcei_id,
+		uint16_t		*token);
 
 /**
  * dpdcei_close() - Close the control session of the object
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  *
  * After this function is called, no further operations are
  * allowed on the object without opening a new control session.
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_close(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdcei_close(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
 
 /**
  * struct dpdcei_cfg - Structure representing DPDCEI configuration
@@ -91,14 +98,15 @@ int dpdcei_close(struct fsl_mc_io *mc_io, uint16_t token);
  * @priority: Priority for the DCE hardware processing (valid values 1-8).
  */
 struct dpdcei_cfg {
-	enum dpdcei_engine engine;
-	uint8_t priority;
+	enum dpdcei_engine	engine;
+	uint8_t		priority;
 };
 
 /**
  * dpdcei_create() - Create the DPDCEI object
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  * @cfg: configuration parameters
  *
  * Create the DPDCEI object, allocate required resources and
@@ -116,101 +124,125 @@ struct dpdcei_cfg {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_create(struct fsl_mc_io *mc_io,
-		  const struct dpdcei_cfg *cfg,
-		  uint16_t *token);
+int dpdcei_create(struct fsl_mc_io		*mc_io,
+		  uint32_t			cmd_flags,
+		  const struct dpdcei_cfg	*cfg,
+		  uint16_t			*token);
 
 /**
  * dpdcei_destroy() - Destroy the DPDCEI object and release all its resources.
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpdcei_destroy(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdcei_destroy(struct fsl_mc_io	*mc_io,
+		   uint32_t		cmd_flags,
+		   uint16_t		token);
 
 /**
  * dpdcei_enable() - Enable the DPDCEI, allow sending and receiving frames.
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token: Token of DPDCEI object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_enable(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdcei_enable(struct fsl_mc_io	*mc_io,
+		  uint32_t		cmd_flags,
+		  uint16_t		token);
 
 /**
  * dpdcei_disable() - Disable the DPDCEI, stop sending and receiving frames.
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token: Token of DPDCEI object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_disable(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdcei_disable(struct fsl_mc_io	*mc_io,
+		   uint32_t		cmd_flags,
+		   uint16_t		token);
 
 /**
  * dpdcei_is_enabled() - Check if the DPDCEI is enabled.
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token: Token of DPDCEI object
  * @en:	Return '1' for object enabled/'0' otherwise
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_is_enabled(struct fsl_mc_io *mc_io, uint16_t token, int *en);
+int dpdcei_is_enabled(struct fsl_mc_io	*mc_io,
+		      uint32_t		cmd_flags,
+		      uint16_t		token,
+		      int		*en);
 
 /**
  * dpdcei_reset() - Reset the DPDCEI, returns the object to initial state.
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token: Token of DPDCEI object
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_reset(struct fsl_mc_io *mc_io, uint16_t token);
+int dpdcei_reset(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
+
+/**
+ * struct dpdcei_irq_cfg - IRQ configuration
+ * @addr:	Address that must be written to signal a message-based interrupt
+ * @val:	Value to write into irq_addr address
+ * @user_irq_id: A user defined number associated with this IRQ
+ */
+struct dpdcei_irq_cfg {
+	     uint64_t		addr;
+	     uint32_t		val;
+	     int		user_irq_id;
+};
 
 /**
  * dpdcei_set_irq() - Set IRQ information for the DPDCEI to trigger an interrupt
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  * @irq_index:	Identifies the interrupt index to configure
- * @irq_addr:	Address that must be written to
- *				signal a message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ * @irq_cfg:	IRQ configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_set_irq(struct fsl_mc_io *mc_io,
-		   uint16_t token,
-		 uint8_t irq_index,
-		 uint64_t irq_addr,
-		 uint32_t irq_val,
-		 int user_irq_id);
+int dpdcei_set_irq(struct fsl_mc_io		*mc_io,
+		   uint32_t			cmd_flags,
+		   uint16_t			token,
+		   uint8_t			irq_index,
+		   struct dpdcei_irq_cfg	*irq_cfg);
 
 /**
- * @dpdcei_get_irq() - Get IRQ information from the DPDCEI
+ * dpdcei_get_irq() - Get IRQ information from the DPDCEI
  *
- * @mc_io:		Pointer to MC portal's I/O object
- * @token:		Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  * @irq_index:	The interrupt index to configure
- * @type:		Returned interrupt type: 0 represents message interrupt
- *				type (both irq_addr and irq_val are valid)
- * @irq_addr:	Returned address that must be written to
- *				signal the message-based interrupt
- * @irq_val:	Value to write into irq_addr address
- * @user_irq_id: A user defined number associated with this IRQ
+ * @type:	Interrupt type: 0 represents message interrupt
+ *		type (both irq_addr and irq_val are valid)
+ * @irq_cfg:	IRQ attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_get_irq(struct fsl_mc_io *mc_io,
-		   uint16_t token,
-		 uint8_t irq_index,
-		 int *type,
-		 uint64_t *irq_addr,
-		 uint32_t *irq_val,
-		 int *user_irq_id);
+int dpdcei_get_irq(struct fsl_mc_io		*mc_io,
+		   uint32_t			cmd_flags,
+		   uint16_t			token,
+		   uint8_t			irq_index,
+		   int				*type,
+		   struct dpdcei_irq_cfg	*irq_cfg);
 
 /**
  * dpdcei_set_irq_enable() - Set overall interrupt state.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @en:			Interrupt state - enable = 1, disable = 0
@@ -222,28 +254,32 @@ int dpdcei_get_irq(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_set_irq_enable(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			uint8_t irq_index,
-			uint8_t en);
+int dpdcei_set_irq_enable(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
+			  uint16_t		token,
+			  uint8_t		irq_index,
+			  uint8_t		en);
 
 /**
  * dpdcei_get_irq_enable() - Get overall interrupt state
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPDCEI object
  * @irq_index:	The interrupt index to configure
  * @en:			Returned Interrupt state - enable = 1, disable = 0
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_get_irq_enable(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			uint8_t irq_index,
-			uint8_t *en);
+int dpdcei_get_irq_enable(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
+			  uint16_t		token,
+			  uint8_t		irq_index,
+			  uint8_t		*en);
 
 /**
  * dpdcei_set_irq_mask() - Set interrupt mask.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPCI object
  * @irq_index:	The interrupt index to configure
  * @mask:		event mask to trigger interrupt;
@@ -256,14 +292,16 @@ int dpdcei_get_irq_enable(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_set_irq_mask(struct fsl_mc_io *mc_io,
-			uint16_t token,
-		      uint8_t irq_index,
-		      uint32_t mask);
+int dpdcei_set_irq_mask(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint8_t		irq_index,
+			uint32_t		mask);
 
 /**
  * dpdcei_get_irq_mask() - Get interrupt mask.
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPDCEI object
  * @irq_index:	The interrupt index to configure
  * @mask:		Returned event mask to trigger interrupt
@@ -273,14 +311,16 @@ int dpdcei_set_irq_mask(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_get_irq_mask(struct fsl_mc_io *mc_io,
-			uint16_t token,
-		      uint8_t irq_index,
-		      uint32_t *mask);
+int dpdcei_get_irq_mask(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint8_t		irq_index,
+			uint32_t		*mask);
 
 /**
  * dpdcei_get_irq_status() - Get the current status of any pending interrupts
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPDCEI object
  * @irq_index:	The interrupt index to configure
  * @status:		Returned interrupts status - one bit per cause:
@@ -289,26 +329,29 @@ int dpdcei_get_irq_mask(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_get_irq_status(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			uint8_t irq_index,
-			uint32_t *status);
+int dpdcei_get_irq_status(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
+			  uint16_t		token,
+			  uint8_t		irq_index,
+			  uint32_t		*status);
 
 /**
  * dpdcei_clear_irq_status() - Clear a pending interrupt's status
- * @mc_io		Pointer to MC portal's I/O object
- * @token		Token of DPDCEI object
- * @irq_index	The interrupt index to configure
- * @status		bits to clear (W1C) - one bit per cause:
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPDCEI object
+ * @irq_index:	The interrupt index to configure
+ * @status:		bits to clear (W1C) - one bit per cause:
  *					0 = don't change
  *					1 = clear status bit
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_clear_irq_status(struct fsl_mc_io *mc_io,
-			    uint16_t token,
-			  uint8_t irq_index,
-			  uint32_t status);
+int dpdcei_clear_irq_status(struct fsl_mc_io	*mc_io,
+			    uint32_t		cmd_flags,
+			    uint16_t		token,
+			    uint8_t		irq_index,
+			    uint32_t		status);
 /**
  * struct dpdcei_attr - Structure representing DPDCEI attributes
  * @id: DPDCEI object ID
@@ -331,15 +374,17 @@ struct dpdcei_attr {
 
 /**
  * dpdcei_get_attributes() - Retrieve DPDCEI attributes.
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  * @attr: Returned  object's attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_get_attributes(struct fsl_mc_io *mc_io,
-			  uint16_t token,
-			  struct dpdcei_attr *attr);
+int dpdcei_get_attributes(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
+			  uint16_t		token,
+			  struct dpdcei_attr	*attr);
 
 /**
  * enum dpdcei_dest - DPDCEI destination types
@@ -366,14 +411,14 @@ enum dpdcei_dest {
  * struct dpdcei_dest_cfg - Structure representing DPDCEI destination parameters
  * @dest_type: Destination type
  * @dest_id: Either DPIO ID or DPCON ID, depending on the destination type
- * @piority: Priority selection within the DPIO or DPCON channel; valid values
+ * @priority: Priority selection within the DPIO or DPCON channel; valid values
  *		are 0-1 or 0-7, depending on the number of priorities in that
  *		channel; not relevant for 'DPDCEI_DEST_NONE' option
  */
 struct dpdcei_dest_cfg {
-	enum dpdcei_dest dest_type;
-	int dest_id;
-	uint8_t priority;
+	enum dpdcei_dest	dest_type;
+	int			dest_id;
+	uint8_t		priority;
 };
 
 /* DPDCEI queue modification options */
@@ -388,28 +433,31 @@ struct dpdcei_dest_cfg {
  * struct dpdcei_rx_queue_cfg - RX queue configuration
  * @options: Flags representing the suggested modifications to the queue;
  *	Use any combination of 'DPDCEI_QUEUE_OPT_<X>' flags
- * @usec_ctx: User context value provided in the frame descriptor of each
+ * @user_ctx: User context value provided in the frame descriptor of each
  *	dequeued frame;
  *	valid only if 'DPDCEI_QUEUE_OPT_USER_CTX' is contained in 'options'
  * @dest_cfg: Queue destination parameters;
  *	valid only if 'DPDCEI_QUEUE_OPT_DEST' is contained in 'options'
  */
 struct dpdcei_rx_queue_cfg {
-	uint32_t options;
-	uint64_t user_ctx;
-	struct dpdcei_dest_cfg dest_cfg;
+	uint32_t		options;
+	uint64_t		user_ctx;
+	struct dpdcei_dest_cfg	dest_cfg;
 };
 
 /**
  * dpdcei_set_rx_queue() - Set Rx queue configuration
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  * @cfg: Rx queue configuration
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_set_rx_queue(struct fsl_mc_io *mc_io, uint16_t token,
-			const struct dpdcei_rx_queue_cfg *cfg);
+int dpdcei_set_rx_queue(struct fsl_mc_io			*mc_io,
+			uint32_t				cmd_flags,
+			uint16_t				token,
+			const struct dpdcei_rx_queue_cfg	*cfg);
 
 /**
  * struct dpdcei_rx_queue_attr - Structure representing attributes of Rx queues
@@ -419,21 +467,24 @@ int dpdcei_set_rx_queue(struct fsl_mc_io *mc_io, uint16_t token,
  * @fqid: Virtual FQID value to be used for dequeue operations
  */
 struct dpdcei_rx_queue_attr {
-	uint64_t user_ctx;
-	struct dpdcei_dest_cfg dest_cfg;
-	uint32_t fqid;
+	uint64_t		user_ctx;
+	struct dpdcei_dest_cfg	dest_cfg;
+	uint32_t		fqid;
 };
 
 /**
  * dpdcei_get_rx_queue() - Retrieve Rx queue attributes.
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDCEI object
  * @attr:	Returned Rx queue attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_get_rx_queue(struct fsl_mc_io *mc_io, uint16_t token,
-			struct dpdcei_rx_queue_attr *attr);
+int dpdcei_get_rx_queue(struct fsl_mc_io		*mc_io,
+			uint32_t			cmd_flags,
+			uint16_t			token,
+			struct dpdcei_rx_queue_attr	*attr);
 
 /**
  * struct dpdcei_tx_queue_attr - Structure representing attributes of Tx queues
@@ -445,13 +496,16 @@ struct dpdcei_tx_queue_attr {
 
 /**
  * dpdcei_get_tx_queue() - Retrieve Tx queue attributes.
- * @mc_io	Pointer to MC portal's I/O object
- * @token	Token of DPDCEI object
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token: Token of DPDCEI object
  * @attr: Returned Tx queue attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_get_tx_queue(struct fsl_mc_io *mc_io, uint16_t token,
-			struct dpdcei_tx_queue_attr *attr);
+int dpdcei_get_tx_queue(struct fsl_mc_io		*mc_io,
+			uint32_t			cmd_flags,
+			uint16_t			token,
+			struct dpdcei_tx_queue_attr	*attr);
 
 #endif /* __FSL_DPDCEI_H */

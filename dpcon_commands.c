@@ -149,7 +149,7 @@ static int print_dpcon_attr(uint32_t dpcon_id,
 	struct dpcon_attr dpcon_attr;
 	bool dpcon_opened = false;
 
-	error = dpcon_open(&restool.mc_io, dpcon_id, &dpcon_handle);
+	error = dpcon_open(&restool.mc_io, 0, dpcon_id, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -166,7 +166,8 @@ static int print_dpcon_attr(uint32_t dpcon_id,
 	}
 
 	memset(&dpcon_attr, 0, sizeof(dpcon_attr));
-	error = dpcon_get_attributes(&restool.mc_io, dpcon_handle, &dpcon_attr);
+	error = dpcon_get_attributes(&restool.mc_io, 0, dpcon_handle,
+					&dpcon_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -192,7 +193,7 @@ out:
 	if (dpcon_opened) {
 		int error2;
 
-		error2 = dpcon_close(&restool.mc_io, dpcon_handle);
+		error2 = dpcon_close(&restool.mc_io, 0, dpcon_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -332,7 +333,7 @@ static int cmd_dpcon_create(void)
 		dpcon_cfg.num_priorities = 1;
 	}
 
-	error = dpcon_create(&restool.mc_io, &dpcon_cfg, &dpcon_handle);
+	error = dpcon_create(&restool.mc_io, 0, &dpcon_cfg, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -341,7 +342,8 @@ static int cmd_dpcon_create(void)
 	}
 
 	memset(&dpcon_attr, 0, sizeof(struct dpcon_attr));
-	error = dpcon_get_attributes(&restool.mc_io, dpcon_handle, &dpcon_attr);
+	error = dpcon_get_attributes(&restool.mc_io, 0, dpcon_handle,
+					&dpcon_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -350,7 +352,7 @@ static int cmd_dpcon_create(void)
 	}
 	printf("dpcon.%d is created under dprc.1\n", dpcon_attr.id);
 
-	error = dpcon_close(&restool.mc_io, dpcon_handle);
+	error = dpcon_close(&restool.mc_io, 0, dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -397,7 +399,7 @@ static int cmd_dpcon_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpcon_open(&restool.mc_io, dpcon_id, &dpcon_handle);
+	error = dpcon_open(&restool.mc_io, 0, dpcon_id, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -413,7 +415,7 @@ static int cmd_dpcon_destroy(void)
 		goto out;
 	}
 
-	error = dpcon_destroy(&restool.mc_io, dpcon_handle);
+	error = dpcon_destroy(&restool.mc_io, 0, dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -425,7 +427,7 @@ static int cmd_dpcon_destroy(void)
 
 out:
 	if (dpcon_opened) {
-		error2 = dpcon_close(&restool.mc_io, dpcon_handle);
+		error2 = dpcon_close(&restool.mc_io, 0, dpcon_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

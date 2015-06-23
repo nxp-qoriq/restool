@@ -36,7 +36,7 @@
 #define DPSW_CMD_EARLY_DROP_EXT_PARAMS		13
 
 /* DPSW Version */
-#define DPSW_VER_MAJOR				5
+#define DPSW_VER_MAJOR				6
 #define DPSW_VER_MINOR				0
 
 /* Command IDs */
@@ -63,9 +63,8 @@
 #define DPSW_CMDID_SET_REFLECTION_IF		0x022
 
 #define DPSW_CMDID_ADD_CUSTOM_TPID		0x024
-#define DPSW_CMDID_SET_CTRL_IF			0x025
+
 #define DPSW_CMDID_REMOVE_CUSTOM_TPID		0x026
-#define DPSW_CMDID_GET_CTRL_IF			0x027
 
 #define DPSW_CMDID_IF_SET_TCI			0x030
 #define DPSW_CMDID_IF_SET_STP			0x031
@@ -73,7 +72,7 @@
 #define DPSW_CMDID_SET_IF_ACCEPT_ALL_VLAN	0x033
 #define DPSW_CMDID_IF_GET_COUNTER		0x034
 #define DPSW_CMDID_IF_SET_COUNTER		0x035
-#define DPSW_CMDID_IF_SET_TC_MAP		0x036
+#define DPSW_CMDID_IF_SET_TX_SELECTION		0x036
 #define DPSW_CMDID_IF_ADD_REFLECTION		0x037
 #define DPSW_CMDID_IF_REMOVE_REFLECTION		0x038
 #define DPSW_CMDID_IF_SET_FLOODING_METERING	0x039
@@ -125,6 +124,12 @@
 #define DPSW_CMDID_ACL_REMOVE_ENTRY		0x093
 #define DPSW_CMDID_ACL_ADD_IF			0x094
 #define DPSW_CMDID_ACL_REMOVE_IF		0x095
+#define DPSW_CMDID_ACL_GET_ATTR			0x096
+
+#define DPSW_CMDID_CTRL_IF_GET_ATTR		0x0A0
+#define DPSW_CMDID_CTRL_IF_SET_POOLS		0x0A1
+#define DPSW_CMDID_CTRL_IF_ENABLE		0x0A2
+#define DPSW_CMDID_CTRL_IF_DISABLE		0x0A3
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_OPEN(cmd, dpsw_id) \
@@ -136,7 +141,6 @@ do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, cfg->num_ifs);\
 	MC_CMD_OP(cmd, 0, 16,  8, uint8_t,  cfg->adv.max_fdbs);\
 	MC_CMD_OP(cmd, 0, 24,  8, uint8_t,  cfg->adv.max_meters_per_if);\
-	MC_CMD_OP(cmd, 0, 32, 16, uint16_t, cfg->adv.ctrl_if_id);\
 	MC_CMD_OP(cmd, 1, 0,  16, uint16_t, cfg->adv.max_vlans);\
 	MC_CMD_OP(cmd, 1, 16, 16, uint16_t, cfg->adv.max_fdb_entries);\
 	MC_CMD_OP(cmd, 1, 32, 16, uint16_t, cfg->adv.fdb_aging_time);\
@@ -149,12 +153,12 @@ do { \
 	MC_RSP_OP(cmd, 0, 0,  1,  int,	    en)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_SET_IRQ(cmd, irq_index, irq_addr, irq_val, user_irq_id) \
+#define DPSW_CMD_SET_IRQ(cmd, irq_index, irq_cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  irq_index);\
-	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_val);\
-	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_CMD_OP(cmd, 2, 0,  32, int,	 user_irq_id); \
+	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_cfg->val);\
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_CMD_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -162,12 +166,12 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_RSP_GET_IRQ(cmd, type, irq_addr, irq_val, user_irq_id) \
+#define DPSW_RSP_GET_IRQ(cmd, type, irq_cfg) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_val); \
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_addr);\
-	MC_RSP_OP(cmd, 2, 0,  32, int,	 user_irq_id); \
-	MC_RSP_OP(cmd, 2, 32, 32, int,	 type); \
+	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, irq_cfg->val); \
+	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_RSP_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
+	MC_RSP_OP(cmd, 2, 32, 32, int,	    type); \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -237,14 +241,6 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_SET_REFLECTION_IF(cmd, if_id) \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_SET_CTRL_IF(cmd, if_id) \
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_RSP_GET_CTRL_IF(cmd, if_id) \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, if_id)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_IF_SET_FLOODING(cmd, if_id, en) \
@@ -331,7 +327,7 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_IF_SET_TC_MAP(cmd, if_id, cfg) \
+#define DPSW_CMD_IF_SET_TX_SELECTION(cmd, if_id, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, if_id);\
 	MC_CMD_OP(cmd, 0, 16, 3,  enum dpsw_priority_selector, \
@@ -344,6 +340,30 @@ do { \
 	MC_CMD_OP(cmd, 1, 40, 8,  uint8_t,  cfg->tc_id[5]);\
 	MC_CMD_OP(cmd, 1, 48, 8,  uint8_t,  cfg->tc_id[6]);\
 	MC_CMD_OP(cmd, 1, 56, 8,  uint8_t,  cfg->tc_id[7]);\
+	MC_CMD_OP(cmd, 2, 0,  16, uint16_t, cfg->tc_sched[0].delta_bandwidth);\
+	MC_CMD_OP(cmd, 2, 16, 4,  enum dpsw_schedule_mode,  \
+					    cfg->tc_sched[0].mode);\
+	MC_CMD_OP(cmd, 2, 32, 16, uint16_t, cfg->tc_sched[1].delta_bandwidth);\
+	MC_CMD_OP(cmd, 2, 48, 4,  enum dpsw_schedule_mode, \
+					    cfg->tc_sched[1].mode);\
+	MC_CMD_OP(cmd, 3, 0,  16, uint16_t, cfg->tc_sched[2].delta_bandwidth);\
+	MC_CMD_OP(cmd, 3, 16, 4,  enum dpsw_schedule_mode,  \
+					    cfg->tc_sched[2].mode);\
+	MC_CMD_OP(cmd, 3, 32, 16, uint16_t, cfg->tc_sched[3].delta_bandwidth);\
+	MC_CMD_OP(cmd, 3, 48, 4,  enum dpsw_schedule_mode, \
+					    cfg->tc_sched[3].mode);\
+	MC_CMD_OP(cmd, 4, 0,  16, uint16_t, cfg->tc_sched[4].delta_bandwidth);\
+	MC_CMD_OP(cmd, 4, 16,  4,  enum dpsw_schedule_mode,  \
+					    cfg->tc_sched[4].mode);\
+	MC_CMD_OP(cmd, 4, 32, 16, uint16_t, cfg->tc_sched[5].delta_bandwidth);\
+	MC_CMD_OP(cmd, 4, 48, 4,  enum dpsw_schedule_mode,  \
+					    cfg->tc_sched[5].mode);\
+	MC_CMD_OP(cmd, 5, 0,  16, uint16_t, cfg->tc_sched[6].delta_bandwidth);\
+	MC_CMD_OP(cmd, 5, 16, 4,  enum dpsw_schedule_mode,  \
+					    cfg->tc_sched[6].mode);\
+	MC_CMD_OP(cmd, 5, 32, 16, uint16_t, cfg->tc_sched[7].delta_bandwidth);\
+	MC_CMD_OP(cmd, 5, 48, 4,  enum dpsw_schedule_mode,  \
+					    cfg->tc_sched[7].mode);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -446,7 +466,8 @@ do { \
 	MC_RSP_OP(cmd, 0, 5,  1,  int,      attr->enabled);\
 	MC_RSP_OP(cmd, 0, 6,  1,  int,      attr->accept_all_vlan);\
 	MC_RSP_OP(cmd, 0, 16, 8,  uint8_t,  attr->num_tcs);\
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->options);\
+	MC_RSP_OP(cmd, 0, 32, 32, uint32_t, attr->tx_fqid);\
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, attr->options);\
 	MC_RSP_OP(cmd, 2, 0,  32, uint32_t, attr->rate);\
 } while (0)
 
@@ -780,6 +801,56 @@ do { \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id);\
 	MC_CMD_OP(cmd, 0, 16, 16, uint16_t, cfg->num_ifs); \
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_ACL_GET_ATTR(cmd, acl_id) \
+	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, acl_id)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_RSP_ACL_GET_ATTR(cmd, attr) \
+do { \
+	MC_RSP_OP(cmd, 1, 0,  16, uint16_t, attr->max_entries);\
+	MC_RSP_OP(cmd, 1, 16, 16, uint16_t, attr->num_entries);\
+	MC_RSP_OP(cmd, 1, 32, 16, uint16_t, attr->num_ifs);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_RSP_CTRL_IF_GET_ATTR(cmd, attr) \
+do { \
+	MC_RSP_OP(cmd, 1, 0,  32, uint32_t, attr->rx_fqid);\
+	MC_RSP_OP(cmd, 1, 32, 32, uint32_t, attr->rx_err_fqid);\
+	MC_RSP_OP(cmd, 2, 0,  32, uint32_t, attr->tx_err_conf_fqid);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSW_CMD_CTRL_IF_SET_POOLS(cmd, cfg) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->num_dpbp); \
+	MC_CMD_OP(cmd, 0, 8,  1,  int,      cfg->pools[0].backup_pool); \
+	MC_CMD_OP(cmd, 0, 9,  1,  int,      cfg->pools[1].backup_pool); \
+	MC_CMD_OP(cmd, 0, 10, 1,  int,      cfg->pools[2].backup_pool); \
+	MC_CMD_OP(cmd, 0, 11, 1,  int,      cfg->pools[3].backup_pool); \
+	MC_CMD_OP(cmd, 0, 12, 1,  int,      cfg->pools[4].backup_pool); \
+	MC_CMD_OP(cmd, 0, 13, 1,  int,      cfg->pools[5].backup_pool); \
+	MC_CMD_OP(cmd, 0, 14, 1,  int,      cfg->pools[6].backup_pool); \
+	MC_CMD_OP(cmd, 0, 15, 1,  int,      cfg->pools[7].backup_pool); \
+	MC_CMD_OP(cmd, 0, 32, 32, int,      cfg->pools[0].dpbp_id); \
+	MC_CMD_OP(cmd, 4, 32, 16, uint16_t, cfg->pools[0].buffer_size);\
+	MC_CMD_OP(cmd, 1, 0,  32, int,      cfg->pools[1].dpbp_id); \
+	MC_CMD_OP(cmd, 4, 48, 16, uint16_t, cfg->pools[1].buffer_size);\
+	MC_CMD_OP(cmd, 1, 32, 32, int,      cfg->pools[2].dpbp_id); \
+	MC_CMD_OP(cmd, 5, 0,  16, uint16_t, cfg->pools[2].buffer_size);\
+	MC_CMD_OP(cmd, 2, 0,  32, int,      cfg->pools[3].dpbp_id); \
+	MC_CMD_OP(cmd, 5, 16, 16, uint16_t, cfg->pools[3].buffer_size);\
+	MC_CMD_OP(cmd, 2, 32, 32, int,      cfg->pools[4].dpbp_id); \
+	MC_CMD_OP(cmd, 5, 32, 16, uint16_t, cfg->pools[4].buffer_size);\
+	MC_CMD_OP(cmd, 3, 0,  32, int,      cfg->pools[5].dpbp_id); \
+	MC_CMD_OP(cmd, 5, 48, 16, uint16_t, cfg->pools[5].buffer_size);\
+	MC_CMD_OP(cmd, 3, 32, 32, int,      cfg->pools[6].dpbp_id); \
+	MC_CMD_OP(cmd, 6, 0,  16, uint16_t, cfg->pools[6].buffer_size);\
+	MC_CMD_OP(cmd, 4, 0,  32, int,      cfg->pools[7].dpbp_id); \
+	MC_CMD_OP(cmd, 6, 16, 16, uint16_t, cfg->pools[7].buffer_size);\
 } while (0)
 
 #endif /* __FSL_DPSW_CMD_H */

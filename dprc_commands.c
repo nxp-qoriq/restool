@@ -372,7 +372,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 
 	printf("dprc.%u\n", dprc_id);
 
-	error = dprc_get_obj_count(&restool.mc_io,
+	error = dprc_get_obj_count(&restool.mc_io, 0,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -388,7 +388,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 		int error2;
 
 		error = dprc_get_obj(
-				&restool.mc_io,
+				&restool.mc_io, 0,
 				dprc_handle,
 				i,
 				&obj_desc);
@@ -417,7 +417,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 		error = list_dprc(obj_desc.id, child_dprc_handle,
 				  nesting_level + 1, show_non_dprc_objects);
 
-		error2 = dprc_close(&restool.mc_io, child_dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, child_dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -465,7 +465,7 @@ static int show_one_resource_type(uint16_t dprc_handle,
 	struct dprc_res_ids_range_desc range_desc;
 	int error;
 
-	error = dprc_get_res_count(&restool.mc_io, dprc_handle,
+	error = dprc_get_res_count(&restool.mc_io, 0, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -484,7 +484,7 @@ static int show_one_resource_type(uint16_t dprc_handle,
 	do {
 		int id;
 
-		error = dprc_get_res_ids(&restool.mc_io, dprc_handle,
+		error = dprc_get_res_ids(&restool.mc_io, 0, dprc_handle,
 					 (char *)mc_res_type, &range_desc);
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
@@ -515,7 +515,7 @@ static int show_one_resource_type_count(uint16_t dprc_handle,
 	int res_count = -1;
 	int error;
 
-	error = dprc_get_res_count(&restool.mc_io, dprc_handle,
+	error = dprc_get_res_count(&restool.mc_io, 0, dprc_handle,
 				   (char *)mc_res_type, &res_count);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -540,7 +540,7 @@ static int show_mc_resources(uint16_t dprc_handle)
 	int error;
 	int ret_error = 0;
 
-	error = dprc_get_pool_count(&restool.mc_io, dprc_handle,
+	error = dprc_get_pool_count(&restool.mc_io, 0, dprc_handle,
 				    &pool_count);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -556,7 +556,7 @@ static int show_mc_resources(uint16_t dprc_handle)
 	}
 	for (int i = 0; i < pool_count; i++) {
 		memset(res_type, 0, sizeof(res_type));
-		error = dprc_get_pool(&restool.mc_io, dprc_handle,
+		error = dprc_get_pool(&restool.mc_io, 0, dprc_handle,
 				      i, res_type);
 
 		/* check for buffer overrun: */
@@ -594,7 +594,7 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 	char plug_stat[10] = {'\0'};
 	struct dprc_obj_desc obj_desc;
 
-	error = dprc_get_obj_count(&restool.mc_io,
+	error = dprc_get_obj_count(&restool.mc_io, 0,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -611,7 +611,7 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 	for (int i = 0; i < num_child_devices; i++) {
 		plug_stat[0] = '\0';
 		memset(&obj_desc, 0, sizeof(obj_desc));
-		error = dprc_get_obj(&restool.mc_io,
+		error = dprc_get_obj(&restool.mc_io, 0,
 				     dprc_handle,
 				     i,
 				     &obj_desc);
@@ -736,7 +736,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -797,7 +797,7 @@ static int print_dprc_attr(uint32_t dprc_id,
 	}
 
 	memset(&dprc_attr, 0, sizeof(dprc_attr));
-	error = dprc_get_attributes(&restool.mc_io, dprc_handle, &dprc_attr);
+	error = dprc_get_attributes(&restool.mc_io, 0, dprc_handle, &dprc_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -827,7 +827,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -941,7 +941,7 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options,
 	} else
 		cfg.label[0] = '\0';
 	error = dprc_create_container(
-			&restool.mc_io,
+			&restool.mc_io, 0,
 			dprc_handle,
 			&cfg,
 			&child_dprc_id,
@@ -964,7 +964,7 @@ static int create_child_dprc(uint16_t dprc_handle, uint64_t options,
 	return 0;
 error:
 	if (child_dprc_created) {
-		error2 = dprc_destroy_container(&restool.mc_io, dprc_handle,
+		error2 = dprc_destroy_container(&restool.mc_io, 0, dprc_handle,
 						child_dprc_id);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
@@ -1125,7 +1125,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1205,7 +1205,7 @@ static int cmd_dprc_destroy_child(void)
 	/*
 	 * Destroy child container in the MC:
 	 */
-	error = dprc_destroy_container(&restool.mc_io, parent_dprc_handle,
+	error = dprc_destroy_container(&restool.mc_io, 0, parent_dprc_handle,
 					child_dprc_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -1218,7 +1218,7 @@ static int cmd_dprc_destroy_child(void)
 	printf("dprc.%u is destroyed\n", child_dprc_id);
 
 	if (parent_dprc_id != restool.root_dprc_id)
-		error = dprc_close(&restool.mc_io, parent_dprc_handle);
+		error = dprc_close(&restool.mc_io, 0, parent_dprc_handle);
 
 out:
 	return error;
@@ -1245,7 +1245,7 @@ static int lookup_obj_desc(uint32_t parent_dprc_id,
 		dprc_handle = restool.root_dprc_handle;
 	}
 
-	error = dprc_get_obj_count(&restool.mc_io,
+	error = dprc_get_obj_count(&restool.mc_io, 0,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -1258,7 +1258,7 @@ static int lookup_obj_desc(uint32_t parent_dprc_id,
 	for (i = 0; i < num_child_devices; i++) {
 		struct dprc_obj_desc obj_desc;
 
-		error = dprc_get_obj(&restool.mc_io,
+		error = dprc_get_obj(&restool.mc_io, 0,
 				     dprc_handle,
 				     i,
 				     &obj_desc);
@@ -1286,7 +1286,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1494,7 +1494,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	}
 
 	if (do_assign) {
-		error = dprc_assign(&restool.mc_io,
+		error = dprc_assign(&restool.mc_io, 0,
 				    dprc_handle,
 				    child_dprc_id,
 				    &res_req);
@@ -1504,7 +1504,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				     mc_status_to_string(mc_status), mc_status);
 		}
 	} else {
-		error = dprc_unassign(&restool.mc_io,
+		error = dprc_unassign(&restool.mc_io, 0,
 				      dprc_handle,
 				      child_dprc_id,
 				      &res_req);
@@ -1518,7 +1518,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1722,7 +1722,7 @@ static int cmd_dprc_set_quota(void)
 	if (error < 0)
 		goto out;
 
-	error = dprc_set_res_quota(&restool.mc_io,
+	error = dprc_set_res_quota(&restool.mc_io, 0,
 				   dprc_handle,
 				   child_dprc_id,
 				   res_type,
@@ -1737,7 +1737,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1772,7 +1772,7 @@ static int cmd_dprc_set_label(void)
 	uint32_t target_parent_dprc_id;
 	uint16_t target_parent_dprc_handle;
 	bool found;
-	int num_child;
+/*	int num_child;*/
 
 	memset(&target_obj_desc, 0, sizeof(target_obj_desc));
 	memset(&obj_desc, 0, sizeof(obj_desc));
@@ -1842,7 +1842,17 @@ static int cmd_dprc_set_label(void)
 		target_parent_dprc_opened = true;
 	}
 
-	error = dprc_get_obj_count(&restool.mc_io,
+	error = dprc_set_obj_label(&restool.mc_io, 0,
+			target_parent_dprc_handle, obj_type, obj_id,
+			restool.cmd_option_args[SET_LABEL_OPT_LABEL]);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+		     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+/*	error = dprc_get_obj_count(&restool.mc_io, 0,
 				target_parent_dprc_handle,
 				&num_child);
 	if (error < 0) {
@@ -1856,7 +1866,8 @@ static int cmd_dprc_set_label(void)
 	for (int i = 0; i < num_child; ++i) {
 		DEBUG_PRINTF("i=%d\n", i);
 		memset(&obj_desc, 0 , sizeof(obj_desc));
-		error = dprc_get_obj(&restool.mc_io, target_parent_dprc_handle,
+		error = dprc_get_obj(&restool.mc_io, 0,
+					target_parent_dprc_handle,
 					i, &obj_desc);
 		if (error < 0) {
 			DEBUG_PRINTF(
@@ -1866,7 +1877,7 @@ static int cmd_dprc_set_label(void)
 		}
 		if (strcmp(obj_desc.type, obj_type) == 0 &&
 		    obj_id == (uint32_t)obj_desc.id) {
-			error = dprc_set_obj_label(&restool.mc_io,
+			error = dprc_set_obj_label(&restool.mc_io, 0,
 				target_parent_dprc_handle, i,
 				restool.cmd_option_args[SET_LABEL_OPT_LABEL]);
 			if (error < 0) {
@@ -1877,7 +1888,7 @@ static int cmd_dprc_set_label(void)
 			}
 			break;
 		}
-	}
+	}*/
 
 out:
 	DEBUG_PRINTF("target_parent_dprc_opened=%d\n",
@@ -1885,7 +1896,8 @@ out:
 	if (target_parent_dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, target_parent_dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0,
+					target_parent_dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1906,13 +1918,13 @@ static int parse_endpoint(char *endpoint_str, struct dprc_endpoint *endpoint)
 
 	n = sscanf(endpoint_str,
 		   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "[a-z].%d.%d",
-		   endpoint->type, &endpoint->id, &endpoint->interface_id);
+		   endpoint->type, &endpoint->id, (int *)&endpoint->if_id);
 
 	if (n < 2)
 		return -EINVAL;
 
 	if (n == 2)
-		assert(endpoint->interface_id == 0);
+		assert(endpoint->if_id == 0);
 
 	return 0;
 }
@@ -1955,6 +1967,10 @@ static int cmd_dprc_connect(void)
 	uint32_t parent_dprc_id;
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
+	struct dprc_connection_cfg dprc_connection_cfg = {
+		.committed_rate = 1000,
+		.max_rate = 1000
+	};
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_HELP)) {
 		printf(usage_msg);
@@ -2019,10 +2035,11 @@ static int cmd_dprc_connect(void)
 		goto out;
 	}
 
-	error = dprc_connect(&restool.mc_io,
+	error = dprc_connect(&restool.mc_io, 0,
 			     dprc_handle,
 			     &endpoint1,
-			     &endpoint2);
+			     &endpoint2,
+			     &dprc_connection_cfg);
 
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -2033,7 +2050,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2109,7 +2126,7 @@ static int cmd_dprc_disconnect(void)
 		goto out;
 	}
 
-	error = dprc_disconnect(&restool.mc_io,
+	error = dprc_disconnect(&restool.mc_io, 0,
 				dprc_handle,
 				&endpoint);
 
@@ -2122,7 +2139,7 @@ out:
 	if (dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0, dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

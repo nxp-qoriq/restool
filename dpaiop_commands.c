@@ -193,7 +193,7 @@ static int print_dpaiop_attr(uint32_t dpaiop_id,
 	uint32_t state;
 	bool dpaiop_opened = false;
 
-	error = dpaiop_open(&restool.mc_io, dpaiop_id, &dpaiop_handle);
+	error = dpaiop_open(&restool.mc_io, 0, dpaiop_id, &dpaiop_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -210,7 +210,7 @@ static int print_dpaiop_attr(uint32_t dpaiop_id,
 	}
 
 	memset(&dpaiop_attr, 0, sizeof(dpaiop_attr));
-	error = dpaiop_get_attributes(&restool.mc_io, dpaiop_handle,
+	error = dpaiop_get_attributes(&restool.mc_io, 0, dpaiop_handle,
 					&dpaiop_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -227,7 +227,7 @@ static int print_dpaiop_attr(uint32_t dpaiop_id,
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 
 	memset(&dpaiop_sl_version, 0, sizeof(dpaiop_sl_version));
-	error = dpaiop_get_sl_version(&restool.mc_io, dpaiop_handle,
+	error = dpaiop_get_sl_version(&restool.mc_io, 0, dpaiop_handle,
 					&dpaiop_sl_version);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -240,7 +240,7 @@ static int print_dpaiop_attr(uint32_t dpaiop_id,
 		dpaiop_sl_version.minor,
 		dpaiop_sl_version.revision);
 
-	error = dpaiop_get_state(&restool.mc_io, dpaiop_handle, &state);
+	error = dpaiop_get_state(&restool.mc_io, 0, dpaiop_handle, &state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -256,7 +256,7 @@ out:
 	if (dpaiop_opened) {
 		int error2;
 
-		error2 = dpaiop_close(&restool.mc_io, dpaiop_handle);
+		error2 = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -418,7 +418,7 @@ static int cmd_dpaiop_create(void)
 		return -EINVAL;
 	}
 
-	error = dpaiop_create(&restool.mc_io, &dpaiop_cfg, &dpaiop_handle);
+	error = dpaiop_create(&restool.mc_io, 0, &dpaiop_cfg, &dpaiop_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -427,7 +427,7 @@ static int cmd_dpaiop_create(void)
 	}
 
 	memset(&dpaiop_attr, 0, sizeof(struct dpaiop_attr));
-	error = dpaiop_get_attributes(&restool.mc_io, dpaiop_handle,
+	error = dpaiop_get_attributes(&restool.mc_io, 0, dpaiop_handle,
 					&dpaiop_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -438,7 +438,7 @@ static int cmd_dpaiop_create(void)
 	printf("dpaiop.%d is created under %s\n", dpaiop_attr.id,
 		restool.cmd_option_args[CREATE_OPT_AIOP_CONTAINER]);
 
-	error = dpaiop_close(&restool.mc_io, dpaiop_handle);
+	error = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -485,7 +485,7 @@ static int cmd_dpaiop_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpaiop_open(&restool.mc_io, dpaiop_id, &dpaiop_handle);
+	error = dpaiop_open(&restool.mc_io, 0, dpaiop_id, &dpaiop_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -501,7 +501,7 @@ static int cmd_dpaiop_destroy(void)
 		goto out;
 	}
 
-	error = dpaiop_destroy(&restool.mc_io, dpaiop_handle);
+	error = dpaiop_destroy(&restool.mc_io, 0, dpaiop_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -513,7 +513,7 @@ static int cmd_dpaiop_destroy(void)
 
 out:
 	if (dpaiop_opened) {
-		error2 = dpaiop_close(&restool.mc_io, dpaiop_handle);
+		error2 = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

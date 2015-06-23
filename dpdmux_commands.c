@@ -206,7 +206,7 @@ static int print_dpdmux_endpoint(uint32_t target_id,
 	strncpy(endpoint1.type, "dpdmux", EP_OBJ_TYPE_MAX_LEN);
 	endpoint1.type[EP_OBJ_TYPE_MAX_LEN] = '\0';
 	endpoint1.id = target_id;
-	endpoint1.interface_id = 0;
+	endpoint1.if_id = 0;
 
 	if (target_parent_dprc_id == restool.root_dprc_id)
 		target_parent_dprc_handle = restool.root_dprc_handle;
@@ -216,7 +216,8 @@ static int print_dpdmux_endpoint(uint32_t target_id,
 		if (error < 0)
 			return error;
 	}
-	error = dprc_get_connection(&restool.mc_io, target_parent_dprc_handle,
+	error = dprc_get_connection(&restool.mc_io, 0,
+					target_parent_dprc_handle,
 					&endpoint1, &endpoint2, &state);
 	printf("endpoint state: %d\n", state);
 
@@ -227,8 +228,8 @@ static int print_dpdmux_endpoint(uint32_t target_id,
 		    strcmp(endpoint2.type, "dpdmux") == 0) {
 			printf("endpoint: %s.%d.%d",
 				endpoint2.type, endpoint2.id,
-				endpoint2.interface_id);
-		} else if (endpoint2.interface_id == 0) {
+				endpoint2.if_id);
+		} else if (endpoint2.if_id == 0) {
 			printf("endpoint: %s.%d",
 				endpoint2.type, endpoint2.id);
 		}
@@ -248,7 +249,7 @@ static int print_dpdmux_endpoint(uint32_t target_id,
 	}
 
 	if (target_parent_dprc_id != restool.root_dprc_id)
-		return dprc_close(&restool.mc_io, target_parent_dprc_handle);
+		return dprc_close(&restool.mc_io, 0, target_parent_dprc_handle);
 
 	return 0;
 }
@@ -314,7 +315,7 @@ static int print_dpdmux_attr(uint32_t dpdmux_id,
 	struct dpdmux_attr dpdmux_attr;
 	bool dpdmux_opened = false;
 
-	error = dpdmux_open(&restool.mc_io, dpdmux_id, &dpdmux_handle);
+	error = dpdmux_open(&restool.mc_io, 0, dpdmux_id, &dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -331,7 +332,7 @@ static int print_dpdmux_attr(uint32_t dpdmux_id,
 	}
 
 	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes(&restool.mc_io, dpdmux_handle,
+	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle,
 					&dpdmux_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -366,7 +367,7 @@ out:
 	if (dpdmux_opened) {
 		int error2;
 
-		error2 = dpdmux_close(&restool.mc_io, dpdmux_handle);
+		error2 = dpdmux_close(&restool.mc_io, 0, dpdmux_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -686,7 +687,7 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.adv.max_mc_groups = 0;
 	}
 
-	error = dpdmux_create(&restool.mc_io, &dpdmux_cfg, &dpdmux_handle);
+	error = dpdmux_create(&restool.mc_io, 0, &dpdmux_cfg, &dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -695,7 +696,7 @@ static int create_dpdmux(const char *usage_msg)
 	}
 
 	memset(&dpdmux_attr, 0, sizeof(struct dpdmux_attr));
-	error = dpdmux_get_attributes(&restool.mc_io, dpdmux_handle,
+	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle,
 					&dpdmux_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -705,7 +706,7 @@ static int create_dpdmux(const char *usage_msg)
 	}
 	printf("dpdmux.%d is created under dprc.1\n", dpdmux_attr.id);
 
-	error = dpdmux_close(&restool.mc_io, dpdmux_handle);
+	error = dpdmux_close(&restool.mc_io, 0, dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -795,7 +796,7 @@ static int cmd_dpdmux_destroy(void)
 	if (error < 0)
 		goto out;
 
-	error = dpdmux_open(&restool.mc_io, dpdmux_id, &dpdmux_handle);
+	error = dpdmux_open(&restool.mc_io, 0, dpdmux_id, &dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -811,7 +812,7 @@ static int cmd_dpdmux_destroy(void)
 		goto out;
 	}
 
-	error = dpdmux_destroy(&restool.mc_io, dpdmux_handle);
+	error = dpdmux_destroy(&restool.mc_io, 0, dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -823,7 +824,7 @@ static int cmd_dpdmux_destroy(void)
 
 out:
 	if (dpdmux_opened) {
-		error2 = dpdmux_close(&restool.mc_io, dpdmux_handle);
+		error2 = dpdmux_close(&restool.mc_io, 0, dpdmux_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

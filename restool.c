@@ -37,8 +37,6 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "fsl_mc_cmd.h"
-#include "fsl_dprc.h"
 
 static const char restool_version[] = "0.8";
 
@@ -163,7 +161,7 @@ int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
 		return 0;
 	}
 
-	error = dprc_get_obj_count(&restool.mc_io,
+	error = dprc_get_obj_count(&restool.mc_io, 0,
 				   dprc_handle,
 				   &num_child_devices);
 	if (error < 0) {
@@ -179,7 +177,7 @@ int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
 		int error2;
 
 		error = dprc_get_obj(
-				&restool.mc_io,
+				&restool.mc_io, 0,
 				dprc_handle,
 				i,
 				&obj_desc);
@@ -219,7 +217,8 @@ int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
 					target_parent_dprc_id,
 					&found2);
 
-			error2 = dprc_close(&restool.mc_io, child_dprc_handle);
+			error2 = dprc_close(&restool.mc_io, 0,
+						child_dprc_handle);
 			if (error2 < 0) {
 				mc_status = flib_error_to_mc_status(error2);
 				ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -265,7 +264,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 	    target_obj_desc->id == (int)restool.root_dprc_id) {
 		printf("number of mappable regions: 1\n");
 		printf("number of interrupts: 1\n");
-		error = dprc_get_irq_mask(&restool.mc_io,
+		error = dprc_get_irq_mask(&restool.mc_io, 0,
 				restool.root_dprc_handle, 0, &irq_mask);
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
@@ -274,7 +273,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 		return error;
 		}
 		printf("interrupt 0's mask: %#x\n", irq_mask);
-		error = dprc_get_irq_status(&restool.mc_io,
+		error = dprc_get_irq_status(&restool.mc_io, 0,
 				restool.root_dprc_handle, 0, &irq_status);
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
@@ -291,7 +290,8 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 		target_obj_desc->region_count);
 	printf("number of interrupts: %u\n", target_obj_desc->irq_count);
 
-	error = ops->obj_open(&restool.mc_io, target_obj_desc->id, &obj_handle);
+	error = ops->obj_open(&restool.mc_io, 0, target_obj_desc->id,
+				&obj_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -300,14 +300,15 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 	}
 
 	for (int j = 0; j < target_obj_desc->irq_count; j++) {
-		ops->obj_get_irq_mask(&restool.mc_io, obj_handle, j, &irq_mask);
+		ops->obj_get_irq_mask(&restool.mc_io, 0, obj_handle, j,
+					&irq_mask);
 		printf("interrupt %d's mask: %#x\n", j, irq_mask);
-		ops->obj_get_irq_status(&restool.mc_io, obj_handle, j,
+		ops->obj_get_irq_status(&restool.mc_io, 0, obj_handle, j,
 					&irq_status);
 		printf("interrupt %d's status: %#x\n", j, irq_status);
 	}
 
-	error = ops->obj_close(&restool.mc_io, obj_handle);
+	error = ops->obj_close(&restool.mc_io, 0, obj_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -465,7 +466,7 @@ int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 	int error;
 	enum mc_cmd_status mc_status;
 
-	error = dprc_open(&restool.mc_io,
+	error = dprc_open(&restool.mc_io, 0,
 			  dprc_id,
 			  dprc_handle);
 	if (error < 0) {
@@ -480,7 +481,7 @@ int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 			"dprc_open() returned invalid handle (auth 0) for dprc.%u\n",
 			dprc_id);
 
-		(void)dprc_close(&restool.mc_io, *dprc_handle);
+		(void)dprc_close(&restool.mc_io, 0, *dprc_handle);
 		error = -ENOENT;
 		goto out;
 	}
@@ -754,7 +755,8 @@ int main(int argc, char *argv[])
 		mc_io_initialized = true;
 		DEBUG_PRINTF("restool.mc_io.fd: %d\n", restool.mc_io.fd);
 
-		error = mc_get_version(&restool.mc_io, &restool.mc_fw_version);
+		error = mc_get_version(&restool.mc_io, 0,
+					&restool.mc_fw_version);
 		if (error != 0) {
 			mc_status = flib_error_to_mc_status(error);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -877,7 +879,8 @@ out:
 	if (root_dprc_opened) {
 		int error2;
 
-		error2 = dprc_close(&restool.mc_io, restool.root_dprc_handle);
+		error2 = dprc_close(&restool.mc_io, 0,
+					restool.root_dprc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
