@@ -340,11 +340,11 @@ static int cmd_dpio_create(void)
 			~ONE_BIT_MASK(CREATE_OPT_CHANNEL_MODE);
 		if (strcmp(restool.cmd_option_args[CREATE_OPT_CHANNEL_MODE],
 		    "DPIO_LOCAL_CHANNEL") == 0) {
-			dpio_cfg.channel_mode = 0;
+			dpio_cfg.channel_mode = DPIO_LOCAL_CHANNEL;
 		} else if (
 			strcmp(restool.cmd_option_args[CREATE_OPT_CHANNEL_MODE],
 			"DPIO_NO_CHANNEL") == 0) {
-			dpio_cfg.channel_mode = 1;
+			dpio_cfg.channel_mode = DPIO_NO_CHANNEL;
 		} else {
 			ERROR_PRINTF("wrong channel mode\n");
 			printf(usage_msg);
