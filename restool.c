@@ -272,7 +272,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 				mc_status_to_string(mc_status), mc_status);
 		return error;
 		}
-		printf("interrupt 0's mask: %#x\n", irq_mask);
+		printf("interrupt[0] mask: %#x\n", irq_mask);
 		error = dprc_get_irq_status(&restool.mc_io, 0,
 				restool.root_dprc_handle, 0, &irq_status);
 		if (error < 0) {
@@ -282,7 +282,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 		return error;
 		}
 
-		printf("interrupt 0's status: %#x\n", irq_status);
+		printf("interrupt[0] status: %#x\n", irq_status);
 		return 0;
 	}
 
@@ -302,10 +302,10 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 	for (int j = 0; j < target_obj_desc->irq_count; j++) {
 		ops->obj_get_irq_mask(&restool.mc_io, 0, obj_handle, j,
 					&irq_mask);
-		printf("interrupt %d's mask: %#x\n", j, irq_mask);
+		printf("interrupt[%d] mask: %#x\n", j, irq_mask);
 		ops->obj_get_irq_status(&restool.mc_io, 0, obj_handle, j,
 					&irq_status);
-		printf("interrupt %d's status: %#x\n", j, irq_status);
+		printf("interrupt[%d] status: %#x\n", j, irq_status);
 	}
 
 	error = ops->obj_close(&restool.mc_io, 0, obj_handle);
