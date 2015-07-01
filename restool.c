@@ -703,7 +703,7 @@ static int parse_obj_command(const char *obj_type,
 
 	clock_gettime(CLOCK_REALTIME, &end_time);
 	diff_time(&start_time, &end_time, &latency);
-	printf("\nIt takes %ld.%ld seconds to run command\n",
+	DEBUG_PRINTF("It takes %ld.%ld seconds to run command\n",
 		latency.tv_sec, latency.tv_nsec);
 
 	if (error < 0)
