@@ -1968,8 +1968,10 @@ static int cmd_dprc_connect(void)
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
 	struct dprc_connection_cfg dprc_connection_cfg = {
-		.committed_rate = 1000,
-		.max_rate = 1000
+		/* If both rates are zero the connection */
+		/* will be configured in "best effort" mode. */
+		.committed_rate = 0,
+		.max_rate = 0
 	};
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_HELP)) {
