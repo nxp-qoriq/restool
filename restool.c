@@ -764,15 +764,21 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 
-		if (MC_VER_MAJOR != restool.mc_fw_version.major)
-			printf(
+		if (MC_VER_MAJOR != restool.mc_fw_version.major) {
+			ERROR_PRINTF(
 				"ERROR: MC firmware major version mismatch (found: %d, expected: %d)\n",
 				restool.mc_fw_version.major, MC_VER_MAJOR);
+			error = -EINVAL;
+			goto out;
+		}
 
-		if (MC_VER_MINOR != restool.mc_fw_version.minor)
-			printf(
+		if (MC_VER_MINOR != restool.mc_fw_version.minor) {
+			ERROR_PRINTF(
 				"WARNING: MC Firmware minor version mismatch (found: %d, expected: %d)\n",
 				restool.mc_fw_version.minor, MC_VER_MINOR);
+			error = -EINVAL;
+			goto out;
+		}
 
 		DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
 			     restool.mc_fw_version.major,
