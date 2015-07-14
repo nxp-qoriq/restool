@@ -74,6 +74,7 @@ C_ASSERT(ARRAY_SIZE(dpseci_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  */
 enum dpseci_create_options {
 	CREATE_OPT_HELP = 0,
+	CREATE_OPT_NUM_QUEUES,
 	CREATE_OPT_PRIORITIES,
 };
 
@@ -81,6 +82,13 @@ static struct option dpseci_create_options[] = {
 	[CREATE_OPT_HELP] = {
 		.name = "help",
 		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_NUM_QUEUES] = {
+		.name = "num-queues",
+		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
 	},
@@ -275,7 +283,8 @@ out:
 	return error;
 }
 
-static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities)
+static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities,
+					int num)
 {
 	char *cursor = NULL;
 	char *endptr;
@@ -284,9 +293,8 @@ static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities)
 	long val;
 
 	while (prio_str != NULL) {
-		if (i >= 2) {
-			ERROR_PRINTF("Invalid priorities.\n");
-			ERROR_PRINTF("DPSEC only supports 2 priorities.\n");
+		if (i >= num) {
+			ERROR_PRINTF("Only supports %d priorities.\n", num);
 			return -EINVAL;
 		}
 
@@ -304,8 +312,8 @@ static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities)
 		++i;
 	}
 
-	if (2 != i) {
-		ERROR_PRINTF("Please set 2 priorities\n");
+	if (num != i) {
+		ERROR_PRINTF("Please set %d priorities\n", num);
 		return -EINVAL;
 	}
 
@@ -322,18 +330,24 @@ static int cmd_dpseci_create(void)
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPSECI by default options\n"
-		"--priorities=<priority1,priority2>\n"
-		"   DPSECI supports 2 priorities that can be individually set.\n"
-		"   Valid values for <priority1> and <priority2> are 1-8. Default value is 1.\n"
+		"default is: restool dpseci create --num-queues=2 priorities=1,2\n"
+		"--num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
+		"--priorities=<priority1,priority2, ...,priority8>\n"
+		"   DPSECI supports num-queues priorities that can be individually set.\n"
+		"   Valid values for <priorityN> are 1-8.\n"
+		"--num-queues and --priorities should be both on or both off\n"
 		"\n"
-		"e.g. create a DPSECI with 2,4 priorities:\n"
-		"   restool dpseci create --priorities=2,4\n"
+		"e.g. create a DPSECI with 2 rx/tx queues, 2,4 priorities:\n"
+		"   restool dpseci create --num-queues=2 --priorities=2,4\n"
 		"\n";
 
 	int error;
-	struct dpseci_cfg dpseci_cfg;
+	struct dpseci_cfg dpseci_cfg = { 0 };
 	uint16_t dpseci_handle;
 	struct dpseci_attr dpseci_attr;
+	long val;
+	char *str;
+	char *endptr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		printf(usage_msg);
@@ -348,21 +362,51 @@ static int cmd_dpseci_create(void)
 		return -EINVAL;
 	}
 
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PRIORITIES)) {
+	if ((restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES)) &&
+	    (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PRIORITIES))) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_PRIORITIES);
+		errno = 0;
+		str = restool.cmd_option_args[CREATE_OPT_NUM_QUEUES];
+		val = strtol(str, &endptr, 0);
+		if (STRTOL_ERROR(str, endptr, val, errno) ||
+		    (val < 1 || val > DPSECI_PRIO_NUM)) {
+			ERROR_PRINTF("Invalid number of queues range\n");
+			return -EINVAL;
+		}
+		dpseci_cfg.num_tx_queues = val;
+		dpseci_cfg.num_rx_queues = val;
+
 		error = parse_dpseci_priorities(
 			restool.cmd_option_args[CREATE_OPT_PRIORITIES],
-			dpseci_cfg.priorities);
+			dpseci_cfg.priorities, val);
 		if (error < 0) {
 			DEBUG_PRINTF(
 				"parse_dpseci_priorities() failed with error %d, cannot get priorities.\n",
 				error);
 			return error;
 		}
+	} else if (restool.cmd_option_mask &
+		   ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
+		ERROR_PRINTF("options should be both on or both off");
+		printf(usage_msg);
+		return -EINVAL;
+	} else if (restool.cmd_option_mask &
+		   ONE_BIT_MASK(CREATE_OPT_PRIORITIES)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_PRIORITIES);
+		ERROR_PRINTF("options should be both on or both off");
+		printf(usage_msg);
+		return -EINVAL;
 	} else {
+		dpseci_cfg.num_tx_queues = 2;
+		dpseci_cfg.num_rx_queues = 2;
 		dpseci_cfg.priorities[0] = 1;
-		dpseci_cfg.priorities[1] = 1;
+		dpseci_cfg.priorities[1] = 2;
 	}
 
 	error = dpseci_create(&restool.mc_io, 0, &dpseci_cfg, &dpseci_handle);

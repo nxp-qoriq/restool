@@ -821,7 +821,7 @@ int main(int argc, char *argv[])
 		}
 
 		if (restool.global_option_mask & ONE_BIT_MASK(GLOBAL_OPT_HELP))
-			print_usage();
+			print_usage();	/* print help message */
 
 		if (restool.global_option_mask &
 		    ONE_BIT_MASK(GLOBAL_OPT_VERSION))
