@@ -413,6 +413,15 @@ static void print_usage(void)
 {
 	static const char usage_msg[] =
 		"\n"
+		"There are 3 levels of help, from up to bottom:\n"
+		"global: restool --help\n"
+		"object: restool dp* help\n"
+		"	tells you all the commands this object support\n"
+		"	e.g. restool dprc help\n"
+		"object-command: restool dp* <command> --help\n"
+		"	tells you how to use this <command>\n"
+		"	e.g. restool dprc create --help\n"
+		"\n"
 		"Usage: restool [<global-options>] <object-type> <command> <object-name> [ARGS...]\n"
 		"\n"
 		"Valid <global-options> are:\n"
@@ -428,9 +437,9 @@ static void print_usage(void)
 		"\n"
 		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|dpmcp|dpmac|dpdcei|dpaiop>\n"
 		"\n"
-		"Valid commands vary for each object type.  Use the \'help\'\n"
-		"command to see detailed usage info for an object.  The following\n"
-		"commands are valid for all object types:\n"
+		"Valid commands vary for each object type.\n"
+		"Use the \'restool dp* help\' command to see detailed usage info for an object.\n"
+		"The following commands are valid for all object types:\n"
 		"   help\n"
 		"   info\n"
 		"   create\n"
@@ -439,7 +448,7 @@ static void print_usage(void)
 		"The <object-name> arg is a string containing object type\n"
 		"and ID (e.g. dpni.7).\n"
 		"\n"
-		"For valid [ARGS] values, see the \'help\' command for the object type.\n"
+		"For valid [ARGS] values, use the \'restool dp* <command> --help\'\n"
 		"\n";
 
 	printf(usage_msg);
