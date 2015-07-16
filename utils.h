@@ -56,7 +56,8 @@ do { \
 #define DEBUG_PRINTF(_fmt, ...)	\
 do { \
 	if (restool.debug) \
-		fprintf(stderr, "DBG: %s: " _fmt, __func__, ##__VA_ARGS__); \
+		fprintf(stderr, "DBG: %s:%d: " _fmt, \
+			__func__, __LINE__, ##__VA_ARGS__); \
 } while (0)
 
 #define STRINGIFY(_x)	__STRINGIFY_EXPANDED(_x)

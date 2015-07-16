@@ -422,6 +422,11 @@ static void print_usage(void)
 	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
 }
 
+static void print_global_try(void)
+{
+	ERROR_PRINTF("try 'restool -h'\n");
+}
+
 static void print_version(void)
 {
 	printf("Freescale MC restool tool version %s\n", restool_version);
@@ -496,7 +501,6 @@ static int parse_global_options(int argc, char *argv[],
 {
 	int c;
 	int opt_index;
-	int error;
 
 	/*
 	 * Initialize getopt global variables:
@@ -508,14 +512,21 @@ static int parse_global_options(int argc, char *argv[],
 	for ( ; ; ) {
 		opt_index = 0;
 		c = getopt_long(argc, argv, "+h?vmd", global_options, NULL);
+		DEBUG_PRINTF("c=%d\n", c);
+		DEBUG_PRINTF("optopt=%d\n", optopt);
+
 		if (c == -1)
 			break;
 
 		switch (c) {
 		case 'h':
 		case '?':
-			opt_index = GLOBAL_OPT_HELP;
-			break;
+			if (optopt == 0) {
+				opt_index = GLOBAL_OPT_HELP;
+				break;
+			}
+			print_global_try();
+			return -EINVAL;
 
 		case 'v':
 			opt_index = GLOBAL_OPT_VERSION;
@@ -530,15 +541,16 @@ static int parse_global_options(int argc, char *argv[],
 			break;
 
 		default:
+			DEBUG_PRINTF("\n");
 			assert(false);
+			DEBUG_PRINTF("\n");
 		}
 
 		assert((unsigned int)opt_index < MAX_NUM_CMD_LINE_OPTIONS);
 		if (restool.global_option_mask & ONE_BIT_MASK(opt_index)) {
 			ERROR_PRINTF("Duplicated option: %s\n",
 				     global_options[opt_index].name);
-			error = -EINVAL;
-			goto error;
+			return -EINVAL;
 		}
 
 		restool.global_option_mask |= ONE_BIT_MASK(opt_index);
@@ -550,9 +562,8 @@ static int parse_global_options(int argc, char *argv[],
 
 	DEBUG_PRINTF("optind: %d, argc: %d\n", optind, argc);
 	*next_argv_index = optind;
+	DEBUG_PRINTF("\n");
 	return 0;
-error:
-	return error;
 }
 
 static int parse_cmd_options(int argc, char *argv[],
