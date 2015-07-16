@@ -630,7 +630,7 @@ static int create_dpsw(const char *usage_msg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpsw.%d is created under dprc.1\n", dpsw_attr.id);
+	print_new_obj("dpsw", dpsw_attr.id, NULL);
 
 	error = dpsw_close(&restool.mc_io, 0, dpsw_handle);
 	if (error < 0) {

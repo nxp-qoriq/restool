@@ -343,7 +343,7 @@ static int cmd_dpbp_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpbp.%d is created under dprc.1\n", dpbp_attr.id);
+	print_new_obj("dpbp", dpbp_attr.id, NULL);
 
 	error = dpbp_close(&restool.mc_io, 0, dpbp_handle);
 	if (error < 0) {

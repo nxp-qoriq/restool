@@ -197,6 +197,13 @@ struct restool {
 	 * global flag to enable debug printing
 	 */
 	bool debug;
+
+	/**
+	 * global flag to enable script printing
+	 * it only print out created object name
+	 * instead of the whole sentence
+	 */
+	bool script;
 };
 
 /**
@@ -207,6 +214,7 @@ enum global_options {
 	GLOBAL_OPT_VERSION,
 	GLOBAL_OPT_MC_VERSION,
 	GLOBAL_OPT_DEBUG,
+	GLOBAL_OPT_SCRIPT
 };
 
 /**
@@ -258,6 +266,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 			const struct flib_ops *ops);
 int check_resource_type(char *res_type);
 bool in_use(const char *obj, const char *situation);
+void print_new_obj(char *type, int id, const char *parent);
 
 extern struct restool restool;
 extern struct object_command dprc_commands[];

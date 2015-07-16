@@ -404,7 +404,7 @@ static int cmd_dpdcei_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpdcei.%d is created under dprc.1\n", dpdcei_attr.id);
+	print_new_obj("dpdcei", dpdcei_attr.id, NULL);
 
 	error = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
 	if (error < 0) {

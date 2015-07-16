@@ -377,7 +377,7 @@ static int cmd_dpci_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpci.%d is created under dprc.1\n", dpci_attr.id);
+	print_new_obj("dpci", dpci_attr.id, NULL);
 
 	error = dpci_close(&restool.mc_io, 0, dpci_handle);
 	if (error < 0) {

@@ -435,7 +435,7 @@ static int cmd_dpaiop_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpaiop.%d is created under %s\n", dpaiop_attr.id,
+	print_new_obj("dpaiop", dpaiop_attr.id,
 		restool.cmd_option_args[CREATE_OPT_AIOP_CONTAINER]);
 
 	error = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);

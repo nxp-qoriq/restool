@@ -471,7 +471,7 @@ static int cmd_dpmac_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpmac.%d is created under dprc.1\n", dpmac_attr.id);
+	print_new_obj("dpmac", dpmac_attr.id, NULL);
 
 	error = dpmac_close(&restool.mc_io, 0, dpmac_handle);
 	if (error < 0) {

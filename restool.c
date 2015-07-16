@@ -61,6 +61,12 @@ static struct option global_options[] = {
 		.val = 'd',
 	},
 
+	[GLOBAL_OPT_SCRIPT] = {
+		.name = "script",
+		.val = 's',
+	},
+
+
 	{ 0 },
 };
 
@@ -377,6 +383,21 @@ bool in_use(const char *obj, const char *situation)
 	return false;
 }
 
+void print_new_obj(char *type, int id, const char *parent)
+{
+	if (restool.script) {
+		printf("%s.%d\n", type, id);
+		return;
+	}
+
+	if (parent == NULL) { /* by default, parent == dprc.1 */
+		printf("%s.%d is created under dprc.1\n", type, id);
+		return;
+	}
+
+	printf("%s.%d is created under %s\n", type, id, parent);
+}
+
 void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options)
 {
@@ -401,6 +422,9 @@ static void print_usage(void)
 		"   -d, --debug	   Print out DEBUG info\n"
 		"	--debug option must be used together with an object\n"
 		"	e.g. restool --debug dpni info dpni.11\n"
+		"   -s, --script   Print newly-created object name only instead of whole sentence\n"
+		"	e.g. restool -s dpseci create\n"
+		"	     dpseci.0\n"
 		"\n"
 		"Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|dpmcp|dpmac|dpdcei|dpaiop>\n"
 		"\n"
@@ -422,9 +446,9 @@ static void print_usage(void)
 	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
 }
 
-static void print_global_try(void)
+static void print_try_help(void)
 {
-	ERROR_PRINTF("try 'restool -h'\n");
+	ERROR_PRINTF("try 'restool --help'\n");
 }
 
 static void print_version(void)
@@ -511,7 +535,7 @@ static int parse_global_options(int argc, char *argv[],
 	restool.global_option_mask = 0;
 	for ( ; ; ) {
 		opt_index = 0;
-		c = getopt_long(argc, argv, "+h?vmd", global_options, NULL);
+		c = getopt_long(argc, argv, "+h?vmds", global_options, NULL);
 		DEBUG_PRINTF("c=%d\n", c);
 		DEBUG_PRINTF("optopt=%d\n", optopt);
 
@@ -525,7 +549,7 @@ static int parse_global_options(int argc, char *argv[],
 				opt_index = GLOBAL_OPT_HELP;
 				break;
 			}
-			print_global_try();
+			print_try_help();
 			return -EINVAL;
 
 		case 'v':
@@ -538,6 +562,10 @@ static int parse_global_options(int argc, char *argv[],
 
 		case 'd':
 			opt_index = GLOBAL_OPT_DEBUG;
+			break;
+
+		case 's':
+			opt_index = GLOBAL_OPT_SCRIPT;
 			break;
 
 		default:
@@ -644,7 +672,7 @@ static int parse_obj_command(const char *obj_type,
 
 	if (obj_cmd_parser == NULL) {
 		ERROR_PRINTF("error: invalid object type \'%s\'\n", obj_type);
-		print_usage();
+		print_try_help();
 		error = -EINVAL;
 		goto out;
 	}
@@ -663,7 +691,7 @@ static int parse_obj_command(const char *obj_type,
 	if (obj_cmd == NULL) {
 		ERROR_PRINTF("Invalid command \'%s\' for object type \'%s\'\n",
 			     cmd_name, obj_type);
-		print_usage();
+		print_try_help();
 		error = -EINVAL;
 		goto out;
 	}
@@ -692,14 +720,14 @@ static int parse_obj_command(const char *obj_type,
 		if (next_argv_index != argc) {
 			assert(next_argv_index < argc);
 			ERROR_PRINTF("Invalid command line\n");
-			print_usage();
+			print_try_help();
 			error = -EINVAL;
 			goto out;
 		}
 	} else {
 		if (argc != 1) {
 			ERROR_PRINTF("Invalid command line\n");
-			print_usage();
+			print_try_help();
 			error = -EINVAL;
 			goto out;
 		}
@@ -826,7 +854,7 @@ int main(int argc, char *argv[])
 	if (next_argv_index == argc) {
 		if (restool.global_option_mask == 0) {
 			ERROR_PRINTF("Incomplete command line\n");
-			print_usage();
+			print_try_help();
 			error = -EINVAL;
 			goto out;
 		}
@@ -846,10 +874,20 @@ int main(int argc, char *argv[])
 		    ONE_BIT_MASK(GLOBAL_OPT_DEBUG)) {
 			restool.global_option_mask &=
 				~ONE_BIT_MASK(GLOBAL_OPT_DEBUG);
-			print_usage();
+			print_try_help();
 			error = -EINVAL;
 			goto out;
 		}
+
+		if (restool.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_SCRIPT)) {
+			restool.global_option_mask &=
+				~ONE_BIT_MASK(GLOBAL_OPT_SCRIPT);
+			print_try_help();
+			error = -EINVAL;
+			goto out;
+		}
+
 
 		if (restool.global_option_mask != 0) {
 			print_unexpected_options_error(
@@ -865,6 +903,13 @@ int main(int argc, char *argv[])
 			restool.debug = true;
 		}
 
+		if (restool.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_SCRIPT)) {
+			restool.global_option_mask &=
+				~ONE_BIT_MASK(GLOBAL_OPT_SCRIPT);
+			restool.script = true;
+		}
+
 		int num_remaining_args;
 
 		assert(next_argv_index < argc);
@@ -872,7 +917,7 @@ int main(int argc, char *argv[])
 			print_unexpected_options_error(
 				restool.global_option_mask,
 				global_options);
-			print_usage();
+			print_try_help();
 			error = -EINVAL;
 			goto out;
 		}
@@ -880,7 +925,7 @@ int main(int argc, char *argv[])
 		num_remaining_args = argc - next_argv_index;
 		if (num_remaining_args < 2) {
 			ERROR_PRINTF("Incomplete command line\n");
-			print_usage();
+			print_try_help();
 			error = -EINVAL;
 			goto out;
 		}
