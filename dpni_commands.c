@@ -911,7 +911,6 @@ static int create_dpni(const char *usage_msg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpni.%d is created under dprc.1\n", dpni_attr.id);
 	print_new_obj("dpni", dpni_attr.id, NULL);
 
 	error = dpni_close(&restool.mc_io, 0, dpni_handle);
