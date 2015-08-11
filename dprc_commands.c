@@ -1767,14 +1767,11 @@ static int cmd_dprc_set_label(void)
 	uint32_t obj_id;
 	bool target_parent_dprc_opened = false;
 	struct dprc_obj_desc target_obj_desc;
-	struct dprc_obj_desc obj_desc;
 	uint32_t target_parent_dprc_id;
 	uint16_t target_parent_dprc_handle;
 	bool found;
-/*	int num_child;*/
 
 	memset(&target_obj_desc, 0, sizeof(target_obj_desc));
-	memset(&obj_desc, 0, sizeof(obj_desc));
 	if (restool.cmd_option_mask & ONE_BIT_MASK(SET_LABEL_OPT_HELP)) {
 		printf(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_LABEL_OPT_HELP);
@@ -1850,44 +1847,6 @@ static int cmd_dprc_set_label(void)
 		     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
-
-/*	error = dprc_get_obj_count(&restool.mc_io, 0,
-				target_parent_dprc_handle,
-				&num_child);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	DEBUG_PRINTF("num_child=%d\n", num_child);
-	for (int i = 0; i < num_child; ++i) {
-		DEBUG_PRINTF("i=%d\n", i);
-		memset(&obj_desc, 0 , sizeof(obj_desc));
-		error = dprc_get_obj(&restool.mc_io, 0,
-					target_parent_dprc_handle,
-					i, &obj_desc);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"dprc_get_object(%u) failed with error %d\n",
-				i, error);
-			goto out;
-		}
-		if (strcmp(obj_desc.type, obj_type) == 0 &&
-		    obj_id == (uint32_t)obj_desc.id) {
-			error = dprc_set_obj_label(&restool.mc_io, 0,
-				target_parent_dprc_handle, i,
-				restool.cmd_option_args[SET_LABEL_OPT_LABEL]);
-			if (error < 0) {
-				mc_status = flib_error_to_mc_status(error);
-				ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-				goto out;
-			}
-			break;
-		}
-	}*/
 
 out:
 	DEBUG_PRINTF("target_parent_dprc_opened=%d\n",
