@@ -1933,30 +1933,31 @@ static int cmd_dprc_connect(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprc connect <container> --endpoint1=<object> --endpoint2=<object>\n"
+		"Usage: restool dprc connect <parent-container> --endpoint1=<object> --endpoint2=<object>\n"
 		"\n"
+		"<parent-container> should be a shared parent (grand parent) of both endpoints\n"
+		"it is always true to utilize root container dprc.1\n"
 		"--endpoint1=<object>\n"
 		"   Specifies the first endpoint object.\n"
 		"--endpoint2=<object>\n"
 		"   Specifies the second endpoint object.\n"
+		"endpoint1 and endpoint2 do not need to be in the same container.\n"
 		"There are several restrictions on this connect command.\n"
 		"1. Neither endpoint1 nor endpoint2 should already be connected to other endpoints.\n"
-		"   You can do 'dprc disconnect' before doing 'connect'\n"
-		"2. Both endpoint1 and endpoint2 should be in the same container.\n"
-		"3. dpsw.1 has several interfaces, a legal endpoint is dpsw.1.0, dpsw.1.1,\n"
+		"   You should do 'dprc disconnect' before doing 'connect'\n"
+		"2. dpsw.1 has several interfaces, a legal endpoint is dpsw.1.0, dpsw.1.1,\n"
 		"   dpsw.1.3, etc. dpsw.1 is not a legal endpoint.\n"
 		"\n"
-		"For instance, dpni.8 is under dprc.4, dpsw.1 is under dprc.1\n"
-		"dpni.8 is connected to dpmac.8, dpsw.1.0 is connected to dpni.1\n"
+		"For instance, dprc.4 under dprc.1, dpni.8 under dprc.4, dpsw.1 under dprc.1\n"
+		"dpni.8 connected to dpmac.8, dpsw.1.0 connected to dpni.1\n"
 		"\n"
 		"\'restool dprc connect dprc.4  --endpoint1=dpni.8 --endpoint2=dpsw.1.0\'  shall fail\n"
 		"\n"
 		"correct steps are:\n"
 		"\n"
 		"restool dprc disconnect dprc.4 --endpoint=dpni.8\n"
+		"or restool dprc disconnect dprc.1 --endpoint=dpni.8\n"
 		"restool dprc disconnect dprc.1 --endpoint=dpsw.1.0\n"
-		"restool dprc assign dprc.4 --object=dpni.8 --plugged=0\n"
-		"restool dprc unassign dprc.1 --child=dprc.4 --object=dpni.8\n"
 		"restool dprc connect dprc.1 --endpoint1=dpni.8 --endpoint2=dpsw.1.0\n"
 		"\n";
 
@@ -2068,10 +2069,15 @@ static int cmd_dprc_disconnect(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprc disconnect <container> --endpoint=<object>\n"
+		"Usage: restool dprc disconnect <parent-container> --endpoint=<object>\n"
 		"\n"
+		"<parent-container> is the parent or grand parent of endpoint\n"
+		"It is always true if you utilize root container dprc.1\n"
 		"--endpoint=<object>\n"
 		"   Specifies either endpoint of a connection.\n"
+		"e.g. dprc.1 -> dprc.3 -> dpni.7\n"
+		"restool dprc disconnnect dprc.3 --endpoint=dpni.7\n"
+		"restool dprc disconnnect dprc.1 --endpoint=dpni.7\n"
 		"\n";
 
 	uint16_t dprc_handle;
