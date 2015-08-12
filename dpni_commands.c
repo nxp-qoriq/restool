@@ -284,12 +284,10 @@ static void print_dpni_options(uint32_t options)
 		printf("\tDPNI_OPT_FS_MASK_SUPPORT\n");
 }
 
-static int print_dpni_endpoint(uint32_t target_id,
-				uint32_t target_parent_dprc_id)
+static int print_dpni_endpoint(uint32_t target_id)
 {
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
-	uint16_t target_parent_dprc_handle;
 	int state;
 	int error = 0;
 
@@ -301,16 +299,8 @@ static int print_dpni_endpoint(uint32_t target_id,
 	endpoint1.id = target_id;
 	endpoint1.if_id = 0;
 
-	if (target_parent_dprc_id == restool.root_dprc_id)
-		target_parent_dprc_handle = restool.root_dprc_handle;
-	else {
-		error = open_dprc(target_parent_dprc_id,
-				&target_parent_dprc_handle);
-		if (error < 0)
-			return error;
-	}
 	error = dprc_get_connection(&restool.mc_io, 0,
-					target_parent_dprc_handle,
+					restool.root_dprc_handle,
 					&endpoint1, &endpoint2, &state);
 	printf("endpoint state: %d\n", state);
 
@@ -341,15 +331,11 @@ static int print_dpni_endpoint(uint32_t target_id,
 		return error;
 	}
 
-	if (target_parent_dprc_id != restool.root_dprc_id)
-		return dprc_close(&restool.mc_io, 0, target_parent_dprc_handle);
-
 	return 0;
 }
 
 static int print_dpni_attr(uint32_t dpni_id,
-			struct dprc_obj_desc *target_obj_desc,
-			uint32_t target_parent_dprc_id)
+			struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpni_handle;
 	int error;
@@ -409,7 +395,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	printf("dpni id: %d\n", dpni_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpni_endpoint(dpni_id, target_parent_dprc_id);
+	print_dpni_endpoint(dpni_id);
 	printf("link status: %d - ", link_state.up);
 	link_state.up == 0 ? printf("down\n") :
 	link_state.up == 1 ? printf("up\n") : printf("error state\n");
@@ -476,8 +462,7 @@ static int print_dpni_info(uint32_t dpni_id)
 		return -EINVAL;
 	}
 
-	error = print_dpni_attr(dpni_id, &target_obj_desc,
-				target_parent_dprc_id);
+	error = print_dpni_attr(dpni_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 

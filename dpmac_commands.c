@@ -141,12 +141,10 @@ static int cmd_dpmac_help(void)
 	return 0;
 }
 
-static int print_dpmac_endpoint(uint32_t target_id,
-				uint32_t target_parent_dprc_id)
+static int print_dpmac_endpoint(uint32_t target_id)
 {
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
-	uint16_t target_parent_dprc_handle;
 	int state;
 	int error = 0;
 
@@ -158,16 +156,8 @@ static int print_dpmac_endpoint(uint32_t target_id,
 	endpoint1.id = target_id;
 	endpoint1.if_id = 0;
 
-	if (target_parent_dprc_id == restool.root_dprc_id)
-		target_parent_dprc_handle = restool.root_dprc_handle;
-	else {
-		error = open_dprc(target_parent_dprc_id,
-				&target_parent_dprc_handle);
-		if (error < 0)
-			return error;
-	}
 	error = dprc_get_connection(&restool.mc_io, 0,
-					target_parent_dprc_handle,
+					restool.root_dprc_handle,
 					&endpoint1, &endpoint2, &state);
 	printf("endpoint state: %d\n", state);
 
@@ -197,9 +187,6 @@ static int print_dpmac_endpoint(uint32_t target_id,
 			mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-
-	if (target_parent_dprc_id != restool.root_dprc_id)
-		return dprc_close(&restool.mc_io, 0, target_parent_dprc_handle);
 
 	return 0;
 }
@@ -264,8 +251,7 @@ static void print_dpmac_eth_if(enum dpmac_eth_if eth_if)
 }
 
 static int print_dpmac_attr(uint32_t dpmac_id,
-			struct dprc_obj_desc *target_obj_desc,
-			uint32_t target_parent_dprc_id)
+			struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpmac_handle;
 	int error;
@@ -304,7 +290,7 @@ static int print_dpmac_attr(uint32_t dpmac_id,
 	printf("dpmac object id/portal id: %d\n", dpmac_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpmac_endpoint(dpmac_id, target_parent_dprc_id);
+	print_dpmac_endpoint(dpmac_id);
 	print_dpmac_link_type(dpmac_attr.link_type);
 	print_dpmac_eth_if(dpmac_attr.eth_if);
 	printf("maximum supported rate %lu Mbps\n",
@@ -350,8 +336,7 @@ static int print_dpmac_info(uint32_t dpmac_id)
 		return -EINVAL;
 	}
 
-	error = print_dpmac_attr(dpmac_id, &target_obj_desc,
-				 target_parent_dprc_id);
+	error = print_dpmac_attr(dpmac_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
