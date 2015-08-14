@@ -312,7 +312,7 @@ static int cmd_dpmcp_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	printf("dpmcp.%d is created under dprc.1\n", dpmcp_attr.id);
+	print_new_obj("dpmcp", dpmcp_attr.id, NULL);
 
 	error = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
 	if (error < 0) {
