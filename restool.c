@@ -102,7 +102,7 @@ enum mc_cmd_status flib_error_to_mc_status(int error)
 		return MC_CMD_STATUS_NO_PRIVILEGE;
 	case -EIO:
 		return MC_CMD_STATUS_DMA_ERR;
-	case -EINVAL:
+	case -ENXIO:
 		return MC_CMD_STATUS_CONFIG_ERR;
 	case -ETIMEDOUT:
 		return MC_CMD_STATUS_TIMEOUT;
@@ -121,7 +121,7 @@ enum mc_cmd_status flib_error_to_mc_status(int error)
 	}
 
 	/* Not expected to reach here */
-	return 1000;
+	return 1000;	/* 1000 == 0x3e8 */
 }
 
 const char *mc_status_to_string(enum mc_cmd_status status)
