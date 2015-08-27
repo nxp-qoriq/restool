@@ -993,8 +993,10 @@ static int parse_create_options(char *options_str, uint64_t *options)
 	};
 
 	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ",", &cursor);
+	char *opt_str = strtok_r(options_str, ", ", &cursor);
 	uint64_t options_mask = 0;
+
+	DEBUG_PRINTF("opt_str = %s\n", opt_str);
 
 	while (opt_str != NULL) {
 		unsigned int i;
@@ -1011,7 +1013,8 @@ static int parse_create_options(char *options_str, uint64_t *options)
 			return -EINVAL;
 		}
 
-		opt_str = strtok_r(NULL, ",", &cursor);
+		opt_str = strtok_r(NULL, ", ", &cursor);
+		DEBUG_PRINTF("opt_str = %s\n", opt_str);
 	}
 
 	*options = options_mask;
@@ -1025,7 +1028,7 @@ static int cmd_dprc_create_child(void)
 		"Usage: restool dprc create <parent-container> [--options=<options-mask>] [--label=<object's-label>]\n"
 		"\n"
 		"--options=<options-mask>\n"
-		"   Where <options-mask> is a comma separated list of DPRC options:\n"
+		"   Where <options-mask> is a comma or space separated list of DPRC options:\n"
 		"	DPRC_CFG_OPT_SPAWN_ALLOWED\n"
 		"	DPRC_CFG_OPT_ALLOC_ALLOWED\n"
 		"	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED\n"

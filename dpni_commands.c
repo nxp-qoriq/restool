@@ -537,8 +537,10 @@ static int parse_dpni_create_options(char *options_str, uint32_t *options)
 	};
 
 	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ",", &cursor);
+	char *opt_str = strtok_r(options_str, ", ", &cursor);
 	uint32_t options_mask = 0;
+
+	DEBUG_PRINTF("opt_str = %s\n", opt_str);
 
 	while (opt_str != NULL) {
 		unsigned int i;
@@ -555,7 +557,8 @@ static int parse_dpni_create_options(char *options_str, uint32_t *options)
 			return -EINVAL;
 		}
 
-		opt_str = strtok_r(NULL, ",", &cursor);
+		opt_str = strtok_r(NULL, ", ", &cursor);
+		DEBUG_PRINTF("opt_str = %s\n", opt_str);
 	}
 
 	*options = options_mask;
@@ -925,7 +928,7 @@ static int cmd_dpni_create(void)
 		"	In case it isn't power-of-2 it will be ceiling to\n"
 		"	the next power-of-2 as HW demand it; 0 will be treated as 1\n"
 		"--options=<options-mask>\n"
-		"   Where <options-mask> is a comma separated list of DPNI options:\n"
+		"   Where <options-mask> is a comma or space separated list of DPNI options:\n"
 		"	DPNI_OPT_ALLOW_DIST_KEY_PER_TC\n"
 		"	DPNI_OPT_TX_CONF_DISABLED\n"
 		"	DPNI_OPT_PRIVATE_TX_CONF_ERR_DISABLED\n"
