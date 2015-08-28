@@ -1191,8 +1191,10 @@ static int cmd_dprc_destroy_child(void)
 				restool.root_dprc_handle, 0,
 				child_dprc_id, "dprc", &child_obj_desc,
 				&parent_dprc_id, &found);
-	if (error < 0) {
-		printf("destroy dprc.%u failed\n", child_dprc_id);
+
+	if (!found && error < 0) {
+		printf("%s does not exist\n", restool.obj_name);
+		error = -EINVAL;
 		goto out;
 	}
 
@@ -1829,8 +1831,16 @@ static int cmd_dprc_set_label(void)
 	error = find_target_obj_desc(restool.root_dprc_id,
 			restool.root_dprc_handle, 0, obj_id, obj_type,
 			&target_obj_desc, &target_parent_dprc_id, &found);
+
+	if (!found && error < 0) {
+		printf("%s does not exist\n", restool.obj_name);
+		error = -EINVAL;
+		goto out;
+	}
+
 	if (error < 0)
 		goto out;
+
 	if (target_parent_dprc_id == restool.root_dprc_id)
 		target_parent_dprc_handle = restool.root_dprc_handle;
 	else {

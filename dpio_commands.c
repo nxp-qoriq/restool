@@ -437,6 +437,11 @@ static int cmd_dpio_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpio", dpio_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpio_open(&restool.mc_io, 0, dpio_id, &dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

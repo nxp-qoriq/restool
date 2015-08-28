@@ -361,6 +361,11 @@ static int cmd_dpmcp_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpmcp", dpmcp_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpmcp_open(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

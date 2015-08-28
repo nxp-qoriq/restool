@@ -391,6 +391,11 @@ static int cmd_dpbp_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpbp", dpbp_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpbp_open(&restool.mc_io, 0, dpbp_id, &dpbp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

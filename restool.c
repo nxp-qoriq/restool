@@ -248,6 +248,27 @@ out:
 	return error;
 }
 
+bool find_obj(char *obj_type, uint32_t obj_id)
+{
+	struct dprc_obj_desc target_obj_desc;
+	uint32_t target_parent_dprc_id;
+	int error;
+	bool found = false;
+
+	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0, obj_id,
+				obj_type, &target_obj_desc,
+				&target_parent_dprc_id, &found);
+
+	if (!found && error < 0) {
+		printf("%s.%u does not exist\n", obj_type, obj_id);
+		return false;
+	}
+
+	return true;
+}
+
 void print_obj_label(struct dprc_obj_desc *target_obj_desc)
 {
 	assert(strlen(target_obj_desc->label) <= MC_OBJ_LABEL_MAX_LENGTH);
@@ -370,6 +391,7 @@ bool in_use(const char *obj, const char *situation)
 	r = readlink(symbolic, linkname, PATH_MAX - 1);
 	if (r != -1)
 		linkname[r] = '\0';
+	DEBUG_PRINTF("readlink's errno = %d\n", errno);
 	DEBUG_PRINTF("linkname=%s\n", linkname);
 	DEBUG_PRINTF("r = %d\n", (int)r);
 	if (r > 0) {

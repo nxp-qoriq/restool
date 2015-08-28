@@ -505,6 +505,11 @@ static int cmd_dpmac_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpmac", dpmac_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpmac_open(&restool.mc_io, 0, dpmac_id, &dpmac_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

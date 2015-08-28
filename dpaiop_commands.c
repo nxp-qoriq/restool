@@ -485,6 +485,11 @@ static int cmd_dpaiop_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpaiop", dpaiop_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpaiop_open(&restool.mc_io, 0, dpaiop_id, &dpaiop_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

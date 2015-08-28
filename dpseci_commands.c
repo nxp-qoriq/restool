@@ -476,6 +476,11 @@ static int cmd_dpseci_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpseci", dpseci_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpseci_open(&restool.mc_io, 0, dpseci_id, &dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

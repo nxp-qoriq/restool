@@ -425,6 +425,11 @@ static int cmd_dpci_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpci", dpci_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpci_open(&restool.mc_io, 0, dpci_id, &dpci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

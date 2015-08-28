@@ -1007,6 +1007,11 @@ static int cmd_dpni_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpni", dpni_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

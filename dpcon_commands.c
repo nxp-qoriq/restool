@@ -399,6 +399,11 @@ static int cmd_dpcon_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpcon", dpcon_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpcon_open(&restool.mc_io, 0, dpcon_id, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

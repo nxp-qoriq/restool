@@ -453,6 +453,11 @@ static int cmd_dpdcei_destroy(void)
 	if (error < 0)
 		goto out;
 
+	if (!find_obj("dpdcei", dpdcei_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
 	error = dpdcei_open(&restool.mc_io, 0, dpdcei_id, &dpdcei_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
