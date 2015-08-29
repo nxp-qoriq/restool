@@ -52,6 +52,24 @@
 enum mc_cmd_status mc_status;
 
 /**
+ * dprc sync command options
+ */
+enum dprc_sync_options {
+	SYNC_OPT_HELP = 0,
+};
+
+static struct option dprc_sync_options[] = {
+	[SYNC_OPT_HELP] = {
+		.name = "help",
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dprc_sync_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+
+/**
  * dprc list command options
  */
 enum dprc_list_options {
@@ -97,7 +115,7 @@ static struct option dprc_show_options[] = {
 C_ASSERT(ARRAY_SIZE(dprc_show_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 /**
- * dpio show command options
+ * dprc info command options
  */
 enum dprc_info_options {
 	INFO_OPT_HELP = 0,
@@ -334,6 +352,7 @@ static int cmd_dprc_help(void)
 		"\n"
 		"restool dprc <command>\n"
 		"Where <command> can be:\n"
+		"   sync - synchronize the objects in MC with MC bus.\n"
 		"   list - lists all containers (DPRC objects) in the system.\n"
 		"   show - displays the contents (objects and resources) of a DPRC object.\n"
 		"   info - displays detailed information about a DPRC object.\n"
@@ -354,6 +373,40 @@ static int cmd_dprc_help(void)
 
 	printf(help_msg);
 	return 0;
+}
+
+static int cmd_dprc_sync(void)
+{
+	int error;
+
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dprc sync\n"
+		"\n";
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SYNC_OPT_HELP)) {
+		printf(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SYNC_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name != NULL) {
+		ERROR_PRINTF(
+			"Unexpected argument: \'%s\'\n\n", restool.obj_name);
+		printf(usage_msg);
+		return -EINVAL;
+	}
+
+	DEBUG_PRINTF("calling ioctl(RESTOOL_DPRC_SYNC)\n");
+	error = ioctl(restool.mc_io.fd, RESTOOL_DPRC_SYNC);
+	if (error == -1) {
+		error = -errno;
+		DEBUG_PRINTF(
+			"ioctl(RESTOOL_DPRC_SYNC) failed with error %d\n",
+			error);
+	}
+
+	return error;
 }
 
 /**
@@ -2138,6 +2191,10 @@ struct object_command dprc_commands[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dprc_help },
+
+	{ .cmd_name = "sync",
+	  .options = dprc_sync_options,
+	  .cmd_func = cmd_dprc_sync },
 
 	{ .cmd_name = "list",
 	  .options = dprc_list_options,
