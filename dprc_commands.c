@@ -397,12 +397,12 @@ static int cmd_dprc_sync(void)
 		return -EINVAL;
 	}
 
-	DEBUG_PRINTF("calling ioctl(RESTOOL_DPRC_SYNC)\n");
-	error = ioctl(restool.mc_io.fd, RESTOOL_DPRC_SYNC);
+	DEBUG_PRINTF("calling sytem()\n");
+	error = system("echo 1 > /sys/bus/fsl-mc/rescan");
 	if (error == -1) {
 		error = -errno;
 		DEBUG_PRINTF(
-			"ioctl(RESTOOL_DPRC_SYNC) failed with error %d\n",
+			"system() failed with error %d\n",
 			error);
 	}
 
