@@ -97,7 +97,7 @@ do { \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  irq_index);\
 	MC_CMD_OP(cmd, 0, 32, 32, uint32_t, irq_cfg->val);\
-	MC_CMD_OP(cmd, 0, 0,  64, uint64_t, irq_cfg->addr);\
+	MC_CMD_OP(cmd, 1, 0,  64, uint64_t, irq_cfg->addr);\
 	MC_CMD_OP(cmd, 2, 0,  32, int,	    irq_cfg->user_irq_id); \
 } while (0)
 
