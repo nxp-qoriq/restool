@@ -338,7 +338,7 @@ static int print_dpdmux_attr(uint32_t dpdmux_id,
 	printf("dpdmux id: %d\n", dpdmux_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpdmux_endpoint(dpdmux_id, dpdmux_attr.num_ifs);
+	print_dpdmux_endpoint(dpdmux_id, dpdmux_attr.num_ifs + 1);
 	printf("dpdmux_attr.options value is: %#llx\n",
 	       (unsigned long long)dpdmux_attr.options);
 	print_dpdmux_options(dpdmux_attr.options);
