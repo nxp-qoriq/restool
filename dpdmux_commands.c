@@ -714,7 +714,7 @@ static int cmd_dpdmux_create(void)
 		"\n"
 		"ARGUMETNS:\n"
 		"--num-ifs=<number>\n"
-		"   Number of virtual interfaces (include the uplink interface)\n"
+		"   Number of virtual interfaces (excluding the uplink interface)\n"
 		"--control-if=<interface-num>\n"
 		"   The initial control interface\n"
 		"   Ranges from 0 to [number-1].\n"
