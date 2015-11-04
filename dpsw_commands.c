@@ -42,7 +42,9 @@
 #define ALL_DPSW_OPTS (			\
 	DPSW_OPT_FLOODING_DIS |		\
 	DPSW_OPT_MULTICAST_DIS |	\
-	DPSW_OPT_CTRL_IF_DIS)
+	DPSW_OPT_CTRL_IF_DIS |	\
+	DPSW_OPT_FLOODING_METERING_DIS |	\
+	DPSW_OPT_METERING_EN)
 
 enum mc_cmd_status mc_status;
 
@@ -209,6 +211,12 @@ static void print_dpsw_options(uint64_t options)
 
 	if (options & DPSW_OPT_CTRL_IF_DIS)
 		printf("\tDPSW_OPT_CTRL_IF_DIS\n");
+
+	if (options & DPSW_OPT_FLOODING_METERING_DIS)
+		printf("\tDPSW_OPT_FLOODING_METERING_DIS\n");
+
+	if (options & DPSW_OPT_METERING_EN)
+		printf("\tDPSW_OPT_METERING_EN\n");
 }
 
 static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs)
@@ -419,6 +427,8 @@ static int parse_dpsw_create_options(char *options_str, uint64_t *options)
 		OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_DIS),
 		OPTION_MAP_ENTRY(DPSW_OPT_MULTICAST_DIS),
 		OPTION_MAP_ENTRY(DPSW_OPT_CTRL_IF_DIS),
+		OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_METERING_DIS),
+		OPTION_MAP_ENTRY(DPSW_OPT_METERING_EN),
 	};
 
 	char *cursor = NULL;
@@ -642,6 +652,8 @@ static int cmd_dpsw_create(void)
 		"	DPSW_OPT_FLOODING_DIS\n"
 		"	DPSW_OPT_MULTICAST_DIS\n"
 		"	DPSW_OPT_CTRL_IF_DIS\n"
+		"	DPSW_OPT_FLOODING_METERING_DIS\n"
+		"	DPSW_OPT_METERING_EN\n"
 		"--max-vlans=<number>\n"
 		"	Maximum number of VLAN's. Default is 16.\n"
 		"--max-fdbs=<number>\n"
