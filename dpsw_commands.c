@@ -198,7 +198,7 @@ static int cmd_dpsw_help(void)
 
 static void print_dpsw_options(uint64_t options)
 {
-	if (options == 0 || (options & ~ALL_DPSW_OPTS) != 0) {
+	if ((options & ~ALL_DPSW_OPTS) != 0) {
 		printf("\tUnrecognized options found...\n");
 		return;
 	}
@@ -510,7 +510,7 @@ static int create_dpsw(const char *usage_msg)
 			return error;
 		}
 	} else { /* Todo: default option may change with spec */
-		dpsw_cfg.adv.options = DPSW_OPT_FLOODING_DIS;
+		dpsw_cfg.adv.options = 0;
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_VLANS)) {
