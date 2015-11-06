@@ -112,7 +112,8 @@ enum mc_cmd_status flib_error_to_mc_status(int error)
 		return MC_CMD_STATUS_NO_MEMORY;
 	case -EBUSY:
 		return MC_CMD_STATUS_BUSY;
-	case -ENOTSUP:
+	case -524:
+		/* #define ENOTSUPP 524 in Linux, no ENOTSUPP in user space */
 		return MC_CMD_STATUS_UNSUPPORTED_OP;
 	case -ENODEV:
 		return MC_CMD_STATUS_INVALID_STATE;
@@ -121,7 +122,7 @@ enum mc_cmd_status flib_error_to_mc_status(int error)
 	}
 
 	/* Not expected to reach here */
-	return 1000;	/* 1000 == 0x3e8 */
+	return error;	/* 1000 == 0x3e8 */
 }
 
 const char *mc_status_to_string(enum mc_cmd_status status)
