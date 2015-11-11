@@ -273,9 +273,11 @@ static void print_dpdmux_method(enum dpdmux_method method)
 	case DPDMUX_METHOD_C_VLAN:
 		printf("DPDMUX_METHOD_C_VLAN\n");
 		break;
+#if 0 /* TODO: Enable when MC support added */
 	case DPDMUX_METHOD_S_VLAN:
 		printf("DPDMUX_METHOD_S_VLAN\n");
 		break;
+#endif
 	default:
 		assert(false);
 		break;
@@ -289,9 +291,11 @@ static void print_dpdmux_manip(enum dpdmux_manip manip)
 	case DPDMUX_MANIP_NONE:
 		printf("DPDMUX_MANIP_NONE\n");
 		break;
+#if 0 /* TODO: Enable when MC support added */
 	case DPDMUX_MANIP_ADD_REMOVE_S_VLAN:
 		printf("DPDMUX_MANIP_ADD_REMOVE_S_VLAN\n");
 		break;
+#endif
 	default:
 		assert(false);
 		break;
@@ -487,10 +491,12 @@ static int parse_dpdmux_manip(char *manip_str, enum dpdmux_manip *manip)
 		return 0;
 	}
 
+#if 0 /* TODO: Enable when MC support added */
 	if (strcmp(manip_str, "DPDMUX_MANIP_ADD_REMOVE_S_VLAN") == 0) {
 		*manip = DPDMUX_MANIP_ADD_REMOVE_S_VLAN;
 		return 0;
 	}
+#endif
 
 	printf("Invalid dpdmux manip input.\n");
 	return -EINVAL;
@@ -519,10 +525,12 @@ static int parse_dpdmux_method(char *method_str, enum dpdmux_method *method)
 		return 0;
 	}
 
+#if 0 /* TODO: Enable when MC support added */
 	if (strcmp(method_str, "DPDMUX_METHOD_S_VLAN") == 0) {
 		*method = DPDMUX_METHOD_S_VLAN;
 		return 0;
 	}
+#endif
 
 	printf("Invalid dpdmux method input.\n");
 	return -EINVAL;
@@ -728,13 +736,17 @@ static int cmd_dpdmux_create(void)
 		"	DPDMUX_METHOD_C_VLAN_MAC\n"
 		"	DPDMUX_METHOD_MAC\n"
 		"	DPDMUX_METHOD_C_VLAN\n"
+#if 0 /* TODO: Enable when MC support added */
 		"	DPDMUX_METHOD_S_VLAN\n"
+#endif
 		"   Default is DPDMUX_METHOD_C_VLAN_MAC\n"
 		"--manip=<manip>\n"
 		"   Where <manip> defines the DMux required manipulation operation.\n"
 		"   A valid value is one of the following:\n"
 		"	DPDMUX_MANIP_NONE\n"
+#if 0 /* TODO: Enable when MC support added */
 		"	DPDMUX_MANIP_ADD_REMOVE_S_VLAN\n"
+#endif
 		"   Default is DPDMUX_MANIP_NONE\n"
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma separated list of DPDMUX options:\n"
