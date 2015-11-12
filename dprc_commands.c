@@ -1092,7 +1092,8 @@ static int cmd_dprc_create_child(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprc create <parent-container> [--options=<options-mask>] [--label=<object's-label>]\n"
+		"Usage: restool dprc create <parent-container> [--options=<options-mask>]\n"
+                "                    [--label=<object's-label>]\n"
 		"\n"
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma or space separated list of DPRC options:\n"
