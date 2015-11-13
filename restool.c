@@ -38,7 +38,7 @@
 #include "restool.h"
 #include "utils.h"
 
-static const char restool_version[] = "1.1";
+static const char restool_version[] = "1.2";
 
 static struct option global_options[] = {
 	[GLOBAL_OPT_HELP] = {
