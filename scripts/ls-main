@@ -1,0 +1,883 @@
+#!/bin/bash
+
+shopt -s extglob
+shopt -s lastpipe
+
+# Intercept the Ctrl+C command but do not interrupt execution
+trap ' ' INT
+
+# Name of restool script
+restool="restool"
+
+#Root container
+root_c=
+
+# Type of endpoint object
+toe=
+
+dpnis=()
+dpmacs=()
+containers=()
+# Full path containers
+fpc=()
+idx=0
+
+SYS_DPRC="/sys/bus/fsl-mc/drivers/fsl_mc_dprc"
+
+#####################################################################
+###                   Helper functions                            ###
+#####################################################################
+# Create a DPMCP object
+create_dpmcp() {
+	obj=$($restool --script dpmcp create)
+	$restool dprc assign "$root_c" --object="$obj" --plugged=1
+}
+
+# Create a DPIO object
+create_dpio() {
+	# Count the existing DPIO objects and create the rest up to 8
+	cnt=$($restool dprc show "$root_c" | grep -c dpio)
+
+	if [ "$cnt" -ge 8 ]; then
+		return
+	fi
+
+	for i in $(seq 1 $((8-cnt))); do
+		# only num_priorities=8 is supported
+		obj=$($restool --script dpio create \
+			--channel-mode="DPIO_LOCAL_CHANNEL" \
+			--num-priorities=8)
+		$restool dprc assign "$root_c" --object="$obj" --plugged=1
+	done
+}
+
+# Create a DPBP object
+create_dpbp() {
+	obj=$($restool --script dpbp create)
+	$restool dprc assign "$root_c" --object="$obj" --plugged=1
+}
+
+# Create a DPCON object
+create_dpcon() {
+	# only num_priorities=8 is supported
+
+	obj=$($restool --script dpcon create --num-priorities=2)
+	$restool dprc assign "$root_c" --object="$obj" --plugged=1
+}
+
+# Connect two endpoints
+# The order of the two endpoint arguments is not relevant.
+connect() {
+	ep1=$1
+	ep2=$2
+
+	$restool dprc connect "$root_c" --endpoint1="$ep1" --endpoint2="$ep2"
+}
+
+get_root_container() {
+	# For now just retrieve the first root container
+	res=$($restool dprc list)
+	root_c=$(echo "$res" | cut -f 1 -d " ")
+
+	if [ -z "$root_c" ]; then
+		echo "No base container found!"
+		exit 1
+	fi
+}
+
+# Retrieves the type of provided endpoint object
+type_of_endpoint() {
+	toe=$(echo "$1" | sed "s/\(\.[0-9]*\)\(\.[0-9]*\)*$//g")
+}
+
+# Check if endpoint object exists
+check_endpoint() {
+	cep=$($restool "$toe" info "$1")
+
+	if [[ "$cep" == *"does not exist"* ]]; then
+		echo "End point $1 does not exist"
+		exit 1
+	fi
+}
+
+# Check whether the end point provided already has an end point associated
+has_endpoint() {
+	if [ "$toe" == "dpdmux" ]; then
+		itf_id=$(echo "$1" | sed "s/\(dpdmux\.[0-9]*\.\)//g")
+		ep=$($restool "$toe" info "$1" | grep "interface $itf_id" | sed "s/.*interface $itf_id: \([^ ]*\)\,.*/\1/")
+	else
+		ep=$($restool "$toe" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
+	fi
+
+	if [[ "$ep" != *"No object associated"* ]]; then
+		echo "$1 is already linked to $ep"
+		exit 1
+	fi
+}
+
+count_spaces() {
+	echo $(echo "$1" | sed "s: : \n:g" | grep -c " ")
+}
+
+# Retrieve container given the full path
+get_container() {
+	echo $(echo "$i" | sed "s/\(dprc.[0-9]*\/\)*//g")
+}
+
+build_fpc_list() {
+	$restool dprc list |
+	while IFS= read -r line
+	do
+		containers+=("$line")
+	done
+
+	for i in "${containers[@]}"
+	do
+		cnt=$(count_spaces "$i")
+
+		if [ "$cnt" -gt 0 ]; then
+			# Get index of the upper level container
+			idx2=$((idx-1))
+			crt_ct="$i"
+
+			while [ "$idx2" -ge 0 ]
+			do
+				cntp=$(count_spaces "${containers[idx2]}")
+
+				if [ "$cntp" -lt "$cnt" ]; then
+					upc=$(echo "${containers[idx2]}" | sed "s/ *$//")
+					crt_ct=$upc"/""$(echo $crt_ct | sed 's/ *$//')"
+				fi
+				((idx2=idx2-1))
+			done
+
+			fpc+=($crt_ct)
+		else
+			fpc+=("$i")
+		fi
+
+		((idx=idx+1))
+	done
+}
+
+get_label() {
+	# Retrieve the type of the object
+	too=$(echo "$1" | sed "s/\(\.[0-9]*\)\(\.[0-9]*\)*$//g")
+
+        echo $($restool "$too" info "$1" | grep "object label:" | sed "s/object label: \([^ ]*\)/\1/")
+}
+
+get_endpoint() {
+	# Retrieve the type of the object
+	too=$(echo "$1" | sed "s/\(\.[0-9]*\)\(\.[0-9]*\)*$//g")
+
+	if [ "$too" == "dpdmux" ]; then
+		itf_id=$(echo "$1" | sed "s/\(dpdmux\.[0-9]*\.\)//g")
+		end_point=$($restool "$too" info "$1" | grep "interface $itf_id" | sed "s/.*interface $itf_id: \([^ ]*\)\,.*/\1/")
+	else
+		end_point=$($restool "$too" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
+	fi
+
+	if [[ "$end_point" != *"No object associated"* ]]; then
+		echo "$end_point"
+	fi
+}
+
+#####################################################################
+###              DPDMUX related functions                         ###
+#####################################################################
+usage_addmux() {
+	echo "Create a DPAA2 MUX object
+
+Usage: $0 [OPTIONS] -d=<NUM_IFS> -u=<UP_ID> <endpoint>
+
+The options are:
+	-h, --help					This message.
+	-b, --veb					MUX is configured as a VEB. Default is VEPA.
+	-m, --method					Traffic steering method. One of: DPDMUX_METHOD_NONE,
+							DPDMUX_METHOD_C_VLAN_MAC, DPDMUX_METHOD_MAC,
+							DPDMUX_METHOD_C_VLAN.
+							Default is DPDMUX_METHOD_MAC
+	-n, --no-link					The uplink will not be linked to any endpoint.
+	-e, --max-dmat-entries=NUM_ENTRIES		Entries in address table.
+							Default value is 64.
+	-g, --max-mcast-groups=NUM_MGROUPS		Multicast groups in address table.
+							Default value is 32.
+	-l, --label=LABEL				The label of the resulting object associated to the MUX.
+							Maximum length is 15 characters.
+
+The arguments are:
+	-d, --num-ifs=NUM_IFS				Number of virtual interfaces (excluding the uplink
+							interface)
+	-u, --uplink-id=UP_ID				ID of the uplink. Ranges from 0 to [number-1].
+							Default value is 0.
+
+<endpoint> represents the uplink device. Is one of the following:
+	dpmac.X 					X is the index of the dpmac object
+	dpni.X						X is the index of the dpni object
+<endpoint> is mandatory unless -n | --no-link option is used
+
+Usage examples:
+	#ls-addmux -d=2 -u=0 dpmac.1			// Creates a MUX with 2 downlinks and uplink connected
+							// to dpmac.1
+	#ls-addmux -d=5 -u=0 -n				// Creates a MUX with 5 downlinks and no device connected
+							// to uplink
+	#ls-addmux -b -m=DPDMUX_METHOD_C_VLAN_MAC -e=32 -g=16 -d=4 -u=0 dpmac.6
+							// Creates a MUX with 4 downlinks, uplink connected to
+							// dpmac.6, using VLAN and MAC information for traffic
+							// steering, with maximum 32 entries in FDB and 16
+							//multicast groups."
+}
+
+# Create a DPDMUX and its dependencies
+create_dpdmux() {
+	create_dpmcp
+
+	if [ "$options" == "" ]; then
+		options_str=
+	else
+		options_str="--options=$options"
+	fi
+
+	dpdmux=$($restool --script dpdmux create			\
+		--num-ifs="$num_ifs"					\
+		--control-if="$control_if"				\
+		$options_str						\
+		--method="$method"					\
+		--max-dmat-entries="$max_dmat_entries"			\
+		--max-mc-groups="$max_mc_groups"			\
+		--manip=DPDMUX_MANIP_NONE				\
+	)
+
+	# Make a link in case there is an end point specified
+	if [ "$no_link" -eq 0 ]; then
+		connect "$dpdmux" "$endpoint"
+	fi
+
+	# Assign the newly-created DPDMUX to the Linux container and plug it
+	# in order to trigger the probe function.
+	$restool dprc assign "${root_c}" --object="${dpdmux}" --plugged=1
+
+	$restool dprc sync
+
+	if [ -n "$label" ]; then
+		$restool dprc set-label "$dpdmux" --label="$label"
+	fi
+}
+
+# Process ls-addmux command
+process_addmux() {
+	# Comma separated list of DPDMUX options
+	options=""
+	# Number of virtual interfaces (excluding the uplink interface)
+	num_ifs=
+	# The initial control interface (uplink). Ranges from 0 to $num_ifs.
+	control_if=
+	#  Where <dmat-method> defines the method of the DMux address table.
+	method="DPDMUX_METHOD_MAC"
+	#Max entries in DMux address table. Default is 64.
+	max_dmat_entries=64
+	#Number of multicast groups in DMAT. Default is 32 groups.
+	max_mc_groups=32
+	#Endpoint object provided as argument
+	endpoint=
+	no_link=0
+
+	for i in "$@"
+	do
+		case $i in
+			-h | --help)
+				usage_addmux
+				exit 0
+				;;
+			-b | --veb)
+				options="DPDMUX_OPT_BRIDGE_EN"
+				;;
+			-m=* | --method=*)
+				method="${i#*=}"
+				;;
+			-d=* | --num-ifs=*)
+				num_ifs="${i#*=}"
+				;;
+			-u=* | --uplink-id=*)
+				control_if="${i#*=}"
+				# TODO: check range [0, num-ifs]
+				;;
+			-n | --no-link)
+				no_link=1
+				endpoint=none
+				;;
+			-e=* | --max-dmat-entries=*)
+				max_dmat_entries="${i#*=}"
+				;;
+			-g=* | --max-mc-groups=*)
+				max_mc_groups="${i#*=}"
+				;;
+			-l=* | --label=*)
+				label="${i#*=}"
+				;;
+			*(dprc.+([0-9])/)dpmac.+([0-9]))
+				endpoint="${i#*=}"
+				;;
+			*(dprc.+([0-9])/)dpni.+([0-9]))
+				endpoint="${i#*=}"
+				;;
+			*)
+				usage_addmux
+				exit 1
+				;;
+		esac
+	done
+
+	# Check if --no-link the endpoint have been provided otherwise
+	# display the usage
+	if [ $no_link -eq 0 ] && [ -z "$endpoint" ]; then
+		usage_addmux
+		exit 1
+	fi
+
+	get_root_container
+
+	if [ $no_link -eq 0 ]; then
+		type_of_endpoint "$endpoint"
+
+		if [ "$toe" == "dpmac" ]; then
+			res=$(trap '$restool dpmac info $endpoint' EXIT)
+
+			if [[ "$res" == *"does not exist"* ]]; then
+				echo "$res"
+				exit 1
+			fi
+		else
+			check_endpoint "$endpoint"
+		fi
+
+		has_endpoint "$endpoint"
+	fi
+
+	# Create the MUX
+	create_dpdmux
+
+	evb=$(ls $SYS_DPRC/"$root_c"/"$dpdmux"/net/ | grep -v "p")
+
+	echo "Created EVB: $evb (object: $dpdmux, uplink: $endpoint)"
+	echo "Do not forget to connect devices to downlink(s)."
+}
+
+#####################################################################
+###              DPSW related functions                           ###
+#####################################################################
+usage_addsw() {
+	echo "Create a DPAA2 SWITCH object
+
+	Usage: $0 [OPTIONS]
+The options are:
+      -h, --help			This message.
+      -i, --num-ifs=<number>  		Number of external and internal interfaces. Default is 4.
+      -o, --options=<options-mask>	Where <options-mask> is a comma separated list of DPSW options:
+					      DPSW_OPT_FLOODING_DIS
+					      DPSW_OPT_MULTICAST_DIS
+					      DPSW_OPT_CTRL_IF_DIS
+					      DPSW_OPT_FLOODING_METERING_DIS
+					      DPSW_OPT_METERING_EN
+      -v, --max-vlans=<number>		Maximum number of VLAN's. Default is 16.
+      -f, --max-fdbs=<number>		Maximum Number of FDB's. Default is 1.
+      -e, --max-fdb-entries=<number>	Number of FDB entries. Default is 1024.
+      -a, --fdb-aging-time=<number>	Default FDB aging time in seconds. Default is 300 seconds.
+      -g, --max-fdb-mc-groups=<number>	Number of multicast groups in each FDB table. Default is 32.
+      <endpoint>            		Is a list of the following:
+					      dpmac.X - X is the index of the dpmac object
+					      dpni.Y  - Y is the index of the dpni object
+					The number of endpoints can't be greater than the 'num-ifs'.
+      -l, --label=LABEL     		The label of the resulting object associated to the SWITCH.
+					Maximum length is 15 characters.
+
+Usage examples:
+      ls-addsw
+      ls-addsw dpni.1 dpni.2 dpni.3 dpmac.1
+      ls-addsw -v=8 -a=100 -o=DPSW_OPT_CTRL_IF_DIS -l=myETHSW -i=5 dpni.1 dpni.2 dpni.3 dpmac.1 dpmac.2
+"
+}
+
+# Create a DPSW and its dependencies
+create_dpsw() {
+    create_dpmcp
+
+    dpsw=$($restool --script dpsw create 				\
+	    --num-ifs="$num_ifs"					\
+	    --max-vlans="$max_vlans"  					\
+	    --max-fdbs="$max_fdbs"		  			\
+	    --max-fdb-entries="$max_fdb_entries"			\
+	    --fdb-aging-time="$fdb_aging_time"				\
+	    --max-fdb-mc-groups="$max_fdb_mc_groups"			\
+	    --options="$options"					\
+    )
+
+    # Make a link in case there is an end point specified
+    index=0
+    for i in "${endpoint[@]}"; do
+	connect "$dpsw.$index" "$i"
+	index=$((index + 1))
+    done
+
+    # Assign the newly-created DPSW to the Linux container and plug it
+    # in order to trigger the probe function.
+    $restool dprc assign "${root_c}" --object="${dpsw}" --plugged=1
+
+    $restool dprc sync
+
+    if [ -n "$label" ]; then
+	$restool dprc set-label "${dpsw}" --label="$label"
+    fi
+}
+
+# Process ls-addsw command
+process_addsw() {
+    # Number of external and internal interfaces.
+    num_ifs=4
+    # Comma separated list of DPSW options
+    options=""
+    # Maximum number of VLANs. Default is 16.
+    max_vlans=16
+    # Maximum Number of FDBs. Default is 16.
+    max_fdbs=1
+    # Number of FDB entries. Default is 1024.
+    max_fdb_entries=1024
+    # Default FDB aging time in seconds. Default is 300 seconds.
+    fdb_aging_time=300
+    # Number of multicast groups in each FDB table. Default is 32.
+    max_fdb_mc_groups=32
+    # dpsw object label
+    label=
+    #Endpoint objects provided as argument
+    endpoint=()
+    ifcnt=0
+
+    get_root_container
+
+    for i in "$@"
+    do
+	case $i in
+	    -h | --help)
+		usage_addsw
+		exit 0
+		;;
+	    -i=* | --num-ifs=*)
+		num_ifs="${i#*=}"
+		;;
+	    -o=* | --options=*)
+		options="${i#*=}"
+		;;
+	    -v=* | --max-vlans=*)
+		max_vlans="${i#*=}"
+		;;
+	    -f=* | --max-fdbs=*)
+		max_fdbs="${i#*=}"
+		;;
+	    -e=* | --max-fdb-entries=*)
+		max_fdb_entries="${i#*=}"
+		;;
+	    -a=* | --fdb-aging-time=*)
+		fdb_aging_time="${i#*=}"
+		;;
+	    -g=* | --max-fdb-mc-groups=*)
+		max_fdb_mc_groups="${i#*=}"
+		;;
+	    -l=* | --label=*)
+		label="${i#*=}"
+		;;
+	    @(dpni|dpmac).+([0-9]))
+		endpoint[$ifcnt]="$(echo ${i#*=} | tr -d ,)"
+		ifcnt=$((ifcnt + 1))
+		;;
+	    *)
+		echo "Error: $i argument is invalid"
+		usage_addsw
+		exit 1
+		;;
+	esac
+    done
+
+    # Check if there are more endpoints provided than the number of the interfaces
+    if [ $num_ifs -lt ${#endpoint[@]} ]; then
+	  echo "Error: there are more endpoints provided than the number of the interfaces"
+	  usage_addsw
+	  exit 1
+    fi
+
+    # Check if the endpoints are valid
+    for i in "${endpoint[@]}"; do
+	type_of_endpoint "$i"
+	check_endpoint "$i"
+	has_endpoint "$i"
+    done
+
+    # Create the SWITCH
+    create_dpsw
+
+    ethsw=$(ls $SYS_DPRC/"$root_c"/"$dpsw"/net/ | grep -v "p")
+    echo "Created ETHSW: $ethsw (object: $dpsw, interfaces:  ${#endpoint[@]})"
+
+    if [ $num_ifs -gt ${#endpoint[@]} ]; then
+	echo "Do not forget to connect devices to interface(s)."
+    fi
+}
+
+#####################################################################
+###              DPNI related functions                           ###
+#####################################################################
+usage_addni() {
+	echo "Usage: $0 [OPTIONS] <endpoint>
+The options are:
+	-h, --help					This message.
+	-a, --mac-addr=XX:XX:XX:XX:XX:XX		Mac address of the network interface.
+							Default value is 00:00:00:00:00:00 allowing the
+							Ethernet driver to randomly allocate one.
+	-d, --max-dist-per-tc=MAX_DIST_PER_TC		Maximum distributions per traffic class.
+							The values are rounded up to the nearest power of 2.
+							Valid range is [1-8]. Default value is 8.
+	-l, --label=LABEL				The label of the resulting DPNI object associated to the
+							network interface. Maximum length must be 15 characters.
+	-n, --no-link					The network interface will not be linked to any endpoint
+	-o, --options=OPTIONS				Comma separated options. Supported values are:
+							DPNI_OPT_MULTICAST_FILTER, DPNI_OPT_UNICAST_FILTER,
+							DPNI_OPT_DIST_HASH, DPNI_OPT_DIST_FS
+							Default value is: DPNI_OPT_MULTICAST_FILTER,
+							DPNI_OPT_UNICAST_FILTER,DPNI_OPT_DIST_HASH,DPNI_OPT_DIST_FS
+	-s, --max-senders=NUM_SENDERS			Maximum number of senders.
+							Valid range is [1-8]. Default value is 8.
+	-t, --max-tcs=NUM_TCS				Maximum number of traffic classes.
+							Default value is 1.
+
+<endpoint> is one of the following:
+	dpmac.X 					X is the index of the dpmac object
+	dpni.X						X is the index of the dpni object
+<endpoint> is mandatory unless -n | --no-link option is used
+
+Usage examples:
+	# ls-addni dpmac.4				// Creates niX (dpni.X) linked to dpmac.4
+	# ls-addni --no-link				// Creates niX (dpni.X) not linked with a dpmac or other dpni
+	# ls-addni dpni.2				// Creates niY (dpni.Y) and links it to ni2 (dpni.2)"
+}
+
+# Create a DPNI and its private dependencies
+create_dpni() {
+
+	# Parameter adjusting, to allow us create
+	# the real number of necessary DPCONs.
+	case $max_dist_per_tc in
+		[0-1])
+			no_of_dpcons=1
+			;;
+		2)
+			no_of_dpcons=2
+			;;
+		[3-4])
+			no_of_dpcons=4
+			;;
+		[5-8])
+			no_of_dpcons=8
+			;;
+		*)
+			return
+	esac
+	echo "Will allocate $no_of_dpcons DPCON objects for this hash size"
+
+	# Create private dependencies
+	create_dpbp
+	create_dpmcp
+	for i in $(seq 1 ${no_of_dpcons}); do
+		create_dpcon
+	done
+
+	$restool dprc sync
+
+	# Restrictions: max-tcs must be 1, max-senders must be 8.
+	# Set mac addr to all-zero, allowing the Eth driver to randomly
+	# allocate one.
+	dpni=$($restool --script dpni create		\
+		--mac-addr="$mac_addr"			\
+		--max-senders="$max_senders"		\
+		--max-tcs="$max_tcs"			\
+		--max-dist-per-tc="$max_dist_per_tc"	\
+		--options="$options"			\
+	)
+
+	# Assign the newly-created DPNI to the Linux container and plug it
+	# in order to trigger the probe function.
+	$restool dprc assign "$root_c" --object="$dpni" --plugged=1
+
+	$restool dprc sync
+
+	if [ -n "$label" ]; then
+		$restool dprc set-label "$dpni" --label="$label"
+	fi
+}
+
+process_addni() {
+	no_link=0
+	mac_addr=00:00:00:00:00:00
+	max_dist_per_tc=8
+	max_senders=8
+	max_tcs=1
+	options=DPNI_OPT_MULTICAST_FILTER,DPNI_OPT_UNICAST_FILTER,DPNI_OPT_DIST_HASH,DPNI_OPT_DIST_FS
+	label=
+
+	#Endpoint object provided as argument
+	endpoint=
+
+	# The DPNI object created for the current network interface
+	dpni=
+
+	for i in "$@"
+	do
+		case $i in
+			-h | --help)
+				usage_addni
+				exit 1
+				;;
+			-a=* | --mac-addr=*)
+				mac_addr="${i#*=}"
+
+				if [[ ! "$mac_addr" =~ ^([a-fA-F0-9]{2}:){5}[a-fA-F0-9]{2}$ ]]; then
+					echo "Invalid MAC address: $mac_addr"
+					exit 1
+				fi
+				;;
+			-d=* | --max-dist-per-tc=*)
+				max_dist_per_tc="${i#*=}"
+				if [ "$max_dist_per_tc" -gt 8 ]; then
+					echo "Invalid max_dist_per_tc=${max_dist_per_tc}. Valid range is [1-8]."
+					exit 1
+				fi
+				;;
+			-l=* | --label=*)
+				label="${i#*=}"
+				;;
+			-n | --no-link)
+				# In case both "-n" option and the end point are provided ignore the "-n"
+				if [ -z "$endpoint" ]; then
+					no_link=1
+					endpoint=none
+				fi
+				;;
+			-o=* | --options=*)
+				options="${i#*=}"
+				;;
+			-s=* | --max-senders=*)
+				max_senders="${i#*=}"
+				;;
+			-t=* | --max-tcs=*)
+				max_tcs="${i#*=}"
+				;;
+			*(dprc.+([0-9])/)dpmac.+([0-9]))
+				no_link=0
+				endpoint="${i#*=}"
+				;;
+			*(dprc.+([0-9])/)dpni.+([0-9]))
+				no_link=0
+				endpoint="${i#*=}"
+				;;
+			*(dprc.+([0-9])/)dpdmux.+([0-9]).+([0-9]))
+				no_link=0
+				endpoint="${i#*=}"
+				;;
+			*(dprc.+([0-9])/)dpsw.+([0-9]).+([0-9]))
+				no_link=0
+				endpoint="${i#*=}"
+				;;
+			*)
+				usage_addni
+				exit 1
+				;;
+		esac
+	done
+
+	# Check if --no-link the endpoint have been provided otherwise display the usage
+	if [ $no_link -eq 0 ] && [ -z "$endpoint" ]; then
+		usage_addni
+		exit 1
+	fi
+
+	get_root_container
+
+	if [ $no_link -eq 0 ]; then
+		type_of_endpoint "$endpoint"
+
+		if [ "$toe" == "dpmac" ]; then
+			res=$(trap '$restool dpmac info $endpoint' EXIT)
+
+			if [[ "$res" == *"does not exist"* ]]; then
+				echo "$res"
+				exit 1
+			fi
+		else
+			check_endpoint "$endpoint"
+		fi
+
+		has_endpoint "$endpoint"
+	fi
+
+	create_dpio
+
+	# Create the DPNI object and Linux network interface
+	create_dpni
+
+	# Make a link in case there is an end point specified
+	if [ $no_link -eq 0 ]; then
+		connect "$dpni" "$endpoint"
+	fi
+
+	ni=$(ls $SYS_DPRC/"$root_c"/"$dpni"/net/)
+
+	echo "Created interface: $ni (object:$dpni, endpoint: $endpoint)"
+}
+
+process_listni() {
+	build_fpc_list
+
+	for i in "${fpc[@]}"
+	do
+		crt_c=$(get_container "$i")
+		$restool dprc show "$crt_c" | grep dpni |
+		while IFS= read -r line
+		do
+			dpni=$(echo $line | cut -f 1 -d " ")
+			lb=$(get_label "$dpni")
+
+			ni=""
+			details=""
+			# Query the interface name
+			if [ -d "$SYS_DPRC"/"$crt_c"/"$dpni"/net/ ]; then
+				ni=$(ls $SYS_DPRC/"$crt_c"/"$dpni"/net/)
+			fi
+
+			end_point=$(get_endpoint "$dpni")
+
+			if [ -n "$ni" ]; then
+				details="(interface: $ni"
+				if [ -n "$end_point" ]; then
+					details=$details", end point: $end_point"
+				fi
+
+				if [ -n "$lb" ]; then
+					details=$details", label: $lb"
+				fi
+
+				details=$details")"
+			else
+				if [ -n "$end_point" ]; then
+					details="(end point: $end_point"
+					if [ -n "$lb" ]; then
+						details=$details", label: $lb"
+					fi
+					details=$details")"
+				else
+					if [ -n "$lb" ]; then
+						details="(label: $lb)"
+					fi
+				fi
+			fi
+
+			dpnis+=("$dpni $details")
+		done
+
+		if [ -n "$dpnis" ]; then
+			for j in "${dpnis[@]}"; do
+				echo "$i/$j"
+			done
+
+			dpnis=()
+		fi
+	done
+}
+
+process_listmac() {
+	build_fpc_list
+
+	for i in "${fpc[@]}"
+	do
+		crt_c=$(get_container "$i")
+		$restool dprc show "$crt_c" | grep dpmac |
+		while IFS= read -r line
+		do
+			dpmac=$(echo $line | cut -f 1 -d " ")
+			lb=$(get_label "$dpmac")
+
+			details=""
+			end_point=$(get_endpoint "$dpmac")
+
+			if [ -n "$end_point" ]; then
+				details="(end point: $end_point"
+				if [ -n "$lb" ]; then
+					details=$details", label: $lb"
+				fi
+				details=$details")"
+			else
+				if [ -n "$lb" ]; then
+					details="(label: $lb)"
+				fi
+			fi
+
+			dpmacs+=("$dpmac $details")
+		done
+
+		if [ -n "$dpmacs" ]; then
+			for j in "${dpmacs[@]}"; do
+				echo "$i/$j"
+			done
+
+			dpmacs=()
+		fi
+	done
+}
+
+#####################################################################
+##################### Script starts here ############################
+#####################################################################
+
+# First check if $restool exists
+if [ ! "$(which $restool)" ]; then
+	echo "This command relies on '$restool' which is NOT found. Exiting..."
+	exit 1
+fi
+
+operation=$(basename "${0}")
+
+usage_main () {
+	echo "Wrapper for DPAA2 objects handling
+
+Usage: <OPERATION> [OPTIONS]
+The operations are:
+    - ls-addni    -   Create an network interface (and corresponding dpni object)
+    - ls-addmux   -   Create an evb (and the corresponding dpdmux object)
+    - ls-addsw    -   Create a switch (and the corresponding dpsw object)
+    - ls-listni	  -   List the available dpni objects in the root and child containers
+    - ls-listmac  -   List the available dpmac objects in the root and child containers
+
+The options depend on the used operation. Use -h parameter for each operation
+to get more details on available options."
+ }
+
+case $operation in
+	ls-addmux)
+		process_addmux "$@"
+		;;
+	ls-addsw)
+		process_addsw "$@"
+		;;
+	ls-addni)
+		process_addni "$@"
+		;;
+	ls-listni)
+		process_listni "$@"
+		;;
+	ls-listmac)
+		process_listmac "$@"
+		;;
+	*)
+		echo "Unknown operation $operation"
+		usage_main
+		exit 2
+		;;
+esac
