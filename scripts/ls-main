@@ -30,6 +30,10 @@ SYS_DPRC="/sys/bus/fsl-mc/drivers/fsl_mc_dprc"
 # Create a DPMCP object
 create_dpmcp() {
 	obj=$($restool --script dpmcp create)
+	if [ -z "$obj" ]; then
+		echo "Error: dpmcp object was not created!"
+		return 1
+	fi
 	$restool dprc assign "$root_c" --object="$obj" --plugged=1
 }
 
@@ -47,6 +51,10 @@ create_dpio() {
 		obj=$($restool --script dpio create \
 			--channel-mode="DPIO_LOCAL_CHANNEL" \
 			--num-priorities=8)
+		if [ -z "$obj" ]; then
+			echo "Error: dpio object was not created!"
+			return 1
+		fi
 		$restool dprc assign "$root_c" --object="$obj" --plugged=1
 	done
 }
@@ -54,6 +62,10 @@ create_dpio() {
 # Create a DPBP object
 create_dpbp() {
 	obj=$($restool --script dpbp create)
+	if [ -z "$obj" ]; then
+		echo "Error: dpbp object was not created!"
+		return 1
+	fi
 	$restool dprc assign "$root_c" --object="$obj" --plugged=1
 }
 
@@ -62,6 +74,10 @@ create_dpcon() {
 	# only num_priorities=8 is supported
 
 	obj=$($restool --script dpcon create --num-priorities=2)
+	if [ -z "$obj" ]; then
+		echo "Error: dpcon object was not created!"
+		return 1
+	fi
 	$restool dprc assign "$root_c" --object="$obj" --plugged=1
 }
 
@@ -248,6 +264,10 @@ create_dpdmux() {
 		--max-mc-groups="$max_mc_groups"			\
 		--manip=DPDMUX_MANIP_NONE				\
 	)
+	if [ -z "$dpdmux" ]; then
+		echo "Error: dpdmux object was not created!"
+		return 1
+	fi
 
 	# Make a link in case there is an end point specified
 	if [ "$no_link" -eq 0 ]; then
@@ -358,10 +378,15 @@ process_addmux() {
 	# Create the MUX
 	create_dpdmux
 
-	evb=$(ls $SYS_DPRC/"$root_c"/"$dpdmux"/net/ | grep -v "p")
+	if [ -d $SYS_DPRC/"$root_c"/"$dpdmux"/net ]; then
+		evb=$(ls $SYS_DPRC/"$root_c"/"$dpdmux"/net/ | grep -v "p")
 
-	echo "Created EVB: $evb (object: $dpdmux, uplink: $endpoint)"
-	echo "Do not forget to connect devices to downlink(s)."
+		echo "Created EVB: $evb (object: $dpdmux, uplink: $endpoint)"
+		echo "Do not forget to connect devices to downlink(s)."
+	else
+		echo "EVB creation failed!"
+	fi
+
 }
 
 #####################################################################
@@ -412,6 +437,10 @@ create_dpsw() {
 	    --max-fdb-mc-groups="$max_fdb_mc_groups"			\
 	    --options="$options"					\
     )
+    if [ -z "$dpsw" ]; then
+	    echo "Error: dpsw object was not created!"
+	    return 1
+    fi
 
     # Make a link in case there is an end point specified
     index=0
@@ -515,11 +544,15 @@ process_addsw() {
     # Create the SWITCH
     create_dpsw
 
-    ethsw=$(ls $SYS_DPRC/"$root_c"/"$dpsw"/net/ | grep -v "p")
-    echo "Created ETHSW: $ethsw (object: $dpsw, interfaces:  ${#endpoint[@]})"
+    if [ -d $SYS_DPRC/"$root_c"/"$dpsw"/net ]; then
+	    ethsw=$(ls $SYS_DPRC/"$root_c"/"$dpsw"/net/ | grep -v "p")
+	    echo "Created ETHSW: $ethsw (object: $dpsw, interfaces:  ${#endpoint[@]})"
 
-    if [ $num_ifs -gt ${#endpoint[@]} ]; then
-	echo "Do not forget to connect devices to interface(s)."
+	    if [ $num_ifs -gt ${#endpoint[@]} ]; then
+		echo "Do not forget to connect devices to interface(s)."
+	    fi
+    else
+	    echo "Switch creation failed!"
     fi
 }
 
@@ -581,13 +614,15 @@ create_dpni() {
 		*)
 			return
 	esac
-	echo "Will allocate $no_of_dpcons DPCON objects for this hash size"
 
 	# Create private dependencies
 	create_dpbp
 	create_dpmcp
 	for i in $(seq 1 ${no_of_dpcons}); do
 		create_dpcon
+		if [ $? -ne 0 ]; then
+			break;
+		fi
 	done
 
 	$restool dprc sync
@@ -602,6 +637,10 @@ create_dpni() {
 		--max-dist-per-tc="$max_dist_per_tc"	\
 		--options="$options"			\
 	)
+	if [ -z "$dpni" ]; then
+		echo "Error: dpni object was not created!"
+		return 1
+	fi
 
 	# Assign the newly-created DPNI to the Linux container and plug it
 	# in order to trigger the probe function.
@@ -728,9 +767,12 @@ process_addni() {
 		connect "$dpni" "$endpoint"
 	fi
 
-	ni=$(ls $SYS_DPRC/"$root_c"/"$dpni"/net/)
-
-	echo "Created interface: $ni (object:$dpni, endpoint: $endpoint)"
+	if [ -d $SYS_DPRC/"$root_c"/"$dpni"/net/ ]; then
+		ni=$(ls $SYS_DPRC/"$root_c"/"$dpni"/net/)
+		echo "Created interface: $ni (object:$dpni, endpoint: $endpoint)"
+	else
+		echo "Network interface creation failed!"
+	fi
 }
 
 process_listni() {
