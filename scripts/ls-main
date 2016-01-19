@@ -397,163 +397,163 @@ usage_addsw() {
 
 	Usage: $0 [OPTIONS]
 The options are:
-      -h, --help			This message.
-      -i, --num-ifs=<number>  		Number of external and internal interfaces. Default is 4.
-      -o, --options=<options-mask>	Where <options-mask> is a comma separated list of DPSW options:
-					      DPSW_OPT_FLOODING_DIS
-					      DPSW_OPT_MULTICAST_DIS
-					      DPSW_OPT_CTRL_IF_DIS
-					      DPSW_OPT_FLOODING_METERING_DIS
-					      DPSW_OPT_METERING_EN
-      -v, --max-vlans=<number>		Maximum number of VLAN's. Default is 16.
-      -f, --max-fdbs=<number>		Maximum Number of FDB's. Default is 1.
-      -e, --max-fdb-entries=<number>	Number of FDB entries. Default is 1024.
-      -a, --fdb-aging-time=<number>	Default FDB aging time in seconds. Default is 300 seconds.
-      -g, --max-fdb-mc-groups=<number>	Number of multicast groups in each FDB table. Default is 32.
-      <endpoint>            		Is a list of the following:
-					      dpmac.X - X is the index of the dpmac object
-					      dpni.Y  - Y is the index of the dpni object
-					The number of endpoints can't be greater than the 'num-ifs'.
-      -l, --label=LABEL     		The label of the resulting object associated to the SWITCH.
-					Maximum length is 15 characters.
+	-h, --help					This message.
+	-i, --num-ifs=<number>  			Number of external and internal interfaces. Default is 4.
+	-o, --options=<options-mask>			Where <options-mask> is a comma separated list of DPSW options:
+								DPSW_OPT_FLOODING_DIS
+								DPSW_OPT_MULTICAST_DIS
+								DPSW_OPT_CTRL_IF_DIS
+								DPSW_OPT_FLOODING_METERING_DIS
+								DPSW_OPT_METERING_EN
+	-v, --max-vlans=<number>			Maximum number of VLAN's. Default is 16.
+	-f, --max-fdbs=<number>				Maximum Number of FDB's. Default is 1.
+	-e, --max-fdb-entries=<number>			Number of FDB entries. Default is 1024.
+	-a, --fdb-aging-time=<number>			Default FDB aging time in seconds. Default is 300 seconds.
+	-g, --max-fdb-mc-groups=<number>		Number of multicast groups in each FDB table. Default is 32.
+	<endpoint>            				Is a list of the following:
+								dpmac.X - X is the index of the dpmac object
+								dpni.Y  - Y is the index of the dpni object
+							The number of endpoints can't be greater than the 'num-ifs'.
+	-l, --label=LABEL     				The label of the resulting object associated to the SWITCH.
+							Maximum length is 15 characters.
 
 Usage examples:
-      ls-addsw
-      ls-addsw dpni.1 dpni.2 dpni.3 dpmac.1
-      ls-addsw -v=8 -a=100 -o=DPSW_OPT_CTRL_IF_DIS -l=myETHSW -i=5 dpni.1 dpni.2 dpni.3 dpmac.1 dpmac.2
+	ls-addsw
+	ls-addsw dpni.1 dpni.2 dpni.3 dpmac.1
+	ls-addsw -v=8 -a=100 -o=DPSW_OPT_CTRL_IF_DIS -l=myETHSW -i=5 dpni.1 dpni.2 dpni.3 dpmac.1 dpmac.2
 "
 }
 
 # Create a DPSW and its dependencies
 create_dpsw() {
-    create_dpmcp
+	create_dpmcp
 
-    dpsw=$($restool --script dpsw create 				\
-	    --num-ifs="$num_ifs"					\
-	    --max-vlans="$max_vlans"  					\
-	    --max-fdbs="$max_fdbs"		  			\
-	    --max-fdb-entries="$max_fdb_entries"			\
-	    --fdb-aging-time="$fdb_aging_time"				\
-	    --max-fdb-mc-groups="$max_fdb_mc_groups"			\
-	    --options="$options"					\
-    )
-    if [ -z "$dpsw" ]; then
-	    echo "Error: dpsw object was not created!"
-	    return 1
-    fi
+	dpsw=$($restool --script dpsw create 				\
+		--num-ifs="$num_ifs"					\
+		--max-vlans="$max_vlans"  				\
+		--max-fdbs="$max_fdbs"		  			\
+		--max-fdb-entries="$max_fdb_entries"			\
+		--fdb-aging-time="$fdb_aging_time"			\
+		--max-fdb-mc-groups="$max_fdb_mc_groups"		\
+		--options="$options"					\
+	)
+	if [ -z "$dpsw" ]; then
+		echo "Error: dpsw object was not created!"
+		return 1
+	fi
 
-    # Make a link in case there is an end point specified
-    index=0
-    for i in "${endpoint[@]}"; do
-	connect "$dpsw.$index" "$i"
-	index=$((index + 1))
-    done
+	# Make a link in case there is an end point specified
+	index=0
+	for i in "${endpoint[@]}"; do
+		connect "$dpsw.$index" "$i"
+		index=$((index + 1))
+	done
 
-    # Assign the newly-created DPSW to the Linux container and plug it
-    # in order to trigger the probe function.
-    $restool dprc assign "${root_c}" --object="${dpsw}" --plugged=1
+	# Assign the newly-created DPSW to the Linux container and plug it
+	# in order to trigger the probe function.
+	$restool dprc assign "${root_c}" --object="${dpsw}" --plugged=1
 
-    $restool dprc sync
+	$restool dprc sync
 
-    if [ -n "$label" ]; then
-	$restool dprc set-label "${dpsw}" --label="$label"
-    fi
+	if [ -n "$label" ]; then
+		$restool dprc set-label "${dpsw}" --label="$label"
+	fi
 }
 
 # Process ls-addsw command
 process_addsw() {
-    # Number of external and internal interfaces.
-    num_ifs=4
-    # Comma separated list of DPSW options
-    options=""
-    # Maximum number of VLANs. Default is 16.
-    max_vlans=16
-    # Maximum Number of FDBs. Default is 16.
-    max_fdbs=1
-    # Number of FDB entries. Default is 1024.
-    max_fdb_entries=1024
-    # Default FDB aging time in seconds. Default is 300 seconds.
-    fdb_aging_time=300
-    # Number of multicast groups in each FDB table. Default is 32.
-    max_fdb_mc_groups=32
-    # dpsw object label
-    label=
-    #Endpoint objects provided as argument
-    endpoint=()
-    ifcnt=0
+	# Number of external and internal interfaces.
+	num_ifs=4
+	# Comma separated list of DPSW options
+	options=""
+	# Maximum number of VLANs. Default is 16.
+	max_vlans=16
+	# Maximum Number of FDBs. Default is 16.
+	max_fdbs=1
+	# Number of FDB entries. Default is 1024.
+	max_fdb_entries=1024
+	# Default FDB aging time in seconds. Default is 300 seconds.
+	fdb_aging_time=300
+	# Number of multicast groups in each FDB table. Default is 32.
+	max_fdb_mc_groups=32
+	# dpsw object label
+	label=
+	#Endpoint objects provided as argument
+	endpoint=()
+	ifcnt=0
 
-    get_root_container
+	get_root_container
 
-    for i in "$@"
-    do
-	case $i in
-	    -h | --help)
-		usage_addsw
-		exit 0
-		;;
-	    -i=* | --num-ifs=*)
-		num_ifs="${i#*=}"
-		;;
-	    -o=* | --options=*)
-		options="${i#*=}"
-		;;
-	    -v=* | --max-vlans=*)
-		max_vlans="${i#*=}"
-		;;
-	    -f=* | --max-fdbs=*)
-		max_fdbs="${i#*=}"
-		;;
-	    -e=* | --max-fdb-entries=*)
-		max_fdb_entries="${i#*=}"
-		;;
-	    -a=* | --fdb-aging-time=*)
-		fdb_aging_time="${i#*=}"
-		;;
-	    -g=* | --max-fdb-mc-groups=*)
-		max_fdb_mc_groups="${i#*=}"
-		;;
-	    -l=* | --label=*)
-		label="${i#*=}"
-		;;
-	    @(dpni|dpmac).+([0-9]))
-		endpoint[$ifcnt]="$(echo ${i#*=} | tr -d ,)"
-		ifcnt=$((ifcnt + 1))
-		;;
-	    *)
-		echo "Error: $i argument is invalid"
+	for i in "$@"
+	do
+		case $i in
+			-h | --help)
+				usage_addsw
+				exit 0
+				;;
+			-i=* | --num-ifs=*)
+				num_ifs="${i#*=}"
+				;;
+			-o=* | --options=*)
+				options="${i#*=}"
+				;;
+			-v=* | --max-vlans=*)
+				max_vlans="${i#*=}"
+				;;
+			-f=* | --max-fdbs=*)
+				max_fdbs="${i#*=}"
+				;;
+			-e=* | --max-fdb-entries=*)
+				max_fdb_entries="${i#*=}"
+				;;
+			-a=* | --fdb-aging-time=*)
+				fdb_aging_time="${i#*=}"
+				;;
+			-g=* | --max-fdb-mc-groups=*)
+				max_fdb_mc_groups="${i#*=}"
+				;;
+			-l=* | --label=*)
+				label="${i#*=}"
+				;;
+			@(dpni|dpmac).+([0-9]))
+				endpoint[$ifcnt]="$(echo ${i#*=} | tr -d ,)"
+				ifcnt=$((ifcnt + 1))
+				;;
+			*)
+				echo "Error: $i argument is invalid"
+				usage_addsw
+				exit 1
+				;;
+		esac
+	done
+
+	# Check if there are more endpoints provided than the number of the interfaces
+	if [ $num_ifs -lt ${#endpoint[@]} ]; then
+		echo "Error: there are more endpoints provided than the number of the interfaces"
 		usage_addsw
 		exit 1
-		;;
-	esac
-    done
+	fi
 
-    # Check if there are more endpoints provided than the number of the interfaces
-    if [ $num_ifs -lt ${#endpoint[@]} ]; then
-	  echo "Error: there are more endpoints provided than the number of the interfaces"
-	  usage_addsw
-	  exit 1
-    fi
+	# Check if the endpoints are valid
+	for i in "${endpoint[@]}"; do
+		type_of_endpoint "$i"
+		check_endpoint "$i"
+		has_endpoint "$i"
+	done
 
-    # Check if the endpoints are valid
-    for i in "${endpoint[@]}"; do
-	type_of_endpoint "$i"
-	check_endpoint "$i"
-	has_endpoint "$i"
-    done
+	# Create the SWITCH
+	create_dpsw
 
-    # Create the SWITCH
-    create_dpsw
+	if [ -d $SYS_DPRC/"$root_c"/"$dpsw"/net ]; then
+		ethsw=$(ls $SYS_DPRC/"$root_c"/"$dpsw"/net/ | grep -v "p")
+		echo "Created ETHSW: $ethsw (object: $dpsw, interfaces:  ${#endpoint[@]})"
 
-    if [ -d $SYS_DPRC/"$root_c"/"$dpsw"/net ]; then
-	    ethsw=$(ls $SYS_DPRC/"$root_c"/"$dpsw"/net/ | grep -v "p")
-	    echo "Created ETHSW: $ethsw (object: $dpsw, interfaces:  ${#endpoint[@]})"
-
-	    if [ $num_ifs -gt ${#endpoint[@]} ]; then
-		echo "Do not forget to connect devices to interface(s)."
-	    fi
-    else
-	    echo "Switch creation failed!"
-    fi
+		if [ $num_ifs -gt ${#endpoint[@]} ]; then
+		    echo "Do not forget to connect devices to interface(s)."
+		fi
+	else
+		echo "Switch creation failed!"
+	fi
 }
 
 #####################################################################
