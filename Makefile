@@ -45,6 +45,9 @@ CFLAGS = ${EXTRA_CFLAGS} \
 
 LDFLAGS = -static -Wl,--hash-style=gnu
 
+PREFIX = /sbin
+EXEC_PREFIX = /usr/sbin
+
 HEADER_DEPENDENCIES = $(subst .o,.d,$(OBJS))
 
 all: restool
@@ -52,6 +55,11 @@ all: restool
 restool: $(OBJS)
 	$(CC) $(LDFLAGS) -o $@ $(OBJS) -lm
 	file $@
+
+install:
+	install -m 755 restool $(PREFIX)
+	cp -d scripts/* $(EXEC_PREFIX)
+	chmod 755 $(EXEC_PREFIX)/ls-main
 
 clean:
 	rm -f $(OBJS) \
