@@ -1,5 +1,45 @@
 #!/bin/bash
 
+##	Restool wrapper script
+#
+# Prerequisites:
+#	- Management Complex version 8.0.5 or newer
+#	- restool version 1.1 or newer
+#	- bash shell
+#
+#
+# The purpose of ths script is to offer a user friendly way to create
+# DPAA2 objects, their associated dependencies and the corresponding
+# Linux-like entities (e.g. network interfaces). The script relies on
+# restool utility which provides advanced commands and options for
+# objects manipulation.
+#
+# As an example, in order to create a dpni object, the corresponding Linux
+# network interface and link it to a physical port one would need to make
+# the following call:
+#
+#	$ ls-addni dpmac.2
+#
+# This command will check for dpmac.2 existence, will query the status of
+# the specified end point (if it is already connected to another dpni),
+# will look for the minimum number of dpio objects (that is 8), will create
+# a dpmcp, dpbp and dpcon objects, all those operations being transparent
+# to the user.
+#
+# Several operations are allowed:
+#	- adding new objects
+#
+#		$ ls-add[ni|mux|sw]
+#
+#	- listing objects
+#
+#		$ ls-list[ni|mac]
+#
+# For more information about the available options use -h parameter with the
+# above commands.
+#
+##
+
 shopt -s extglob
 shopt -s lastpipe
 
