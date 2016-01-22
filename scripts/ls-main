@@ -254,7 +254,6 @@ The options are:
 							DPDMUX_METHOD_C_VLAN_MAC, DPDMUX_METHOD_MAC,
 							DPDMUX_METHOD_C_VLAN.
 							Default is DPDMUX_METHOD_MAC
-	-n, --no-link					The uplink will not be linked to any endpoint.
 	-e, --max-dmat-entries=NUM_ENTRIES		Entries in address table.
 							Default value is 64.
 	-g, --max-mcast-groups=NUM_MGROUPS		Multicast groups in address table.
@@ -271,12 +270,11 @@ The arguments are:
 <endpoint> represents the uplink device. Is one of the following:
 	dpmac.X 					X is the index of the dpmac object
 	dpni.X						X is the index of the dpni object
-<endpoint> is mandatory unless -n | --no-link option is used
+<endpoint> is mandatory
 
 Usage examples:
 	#ls-addmux -d=2 -u=0 dpmac.1			// Creates a MUX with 2 downlinks and uplink connected
 							// to dpmac.1
-	#ls-addmux -d=5 -u=0 -n				// Creates a MUX with 5 downlinks and no device connected
 							// to uplink
 	#ls-addmux -b -m=DPDMUX_METHOD_C_VLAN_MAC -e=32 -g=16 -d=4 -u=0 dpmac.6
 							// Creates a MUX with 4 downlinks, uplink connected to
@@ -309,10 +307,8 @@ create_dpdmux() {
 		return 1
 	fi
 
-	# Make a link in case there is an end point specified
-	if [ "$no_link" -eq 0 ]; then
-		connect "$dpdmux" "$endpoint"
-	fi
+	# Make a link
+	connect "$dpdmux" "$endpoint"
 
 	# Assign the newly-created DPDMUX to the Linux container and plug it
 	# in order to trigger the probe function.
@@ -341,7 +337,6 @@ process_addmux() {
 	max_mc_groups=32
 	#Endpoint object provided as argument
 	endpoint=
-	no_link=0
 
 	for i in "$@"
 	do
@@ -362,10 +357,6 @@ process_addmux() {
 			-u=* | --uplink-id=*)
 				control_if="${i#*=}"
 				# TODO: check range [0, num-ifs]
-				;;
-			-n | --no-link)
-				no_link=1
-				endpoint=none
 				;;
 			-e=* | --max-dmat-entries=*)
 				max_dmat_entries="${i#*=}"
@@ -389,31 +380,29 @@ process_addmux() {
 		esac
 	done
 
-	# Check if --no-link the endpoint have been provided otherwise
+	# Check if the uplink endpoint has been provided otherwise
 	# display the usage
-	if [ $no_link -eq 0 ] && [ -z "$endpoint" ]; then
+	if [ -z "$endpoint" ]; then
 		usage_addmux
 		exit 1
 	fi
 
 	get_root_container
 
-	if [ $no_link -eq 0 ]; then
-		type_of_endpoint "$endpoint"
+	type_of_endpoint "$endpoint"
 
-		if [ "$toe" == "dpmac" ]; then
-			res=$(trap '$restool dpmac info $endpoint' EXIT)
+	if [ "$toe" == "dpmac" ]; then
+		res=$(trap '$restool dpmac info $endpoint' EXIT)
 
-			if [[ "$res" == *"does not exist"* ]]; then
-				echo "$res"
-				exit 1
-			fi
-		else
-			check_endpoint "$endpoint"
+		if [[ "$res" == *"does not exist"* ]]; then
+			echo "$res"
+			exit 1
 		fi
-
-		has_endpoint "$endpoint"
+	else
+		check_endpoint "$endpoint"
 	fi
+
+	has_endpoint "$endpoint"
 
 	# Create the MUX
 	create_dpdmux
