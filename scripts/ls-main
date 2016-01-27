@@ -907,6 +907,21 @@ process_listmac() {
 ##################### Script starts here ############################
 #####################################################################
 
+usage_main () {
+	echo "Wrapper for DPAA2 objects handling
+
+Usage: <OPERATION> [OPTIONS]
+The operations are:
+	- ls-addni	-   Create an network interface (and corresponding dpni object)
+	- ls-addmux	-   Create an evb (and the corresponding dpdmux object)
+	- ls-addsw	-   Create a switch (and the corresponding dpsw object)
+	- ls-listni	-   List the available dpni objects in the root and child containers
+	- ls-listmac 	-   List the available dpmac objects in the root and child containers
+
+The options depend on the used operation. Use -h parameter for each operation
+to get more details on available options."
+}
+
 # First check if $restool exists
 if [ ! "$(which $restool)" ]; then
 	echo "This command relies on '$restool' which is NOT found. Exiting..."
@@ -914,21 +929,6 @@ if [ ! "$(which $restool)" ]; then
 fi
 
 operation=$(basename "${0}")
-
-usage_main () {
-	echo "Wrapper for DPAA2 objects handling
-
-Usage: <OPERATION> [OPTIONS]
-The operations are:
-    - ls-addni    -   Create an network interface (and corresponding dpni object)
-    - ls-addmux   -   Create an evb (and the corresponding dpdmux object)
-    - ls-addsw    -   Create a switch (and the corresponding dpsw object)
-    - ls-listni	  -   List the available dpni objects in the root and child containers
-    - ls-listmac  -   List the available dpmac objects in the root and child containers
-
-The options depend on the used operation. Use -h parameter for each operation
-to get more details on available options."
- }
 
 case $operation in
 	ls-addmux)
