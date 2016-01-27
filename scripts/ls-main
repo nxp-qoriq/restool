@@ -912,7 +912,7 @@ usage_main () {
 
 Usage: <OPERATION> [OPTIONS]
 The operations are:
-	- ls-addni	-   Create an network interface (and corresponding dpni object)
+	- ls-addni	-   Create a network interface (and corresponding dpni object)
 	- ls-addmux	-   Create an evb (and the corresponding dpdmux object)
 	- ls-addsw	-   Create a switch (and the corresponding dpsw object)
 	- ls-listni	-   List the available dpni objects in the root and child containers
@@ -928,6 +928,8 @@ if [ ! "$(which $restool)" ]; then
 	exit 1
 fi
 
+# The operation name will be one of ls-addmux/ls-addsw/ls-addni/ls-listni/ls-listmac,
+# as they are symbolic links to ls-main
 operation=$(basename "${0}")
 
 case $operation in
