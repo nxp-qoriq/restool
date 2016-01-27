@@ -924,7 +924,7 @@ to get more details on available options."
 
 # First check if $restool exists
 if [ ! "$(which $restool)" ]; then
-	echo "This command relies on '$restool' which is NOT found. Exiting..."
+	echo "restool is not installed. Aborting."
 	exit 1
 fi
 
