@@ -1,4 +1,5 @@
 CROSS_COMPILE ?=
+DESTDIR ?=
 
 CC = $(CROSS_COMPILE)gcc
 
@@ -45,8 +46,8 @@ CFLAGS = ${EXTRA_CFLAGS} \
 
 LDFLAGS = -static -Wl,--hash-style=gnu
 
-PREFIX = /sbin
-EXEC_PREFIX = /usr/sbin
+PREFIX = $(DESTDIR)/sbin
+EXEC_PREFIX = $(DESTDIR)/usr/sbin
 
 HEADER_DEPENDENCIES = $(subst .o,.d,$(OBJS))
 
@@ -57,6 +58,7 @@ restool: $(OBJS)
 	file $@
 
 install:
+	install -d $(PREFIX) $(EXEC_PREFIX)
 	install -m 755 restool $(PREFIX)
 	cp -d scripts/* $(EXEC_PREFIX)
 	chmod 755 $(EXEC_PREFIX)/ls-main
