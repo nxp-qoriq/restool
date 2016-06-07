@@ -675,22 +675,12 @@ error:
 	return error;
 }
 
-static int parse_obj_command(const char *obj_type,
-			     const char *cmd_name,
-			     int argc,
-			     char *argv[])
+static struct object_command* get_obj_cmd(const char *obj_type, const char *cmd_name)
 {
-	int error;
-	int next_argv_index;
-	unsigned int i;
-	const struct object_cmd_parser *obj_cmd_parser = NULL;
-	struct object_command *obj_commands;
-	struct object_command *obj_cmd = NULL;
-	struct timespec start_time = { 0 };
-	struct timespec end_time = { 0 };
-	struct timespec latency = { 0 };
-
-	assert(argv[0] == cmd_name);
+        unsigned int i;
+        const struct object_cmd_parser *obj_cmd_parser = NULL;
+        struct object_command *obj_commands;
+        struct object_command *obj_cmd = NULL;
 
 	/*
 	 * Lookup object command parser:
@@ -705,9 +695,11 @@ static int parse_obj_command(const char *obj_type,
 	if (obj_cmd_parser == NULL) {
 		ERROR_PRINTF("error: invalid object type \'%s\'\n", obj_type);
 		print_try_help();
-		error = -EINVAL;
 		goto out;
 	}
+
+	//obj_cmd_parser now knows which object
+	//this is where we would check version # for compatability
 
 	/*
 	 * Lookup object-level command:
@@ -724,11 +716,33 @@ static int parse_obj_command(const char *obj_type,
 		ERROR_PRINTF("Invalid command \'%s\' for object type \'%s\'\n",
 			     cmd_name, obj_type);
 		print_try_help();
-		error = -EINVAL;
 		goto out;
 	}
 
+out:
+	return obj_cmd;
+}
+
+static int parse_obj_command(const char *obj_type,
+			     const char *cmd_name,
+			     int argc,
+			     char *argv[])
+{
+	int error;
+	int next_argv_index;
+        struct object_command *obj_cmd = NULL;
+	struct timespec start_time = { 0 };
+	struct timespec end_time = { 0 };
+	struct timespec latency = { 0 };
+
+	assert(argv[0] == cmd_name);
+
+	obj_cmd = get_obj_cmd(obj_type, cmd_name);
 	restool.obj_cmd = obj_cmd;
+	if (restool.obj_cmd == NULL) {
+		error = -EINVAL;
+		goto out;
+	}
 
 	if (argc >= 2 && argv[1][0] != '-') {
 		restool.obj_name = argv[1];
