@@ -17,21 +17,21 @@ OBJS = restool.o \
        dpmac_commands.o \
        dpdcei_commands.o \
        dpaiop_commands.o \
-       dprc.o \
-       dpmng.o \
-       dpni.o \
-       dpbp.o \
-       dpio.o \
-       dpsw.o \
-       dpci.o \
-       dpcon.o \
-       dpseci.o \
-       dpdmux.o \
-       dpmcp.o \
-       dpmac.o \
-       dpdcei.o \
-       dpaiop.o \
-       fsl_mc_sys.o
+       mc_v8/dprc.o \
+       mc_v8/dpmng.o \
+       mc_v8/dpni.o \
+       mc_v8/dpbp.o \
+       mc_v8/dpio.o \
+       mc_v8/dpsw.o \
+       mc_v8/dpci.o \
+       mc_v8/dpcon.o \
+       mc_v8/dpseci.o \
+       mc_v8/dpdmux.o \
+       mc_v8/dpmcp.o \
+       mc_v8/dpmac.o \
+       mc_v8/dpdcei.o \
+       mc_v8/dpaiop.o \
+       mc_v8/fsl_mc_sys.o
 
 CFLAGS = ${EXTRA_CFLAGS} \
 	  -Wall \

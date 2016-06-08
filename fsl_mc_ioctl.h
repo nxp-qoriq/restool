@@ -32,7 +32,7 @@
 #define _FSL_MC_IOCTL_H_
 
 #include <linux/ioctl.h>
-#include "fsl_mc_cmd.h"
+#include "mc_v8/fsl_mc_cmd.h"
 
 #define RESTOOL_IOCTL_TYPE   'R'
 

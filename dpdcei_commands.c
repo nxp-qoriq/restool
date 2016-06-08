@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "fsl_dpdcei.h"
+#include "mc_v8/fsl_dpdcei.h"
 
 enum mc_cmd_status mc_status;
 

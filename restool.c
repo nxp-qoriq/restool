@@ -854,7 +854,7 @@ static struct object_command* get_obj_cmd(const char *obj_type,
 	}
 
 	/*
-         * lookup object version number supported by  MC firmware version
+         * lookup object version number supported by MC firmware version
          */
 	obj_version = get_obj_version(obj_type);
 	if (obj_version == 0) {

@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "fsl_dpdmux.h"
+#include "mc_v8/fsl_dpdmux.h"
 
 #define ALL_DPDMUX_OPTS		DPDMUX_OPT_BRIDGE_EN
 

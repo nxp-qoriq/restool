@@ -35,11 +35,11 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <limits.h>
-#include "fsl_mc_sys.h"
-#include "fsl_dpmng.h"
-#include "fsl_dprc.h"
+#include "mc_v8/fsl_mc_sys.h"
+#include "mc_v8/fsl_dpmng.h"
+#include "mc_v8/fsl_dprc.h"
 #include "fsl_mc_ioctl.h"
-#include "fsl_mc_cmd.h"
+#include "mc_v8/fsl_mc_cmd.h"
 
 /**
  * MC object type string max length (without including the null terminator)

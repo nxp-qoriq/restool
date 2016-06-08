@@ -38,7 +38,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "fsl_dpni.h"
+#include "mc_v8/fsl_dpni.h"
 
 #define ALL_DPNI_OPTS (					\
 	DPNI_OPT_ALLOW_DIST_KEY_PER_TC |		\

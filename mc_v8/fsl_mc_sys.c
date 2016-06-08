@@ -35,8 +35,8 @@
 #include <sys/ioctl.h>
 #include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
-#include "fsl_mc_ioctl.h"
-#include "utils.h"
+#include "../fsl_mc_ioctl.h"
+#include "../utils.h"
 
 #define RESTOOL_DEVICE_FILE  "/dev/mc_restool"
 
