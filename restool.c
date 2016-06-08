@@ -978,6 +978,28 @@ int main(int argc, char *argv[])
 	restool.debug = true;
 	#endif
 
+	DEBUG_PRINTF("restool built on " __DATE__ " " __TIME__ "\n");
+	error = mc_io_init(&restool.mc_io);
+	if (error != 0)
+		goto out;
+
+	mc_io_initialized = true;
+	DEBUG_PRINTF("restool.mc_io.fd: %d\n", restool.mc_io.fd);
+
+	error = mc_get_version(&restool.mc_io, 0,
+				&restool.mc_fw_version);
+	if (error != 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
+		     restool.mc_fw_version.major,
+		     restool.mc_fw_version.minor,
+		     restool.mc_fw_version.revision);
+
 	for (int i = 0; i < argc; i++) {
 		if (strcmp(argv[i], "-v") == 0 ||
 			strcmp(argv[i], "--version") == 0 ||
@@ -992,27 +1014,6 @@ int main(int argc, char *argv[])
 
 	DEBUG_PRINTF("talk_to_mc = %d\n", talk_to_mc);
 	if (talk_to_mc) {
-		DEBUG_PRINTF("restool built on " __DATE__ " " __TIME__ "\n");
-		error = mc_io_init(&restool.mc_io);
-		if (error != 0)
-			goto out;
-
-		mc_io_initialized = true;
-		DEBUG_PRINTF("restool.mc_io.fd: %d\n", restool.mc_io.fd);
-
-		error = mc_get_version(&restool.mc_io, 0,
-					&restool.mc_fw_version);
-		if (error != 0) {
-			mc_status = flib_error_to_mc_status(error);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				mc_status_to_string(mc_status), mc_status);
-			goto out;
-		}
-
-		DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
-			     restool.mc_fw_version.major,
-			     restool.mc_fw_version.minor,
-			     restool.mc_fw_version.revision);
 
 		DEBUG_PRINTF("calling ioctl(RESTOOL_GET_ROOT_DPRC_INFO)\n");
 		error = ioctl(restool.mc_io.fd, RESTOOL_GET_ROOT_DPRC_INFO,
