@@ -89,6 +89,113 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 
 };
 
+/**
+ * Individual object structs to hold the mapping of the MC Version
+ * (major part only) to a corresponding object version(major part 
+ * only) supported by the MC.  Used in the lookup table below
+ */
+struct version_table dpaiop_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 1 },
+	{ .mc_major_version = 9, .object_version = 1 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpbp_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 2 },
+	{ .mc_major_version = 9, .object_version = 2 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpci_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 2 },
+	{ .mc_major_version = 9, .object_version = 2 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpcon_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 2 },
+	{ .mc_major_version = 9, .object_version = 2 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpcei_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 1 },
+	{ .mc_major_version = 9, .object_version = 1 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpmai_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 2 },
+	{ .mc_major_version = 9, .object_version = 2 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpdmux_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 4 },
+	{ .mc_major_version = 9, .object_version = 5 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpio_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 3 },
+	{ .mc_major_version = 9, .object_version = 3 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpmac_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 3 },
+	{ .mc_major_version = 9, .object_version = 3 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpmcp_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 2 },
+	{ .mc_major_version = 9, .object_version = 3 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpni_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 5 },
+	{ .mc_major_version = 9, .object_version = 6 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dprc_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 5 },
+	{ .mc_major_version = 9, .object_version = 5 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpseci_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 3 },
+	{ .mc_major_version = 9, .object_version = 3 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpsw_version_table[] = {
+	{ .mc_major_version = 8, .object_version = 6 },
+	{ .mc_major_version = 9, .object_version = 7 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dpdbg_version_table[] = {
+	{ .mc_major_version = 9, .object_version = 1 },
+	{ .mc_major_version = 0 }
+};
+struct version_table dprtc_version_table[] = {
+	{ .mc_major_version = 9, .object_version = 1 },
+	{ .mc_major_version = 0 }
+};
+
+/**
+ * Lookup table used to map a specific MC Version to its corresponding
+ * supported object version
+ */
+struct lut_entry version_lut[] = {
+        { .object = "dpaiop", .versions_table = dpaiop_version_table },
+        { .object = "dpbp",   .versions_table = dpbp_version_table   },
+        { .object = "dpci",   .versions_table = dpci_version_table   },
+        { .object = "dpcon",  .versions_table = dpcon_version_table  },
+        { .object = "dpdcei", .versions_table = dpcei_version_table  },
+        { .object = "dpdmai", .versions_table = dpmai_version_table  },
+        { .object = "dpdmux", .versions_table = dpdmux_version_table },
+        { .object = "dpio",   .versions_table = dpio_version_table   },
+        { .object = "dpmac",  .versions_table = dpmac_version_table  },
+        { .object = "dpmcp",  .versions_table = dpmcp_version_table  },
+        { .object = "dpni",   .versions_table = dpni_version_table   },
+        { .object = "dprc",   .versions_table = dprc_version_table   },
+        { .object = "dpseci", .versions_table = dpseci_version_table },
+        { .object = "dpsw",   .versions_table = dpsw_version_table   },
+        { .object = "dpdbg",  .versions_table = dpdbg_version_table  },
+        { .object = "dprtc",  .versions_table = dprtc_version_table  },
+};
+
 struct restool restool;
 
 enum mc_cmd_status flib_error_to_mc_status(int error)
@@ -674,13 +781,61 @@ static int parse_cmd_options(int argc, char *argv[],
 error:
 	return error;
 }
+/*
+ * This function can be used to get the supported obj version(major) for a
+ * specific object and your current MC Firmware Version
+ */
+static uint16_t get_obj_version(const char *obj_type)
+{
+	unsigned int i;
+	uint16_t obj_version = 0;
+	uint32_t mc_major_version = restool.mc_fw_version.major;
+	struct lut_entry *lut_obj_entry = NULL;
+	struct version_table *versions_table;
 
-static struct object_command* get_obj_cmd(const char *obj_type, const char *cmd_name)
+	/*
+	 * get the specific object version lookup table
+	 */
+	for (i = 0; i < ARRAY_SIZE(version_lut); i++){
+		if (strcmp(obj_type, version_lut[i].object) == 0) {
+			lut_obj_entry = &version_lut[i];
+		}
+	}
+
+	if (lut_obj_entry == NULL) {
+        	ERROR_PRINTF("error: invalid object type \'%s\'\n", obj_type);
+		goto out;
+	}
+
+	/*
+	 * find the corresponding supported object version number from the MC Version
+	 */
+	versions_table = lut_obj_entry->versions_table;
+	for (i = 0; versions_table[i].mc_major_version != 0; i++){
+                if (mc_major_version == versions_table[i].mc_major_version) {
+                        obj_version = versions_table[i].object_version;
+		}
+        }
+
+	if (obj_version == 0) {
+                ERROR_PRINTF("error: invalid MC firmware version %d" 
+			     " for object type \'%s\'\n",
+			     mc_major_version, obj_type);
+		goto out;
+	}
+
+out:
+	return obj_version;
+}
+
+static struct object_command* get_obj_cmd(const char *obj_type,
+					  const char *cmd_name)
 {
         unsigned int i;
         const struct object_cmd_parser *obj_cmd_parser = NULL;
         struct object_command *obj_commands;
         struct object_command *obj_cmd = NULL;
+	uint16_t obj_version;
 
 	/*
 	 * Lookup object command parser:
@@ -698,8 +853,13 @@ static struct object_command* get_obj_cmd(const char *obj_type, const char *cmd_
 		goto out;
 	}
 
-	//obj_cmd_parser now knows which object
-	//this is where we would check version # for compatability
+	/*
+         * lookup object version number supported by  MC firmware version
+         */
+	obj_version = get_obj_version(obj_type);
+	if (obj_version == 0) {
+		goto out;
+	}
 
 	/*
 	 * Lookup object-level command:

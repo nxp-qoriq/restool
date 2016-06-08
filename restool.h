@@ -138,6 +138,36 @@ struct object_cmd_parser {
 };
 
 /**
+ * look up table entry for each object version numbers
+ */
+struct lut_entry {
+	/**
+	 * Name of object type trying to look up
+	 */
+        const char *object;
+
+	/**
+	 * array of the different MC Versions this object is found in
+	 */
+        struct version_table *versions_table;
+};
+/**
+ * holds the MC version as well as the corresponding object version
+ */
+struct version_table {
+        /**
+         * MC Versions this object is found in
+         */
+        uint32_t mc_major_version;
+
+        /**
+         * corresponding object version to MC Version
+         */
+        uint16_t object_version;
+
+};
+
+/**
  * Global state of the restool tool
  */
 struct restool {
