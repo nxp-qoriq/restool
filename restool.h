@@ -123,6 +123,21 @@ struct object_command {
 };
 
 /**
+ * structure to hold mapping from version to object commands
+ */
+struct obj_command_versions {
+        /**
+         * version # of object-type flibs
+         */
+        uint16_t version;
+
+        /**
+         * pointer to the correct array of commands for version #
+         */
+        struct object_command *obj_commands;
+};
+
+/**
  * Object command parser structure
  */
 struct object_cmd_parser {
@@ -132,9 +147,9 @@ struct object_cmd_parser {
 	const char *obj_type;
 
 	/**
-	 * Pointer to array of commands for the object type
+	 * Pointer to array of command/version mappings for the object type
 	 */
-	struct object_command *obj_commands;
+	const struct obj_command_versions *obj_commands_versions;
 };
 
 /**

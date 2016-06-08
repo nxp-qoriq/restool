@@ -72,20 +72,73 @@ static struct option global_options[] = {
 
 C_ASSERT(ARRAY_SIZE(global_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+static const struct obj_command_versions dprc_command_versions[] = {
+	{ .version = 5, .obj_commands = dprc_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpni_command_versions[] = {
+	{ .version = 5, .obj_commands = dpni_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpio_command_versions[] = {
+	{ .version = 3, .obj_commands = dpio_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpbp_command_versions[] = {
+	{ .version = 2, .obj_commands = dpbp_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpsw_command_versions[] = {
+	{ .version = 6, .obj_commands = dpsw_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpci_command_versions[] = {
+	{ .version = 2, .obj_commands = dpci_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpcon_command_versions[] = {
+	{ .version = 2, .obj_commands = dpcon_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpseci_command_versions[] = {
+	{ .version = 3, .obj_commands = dpseci_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpdmux_command_versions[] = {
+	{ .version = 4, .obj_commands = dpdmux_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpmcp_command_versions[] = {
+	{ .version = 2, .obj_commands = dpmcp_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpmac_command_versions[] = {
+	{ .version = 3, .obj_commands = dpmac_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpdcei_command_versions[] = {
+	{ .version = 1, .obj_commands = dpdcei_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpaiop_command_versions[] = {
+	{ .version = 1, .obj_commands = dpaiop_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+
 static const struct object_cmd_parser object_cmd_parsers[] = {
-	{ .obj_type = "dprc", .obj_commands = dprc_commands },
-	{ .obj_type = "dpni", .obj_commands = dpni_commands },
-	{ .obj_type = "dpio", .obj_commands = dpio_commands },
-	{ .obj_type = "dpbp", .obj_commands = dpbp_commands },
-	{ .obj_type = "dpsw", .obj_commands = dpsw_commands },
-	{ .obj_type = "dpci", .obj_commands = dpci_commands },
-	{ .obj_type = "dpcon", .obj_commands = dpcon_commands },
-	{ .obj_type = "dpseci", .obj_commands = dpseci_commands },
-	{ .obj_type = "dpdmux", .obj_commands = dpdmux_commands },
-	{ .obj_type = "dpmcp", .obj_commands = dpmcp_commands },
-	{ .obj_type = "dpmac", .obj_commands = dpmac_commands },
-	{ .obj_type = "dpdcei", .obj_commands = dpdcei_commands },
-	{ .obj_type = "dpaiop", .obj_commands = dpaiop_commands },
+	{ .obj_type = "dprc",   .obj_commands_versions = dprc_command_versions   },
+	{ .obj_type = "dpni",   .obj_commands_versions = dpni_command_versions   },
+	{ .obj_type = "dpio",   .obj_commands_versions = dpio_command_versions   },
+	{ .obj_type = "dpbp",   .obj_commands_versions = dpbp_command_versions   },
+	{ .obj_type = "dpsw",   .obj_commands_versions = dpsw_command_versions   },
+	{ .obj_type = "dpci",   .obj_commands_versions = dpci_command_versions   },
+	{ .obj_type = "dpcon",  .obj_commands_versions = dpcon_command_versions  },
+	{ .obj_type = "dpseci", .obj_commands_versions = dpseci_command_versions },
+	{ .obj_type = "dpdmux", .obj_commands_versions = dpdmux_command_versions },
+	{ .obj_type = "dpmcp",  .obj_commands_versions = dpmcp_command_versions  },
+	{ .obj_type = "dpmac",  .obj_commands_versions = dpmac_command_versions  },
+	{ .obj_type = "dpdcei", .obj_commands_versions = dpdcei_command_versions },
+	{ .obj_type = "dpaiop", .obj_commands_versions = dpaiop_command_versions },
 
 };
 
@@ -833,6 +886,7 @@ static struct object_command* get_obj_cmd(const char *obj_type,
 {
         unsigned int i;
         const struct object_cmd_parser *obj_cmd_parser = NULL;
+	const struct obj_command_versions *obj_cmd_versions;
         struct object_command *obj_commands;
         struct object_command *obj_cmd = NULL;
 	uint16_t obj_version;
@@ -862,9 +916,23 @@ static struct object_command* get_obj_cmd(const char *obj_type,
 	}
 
 	/*
+	 * Fins the right object_command struct assosiates with version
+	 */
+	obj_cmd_versions = obj_cmd_parser->obj_commands_versions;
+	for (i = 0; obj_cmd_versions[i].obj_commands != NULL; i++) {
+		if (obj_version ==  obj_cmd_versions[i].version) {
+			obj_commands = obj_cmd_versions[i].obj_commands;
+		}
+	}
+
+	if (obj_commands == NULL) {
+		ERROR_PRINTF("error: invalid object version \'%u\'\n", obj_version);
+		goto out;
+	}
+	
+	/*
 	 * Lookup object-level command:
 	 */
-	obj_commands = obj_cmd_parser->obj_commands;
 	for (i = 0; obj_commands[i].cmd_name != NULL; i++) {
 		if (strcmp(cmd_name, obj_commands[i].cmd_name) == 0) {
 			obj_cmd = &obj_commands[i];
