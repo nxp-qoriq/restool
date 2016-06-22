@@ -78,6 +78,7 @@ static const struct obj_command_versions dprc_command_versions[] = {
 };
 static const struct obj_command_versions dpni_command_versions[] = {
 	{ .version = 5, .obj_commands = dpni_commands },
+	{ .version = 6, .obj_commands = dpni_commands_v9 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpio_command_versions[] = {
@@ -90,6 +91,7 @@ static const struct obj_command_versions dpbp_command_versions[] = {
 };
 static const struct obj_command_versions dpsw_command_versions[] = {
 	{ .version = 6, .obj_commands = dpsw_commands },
+	{ .version = 7, .obj_commands = dpsw_commands_v9 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpci_command_versions[] = {
@@ -106,10 +108,12 @@ static const struct obj_command_versions dpseci_command_versions[] = {
 };
 static const struct obj_command_versions dpdmux_command_versions[] = {
 	{ .version = 4, .obj_commands = dpdmux_commands },
+	{ .version = 5, .obj_commands = dpdmux_commands_v9 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpmcp_command_versions[] = {
 	{ .version = 2, .obj_commands = dpmcp_commands },
+	{ .version = 3, .obj_commands = dpmcp_commands },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpmac_command_versions[] = {
@@ -122,6 +126,14 @@ static const struct obj_command_versions dpdcei_command_versions[] = {
 };
 static const struct obj_command_versions dpaiop_command_versions[] = {
 	{ .version = 1, .obj_commands = dpaiop_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dpdbg_command_versions[] = {
+	{ .version = 1, .obj_commands = dpdbg_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+static const struct obj_command_versions dprtc_command_versions[] = {
+	{ .version = 1, .obj_commands = dprtc_commands },
 	{ .version = 0, .obj_commands = NULL },
 };
 
@@ -139,6 +151,8 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 	{ .obj_type = "dpmac",  .obj_commands_versions = dpmac_command_versions  },
 	{ .obj_type = "dpdcei", .obj_commands_versions = dpdcei_command_versions },
 	{ .obj_type = "dpaiop", .obj_commands_versions = dpaiop_command_versions },
+	{ .obj_type = "dpdbg",  .obj_commands_versions = dpdbg_command_versions },
+	{ .obj_type = "dprtc",  .obj_commands_versions = dprtc_command_versions },
 
 };
 
@@ -638,6 +652,52 @@ static void print_usage(void)
 	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
 }
 
+static void print_usage_v9(void)
+{
+        static const char usage_msg[] =
+                "\n"
+                "There are 3 levels of help, from up to bottom:\n"
+                "global: restool --help\n"
+                "object: restool dp* help\n"
+                "       tells you all the commands this object support\n"
+                "       e.g. restool dprc help\n"
+                "object-command: restool dp* <command> --help\n"
+                "       tells you how to use this <command>\n"
+                "       e.g. restool dprc create --help\n"
+                "\n"
+                "Usage: restool [<global-options>] <object-type> <command> <object-name> [ARGS...]\n"
+                "\n"
+                "Valid <global-options> are:\n"
+                "   -v,--version   Displays tool version info\n"
+                "   -m,--mc-version Displays mc firmware version.\n"
+                "   -h,-?,--help   Displays general help info\n"
+                "   -d, --debug    Print out DEBUG info\n"
+                "       --debug option must be used together with an object\n"
+                "       e.g. restool --debug dpni info dpni.11\n"
+                "   -s, --script   Print newly-created object name only instead of whole sentence\n"
+                "       e.g. restool -s dpseci create\n"
+                "            dpseci.0\n"
+                "\n"
+                "Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|dpmcp|dpmac|dpdcei|dpaiop|dpdmai|dbdbg|dprtc>\n"
+                "\n"
+                "Valid commands vary for each object type.\n"
+                "Use the \'restool dp* help\' command to see detailed usage info for an object.\n"
+                "The following commands are valid for all object types:\n"
+                "   help\n"
+                "   info\n"
+                "   create\n"
+                "   destroy\n"
+                "\n"
+                "The <object-name> arg is a string containing object type\n"
+                "and ID (e.g. dpni.7).\n"
+                "\n"
+                "For valid [ARGS] values, use the \'restool dp* <command> --help\'\n"
+                "\n";
+
+        printf(usage_msg);
+        restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
+}
+
 static void print_try_help(void)
 {
 	ERROR_PRINTF("try 'restool --help'\n");
@@ -964,14 +1024,12 @@ static int parse_obj_command(const char *obj_type,
 	struct timespec latency = { 0 };
 
 	assert(argv[0] == cmd_name);
-
 	obj_cmd = get_obj_cmd(obj_type, cmd_name);
 	restool.obj_cmd = obj_cmd;
 	if (restool.obj_cmd == NULL) {
 		error = -EINVAL;
 		goto out;
 	}
-
 	if (argc >= 2 && argv[1][0] != '-') {
 		restool.obj_name = argv[1];
 		argv++;
@@ -979,7 +1037,6 @@ static int parse_obj_command(const char *obj_type,
 	} else {
 		restool.obj_name = NULL;
 	}
-
 	/*
 	 * Parse object-level command options:
 	 */
@@ -998,7 +1055,7 @@ static int parse_obj_command(const char *obj_type,
 			error = -EINVAL;
 			goto out;
 		}
-	} else {
+	} else { 
 		if (argc != 1) {
 			ERROR_PRINTF("Invalid command line\n");
 			print_try_help();
@@ -1118,8 +1175,14 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 
-		if (restool.global_option_mask & ONE_BIT_MASK(GLOBAL_OPT_HELP))
-			print_usage();	/* print help message */
+		if (restool.global_option_mask & ONE_BIT_MASK(GLOBAL_OPT_HELP)) {
+			if (restool.mc_fw_version.major == 8) {
+				print_usage();  /* print help message */
+			}
+			else if (restool.mc_fw_version.major == 9) {
+				print_usage_v9();  /* print help message */
+			}
+		}
 
 		if (restool.global_option_mask &
 		    ONE_BIT_MASK(GLOBAL_OPT_VERSION))

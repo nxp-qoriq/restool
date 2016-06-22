@@ -316,16 +316,21 @@ void print_new_obj(char *type, int id, const char *parent);
 extern struct restool restool;
 extern struct object_command dprc_commands[];
 extern struct object_command dpni_commands[];
+extern struct object_command dpni_commands_v9[];
 extern struct object_command dpio_commands[];
 extern struct object_command dpbp_commands[];
 extern struct object_command dpsw_commands[];
+extern struct object_command dpsw_commands_v9[];
 extern struct object_command dpci_commands[];
 extern struct object_command dpcon_commands[];
 extern struct object_command dpseci_commands[];
 extern struct object_command dpdmux_commands[];
+extern struct object_command dpdmux_commands_v9[];
 extern struct object_command dpmcp_commands[];
 extern struct object_command dpmac_commands[];
 extern struct object_command dpdcei_commands[];
 extern struct object_command dpaiop_commands[];
+extern struct object_command dpdbg_commands[];
+extern struct object_command dprtc_commands[];
 
 #endif /* _RESTOOL_H_ */
