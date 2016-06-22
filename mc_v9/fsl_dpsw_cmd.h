@@ -23,8 +23,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef __FSL_DPSW_CMD_H
-#define __FSL_DPSW_CMD_H
+#ifndef __FSL_DPSW_CMD_V9_H
+#define __FSL_DPSW_CMD_V9_H
 
 /* DPSW Version */
 #define DPSW_VER_MAJOR				7
@@ -127,7 +127,7 @@
 	MC_CMD_OP(cmd, 0, 0,  32, int,	 dpsw_id)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_CREATE(cmd, cfg) \
+#define DPSW_CMD_CREATE_V9(cmd, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, cfg->num_ifs);\
 	MC_CMD_OP(cmd, 0, 16,  8, uint8_t,  cfg->adv.max_fdbs);\
@@ -216,7 +216,7 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSW_RSP_GET_ATTR(cmd, attr) \
+#define DPSW_RSP_GET_ATTR_V9(cmd, attr) \
 do { \
 	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, attr->num_ifs);\
 	MC_RSP_OP(cmd, 0, 16, 8,  uint8_t,  attr->max_fdbs);\

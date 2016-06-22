@@ -23,8 +23,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _FSL_DPNI_CMD_H
-#define _FSL_DPNI_CMD_H
+#ifndef _FSL_DPNI_CMD_V9_H
+#define _FSL_DPNI_CMD_V9_H
 
 /* DPNI Version */
 #define DPNI_VER_MAJOR				6
@@ -195,7 +195,7 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPNI_CMD_CREATE(cmd, cfg) \
+#define DPNI_CMD_CREATE_V9(cmd, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,	8,  uint8_t,  cfg->adv.max_tcs); \
 	MC_CMD_OP(cmd, 0, 8,	8,  uint8_t,  cfg->adv.max_senders); \
@@ -323,11 +323,11 @@ do { \
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPNI_CMD_GET_ATTR(cmd, attr) \
+#define DPNI_CMD_GET_ATTR_V9(cmd, attr) \
 	MC_CMD_OP(cmd, 6, 0,  64, uint64_t, attr->ext_cfg_iova)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPNI_RSP_GET_ATTR(cmd, attr) \
+#define DPNI_RSP_GET_ATTR_V9(cmd, attr) \
 do { \
 	MC_RSP_OP(cmd, 0, 0,  32, int,	    attr->id);\
 	MC_RSP_OP(cmd, 0, 32, 8,  uint8_t,  attr->max_tcs); \
@@ -1049,4 +1049,4 @@ do { \
 	MC_RSP_OP(cmd, 4, 0,  64, uint64_t, cfg->message_iova); \
 } while (0)
 
-#endif /* _FSL_DPNI_CMD_H */
+#endif /* _FSL_DPNI_CMD_V9_H */

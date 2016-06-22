@@ -23,8 +23,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#ifndef _FSL_DPDMUX_CMD_H
-#define _FSL_DPDMUX_CMD_H
+#ifndef _FSL_DPDMUX_CMD_V9_H
+#define _FSL_DPDMUX_CMD_V9_H
 
 /* DPDMUX Version */
 #define DPDMUX_VER_MAJOR				5
@@ -69,7 +69,7 @@
 	MC_CMD_OP(cmd, 0, 0,  32,  int,	dpdmux_id)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPDMUX_CMD_CREATE(cmd, cfg) \
+#define DPDMUX_CMD_CREATE_V9(cmd, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  enum dpdmux_method, cfg->method);\
 	MC_CMD_OP(cmd, 0, 8,  8,  enum dpdmux_manip, cfg->manip);\
@@ -154,7 +154,7 @@ do { \
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index); \
 } while (0)
 
-#define DPDMUX_RSP_GET_ATTR(cmd, attr) \
+#define DPDMUX_RSP_GET_ATTR_V9(cmd, attr) \
 do { \
 	MC_RSP_OP(cmd, 0, 0,  8,  enum dpdmux_method, attr->method);\
 	MC_RSP_OP(cmd, 0, 8,  8,  enum dpdmux_manip, attr->manip);\
@@ -247,4 +247,4 @@ do { \
 	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, state->options);\
 } while (0)
 
-#endif /* _FSL_DPDMUX_CMD_H */
+#endif /* _FSL_DPDMUX_CMD_V9_H */
