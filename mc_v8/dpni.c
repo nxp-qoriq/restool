@@ -29,89 +29,6 @@
 #include "fsl_dpni.h"
 #include "fsl_dpni_cmd.h"
 
-#if 0
-int dpni_prepare_key_cfg(struct dpkg_profile_cfg *cfg,
-			 uint8_t *key_cfg_buf)
-{
-	int i, j;
-	int offset = 0;
-	int param = 1;
-	uint64_t *params = (uint64_t *)key_cfg_buf;
-	struct {
-		uint32_t field;
-		uint8_t size;
-		uint8_t offset;
-		uint8_t hdr_index;
-		uint8_t constant;
-		uint8_t num_of_repeats;
-		enum net_prot prot;
-		enum dpkg_extract_from_hdr_type type;
-	} u_cfg[DPKG_MAX_NUM_OF_EXTRACTS] = { {0} };
-
-	if (!key_cfg_buf || !cfg)
-			return -EINVAL;
-
-	for (i = 0; i < cfg->num_extracts; i++) {
-		switch (cfg->extracts[i].type) {
-		case DPKG_EXTRACT_FROM_HDR:
-			u_cfg[i].prot = cfg->extracts[i].extract.from_hdr.prot;
-			u_cfg[i].type = cfg->extracts[i].extract.from_hdr.type;
-			u_cfg[i].field =
-				cfg->extracts[i].extract.from_hdr.field;
-			u_cfg[i].size = cfg->extracts[i].extract.from_hdr.size;
-			u_cfg[i].offset =
-				cfg->extracts[i].extract.from_hdr.offset;
-			u_cfg[i].hdr_index =
-				cfg->extracts[i].extract.from_hdr.hdr_index;
-			break;
-		case DPKG_EXTRACT_FROM_DATA:
-			u_cfg[i].size = cfg->extracts[i].extract.from_data.size;
-			u_cfg[i].offset =
-				cfg->extracts[i].extract.from_data.offset;
-			break;
-		case DPKG_EXTRACT_CONSTANT:
-			u_cfg[i].constant =
-				cfg->extracts[i].extract.constant.constant;
-			u_cfg[i].num_of_repeats =
-			       cfg->extracts[i].extract.constant.num_of_repeats;
-			break;
-		default:
-			return -EINVAL;
-		}
-	}
-	params[0] |= mc_enc(0, 8, cfg->num_extracts);
-	params[0] = cpu_to_le64(params[0]);
-
-	for (i = 0; i < DPKG_MAX_NUM_OF_EXTRACTS; i++) {
-		params[param] |= mc_enc(0, 8, u_cfg[i].prot);
-		params[param] |= mc_enc(8, 4, u_cfg[i].type);
-		params[param] |= mc_enc(16, 8, u_cfg[i].size);
-		params[param] |= mc_enc(24, 8, u_cfg[i].offset);
-		params[param] |= mc_enc(32, 32, u_cfg[i].field);
-		params[param] = cpu_to_le64(params[param]);
-		param++;
-		params[param] |= mc_enc(0, 8, u_cfg[i].hdr_index);
-		params[param] |= mc_enc(8, 8, u_cfg[i].constant);
-		params[param] |= mc_enc(16, 8, u_cfg[i].num_of_repeats);
-		params[param] |= mc_enc(
-			24, 8, cfg->extracts[i].num_of_byte_masks);
-		params[param] |= mc_enc(32, 4, cfg->extracts[i].type);
-		params[param] = cpu_to_le64(params[param]);
-		param++;
-		for (j = 0; j < 4; j++) {
-			params[param] |= mc_enc(
-				(offset), 8, cfg->extracts[i].masks[j].mask);
-			params[param] |= mc_enc(
-				(offset + 8), 8,
-				cfg->extracts[i].masks[j].offset);
-			offset += 16;
-		}
-		params[param] = cpu_to_le64(params[param]);
-		param++;
-	}
-	return 0;
-}
-#endif
 
 int dpni_open(struct fsl_mc_io *mc_io,
 	      uint32_t cmd_flags,
@@ -165,6 +82,7 @@ int dpni_create(struct fsl_mc_io *mc_io,
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_CREATE,
 					  cmd_flags,
 					  0);
+
 	DPNI_CMD_CREATE(cmd, cfg);
 
 	/* send command to mc*/
