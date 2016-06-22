@@ -18,6 +18,7 @@ OBJS = restool.o \
        dpdcei_commands.o \
        dpaiop_commands.o \
        dpdbg_commands.o \
+       dprtc_commands.o \
        mc_v8/dprc.o \
        mc_v8/dpmng.o \
        mc_v8/dpni.o \
@@ -36,6 +37,7 @@ OBJS = restool.o \
        mc_v9/dpsw.o \
        mc_v9/dpdmux.o \
        mc_v9/dpdbg.o \
+       mc_v9/dprtc.o \
        mc_v8/fsl_mc_sys.o
 
 CFLAGS = ${EXTRA_CFLAGS} \
