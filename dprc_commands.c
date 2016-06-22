@@ -39,6 +39,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
+#include "dprc_commands_generate_dpl.h"
 
 #define ALL_DPRC_OPTS (				\
 	DPRC_CFG_OPT_SPAWN_ALLOWED |		\
@@ -339,6 +340,23 @@ static struct option dprc_disconnect_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dprc_disconnect_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+/**
+ * dpl generate command options
+ */
+enum dpl_generate_options {
+        GENERATE_OPT_HELP = 0,
+};
+
+struct option dpl_generate_options[] = {
+        [GENERATE_OPT_HELP] = {
+                .name = "help",
+        },
+
+        { 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dpl_generate_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
 static const struct flib_ops dprc_ops = {
 	.obj_open = dprc_open,
 	.obj_close = dprc_close,
@@ -367,6 +385,7 @@ static int cmd_dprc_help(void)
 		"   connect - connects 2 objects, creating a link between them.\n"
 		"   disconnect - removes the link between two objects. Either endpoint can be specified\n"
 		"		 as the target of the operation.\n"
+		"   generate-dpl - generate a dts file of the current data path layout.\n" 
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
 		"\n";
@@ -2184,6 +2203,33 @@ out:
 	return error;
 }
 
+static int cmd_dpl_generate(void)
+{
+        int error;
+
+        static const char usage_msg[] =
+                "\n"
+                "Usage: restool dpl generate\n"
+                "       This will generate a dts file called dynamic-dpl.dts\n"
+                "       e.g. 'restool dpl generate'\n"
+                "\n";
+
+        if (restool.cmd_option_mask & ONE_BIT_MASK(GENERATE_OPT_HELP)) {
+                printf(usage_msg);
+                restool.cmd_option_mask &= ~ONE_BIT_MASK(GENERATE_OPT_HELP);
+                return 0;
+        }
+
+        if (restool.obj_name != NULL) {
+                ERROR_PRINTF(
+                        "Unexpected argument: \'%s\'\n\n", restool.obj_name);
+                printf(usage_msg);
+                return -EINVAL;
+        }	
+	error = dpl_generate();
+	return error;
+}
+
 /**
  * DPRC command table
  */
@@ -2240,6 +2286,10 @@ struct object_command dprc_commands[] = {
 	{ .cmd_name = "disconnect",
 	  .options = dprc_disconnect_options,
 	  .cmd_func = cmd_dprc_disconnect },
+
+	{ .cmd_name = "generate-dpl",
+          .options = dpl_generate_options,
+          .cmd_func = cmd_dpl_generate },
 
 	{ .cmd_name = NULL },
 };

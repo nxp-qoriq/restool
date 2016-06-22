@@ -5,6 +5,7 @@ CC = $(CROSS_COMPILE)gcc
 
 OBJS = restool.o \
        dprc_commands.o \
+       dprc_commands_generate_dpl.o \
        dpni_commands.o \
        dpio_commands.o \
        dpbp_commands.o \
