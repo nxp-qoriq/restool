@@ -332,5 +332,6 @@ extern struct object_command dpdcei_commands[];
 extern struct object_command dpaiop_commands[];
 extern struct object_command dpdbg_commands[];
 extern struct object_command dprtc_commands[];
+extern struct object_command dpdmai_commands[];
 
 #endif /* _RESTOOL_H_ */

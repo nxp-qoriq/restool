@@ -137,6 +137,11 @@ static const struct obj_command_versions dprtc_command_versions[] = {
 	{ .version = 0, .obj_commands = NULL },
 };
 
+static const struct obj_command_versions dpdmai_command_versions[] = {
+	{ .version = 2, .obj_commands = dpdmai_commands },
+	{ .version = 0, .obj_commands = NULL },
+};
+
 static const struct object_cmd_parser object_cmd_parsers[] = {
 	{ .obj_type = "dprc",   .obj_commands_versions = dprc_command_versions   },
 	{ .obj_type = "dpni",   .obj_commands_versions = dpni_command_versions   },
@@ -153,9 +158,8 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 	{ .obj_type = "dpaiop", .obj_commands_versions = dpaiop_command_versions },
 	{ .obj_type = "dpdbg",  .obj_commands_versions = dpdbg_command_versions },
 	{ .obj_type = "dprtc",  .obj_commands_versions = dprtc_command_versions },
-
+	{ .obj_type = "dpdmai", .obj_commands_versions = dpdmai_command_versions },
 };
-
 /**
  * Individual object structs to hold the mapping of the MC Version
  * (major part only) to a corresponding object version(major part 

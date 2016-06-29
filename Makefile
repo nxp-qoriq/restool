@@ -19,6 +19,7 @@ OBJS = restool.o \
        dpaiop_commands.o \
        dpdbg_commands.o \
        dprtc_commands.o \
+       dpdmai_commands.o \
        mc_v8/dprc.o \
        mc_v8/dpmng.o \
        mc_v8/dpni.o \
@@ -33,6 +34,7 @@ OBJS = restool.o \
        mc_v8/dpmac.o \
        mc_v8/dpdcei.o \
        mc_v8/dpaiop.o \
+       mc_v8/dpdmai.o \
        mc_v9/dpni.o \
        mc_v9/dpsw.o \
        mc_v9/dpdmux.o \
