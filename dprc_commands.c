@@ -2209,8 +2209,10 @@ static int cmd_dpl_generate(void)
 
         static const char usage_msg[] =
                 "\n"
-                "Usage: restool dpl generate\n"
+                "Usage: restool dprc generate-dpl\n"
+		"       restool dprc generate-dpl <container>\n"
                 "       This will generate a dts file called dynamic-dpl.dts\n"
+		"       if no container specified defaults to root container\n"
                 "       e.g. 'restool dpl generate'\n"
                 "\n";
 
@@ -2219,14 +2221,9 @@ static int cmd_dpl_generate(void)
                 restool.cmd_option_mask &= ~ONE_BIT_MASK(GENERATE_OPT_HELP);
                 return 0;
         }
-
-        if (restool.obj_name != NULL) {
-                ERROR_PRINTF(
-                        "Unexpected argument: \'%s\'\n\n", restool.obj_name);
-                printf(usage_msg);
-                return -EINVAL;
-        }	
+	
 	error = dpl_generate();
+	
 	return error;
 }
 

@@ -319,17 +319,15 @@ static int find_all_obj_desc(uint32_t dprc_id,
 	curr_cont = malloc(sizeof(struct container_list));
 
 	assert(nesting_level <= MAX_DPRC_NESTING);
-	if (dprc_id == restool.root_dprc_id && prev == NULL) {
-		DEBUG_PRINTF("This is root dprc.\n");
+	if (parent_id == 0) {
+		DEBUG_PRINTF("This is the main dprc.\n");
 		container_head = curr_cont;
-		curr_cont->id = restool.root_dprc_id;
-
 	} else {
 		DEBUG_PRINTF("This is child dprc.\n");
 		prev_cont->next = curr_cont;
-		curr_cont->id = dprc_id;
 	}
 
+	curr_cont->id = dprc_id;
 	curr_cont->parent_id = parent_id;
 	curr_cont->obj = NULL;
 	if (prev)
@@ -347,7 +345,6 @@ static int find_all_obj_desc(uint32_t dprc_id,
 	}
 	curr_cont->options = dprc_attr.options;
 	container_count++;
-
 	error = dprc_get_obj_count(&restool.mc_io, 0,
 				   dprc_handle,
 				   &num_child_devices);
@@ -437,11 +434,15 @@ out:
 	return error;
 }
 
-static int parse_layout(void)
+static int parse_layout(uint32_t dprc_id)
 {
 	FILE *fp;
 	int error;
 	int error2;
+
+	bool opened = false;
+
+	uint16_t dprc_handle;
 
 	fp = fopen(RESTOOL_DYNAMIC_DPL, "a");
 	if (!fp) {
@@ -452,8 +453,33 @@ static int parse_layout(void)
 
 	fprintf(fp, "\t/* Parsing Data Path Layout */\n");
 
-	error = find_all_obj_desc(restool.root_dprc_id,
-				restool.root_dprc_handle, 0, NULL, 0);
+	/* if no dprc specified, use root dprc */
+	if (restool.obj_name == NULL || dprc_id == restool.root_dprc_id) {
+		dprc_id = restool.root_dprc_id;
+		dprc_handle = restool.root_dprc_handle;
+	} else {
+		error = dprc_open(&restool.mc_io, 0, dprc_id, &dprc_handle);
+        	if (error < 0) {
+                	mc_status = flib_error_to_mc_status(error);
+                	ERROR_PRINTF("MC error: %s (status %#x)\n",
+                             	    mc_status_to_string(mc_status), mc_status);
+                	goto out;
+		}
+		opened = true;
+	}
+
+	error = find_all_obj_desc(dprc_id, dprc_handle, 0, NULL, 0);
+
+	if (opened == true) {
+	        error = dprc_close(&restool.mc_io, 0, dprc_handle);
+                if (error < 0) {
+                        mc_status = flib_error_to_mc_status(error);
+                        ERROR_PRINTF("MC error: %s (status %#x)\n",
+                                     mc_status_to_string(mc_status), mc_status);
+                        goto out;
+                }
+
+	}
 
 	if (error)
 		ERROR_PRINTF("Parsing Data Path Layout failed\n");
@@ -469,6 +495,7 @@ static int parse_layout(void)
 	if (error)
 		return error;
 
+out:
 	return 0;
 }
 
@@ -2121,6 +2148,13 @@ static void delete_all_list(void)
 int dpl_generate(void)
 {
 	int error;
+	uint32_t dprc_id = 0;
+
+	if (restool.obj_name != NULL) {
+		error = parse_object_name(restool.obj_name, "dprc", &dprc_id);
+        	if (error < 0)
+                	return error;
+	}
 
 
 	error = create_file();
@@ -2129,7 +2163,7 @@ int dpl_generate(void)
 		return error;
 	}
 
-	error = parse_layout();
+	error = parse_layout(dprc_id);
 	if (error) {
 		ERROR_PRINTF("parse_layout() failed, error=%d\n", error);
 		return error;
