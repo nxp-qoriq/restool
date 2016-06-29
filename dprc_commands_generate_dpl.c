@@ -155,7 +155,6 @@ struct conn_list {
  * @obj_list: tracks the objects in current container, sorted list
  * @id: current container's id
  * @parent_id: current container's parent id. 0 means no parent.
- * @portal_id: portal number of current container
  * @options: configuration options of current container
  */
 struct container_list {
@@ -163,7 +162,6 @@ struct container_list {
 	struct obj_list *obj;
 	int id;
 	int parent_id;
-	int portal_id;
 	uint64_t options;
 };
 
@@ -347,7 +345,6 @@ static int find_all_obj_desc(uint32_t dprc_id,
 			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
-	curr_cont->portal_id = dprc_attr.portal_id;
 	curr_cont->options = dprc_attr.options;
 	container_count++;
 
@@ -567,7 +564,6 @@ static int write_containers(void)
 
 		fprintf(fp, "\n");
 		fprintf(fp, "\t\tdprc@%d {\n", curr_cont->id);
-		fprintf(fp, "\t\t\tportal_id = <%d>;\n", curr_cont->portal_id);
 		fprintf(fp, "\t\t\tcompatible = \"fsl,dprc\";\n");
 		if (curr_cont->parent_id == 0)
 			fprintf(fp, "\t\t\tparent = \"none\";\n");
