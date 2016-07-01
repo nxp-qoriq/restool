@@ -120,11 +120,6 @@ int dprc_close(struct fsl_mc_io	*mc_io,
  */
 #define DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED	0x00000008
 
-/* IOMMU bypass - indicates whether objects of this container are permitted
- * to bypass the IOMMU.
- */
-#define DPRC_CFG_OPT_IOMMU_BYPASS		0x00000010
-
 /* AIOP - Indicates that container belongs to AIOP.  */
 #define DPRC_CFG_OPT_AIOP			0x00000020
 
