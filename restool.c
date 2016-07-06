@@ -1093,6 +1093,37 @@ out:
 	return error;
 }
 
+static int open_root_container(void)
+{
+
+	int error;
+	uint32_t root_dprc_id;
+
+	if (access("/dev/mc_restool", F_OK) == 0) {
+		DEBUG_PRINTF("calling ioctl(RESTOOL_GET_ROOT_DPRC_INFO)\n");
+		error = ioctl(restool.mc_io.fd,
+			      RESTOOL_GET_ROOT_DPRC_INFO,
+			      &root_dprc_id);
+		if (error == -1) {
+			error = -errno;
+			return error;
+		}
+
+		DEBUG_PRINTF("ioctl returned MC-bus's root_dprc_id: %#x\n",
+			     root_dprc_id);
+
+		restool.root_dprc_id = root_dprc_id;
+	}
+
+	if (access("/dev/dprc.1", F_OK) == 0)
+		restool.root_dprc_id = 1;
+		/* TODO: depend on dynamic command line input */
+
+	error = open_dprc(restool.root_dprc_id,
+			  &restool.root_dprc_handle);
+	return error;
+}
+
 int main(int argc, char *argv[])
 {
 	int error;
@@ -1101,7 +1132,6 @@ int main(int argc, char *argv[])
 	const char *cmd_name;
 	bool mc_io_initialized = false;
 	bool root_dprc_opened = false;
-	uint32_t root_dprc_id;
 	enum mc_cmd_status mc_status;
 	bool talk_to_mc = true;
 
@@ -1146,21 +1176,8 @@ int main(int argc, char *argv[])
 	DEBUG_PRINTF("talk_to_mc = %d\n", talk_to_mc);
 	if (talk_to_mc) {
 
-		DEBUG_PRINTF("calling ioctl(RESTOOL_GET_ROOT_DPRC_INFO)\n");
-		error = ioctl(restool.mc_io.fd, RESTOOL_GET_ROOT_DPRC_INFO,
-			      &root_dprc_id);
-		if (error == -1) {
-			error = -errno;
-			goto out;
-		}
+		error = open_root_container();
 
-		DEBUG_PRINTF(
-			"ioctl returned MC-bus's root_dprc_id: %#x\n",
-			root_dprc_id);
-
-		restool.root_dprc_id = root_dprc_id;
-		error = open_dprc(restool.root_dprc_id,
-				&restool.root_dprc_handle);
 		if (error < 0)
 			goto out;
 

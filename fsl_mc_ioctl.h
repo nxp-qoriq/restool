@@ -39,7 +39,10 @@
 #define RESTOOL_GET_ROOT_DPRC_INFO \
 	_IOR(RESTOOL_IOCTL_TYPE, 0x1, uint32_t)
 
-#define RESTOOL_SEND_MC_COMMAND \
+#define RESTOOL_SEND_MC_COMMAND_LEGACY \
 	_IOWR(RESTOOL_IOCTL_TYPE, 0x4, struct mc_command)
+
+#define RESTOOL_SEND_MC_COMMAND \
+	_IOWR(RESTOOL_IOCTL_TYPE, 0xE0, struct mc_command)
 
 #endif /* _FSL_MC_IOCTL_H_ */
