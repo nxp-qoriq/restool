@@ -172,61 +172,6 @@ static struct conn_list *conn_head;
 
 enum mc_cmd_status mc_status;
 
-static int create_file(void)
-{
-	FILE *fp;
-	int error;
-
-	fp = fopen(RESTOOL_DYNAMIC_DPL, "w");
-	if (!fp) {
-		error = -errno;
-		perror("fopen() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
-
-	fprintf(fp, "/*\n");
-	fprintf(fp, " * Copyright 2016 NXP Semiconductors, Inc\n");
-	fprintf(fp, " */\n");
-	fprintf(fp, "\n");
-	fprintf(fp, "/* Start Generating DPL */\n");
-	fprintf(fp, "/dts-v1/;\n");
-	fprintf(fp, "/ {\n");
-
-	error = fclose(fp);
-	if (error) {
-		error = -errno;
-		perror("fclose() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
-
-	return 0;
-}
-
-static int finish_file(void)
-{
-	FILE *fp;
-	int error;
-
-	fp = fopen(RESTOOL_DYNAMIC_DPL, "a");
-	if (!fp) {
-		error = -errno;
-		perror("fopen() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
-
-	fprintf(fp, "};\n");
-	fprintf(fp, "/* Finish Generating DPL */\n");
-
-	error = fclose(fp);
-	if (error) {
-		error = -errno;
-		perror("fclose() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
-
-	return 0;
-}
-
 /**
  * compare_insert_obj - compare the newly added object node with existing ones,
  *			insert in sorted order
@@ -436,22 +381,11 @@ out:
 
 static int parse_layout(uint32_t dprc_id)
 {
-	FILE *fp;
 	int error;
-	int error2;
 
 	bool opened = false;
 
 	uint16_t dprc_handle;
-
-	fp = fopen(RESTOOL_DYNAMIC_DPL, "a");
-	if (!fp) {
-		error = -errno;
-		perror("fopen() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
-
-	fprintf(fp, "\t/* Parsing Data Path Layout */\n");
 
 	/* if no dprc specified, use root dprc */
 	if (restool.obj_name == NULL || dprc_id == restool.root_dprc_id) {
@@ -481,19 +415,10 @@ static int parse_layout(uint32_t dprc_id)
 
 	}
 
-	if (error)
+	if (error) {
 		ERROR_PRINTF("Parsing Data Path Layout failed\n");
-
-
-	error2 = fclose(fp);
-	if (error2) {
-		error = -errno;
-		perror("fclose() failed for " RESTOOL_DYNAMIC_DPL);
-		return error2;
-	}
-
-	if (error)
 		return error;
+	}
 
 out:
 	return 0;
@@ -559,21 +484,13 @@ static void parse_obj_label(FILE *fp, char *label)
 
 static int write_containers(void)
 {
-	FILE *fp;
-	int error;
 	struct container_list *curr_cont;
 	struct obj_list *curr_obj;
 	struct obj_list *prev_obj;
 	int obj_num = 99;
 	int base = 100;
 	int remain;
-
-	fp = fopen(RESTOOL_DYNAMIC_DPL, "a");
-	if (!fp) {
-		error = -errno;
-		perror("fopen() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
+	FILE *fp = stdout;
 
 	fprintf(fp,
 		"\t/*****************************************************************\n");
@@ -631,13 +548,6 @@ static int write_containers(void)
 	}
 
 	fprintf(fp, "\t};\n");
-
-	error = fclose(fp);
-	if (error) {
-		error = -errno;
-		perror("fclose() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
 
 	return 0;
 }
@@ -1588,7 +1498,7 @@ static void parse_dpdmux_method(FILE *fp, enum dpdmux_method method)
 		break;
 #if 0 /* TODO: Enable when MC support added */
 	case DPDMUX_METHOD_S_VLAN:
-		printf("DPDMUX_METHOD_S_VLAN\n");
+		fprintf(fp, "DPDMUX_METHOD_S_VLAN\n");
 		break;
 #endif
 	default:
@@ -1606,7 +1516,7 @@ static void parse_dpdmux_manip(FILE *fp, enum dpdmux_manip manip)
 		break;
 #if 0 /* TODO: Enable when MC support added */
 	case DPDMUX_MANIP_ADD_REMOVE_S_VLAN:
-		printf("DPDMUX_MANIP_ADD_REMOVE_S_VLAN\n");
+		fprintf(fp, "DPDMUX_MANIP_ADD_REMOVE_S_VLAN\n");
 		break;
 #endif
 	default:
@@ -1927,16 +1837,9 @@ out:
 
 static int write_objects(void)
 {
-	FILE *fp;
-	int error;
 	struct obj_list *curr_obj;
+	FILE *fp = stdout;
 
-	fp = fopen(RESTOOL_DYNAMIC_DPL, "a");
-	if (!fp) {
-		error = -errno;
-		perror("fopen() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
 	fprintf(fp, "\n");
 	fprintf(fp,
 		"\t/*****************************************************************\n");
@@ -1997,12 +1900,10 @@ static int write_objects(void)
 			/* dpmac do not need to be parsed now */
 
 		if (strcmp(curr_obj->type, "dpni") == 0) {
-                        if (restool.mc_fw_version.major == 8) {
-                                parse_dpni_v8(fp, curr_obj);
-                        }
-                        else if (restool.mc_fw_version.major == 9) {
-                                parse_dpni_v9(fp, curr_obj);
-                        }
+			if (restool.mc_fw_version.major == 8)
+				parse_dpni_v8(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 9)
+				parse_dpni_v9(fp, curr_obj);
                 }
 
 
@@ -2017,12 +1918,10 @@ static int write_objects(void)
 		}
 
 		if (strcmp(curr_obj->type, "dpsw") == 0) {
-                        if (restool.mc_fw_version.major == 8) {
-                                parse_dpsw_v8(fp, curr_obj);
-                        }
-                        else if (restool.mc_fw_version.major == 9) {
-                                parse_dpsw_v9(fp, curr_obj);
-                        }
+			if (restool.mc_fw_version.major == 8)
+				parse_dpsw_v8(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 9)
+				parse_dpsw_v9(fp, curr_obj);
 		}
 
 		fprintf(fp, "\t\t};\n");
@@ -2030,29 +1929,14 @@ static int write_objects(void)
 	}
 	fprintf(fp, "\t};\n");
 
-	error = fclose(fp);
-	if (error) {
-		error = -errno;
-		perror("fclose() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
-
 	return 0;
 }
 
 static int write_connections(void)
 {
-	FILE *fp;
-	int error;
 	struct conn_list *curr_conn;
 	int conn_num = 1;
-
-	fp = fopen(RESTOOL_DYNAMIC_DPL, "a");
-	if (!fp) {
-		error = -errno;
-		perror("fopen() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
+	FILE *fp = stdout;
 
 	fprintf(fp, "\n");
 	fprintf(fp,
@@ -2086,13 +1970,6 @@ static int write_connections(void)
 		conn_num++;
 	}
 	fprintf(fp, "\t};\n");
-
-	error = fclose(fp);
-	if (error) {
-		error = -errno;
-		perror("fclose() failed for " RESTOOL_DYNAMIC_DPL);
-		return error;
-	}
 
 	return 0;
 }
@@ -2156,12 +2033,10 @@ int dpl_generate(void)
                 	return error;
 	}
 
+	FILE *fp = stdout;
 
-	error = create_file();
-	if (error) {
-		ERROR_PRINTF("create_file() failed, error=%d\n", error);
-		return error;
-	}
+	fprintf(fp, "/dts-v1/;\n");
+	fprintf(fp, "/ {\n");
 
 	error = parse_layout(dprc_id);
 	if (error) {
@@ -2187,11 +2062,7 @@ int dpl_generate(void)
 		return error;
 	}
 
-	error = finish_file();
-	if (error) {
-		ERROR_PRINTF("finish_file() failed, error=%d\n", error);
-		return error;
-	}
+	fprintf(fp, "};\n");
 
 	delete_all_list();
 
