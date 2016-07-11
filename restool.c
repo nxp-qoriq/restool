@@ -28,9 +28,11 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <dirent.h>
 #include <stdio.h>
 #include <string.h>
 #include <stdint.h>
+#include <stdlib.h>
 #include <errno.h>
 #include <assert.h>
 #include <getopt.h>
@@ -66,6 +68,11 @@ static struct option global_options[] = {
 		.val = 's',
 	},
 
+	[GLOBAL_OPT_ROOT] = {
+		.name = "root",
+		.val = 'r',
+		.has_arg = optional_argument,
+	},
 
 	{ 0 },
 };
@@ -635,6 +642,7 @@ static void print_usage(void)
 		"   -m,--mc-version  Displays mc firmware version\n"
 		"   -h,-?,--help     Displays general help info\n"
 		"   -s, --script     Display script friendly output\n"
+		"   --root=[dprc]    Specifies root container name\n"
 		"\n"
 		"  Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|\n"
 		"                               dpmcp|dpmac|dpdcei|dpaiop>\n"
@@ -678,6 +686,7 @@ static void print_usage_v9(void)
 		"   -m,--mc-version  Displays mc firmware version\n"
 		"   -h,-?,--help     Displays general help info\n"
 		"   -s, --script     Display script friendly output\n"
+		"   --root=[dprc]    Specifies root container name\n"
 		"\n"
 		"  Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|\n"
 		"                               dpmcp|dpmac|dpdcei|dpaiop|dpdbg|dprtc>\n"
@@ -770,6 +779,23 @@ out:
 	return error;
 }
 
+static int check_arg(char *optarg)
+{
+	int str_len = 0;
+
+	str_len = strlen(optarg);
+
+	if (optarg == NULL || str_len > USR_DEV_FILE_SIZE)
+		str_len = -1;
+	else {
+		char *check = "dprc.";
+
+		if (strncmp(optarg, check, 5) != 0)
+			str_len = -1;
+	}
+	return str_len;
+}
+
 static int parse_global_options(int argc, char *argv[],
 				int *next_argv_index)
 {
@@ -816,6 +842,24 @@ static int parse_global_options(int argc, char *argv[],
 
 		case 's':
 			opt_index = GLOBAL_OPT_SCRIPT;
+			break;
+
+		case 'r':
+			opt_index = GLOBAL_OPT_ROOT;
+			int str_len = check_arg(optarg);
+			int size_buff;
+
+			if (str_len < 0) {
+				ERROR_PRINTF("Invalid Argument: incorrect value for root\n");
+				return str_len;
+			}
+
+			size_buff = sprintf(restool.specified_dev_file, optarg);
+			if (size_buff != str_len) {
+				ERROR_PRINTF("sprintf failed\n");
+				return -1;
+			}
+
 			break;
 
 		default:
@@ -1085,13 +1129,88 @@ out:
 	return error;
 }
 
+static int get_device_file(void)
+{
+	int error = 0;
+	int num_char;
+
+	memset(restool.device_file, '\0', DEV_FILE_SIZE);
+
+	if (restool.specified_dev_file[0] != '\0') {
+		int temp_len = strlen(restool.specified_dev_file);
+
+		temp_len += 5;
+		num_char = sprintf(restool.device_file, "/dev/%s",
+				   restool.specified_dev_file);
+		if (num_char != temp_len) {
+			ERROR_PRINTF("sprintf failed\n");
+			error = -1;
+			goto out;
+		}
+		if (access(restool.device_file, F_OK) != 0) {
+			error = -1;
+			ERROR_PRINTF("error: %s does not exist\n",
+				     restool.device_file);
+		}
+	} else if (access("/dev/mc_restool", F_OK) == 0) {
+		num_char = sprintf(restool.device_file, "/dev/mc_restool");
+		if (num_char != 15) {
+			ERROR_PRINTF("sprintf failed\n");
+			error = -1;
+			goto out;
+		}
+	} else {
+		DIR           *d;
+		struct dirent *dir;
+		int num_dev_files = 0;
+		char *dprc_index;
+
+		d = opendir("/dev");
+		if (!d) {
+			ERROR_PRINTF("error opening directory /dev\n");
+			error = -1;
+			goto out;
+		}
+		while ((dir = readdir(d)) != NULL) {
+			if (strncmp(dir->d_name, "dprc.", 5) == 0) {
+				dprc_index = &dir->d_name[5];
+				num_dev_files += 1;
+			}
+		}
+		closedir(d);
+
+		if (num_dev_files == 1) {
+			int temp_len = strlen(dprc_index);
+
+			temp_len += 10;
+			num_char = sprintf(restool.device_file, "/dev/dprc.%s",
+					   dprc_index);
+			if (num_char != temp_len) {
+				ERROR_PRINTF("sprintf error\n");
+				error = -1;
+				goto out;
+			}
+			restool.root_dprc_id = atoi(dprc_index);
+			if (access(restool.device_file, F_OK) != 0)
+				printf("no such dev file\n");
+		} else {
+			error = -1;
+			if (num_dev_files == 0)
+				ERROR_PRINTF("error: Did not find a device file\n");
+			else
+				ERROR_PRINTF("error: multiple root containers\n");
+		}
+	}
+out:
+	return error;
+}
+
 static int open_root_container(void)
 {
-
 	int error;
 	uint32_t root_dprc_id;
 
-	if (access("/dev/mc_restool", F_OK) == 0) {
+	if (strcmp(restool.device_file, "/dev/mc_restool") == 0) {
 		DEBUG_PRINTF("calling ioctl(RESTOOL_GET_ROOT_DPRC_INFO)\n");
 		error = ioctl(restool.mc_io.fd,
 			      RESTOOL_GET_ROOT_DPRC_INFO,
@@ -1103,14 +1222,13 @@ static int open_root_container(void)
 
 		DEBUG_PRINTF("ioctl returned MC-bus's root_dprc_id: %#x\n",
 			     root_dprc_id);
+	} else {
+		char *dev_file = restool.device_file;
 
-		restool.root_dprc_id = root_dprc_id;
+		root_dprc_id = atoi(&dev_file[10]);
 	}
 
-	if (access("/dev/dprc.1", F_OK) == 0)
-		restool.root_dprc_id = 1;
-		/* TODO: depend on dynamic command line input */
-
+	restool.root_dprc_id = root_dprc_id;
 	error = open_dprc(restool.root_dprc_id,
 			  &restool.root_dprc_handle);
 	return error;
@@ -1130,6 +1248,16 @@ int main(int argc, char *argv[])
 	#ifdef DEBUG
 	restool.debug = true;
 	#endif
+
+	memset(restool.specified_dev_file, '\0', USR_DEV_FILE_SIZE);
+
+	error = parse_global_options(argc, argv, &next_argv_index);
+	if (error < 0)
+		goto out;
+
+	error = get_device_file();
+	if (error < 0)
+		goto out;
 
 	DEBUG_PRINTF("restool built on " __DATE__ " " __TIME__ "\n");
 	error = mc_io_init(&restool.mc_io);
@@ -1178,7 +1306,6 @@ int main(int argc, char *argv[])
 		root_dprc_opened = true;
 	}
 
-	error = parse_global_options(argc, argv, &next_argv_index);
 	if (error < 0)
 		goto out;
 
@@ -1225,7 +1352,6 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 
-
 		if (restool.global_option_mask != 0) {
 			print_unexpected_options_error(
 				restool.global_option_mask,
@@ -1245,6 +1371,12 @@ int main(int argc, char *argv[])
 			restool.global_option_mask &=
 				~ONE_BIT_MASK(GLOBAL_OPT_SCRIPT);
 			restool.script = true;
+		}
+
+		if (restool.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_ROOT)) {
+			restool.global_option_mask &=
+				~ONE_BIT_MASK(GLOBAL_OPT_ROOT);
 		}
 
 		int num_remaining_args;
@@ -1288,7 +1420,6 @@ out:
 				error = error2;
 		}
 	}
-
 	if (mc_io_initialized)
 		mc_io_cleanup(&restool.mc_io);
 

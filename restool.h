@@ -52,6 +52,16 @@
 #define RES_TYPE_MAX_LENGTH	15
 
 /**
+ * Max length of a device file
+ */
+#define DEV_FILE_SIZE		15
+
+/**
+ * Max accepted size for a user specified device file
+ */
+#define USR_DEV_FILE_SIZE	7
+
+/**
  * Maximum number of command line options
  */
 #define MAX_NUM_CMD_LINE_OPTIONS	(sizeof(uint32_t) * 8)
@@ -249,6 +259,17 @@ struct restool {
 	 * instead of the whole sentence
 	 */
 	bool script;
+
+	/**
+	 * device file used by restool
+	 */
+	char device_file[DEV_FILE_SIZE];
+
+	/**
+	 * string to hold user specivied device file
+	 */
+	char specified_dev_file[USR_DEV_FILE_SIZE];
+
 };
 
 /**
@@ -259,7 +280,8 @@ enum global_options {
 	GLOBAL_OPT_VERSION,
 	GLOBAL_OPT_MC_VERSION,
 	GLOBAL_OPT_DEBUG,
-	GLOBAL_OPT_SCRIPT
+	GLOBAL_OPT_SCRIPT,
+	GLOBAL_OPT_ROOT
 };
 
 /**
