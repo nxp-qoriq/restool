@@ -156,6 +156,8 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 	int error;
 	struct dpseci_attr dpseci_attr;
 	bool dpseci_opened = false;
+	struct dpseci_tx_queue_attr tx_attr;
+	uint8_t *priorities;
 
 	error = dpseci_open(&restool.mc_io, 0, dpseci_id, &dpseci_handle);
 	if (error < 0) {
@@ -191,6 +193,36 @@ static int print_dpseci_attr(uint32_t dpseci_id,
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf("number of transmit queues: %u\n", dpseci_attr.num_tx_queues);
 	printf("number of receive queues: %u\n", dpseci_attr.num_rx_queues);
+
+	priorities = malloc(dpseci_attr.num_tx_queues * sizeof(*priorities));
+	if (priorities == NULL) {
+		ERROR_PRINTF("malloc failed\n");
+		error = -errno;
+		goto out;
+	}
+
+	for (int i = 0; i < dpseci_attr.num_tx_queues; i++) {
+		error = dpseci_get_tx_queue(&restool.mc_io, 0, dpseci_handle,
+					    i, &tx_attr);
+
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			free(priorities);
+			goto out;
+		}
+
+		priorities[i] = tx_attr.priority;
+	}
+	printf("tx priorities: ");
+	for (int i = 0; i < dpseci_attr.num_tx_queues-1; i++)
+		printf("%d,", priorities[i]);
+
+	printf("%d\n", priorities[dpseci_attr.num_tx_queues-1]);
+
+	free(priorities);
+
 	print_obj_label(target_obj_desc);
 
 	error = 0;
@@ -324,19 +356,15 @@ static int cmd_dpseci_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dpseci create [OPTIONS]\n"
-		"   e.g. create a DPSECI object with all default options:\n"
-		"	restool dpseci create\n"
+		"Usage: restool dpseci create --num-queues=<count> --priorities=<pri1,pri2,...>\n"
 		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPSECI by default options\n"
-		"default is: restool dpseci create --num-queues=2 --priorities=1,2\n"
+		"Arguments:\n"
 		"--num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
 		"--priorities=<priority1,priority2, ...,priority8>\n"
 		"   DPSECI supports num-queues priorities that can be individually set.\n"
 		"   if --num-queues=3, then --priorities=X,Y,Z\n"
 		"   Valid values for <priorityN> are 1-8.\n"
-		"--num-queues and --priorities should be both on or both off\n"
+		"--num-queues and --priorities must both be specified\n"
 		"\n"
 		"e.g. create a DPSECI with 2 rx/tx queues, 2,4 priorities:\n"
 		"   restool dpseci create --num-queues=2 --priorities=2,4\n"
@@ -404,10 +432,9 @@ static int cmd_dpseci_create(void)
 		printf(usage_msg);
 		return -EINVAL;
 	} else {
-		dpseci_cfg.num_tx_queues = 2;
-		dpseci_cfg.num_rx_queues = 2;
-		dpseci_cfg.priorities[0] = 1;
-		dpseci_cfg.priorities[1] = 2;
+		ERROR_PRINTF("--num-queues and --priorities options missing\n");
+		printf(usage_msg);
+		return -EINVAL;
 	}
 
 	error = dpseci_create(&restool.mc_io, 0, &dpseci_cfg, &dpseci_handle);
