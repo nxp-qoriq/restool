@@ -291,34 +291,33 @@ static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs)
 					&endpoint1,
 					&endpoint2,
 					&state);
-		printf("endpoint state: %d\n", state);
-
+		printf("interface %d:\n", k);
 		if (error == 0 && state == -1) {
-			printf("\tinterface %d: No object associated\n", k);
+			printf("\tconnection: none\n");
+			printf("\tlink state: n/a\n");
 		} else if (error == 0) {
 			if (strcmp(endpoint2.type, "dpsw") == 0 ||
 			    strcmp(endpoint2.type, "dpdmux") == 0) {
-				printf("\tinterface %d: %s.%d.%d",
-					k, endpoint2.type, endpoint2.id,
+				printf("\tconnection: %s.%d.%d\n",
+					endpoint2.type, endpoint2.id,
 					endpoint2.if_id);
 			} else if (endpoint2.if_id == 0) {
-				printf("\tinterface %d: %s.%d",
-					k, endpoint2.type, endpoint2.id);
+				printf("\tconnection: %s.%d\n",
+					endpoint2.type, endpoint2.id);
 			}
 
 			if (state == 1)
-				printf(", link is up\n");
+				printf("\tlink state: up\n");
 			else if (state == 0)
-				printf(", link is down\n");
+				printf("\tlink state: down\n");
 			else
-				printf(", link is in error state\n");
-
+				printf("\tlink state: error\n");
 		} else {
 			mc_status = flib_error_to_mc_status(error);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
 				mc_status_to_string(mc_status), mc_status);
-			return error;
 		}
+
 	}
 
 	return 0;
@@ -428,7 +427,7 @@ static int print_dpdmux_attr(uint32_t dpdmux_id,
 	print_dpdmux_manip(dpdmux_attr.manip);
 	printf("number of interfaces (excluding the uplink interface): %u\n",
 		(uint32_t)dpdmux_attr.num_ifs);
-	printf("DPDMUX frame storage memory size: %u\n",
+	printf("frame storage memory size: %u\n",
 		(uint32_t)dpdmux_attr.mem_size);
 	printf("control interface ID: %u\n",
 	       (uint32_t)dpdmux_attr.control_if);
@@ -534,7 +533,7 @@ static int print_dpdmux_attr_v9(uint32_t dpdmux_id,
 	print_dpdmux_manip(dpdmux_attr.manip);
 	printf("number of interfaces (excluding the uplink interface): %u\n",
 		(uint32_t)dpdmux_attr.num_ifs);
-	printf("DPDMUX frame storage memory size: %u\n",
+	printf("frame storage memory size: %u\n",
 		(uint32_t)dpdmux_attr.mem_size);
 	print_obj_label(target_obj_desc);
 
