@@ -1405,7 +1405,20 @@ int main(int argc, char *argv[])
 					  cmd_name,
 					  num_remaining_args - 1,
 					  &argv[next_argv_index + 1]);
+		if (error < 0) {
+			goto out;
+		}
 	}
+
+	DEBUG_PRINTF("calling sytem()\n");
+	error = system("echo 1 > /sys/bus/fsl-mc/rescan");
+	if (error == -1) {
+		error = -errno;
+		DEBUG_PRINTF(
+			"fsl-mc bus rescan failed (error %d)\n", error);
+		goto out;
+	}
+
 out:
 	if (root_dprc_opened) {
 		int error2;
