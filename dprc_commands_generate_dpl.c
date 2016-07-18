@@ -262,6 +262,11 @@ static int find_all_obj_desc(uint32_t dprc_id,
 	if (prev)
 		prev_cont = *prev;
 	curr_cont = malloc(sizeof(struct container_list));
+	if (curr_cont == NULL) {
+		ERROR_PRINTF("malloc failed\n");
+		error = -errno;
+		goto out;
+	}
 
 	assert(nesting_level <= MAX_DPRC_NESTING);
 	if (parent_id == 0) {
@@ -352,6 +357,11 @@ static int find_all_obj_desc(uint32_t dprc_id,
 		} else {
 			struct obj_list *curr_obj =
 				malloc(sizeof(struct obj_list));
+			if (curr_obj == NULL) {
+				ERROR_PRINTF("malloc failed\n");
+				error = -errno;
+				goto out;
+			}
 
 			curr_obj->next = NULL;
 			strncpy(curr_obj->type, obj_desc.type, 16);
@@ -360,6 +370,11 @@ static int find_all_obj_desc(uint32_t dprc_id,
 
 			struct obj_list *curr_obj2 =
 				malloc(sizeof(struct obj_list));
+			if (curr_obj2 == NULL) {
+				ERROR_PRINTF("malloc failed\n");
+				error = -errno;
+				goto out;
+			}
 
 			curr_obj2->next = NULL;
 			strncpy(curr_obj2->type, obj_desc.type, 16);
@@ -931,7 +946,7 @@ static int parse_dpseci(FILE *fp, struct obj_list *curr)
 	priorities = malloc(dpseci_attr.num_tx_queues * sizeof(*priorities));
 	if (priorities == NULL) {
 		ERROR_PRINTF("malloc failed\n");
-		error = errno;
+		error = -errno;
 		goto out;
 	}
 
@@ -1028,6 +1043,11 @@ static int parse_dpci(FILE *fp, struct obj_list *curr)
 	} else {
 		/* dpci has connection */
 		curr_conn = malloc(sizeof(struct conn_list));
+		if (curr_conn == NULL) {
+			ERROR_PRINTF("malloc failed\n");
+			error = -errno;
+			goto out;
+		}
 		curr_conn->next = NULL;
 		strcpy(curr_conn->type1, "dpci");
 		strcpy(curr_conn->type2, "dpci");
@@ -1194,6 +1214,11 @@ static int parse_endpoint_dpl(struct obj_list *curr_obj, uint16_t num_ifs)
 					endpoint2.if_id);
 
 				curr_conn = malloc(sizeof(struct conn_list));
+				if (curr_conn == NULL) {
+					ERROR_PRINTF("malloc failed\n");
+					error = -errno;
+					return error;
+				}
 				curr_conn->next = NULL;
 				strncpy(curr_conn->type1, endpoint1.type,
 					EP_OBJ_TYPE_MAX_LEN);
@@ -1220,6 +1245,11 @@ static int parse_endpoint_dpl(struct obj_list *curr_obj, uint16_t num_ifs)
 					k, endpoint2.type, endpoint2.id);
 
 				curr_conn = malloc(sizeof(struct conn_list));
+				if (curr_conn == NULL) {
+					ERROR_PRINTF("malloc failed\n");
+					error = -errno;
+					return error;
+				}
 				curr_conn->next = NULL;
 				strncpy(curr_conn->type1, endpoint1.type,
 					EP_OBJ_TYPE_MAX_LEN);
