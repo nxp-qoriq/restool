@@ -280,6 +280,7 @@ static int find_all_obj_desc(uint32_t dprc_id,
 	curr_cont->id = dprc_id;
 	curr_cont->parent_id = parent_id;
 	curr_cont->obj = NULL;
+	curr_cont->next = NULL;
 	if (prev)
 		*prev = curr_cont;
 	prev_cont = curr_cont;
