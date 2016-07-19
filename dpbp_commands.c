@@ -75,20 +75,12 @@ C_ASSERT(ARRAY_SIZE(dpbp_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  */
 enum dpbp_create_options {
 	CREATE_OPT_HELP = 0,
-	CREATE_OPT_BUFFER_SIZE,
 };
 
 static struct option dpbp_create_options[] = {
 	[CREATE_OPT_HELP] = {
 		.name = "help",
 		.has_arg = 0,
-		.flag = NULL,
-		.val = 0,
-	},
-
-	[CREATE_OPT_BUFFER_SIZE] = {
-		.name = "buffer-size",
-		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
 	},
@@ -277,22 +269,10 @@ static int cmd_dpbp_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dpbp create [OPTIONS]\n"
-		"   e.g. create a DPBP object with all default options:\n"
-		"	restool dpbp create\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPBP by default options\n"
-		"--buffer-size=<size>\n"
-		"   size should > 0\n"
-		"   Default value is 0x200. i.e. 512\n"
-		"   e.g. restool dpbp create --buffer-size=512\n"
+		"Usage: restool dpbp create\n"
 		"\n";
 
 	int error;
-	long val;
-	char *endptr;
-	char *str;
 	struct dpbp_cfg dpbp_cfg;
 	uint16_t dpbp_handle;
 	struct dpbp_attr dpbp_attr;
@@ -308,23 +288,6 @@ static int cmd_dpbp_create(void)
 			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_BUFFER_SIZE)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_BUFFER_SIZE);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_BUFFER_SIZE];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) || (val < 0)) {
-			printf(usage_msg);
-			return -EINVAL;
-		}
-
-		dpbp_cfg.options = val;
-	} else {
-		dpbp_cfg.options = 512;
 	}
 
 	error = dpbp_create(&restool.mc_io, 0, &dpbp_cfg, &dpbp_handle);
