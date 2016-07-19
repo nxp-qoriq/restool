@@ -73,20 +73,12 @@ C_ASSERT(ARRAY_SIZE(dprtc_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  */
 enum dprtc_create_options {
 	CREATE_OPT_HELP = 0,
-	CREATE_OPT_OPTIONS,
 };
 
 static struct option dprtc_create_options[] = {
 	[CREATE_OPT_HELP] = {
 		.name = "help",
 		.has_arg = 0,
-		.flag = NULL,
-		.val = 0,
-	},
-
-	[CREATE_OPT_OPTIONS] = {
-		.name = "options",
-		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
 	},
@@ -275,21 +267,10 @@ static int cmd_dprtc_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprtc create [OPTIONS]\n"
-		"   e.g. create a DPRTC object with all default options:\n"
-		"	restool dprtc create\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPRTC by default options\n"
-		"--options=<place holder>\n"
-		"   Default value is 0\n"
-		"   e.g. restool dprtc create --options=5\n"
+		"Usage: restool dprtc create\n"
 		"\n";
 
 	int error;
-	long val;
-	char *endptr;
-	char *str;
 	struct dprtc_cfg dprtc_cfg;
 	uint16_t dprtc_handle;
 	struct dprtc_attr dprtc_attr;
@@ -305,23 +286,6 @@ static int cmd_dprtc_create(void)
 			     restool.obj_name);
 		printf(usage_msg);
 		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_OPTIONS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) || (val < 0)) {
-			printf(usage_msg);
-			return -EINVAL;
-		}
-
-		dprtc_cfg.options = val;
-	} else {
-		dprtc_cfg.options = 0;
 	}
 
 	error = dprtc_create(&restool.mc_io, 0, &dprtc_cfg, &dprtc_handle);
