@@ -245,7 +245,7 @@ get_endpoint() {
 usage_addmux() {
 	echo "Create a DPAA2 MUX object
 
-Usage: $0 [OPTIONS] -d=<NUM_IFS> -u=<UP_ID> <endpoint>
+Usage: $0 [OPTIONS] -d=<NUM_IFS> <endpoint>
 
 The options are:
 	-h, --help					This message.
