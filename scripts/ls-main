@@ -249,7 +249,7 @@ Usage: $0 [OPTIONS] -d=<NUM_IFS> -u=<UP_ID> <endpoint>
 
 The options are:
 	-h, --help					This message.
-	-b, --veb					MUX is configured as a VEB. Default is VEPA.
+	-v, --vepa					MUX is configured as a VEPA. Default is VEB.
 	-m, --method					Traffic steering method. One of: DPDMUX_METHOD_NONE,
 							DPDMUX_METHOD_C_VLAN_MAC, DPDMUX_METHOD_MAC,
 							DPDMUX_METHOD_C_VLAN.
@@ -273,7 +273,7 @@ The arguments are:
 Usage examples:
 	#ls-addmux -d=2 dpmac.1				// Creates a MUX with 2 downlinks and uplink connected
 							// to dpmac.1
-	#ls-addmux -b -m=DPDMUX_METHOD_C_VLAN_MAC -e=32 -g=16 -d=4 dpmac.6
+	#ls-addmux -m=DPDMUX_METHOD_C_VLAN_MAC -e=32 -g=16 -d=4 dpmac.6
 							// Creates a MUX with 4 downlinks, uplink connected to
 							// dpmac.6, using VLAN and MAC information for traffic
 							// steering, with maximum 32 entries in FDB and 16
@@ -319,8 +319,8 @@ create_dpdmux() {
 
 # Process ls-addmux command
 process_addmux() {
-	# Comma separated list of DPDMUX options
-	options=""
+	# Comma separated list of DPDMUX options; default configured as VEB
+	options="DPDMUX_OPT_BRIDGE_EN"
 	# Number of virtual interfaces (excluding the uplink interface)
 	num_ifs=
 	#  Where <dmat-method> defines the method of the DMux address table.
@@ -339,8 +339,8 @@ process_addmux() {
 				usage_addmux
 				exit 0
 				;;
-			-b | --veb)
-				options="DPDMUX_OPT_BRIDGE_EN"
+			-v | --vepa)
+				options=""
 				;;
 			-m=* | --method=*)
 				method="${i#*=}"
