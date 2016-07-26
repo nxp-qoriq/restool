@@ -710,7 +710,7 @@ static int parse_dpdmux_create_options(char *options_str, uint64_t *options)
 		}
 
 		if (i == ARRAY_SIZE(options_map)) {
-			ERROR_PRINTF("Invalid optiooon: '%s'\n", opt_str);
+			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
 			return -EINVAL;
 		}
 
