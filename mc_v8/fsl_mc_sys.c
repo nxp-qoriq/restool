@@ -30,6 +30,7 @@
 
 #include <errno.h>
 #include <assert.h>
+#include <string.h>
 #include <fcntl.h>		/* open() */
 #include <unistd.h>		/* close() */
 #include <sys/ioctl.h>
@@ -43,10 +44,7 @@ int mc_io_init(struct fsl_mc_io *mc_io)
 	int fd = -1;
 	int error;
 
-	if (access("/dev/mc_restool", F_OK) == 0)
-		fd = open("/dev/mc_restool", O_RDWR | O_SYNC);
-	else if (access("/dev/dprc.1", F_OK) == 0)
-		fd = open("/dev/dprc.1", O_RDWR | O_SYNC);
+	fd = open(restool.device_file, O_RDWR | O_SYNC);
 
 	if (fd < 0) {
 		error = -errno;
@@ -78,9 +76,9 @@ int mc_send_command(struct fsl_mc_io *mc_io, struct mc_command *cmd)
 {
 	int error;
 
-	if (access("/dev/mc_restool", F_OK) == 0)
+	if (strcmp(restool.device_file, "/dev/mc_restool") == 0)
 		error = ioctl(mc_io->fd, RESTOOL_SEND_MC_COMMAND_LEGACY, cmd);
-	else if (access("/dev/dprc.1", F_OK) == 0)
+	else
 		error = ioctl(mc_io->fd, RESTOOL_SEND_MC_COMMAND, cmd);
 
 	if (error == -1) {
