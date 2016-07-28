@@ -310,8 +310,6 @@ create_dpdmux() {
 	# in order to trigger the probe function.
 	$restool dprc assign "${root_c}" --object="${dpdmux}" --plugged=1
 
-	$restool dprc sync
-
 	if [ -n "$label" ]; then
 		$restool dprc set-label "$dpdmux" --label="$label"
 	fi
@@ -471,8 +469,6 @@ create_dpsw() {
 	# Assign the newly-created DPSW to the Linux container and plug it
 	# in order to trigger the probe function.
 	$restool dprc assign "${root_c}" --object="${dpsw}" --plugged=1
-
-	$restool dprc sync
 
 	if [ -n "$label" ]; then
 		$restool dprc set-label "${dpsw}" --label="$label"
@@ -644,8 +640,6 @@ create_dpni() {
 		fi
 	done
 
-	$restool dprc sync
-
 	# Restrictions: max-tcs must be 1, max-senders must be 8.
 	# Set mac addr to all-zero, allowing the Eth driver to randomly
 	# allocate one.
@@ -664,8 +658,6 @@ create_dpni() {
 	# Assign the newly-created DPNI to the Linux container and plug it
 	# in order to trigger the probe function.
 	$restool dprc assign "$root_c" --object="$dpni" --plugged=1
-
-	$restool dprc sync
 
 	if [ -n "$label" ]; then
 		$restool dprc set-label "$dpni" --label="$label"
