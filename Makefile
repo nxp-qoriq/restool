@@ -1,7 +1,9 @@
 CROSS_COMPILE ?=
 DESTDIR ?=
 
-CC = $(CROSS_COMPILE)gcc
+ifeq ($(origin CC),default)
+	CC := $(CROSS_COMPILE)gcc
+endif
 
 OBJS = restool.o \
        dprc_commands.o \
