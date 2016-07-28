@@ -128,7 +128,7 @@ static int cmd_dpmac_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpmac <command> [--help] [ARGS...]\n"
+		"Usage: restool dpmac <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPMAC object.\n"
 		"   create - creates a new child DPMAC under the root DPRC.\n"
@@ -392,10 +392,15 @@ static int cmd_dpmac_create(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpmac create [OPTIONS]\n"
-		"--mac-id=<number>\n"
 		"\n"
-		"e.g. create a DPMAC with specified mac id:\n"
-		"   restool dpmac create --mac-id=4\n"
+		"OPTIONS:\n"
+		"--mac-id=<number>\n"
+		"   Where <number> specifies the id of the hardware MAC associated with\n"
+		"   the DPMAC object.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"create a DPMAC with specified mac id:\n"
+		"   $ restool dpmac create --mac-id=4\n"
 		"\n";
 
 	int error;

@@ -137,7 +137,7 @@ static int cmd_dpio_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpio <command> [--help] [ARGS...]\n"
+		"Usage: restool dpio <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPIO object.\n"
 		"   create - creates a new child DPIO under the root DPRC.\n"
@@ -300,8 +300,6 @@ static int cmd_dpio_create(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpio create [OPTIONS]\n"
-		"   e.g. create a DPIO object with all default options:\n"
-		"	restool dpio create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPIO by default options\n"
@@ -312,6 +310,10 @@ static int cmd_dpio_create(void)
 		"   Default value is DPIO_LOCAL_CHANNEL\n"
 		"--num-priorities=<number>\n"
 		"   Valid values for <number> are 1-8. Default value is 8.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPIO object with all default options:\n"
+		"   $ restool dpio create\n"
 		"\n";
 
 	int error;

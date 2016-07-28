@@ -136,7 +136,7 @@ static int cmd_dpaiop_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpaiop <command> [--help] [ARGS...]\n"
+		"Usage: restool dpaiop <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPAIOP object.\n"
 		"   create - creates a new child DPAIOP under the root DPRC.\n"
@@ -344,19 +344,13 @@ static int cmd_dpaiop_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dpaiop create --aiop-id=<number> --aiop-container=<container-name>\n"
+		"Usage: restool dpaiop create --aiop-container=<container-name>\n"
+		"   --aiop-container=<container-name>\n"
+		"      Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
 		"\n"
-		"--aiop-container=<container-name>\n"
-		"   Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
-		"\n"
-		"OPTIONS:\n"
-		"--aiop-id=<number>\n"
-		"Specifies the AIOP ID. Currently aiop container could only hold one dpaiop.\n"
-		"Valid number is 0. Default number is 0.\n"
-		"\n"
-		"e.g. create a DPAIOP\n"
-		"   restool dpaiop create --aiop-id=0 --aiop-container=dprc.3\n"
-		"   restool dpaiop create --aiop-container=dprc.3\n"
+		"EXAMPLE:\n"
+		"create a DPAIOP\n"
+		"   $ restool dpaiop create --aiop-container=dprc.3\n"
 		"\n";
 
 	int error;

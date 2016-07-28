@@ -65,7 +65,7 @@ static int cmd_dpdbg_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpdbg <command> [--help] [ARGS...]\n"
+		"Usage: restool dpdbg <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPDBG object.\n"
 		"\n"

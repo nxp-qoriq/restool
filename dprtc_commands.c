@@ -119,7 +119,7 @@ static int cmd_dprtc_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dprtc <command> [--help] [ARGS...]\n"
+		"Usage: restool dprtc <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPRTC object.\n"
 		"   create - creates a new child DPRTC under the root DPRC.\n"

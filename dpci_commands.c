@@ -128,7 +128,7 @@ static int cmd_dpci_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpci <command> [--help] [ARGS...]\n"
+		"Usage: restool dpci <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPCI object.\n"
 		"   create - creates a new child DPCI under the root DPRC.\n"
@@ -310,8 +310,6 @@ static int cmd_dpci_create(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpci create [OPTIONS]\n"
-		"   e.g. create a DPCI object with all default options:\n"
-		"	restool dpci create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPCI by default options\n"
@@ -319,7 +317,12 @@ static int cmd_dpci_create(void)
 		"   specifies the number of priorities\n"
 		"   valid values are 1-2\n"
 		"   Default value is 1\n"
-		"   e.g. restool dpci create --num-priorities=2\n"
+		"\n"
+		"EXAMPLES:\n"
+		"Create a DPCI object with all default options:\n"
+		"   $ restool dpci create\n"
+		"Create a DPCI object with 2 priorities:\n"
+		"   $ restool dpci create --num-priorities=2\n"
 		"\n";
 
 	int error;

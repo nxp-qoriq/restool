@@ -136,7 +136,7 @@ static int cmd_dpseci_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpseci <command> [--help] [ARGS...]\n"
+		"Usage: restool dpseci <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPSECI object.\n"
 		"   create - creates a new child DPSECI under the root DPRC.\n"
@@ -357,17 +357,16 @@ static int cmd_dpseci_create(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpseci create --num-queues=<count> --priorities=<pri1,pri2,...>\n"
+		"   --num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
+		"   --priorities=<priority1,priority2, ...,priority8>\n"
+		"      DPSECI supports num-queues priorities that can be individually set.\n"
+		"      if --num-queues=3, then --priorities=X,Y,Z\n"
+		"      Valid values for <priorityN> are 1-8.\n"
+		"   --num-queues and --priorities must both be specified\n"
 		"\n"
-		"Arguments:\n"
-		"--num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
-		"--priorities=<priority1,priority2, ...,priority8>\n"
-		"   DPSECI supports num-queues priorities that can be individually set.\n"
-		"   if --num-queues=3, then --priorities=X,Y,Z\n"
-		"   Valid values for <priorityN> are 1-8.\n"
-		"--num-queues and --priorities must both be specified\n"
-		"\n"
-		"e.g. create a DPSECI with 2 rx/tx queues, 2,4 priorities:\n"
-		"   restool dpseci create --num-queues=2 --priorities=2,4\n"
+		"EXAMPLE:\n"
+		"Create a DPSECI with 2 rx/tx queues, 2,4 priorities:\n"
+		"   $ restool dpseci create --num-queues=2 --priorities=2,4\n"
 		"\n";
 
 	int error;

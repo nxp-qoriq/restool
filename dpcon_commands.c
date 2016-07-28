@@ -128,7 +128,7 @@ static int cmd_dpcon_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpcon <command> [--help] [ARGS...]\n"
+		"Usage: restool dpcon <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPCON object.\n"
 		"   create - creates a new child DPCON under the root DPRC.\n"
@@ -282,16 +282,17 @@ static int cmd_dpcon_create(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpcon create [OPTIONS]\n"
-		"   e.g. create a DPCON object with all default options:\n"
-		"	restool dpcon create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPCON by default options\n"
 		"--num-priorities=<number>\n"
 		"   Valid values for <number> are 1-8. Default value is 1.\n"
 		"\n"
-		"e.g. create a DPCON with 4 priorities:\n"
-		"   restool dpcon create --num-priorities=4\n"
+		"EXAMPLES:\n"
+		"Create a DPCON object with all default options:\n"
+		"   $ restool dpcon create\n"
+		"Create a DPCON with 4 priorities:\n"
+		"   $ restool dpcon create --num-priorities=4\n"
 		"\n";
 
 	int error;

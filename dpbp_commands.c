@@ -121,7 +121,7 @@ static int cmd_dpbp_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpbp <command> [--help] [ARGS...]\n"
+		"Usage: restool dpbp <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPBP object.\n"
 		"   create - creates a new child DPBP under the root DPRC.\n"

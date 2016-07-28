@@ -191,7 +191,7 @@ static int cmd_dpsw_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpsw <command> [--help] [ARGS...]\n"
+		"Usage: restool dpsw <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPSW object.\n"
 		"   create - creates a new child DPSW under the root DPRC.\n"
@@ -767,8 +767,6 @@ static int cmd_dpsw_create(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpsw create [OPTIONS]\n"
-		"   e.g. create a DPSW object with all default options:\n"
-		"	restool dpsw create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPSW by default options\n"
@@ -791,6 +789,10 @@ static int cmd_dpsw_create(void)
 		"	Default FDB aging time in seconds. Default is 300 seconds.\n"
 		"--max-fdb-mc-groups=<number>\n"
 		"	Number of multicast groups in each FDB table. Default is 32.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPSW object with all default options:\n"
+		"   $ restool dpsw create\n"
 		"\n";
 
 	return create_dpsw(usage_msg);
@@ -978,8 +980,6 @@ static int cmd_dpsw_create_v9(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpsw create [OPTIONS]\n"
-		"   e.g. create a DPSW object with all default options:\n"
-		"	restool dpsw create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPSW by default options\n"
@@ -1002,6 +1002,10 @@ static int cmd_dpsw_create_v9(void)
 		"	Default FDB aging time in seconds. Default is 300 seconds.\n"
 		"--max-fdb-mc-groups=<number>\n"
 		"	Number of multicast groups in each FDB table. Default is 32.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPSW object with all default options:\n"
+		"   $ restool dpsw create\n"
 		"\n";
 
 	return create_dpsw_v9(usage_msg);

@@ -127,7 +127,7 @@ static int cmd_dpdmai_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpdmai <command> [--help] [ARGS...]\n"
+		"Usage: restool dpdmai <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPDMAI object.\n"
 		"   create - creates a new child DPDMAI under the root DPRC.\n"
@@ -315,8 +315,6 @@ static int cmd_dpdmai_create(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpdmai create [OPTIONS]\n"
-		"   e.g. create a DPDMAI object with all default options:\n"
-		"	restool dpdmai create\n"
 		"\n"
 		"OPTIONS:\n"
 		"if options are not specified, create DPDMAI by default options\n"
@@ -324,8 +322,11 @@ static int cmd_dpdmai_create(void)
 		"--priorities=<priority1,priority2>\n"
 		"   Valid values for <priorityN> are 1-8.\n"
 		"\n"
-		"e.g. create a DPDMAI with 2,4 priorities:\n"
-		"   restool dpdmai create --priorities=2,4\n"
+		"EXAMPLES:\n"
+		"create a DPDMAI object with all default options:\n"
+		"   $ restool dpdmai create\n"
+		"create a DPDMAI with 2,4 priorities:\n"
+		"   $ restool dpdmai create --priorities=2,4\n"
 		"\n";
 
 	int error;

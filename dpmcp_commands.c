@@ -120,7 +120,7 @@ static int cmd_dpmcp_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpmcp <command> [--help] [ARGS...]\n"
+		"Usage: restool dpmcp <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPMCP object.\n"
 		"   create - creates a new child DPMCP under the root DPRC.\n"
@@ -270,9 +270,6 @@ static int cmd_dpmcp_create(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpmcp create\n"
-		"\n"
-		"e.g. create a DPMCP\n"
-		"   restool dpmcp create\n"
 		"\n";
 
 	int error;

@@ -136,7 +136,7 @@ static int cmd_dpdcei_help(void)
 {
 	static const char help_msg[] =
 		"\n"
-		"restool dpdcei <command> [--help] [ARGS...]\n"
+		"Usage: restool dpdcei <command> [--help] [ARGS...]\n"
 		"Where <command> can be:\n"
 		"   info - displays detailed information about a DPDCEI object.\n"
 		"   create - creates a new child DPDCEI under the root DPRC.\n"
