@@ -347,7 +347,7 @@ static int cmd_dprc_help(void)
 		"   connect      - connects 2 objects, creating a link between them.\n"
 		"   disconnect   - removes the link between two objects. Either endpoint can\n"
 		"		   be specified as the target of the operation.\n"
-		"   generate-dpl - generate a dts file of the current data path layout.\n" 
+		"   generate-dpl - generate DPL syntax for the specified container\n" 
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
 		"\n";
@@ -2027,13 +2027,18 @@ static int cmd_dpl_generate(void)
         int error;
 
         static const char usage_msg[] =
-                "\n"
-                "Usage: restool dprc generate-dpl\n"
-		"       restool dprc generate-dpl <container>\n"
-                "       This will generate a dts file called dynamic-dpl.dts\n"
-		"       if no container specified defaults to root container\n"
-                "       e.g. 'restool dpl generate'\n"
-                "\n";
+		"\n"
+		"Usage: restool dprc generate-dpl <container>\n"
+		"   <container> specifies the name of the container\n"
+		"\n"
+		"NOTES:\n"
+		"Generates the DPL syntax for the specified container to stdout,\n"
+		"including all child and decendant containers.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Generate a DPL for dprc.1:\n"
+		"   $ restool dprc generate-dpl dprc.1\n"
+		"\n";
 
         if (restool.cmd_option_mask & ONE_BIT_MASK(GENERATE_OPT_HELP)) {
                 printf(usage_msg);
