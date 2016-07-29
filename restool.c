@@ -712,7 +712,7 @@ static void print_try_help(void)
 
 static void print_version(void)
 {
-	printf("Freescale MC restool tool version %s\n", restool_version);
+	printf("restool %s\n", restool_version);
 	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_VERSION);
 }
 
