@@ -265,11 +265,14 @@ static int cmd_dpdcei_info(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpdcei info <dpdcei-object> [--verbose]\n"
-		"   e.g. restool dpdcei info dpdcei.7\n"
 		"\n"
+		"OPTIONS:\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
-		"   e.g. restool dpdcei info dpdcei.7 --verbose\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpdcei.5:\n"
+		"   $ restool dpdcei info dpdcei.5\n"
 		"\n";
 
 	uint32_t obj_id;

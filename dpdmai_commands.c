@@ -238,14 +238,17 @@ out:
 static int cmd_dpdmai_info(void)
 {
 	static const char usage_msg[] =
-	"\n"
-	"Usage: restool dpdmai info <dpdmai-object> [--verbose]\n"
-	"   e.g. restool dpdmai info dpdmai.5\n"
-	"\n"
-	"--verbose\n"
-	"   Shows extended/verbose information about the object\n"
-	"   e.g. restool dpdmai info dpdmai.5 --verbose\n"
-	"\n";
+		"\n"
+		"Usage: restool dpdmai info <dpdmai-object> [--verbose]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--verbose\n"
+		"   Shows extended/verbose information about the object\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpdmai.5:\n"
+		"   $ restool dpdmai info dpdmai.5\n"
+		"\n";
 
 	uint32_t obj_id;
 	int error;

@@ -691,11 +691,14 @@ static int cmd_dpni_info(uint32_t mc_version)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpni info <dpni-object> [--verbose]\n"
-		"   e.g. restool dpni info dpni.7\n"
 		"\n"
+		"OPTIONS:\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
-		"   e.g. restool dpni info dpni.7 --verbose\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpni.5:\n"
+		"   $ restool dpni info dpni.5\n"
 		"\n";
 
 	uint32_t obj_id;

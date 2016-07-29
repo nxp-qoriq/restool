@@ -230,14 +230,17 @@ out:
 static int cmd_dpbp_info(void)
 {
 	static const char usage_msg[] =
-	"\n"
-	"Usage: restool dpbp info <dpbp-object> [--verbose]\n"
-	"   e.g. restool dpbp info dpbp.5\n"
-	"\n"
-	"--verbose\n"
-	"   Shows extended/verbose information about the object\n"
-	"   e.g. restool dpbp info dpbp.5 --verbose\n"
-	"\n";
+		"\n"
+		"Usage: restool dpbp info <dpbp-object> [--verbose]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--verbose\n"
+		"   Shows extended/verbose information about the object\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpbp.5:\n"
+		"   $ restool dpbp info dpbp.5\n"
+		"\n";
 
 	uint32_t obj_id;
 	int error;

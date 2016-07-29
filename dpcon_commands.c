@@ -242,14 +242,17 @@ out:
 static int cmd_dpcon_info(void)
 {
 	static const char usage_msg[] =
-	"\n"
-	"Usage: restool dpcon info <dpcon-object> [--verbose]\n"
-	"   e.g. restool dpcon info dpcon.5\n"
-	"\n"
-	"--verbose\n"
-	"   Shows extended/verbose information about the object\n"
-	"   e.g. restool dpcon info dpcon.5 --verbose\n"
-	"\n";
+		"\n"
+		"Usage: restool dpcon info <dpcon-object> [--verbose]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--verbose\n"
+		"   Shows extended/verbose information about the object\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpcon.5:\n"
+		"   $ restool dpcon info dpcon.5\n"
+		"\n";
 
 	uint32_t obj_id;
 	int error;

@@ -584,11 +584,14 @@ static int cmd_dpdmux_info(uint16_t obj_version)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpdmux info <dpdmux-object> [--verbose]\n"
-		"   e.g. restool dpdmux info dpdmux.7\n"
 		"\n"
+		"OPTIONS:\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
-		"   e.g. restool dpdmux info dpdmux.7 --verbose\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpdmux.5:\n"
+		"   $ restool dpdmux info dpdmux.5\n"
 		"\n";
 
 	uint32_t obj_id;

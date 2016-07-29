@@ -260,14 +260,17 @@ out:
 static int cmd_dpio_info(void)
 {
 	static const char usage_msg[] =
-	"\n"
-	"Usage: restool dpio info <dpio-object> [--verbose]\n"
-	"   e.g. restool dpio info dpio.5\n"
-	"\n"
-	"--verbose\n"
-	"   Shows extended/verbose information about the object\n"
-	"   e.g. restool dpio info dpio.5 --verbose\n"
-	"\n";
+		"\n"
+		"Usage: restool dpio info <dpio-object> [--verbose]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--verbose\n"
+		"   Shows extended/verbose information about the object\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpio.5:\n"
+		"   $ restool dpio info dpio.5\n"
+		"\n";
 
 	uint32_t obj_id;
 	int error;

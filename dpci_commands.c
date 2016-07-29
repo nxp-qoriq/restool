@@ -270,14 +270,17 @@ out:
 static int cmd_dpci_info(void)
 {
 	static const char usage_msg[] =
-	"\n"
-	"Usage: restool dpci info <dpci-object> [--verbose]\n"
-	"   e.g. restool dpci info dpci.8\n"
-	"\n"
-	"--verbose\n"
-	"   Shows extended/verbose information about the object\n"
-	"   e.g. restool dpci info dpci.8 --verbose\n"
-	"\n";
+		"\n"
+		"Usage: restool dpci info <dpci-object> [--verbose]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--verbose\n"
+		"   Shows extended/verbose information about the object\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpci.5:\n"
+		"   $ restool dpci info dpci.5\n"
+		"\n";
 
 	uint32_t obj_id;
 	int error;

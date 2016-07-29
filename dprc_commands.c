@@ -907,8 +907,13 @@ static int cmd_dprc_info(void)
 		"\n"
 		"Usage: restool dprc info <dprc-object> [--verbose]\n"
 		"\n"
+		"OPTIONS:\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dprc.5:\n"
+		"   $ restool dprc info dprc.5\n"
 		"\n";
 
 	uint32_t dprc_id;

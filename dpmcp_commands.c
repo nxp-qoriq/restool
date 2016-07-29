@@ -231,13 +231,16 @@ static int cmd_dpmcp_info(void)
 {
 	static const char usage_msg[] =
 	"\n"
-	"Usage: restool dpmcp info <dpmcp-object> [--verbose]\n"
-	"   e.g. restool dpmcp info dpmcp.5\n"
-	"\n"
-	"--verbose\n"
-	"   Shows extended/verbose information about the object\n"
-	"   e.g. restool dpmcp info dpmcp.5 --verbose\n"
-	"\n";
+		"Usage: restool dpmcp info <dpmcp-object> [--verbose]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--verbose\n"
+		"   Shows extended/verbose information about the object\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpmcp.5:\n"
+		"   $ restool dpmcp info dpmcp.5\n"
+		"\n";
 
 	uint32_t obj_id;
 	int error;

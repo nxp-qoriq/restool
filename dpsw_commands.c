@@ -493,11 +493,14 @@ static int cmd_dpsw_info(uint16_t obj_version)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpsw info <dpsw-object> [--verbose]\n"
-		"   e.g. restool dpsw info dpsw.2\n"
 		"\n"
+		"OPTIONS:\n"
 		"--verbose\n"
 		"   Shows extended/verbose information about the object\n"
-		"   e.g. restool dpsw info dpsw.2 --verbose\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpsw.5:\n"
+		"   $ restool dpsw info dpsw.5\n"
 		"\n";
 
 	uint32_t obj_id;

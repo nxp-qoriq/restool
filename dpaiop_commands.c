@@ -305,14 +305,17 @@ out:
 static int cmd_dpaiop_info(void)
 {
 	static const char usage_msg[] =
-	"\n"
-	"Usage: restool dpaiop info <dpaiop-object> [--verbose]\n"
-	"   e.g. restool dpaiop info dpaiop.5\n"
-	"\n"
-	"--verbose\n"
-	"   Shows extended/verbose information about the object\n"
-	"   e.g. restool dpaiop info dpaiop.5 --verbose\n"
-	"\n";
+		"\n"
+		"Usage: restool dpaiop info <dpaiop-object> [--verbose]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--verbose\n"
+		"   Shows extended/verbose information about the object\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpaiop.5:\n"
+		"   $ restool dpaiop info dpaiop.5\n"
+		"\n";
 
 	uint32_t obj_id;
 	int error;
