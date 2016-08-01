@@ -689,7 +689,7 @@ static void print_usage_v9(void)
 		"   --root=[dprc]    Specifies root container name\n"
 		"\n"
 		"  Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|\n"
-		"                               dpmcp|dpmac|dpdcei|dpaiop|dpdbg|dprtc|dpdmai>\n"
+		"                               dpmcp|dpmac|dpdcei|dpaiop|dprtc|dpdmai>\n"
 		"\n"
 		"  Valid commands vary for each object type.\n"
 		"  Most objects support the following commands:\n"
