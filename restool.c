@@ -622,6 +622,9 @@ static void print_usage(void)
 	static const char usage_msg[] =
 		"OVERVIEW\n"
 		"\n"
+		"restool provides the ability to dynamically create and manage DPAA2\n"
+		"objects and containers.\n"
+		"\n"
 		"  For general help info:\n"
 		"    restool --help\n"
 		"\n"
