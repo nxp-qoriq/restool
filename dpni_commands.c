@@ -543,14 +543,14 @@ static int print_dpni_attr_v9(uint32_t dpni_id,
 
 	memset(&dpni_attr, 0, sizeof(dpni_attr));
 
-	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle, &dpni_attr,
-                                    &ext_cfg);
+	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle,
+				       &dpni_attr, &ext_cfg);
 	if (error < 0) {
-                mc_status = flib_error_to_mc_status(error);
-                ERROR_PRINTF("MC error: %s (status %#x)\n",
-                             mc_status_to_string(mc_status), mc_status);
-                goto out;
-        }
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
 
 	assert(dpni_id == (uint32_t)dpni_attr.id);
 	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
@@ -592,12 +592,12 @@ static int print_dpni_attr_v9(uint32_t dpni_id,
 	print_dpni_options(dpni_attr.options);
 	printf("max senders: %u\n", (uint32_t)dpni_attr.max_senders);
 	printf("max traffic classes: %u\n", (uint32_t)dpni_attr.max_tcs);
-        for (i = 0; i < dpni_attr.max_tcs; i++)
-                printf("\ttc[%d]: max_dist=%d, max_fs_entries=%d\n",
-                        i,
-                        ext_cfg.tc_cfg[i].max_dist,
-                        dpni_attr.options & DPNI_OPT_DIST_FS ?
-                                ext_cfg.tc_cfg[i].max_fs_entries : 0);
+	for (i = 0; i < dpni_attr.max_tcs; i++)
+		printf("\ttc[%d]: max_dist=%d, max_fs_entries=%d\n",
+			i,
+			ext_cfg.tc_cfg[i].max_dist,
+			dpni_attr.options & DPNI_OPT_DIST_FS ?
+				ext_cfg.tc_cfg[i].max_fs_entries : 0);
 	printf("max unicast filters: %u\n",
 	       (uint32_t)dpni_attr.max_unicast_filters);
 	printf("max multicast filters: %u\n",
@@ -721,14 +721,12 @@ static int cmd_dpni_info(uint32_t mc_version)
 	error = parse_object_name(restool.obj_name, "dpni", &obj_id);
 	if (error < 0)
 		goto out;
-	
 
-	if (mc_version == 8) {
+	if (mc_version == 8)
 		error = print_dpni_info(obj_id);
-	}
-	else if (mc_version == 9) {
+	else if (mc_version == 9)
 		error = print_dpni_info_v9(obj_id);
-	}
+
 out:
 	return error;
 }
@@ -1067,7 +1065,7 @@ static int create_dpni(const char *usage_msg)
 			ERROR_PRINTF("Invalid max qos entries\n");
 			return -EINVAL;
 		}
-		printf("max qos entries = %ld\n",val);
+		printf("max qos entries = %ld\n", val);
 		dpni_cfg.adv.max_qos_entries = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_qos_entries = 0;
@@ -1602,18 +1600,19 @@ static int create_dpni_v9(const char *usage_msg)
 	/**
 	 * hack to get get 0.8.x flibs to work with mc
 	 */
-	error = dpni_create_v9(&restool.mc_io, 0, &dpni_cfg, &dpni_extended_cfg, &dpni_handle);
+	error = dpni_create_v9(&restool.mc_io, 0, &dpni_cfg, &dpni_extended_cfg,
+			       &dpni_handle);
 	if (error < 0) {
-                mc_status = flib_error_to_mc_status(error);
-                ERROR_PRINTF("MC error: %s (status %#x)\n",
-                             mc_status_to_string(mc_status), mc_status);
-                return error;
-        }
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
 
 
 	memset(&dpni_attr, 0, sizeof(struct dpni_attr));
-        error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle, &dpni_attr,
-				    &dpni_extended_cfg);	
+	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle,
+				       &dpni_attr, &dpni_extended_cfg);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1806,9 +1805,9 @@ struct object_command dpni_commands_v9[] = {
 	  .options = dpni_info_options,
 	  .cmd_func = cmd_dpni_info_wrapper_v9 },
 
-        { .cmd_name = "create",
-          .options = dpni_create_options,
-          .cmd_func = cmd_dpni_create_v9 },
+	{ .cmd_name = "create",
+	  .options = dpni_create_options,
+	  .cmd_func = cmd_dpni_create_v9 },
 
 	{ .cmd_name = "destroy",
 	  .options = dpni_destroy_options,

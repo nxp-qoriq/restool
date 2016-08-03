@@ -409,7 +409,8 @@ static int print_dpsw_attr_v9(uint32_t dpsw_id,
 	}
 
 	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
-	error = dpsw_get_attributes_v9(&restool.mc_io, 0, dpsw_handle, &dpsw_attr);
+	error = dpsw_get_attributes_v9(&restool.mc_io, 0, dpsw_handle,
+				       &dpsw_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -524,12 +525,11 @@ static int cmd_dpsw_info(uint16_t obj_version)
 	if (error < 0)
 		goto out;
 
-	if (obj_version == 8) {
+	if (obj_version == 8)
 		error = print_dpsw_info(obj_id);
-	}
-	else if (obj_version == 9) {
+	else if (obj_version == 9)
 		error = print_dpsw_info_v9(obj_id);
-	}
+
 out:
 	return error;
 }

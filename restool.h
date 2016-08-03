@@ -136,15 +136,15 @@ struct object_command {
  * structure to hold mapping from version to object commands
  */
 struct obj_command_versions {
-        /**
-         * version # of object-type flibs
-         */
-        uint16_t version;
+	/**
+	 * version # of object-type flibs
+	 */
+	uint16_t version;
 
-        /**
-         * pointer to the correct array of commands for version #
-         */
-        struct object_command *obj_commands;
+	/**
+	 * pointer to the correct array of commands for version #
+	 */
+	struct object_command *obj_commands;
 };
 
 /**
@@ -169,27 +169,26 @@ struct lut_entry {
 	/**
 	 * Name of object type trying to look up
 	 */
-        const char *object;
+	const char *object;
 
 	/**
 	 * array of the different MC Versions this object is found in
 	 */
-        struct version_table *versions_table;
+	struct version_table *versions_table;
 };
 /**
  * holds the MC version as well as the corresponding object version
  */
 struct version_table {
-        /**
-         * MC Versions this object is found in
-         */
-        uint32_t mc_major_version;
+	/**
+	 * MC Versions this object is found in
+	 */
+	uint32_t mc_major_version;
 
-        /**
-         * corresponding object version to MC Version
-         */
-        uint16_t object_version;
-
+	/**
+	 * corresponding object version to MC Version
+	 */
+	uint16_t object_version;
 };
 
 /**

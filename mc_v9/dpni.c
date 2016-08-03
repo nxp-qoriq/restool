@@ -67,20 +67,20 @@ int dpni_create_v9(struct fsl_mc_io *mc_io,
 					  0);
 	DPNI_CMD_CREATE_V9(cmd, cfg);
 
-        /* Flib compatibility HACK, between 0.7.x and 0.8.x. */
-        MC_CMD_OP(cmd, 3, 0, 8, uint8_t, ext_cfg->tc_cfg[0].max_dist);
-        MC_CMD_OP(cmd, 3, 8, 8, uint8_t, ext_cfg->tc_cfg[1].max_dist);
-        MC_CMD_OP(cmd, 3, 16, 8, uint8_t, ext_cfg->tc_cfg[2].max_dist);
-        MC_CMD_OP(cmd, 3, 24, 8, uint8_t, ext_cfg->tc_cfg[3].max_dist);
-        MC_CMD_OP(cmd, 3, 32, 8, uint8_t, ext_cfg->tc_cfg[4].max_dist);
-        MC_CMD_OP(cmd, 3, 40, 8, uint8_t, ext_cfg->tc_cfg[5].max_dist);
-        MC_CMD_OP(cmd, 3, 48, 8, uint8_t, ext_cfg->tc_cfg[6].max_dist);
-        MC_CMD_OP(cmd, 3, 56, 8, uint8_t, ext_cfg->tc_cfg[7].max_dist);
-        MC_CMD_OP(cmd, 4, 0, 16, uint16_t, ext_cfg->ipr_cfg.max_reass_frm_size);
-        MC_CMD_OP(cmd, 4, 16, 16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv4);
-        MC_CMD_OP(cmd, 4, 32, 16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv6);
-        MC_CMD_OP(cmd, 5, 0, 16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv4);
-        MC_CMD_OP(cmd, 5, 16, 16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv6);
+	/* Flib compatibility HACK, between 0.7.x and 0.8.x. */
+	MC_CMD_OP(cmd, 3, 0, 8, uint8_t, ext_cfg->tc_cfg[0].max_dist);
+	MC_CMD_OP(cmd, 3, 8, 8, uint8_t, ext_cfg->tc_cfg[1].max_dist);
+	MC_CMD_OP(cmd, 3, 16, 8, uint8_t, ext_cfg->tc_cfg[2].max_dist);
+	MC_CMD_OP(cmd, 3, 24, 8, uint8_t, ext_cfg->tc_cfg[3].max_dist);
+	MC_CMD_OP(cmd, 3, 32, 8, uint8_t, ext_cfg->tc_cfg[4].max_dist);
+	MC_CMD_OP(cmd, 3, 40, 8, uint8_t, ext_cfg->tc_cfg[5].max_dist);
+	MC_CMD_OP(cmd, 3, 48, 8, uint8_t, ext_cfg->tc_cfg[6].max_dist);
+	MC_CMD_OP(cmd, 3, 56, 8, uint8_t, ext_cfg->tc_cfg[7].max_dist);
+	MC_CMD_OP(cmd, 4, 0, 16, uint16_t, ext_cfg->ipr_cfg.max_reass_frm_size);
+	MC_CMD_OP(cmd, 4, 16, 16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv4);
+	MC_CMD_OP(cmd, 4, 32, 16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv6);
+	MC_CMD_OP(cmd, 5, 0, 16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv4);
+	MC_CMD_OP(cmd, 5, 16, 16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv6);
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -143,28 +143,28 @@ int dpni_get_attributes_v9(struct fsl_mc_io *mc_io,
 	/* retrieve response parameters */
 	DPNI_RSP_GET_ATTR_V9(cmd, attr);
 
-        /* Flib compatibility HACK (0.7.x <--> 0.8.x)
-         * DO NOT RELY ON THIS.
-         */
-        MC_RSP_OP(cmd, 3, 0,  8, uint8_t, ext_cfg->tc_cfg[0].max_dist);
-        MC_RSP_OP(cmd, 3, 8,  8, uint8_t, ext_cfg->tc_cfg[1].max_dist);
-        MC_RSP_OP(cmd, 3, 16, 8, uint8_t, ext_cfg->tc_cfg[2].max_dist);
-        MC_RSP_OP(cmd, 3, 24, 8, uint8_t, ext_cfg->tc_cfg[3].max_dist);
-        MC_RSP_OP(cmd, 3, 32, 8, uint8_t, ext_cfg->tc_cfg[4].max_dist);
-        MC_RSP_OP(cmd, 3, 40, 8, uint8_t, ext_cfg->tc_cfg[5].max_dist);
-        MC_RSP_OP(cmd, 3, 48, 8, uint8_t, ext_cfg->tc_cfg[6].max_dist);
-        MC_RSP_OP(cmd, 3, 56, 8, uint8_t, ext_cfg->tc_cfg[7].max_dist);
-        MC_RSP_OP(cmd, 4, 0, 16, uint16_t, ext_cfg->ipr_cfg.max_reass_frm_size);
-        MC_RSP_OP(cmd, 4, 16,16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv4);
-        MC_RSP_OP(cmd, 4, 32,16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv6);
-        MC_RSP_OP(cmd, 5, 0, 16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv4);
-        MC_RSP_OP(cmd, 5, 16,16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv6);
-        /* In Flib 0.7.x we know we were not capable of passing max_fs_entries,
-         * so we have no choice but inferring them
-         */
-        if (attr->options & DPNI_OPT_DIST_FS)
-                for (i = 0; i < 7; i++)
-                        ext_cfg->tc_cfg[i].max_fs_entries = ext_cfg->tc_cfg[i].max_dist;
+	/* Flib compatibility HACK (0.7.x <--> 0.8.x)
+	 * DO NOT RELY ON THIS.
+	 */
+	MC_RSP_OP(cmd, 3, 0,  8,  uint8_t, ext_cfg->tc_cfg[0].max_dist);
+	MC_RSP_OP(cmd, 3, 8,  8,  uint8_t, ext_cfg->tc_cfg[1].max_dist);
+	MC_RSP_OP(cmd, 3, 16, 8,  uint8_t, ext_cfg->tc_cfg[2].max_dist);
+	MC_RSP_OP(cmd, 3, 24, 8,  uint8_t, ext_cfg->tc_cfg[3].max_dist);
+	MC_RSP_OP(cmd, 3, 32, 8,  uint8_t, ext_cfg->tc_cfg[4].max_dist);
+	MC_RSP_OP(cmd, 3, 40, 8,  uint8_t, ext_cfg->tc_cfg[5].max_dist);
+	MC_RSP_OP(cmd, 3, 48, 8,  uint8_t, ext_cfg->tc_cfg[6].max_dist);
+	MC_RSP_OP(cmd, 3, 56, 8,  uint8_t, ext_cfg->tc_cfg[7].max_dist);
+	MC_RSP_OP(cmd, 4, 0,  16, uint16_t, ext_cfg->ipr_cfg.max_reass_frm_size);
+	MC_RSP_OP(cmd, 4, 16, 16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv4);
+	MC_RSP_OP(cmd, 4, 32, 16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv6);
+	MC_RSP_OP(cmd, 5, 0,  16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv4);
+	MC_RSP_OP(cmd, 5, 16, 16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv6);
+	/* In Flib 0.7.x we know we were not capable of passing max_fs_entries,
+	 * so we have no choice but inferring them
+	 */
+	if (attr->options & DPNI_OPT_DIST_FS)
+		for (i = 0; i < 7; i++)
+			ext_cfg->tc_cfg[i].max_fs_entries = ext_cfg->tc_cfg[i].max_dist;
 
 	return 0;
 }

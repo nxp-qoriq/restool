@@ -58,12 +58,12 @@
 
 /* dprc stuff */
 #define ALL_DPRC_OPTS_DPL (                     \
-        DPRC_CFG_OPT_SPAWN_ALLOWED |            \
-        DPRC_CFG_OPT_ALLOC_ALLOWED |            \
-        DPRC_CFG_OPT_OBJ_CREATE_ALLOWED |       \
-        DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED | \
-        DPRC_CFG_OPT_AIOP |                     \
-        DPRC_CFG_OPT_IRQ_CFG_ALLOWED)
+	DPRC_CFG_OPT_SPAWN_ALLOWED |            \
+	DPRC_CFG_OPT_ALLOC_ALLOWED |            \
+	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED |       \
+	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED | \
+	DPRC_CFG_OPT_AIOP |                     \
+	DPRC_CFG_OPT_IRQ_CFG_ALLOWED)
 
 /* dpni stuff */
 /**
@@ -409,11 +409,11 @@ static int parse_layout(uint32_t dprc_id)
 		dprc_handle = restool.root_dprc_handle;
 	} else {
 		error = dprc_open(&restool.mc_io, 0, dprc_id, &dprc_handle);
-        	if (error < 0) {
-                	mc_status = flib_error_to_mc_status(error);
-                	ERROR_PRINTF("MC error: %s (status %#x)\n",
-                             	    mc_status_to_string(mc_status), mc_status);
-                	goto out;
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			goto out;
 		}
 		opened = true;
 	}
@@ -421,13 +421,13 @@ static int parse_layout(uint32_t dprc_id)
 	error = find_all_obj_desc(dprc_id, dprc_handle, 0, NULL, 0);
 
 	if (opened == true) {
-	        error = dprc_close(&restool.mc_io, 0, dprc_handle);
-                if (error < 0) {
-                        mc_status = flib_error_to_mc_status(error);
-                        ERROR_PRINTF("MC error: %s (status %#x)\n",
-                                     mc_status_to_string(mc_status), mc_status);
-                        goto out;
-                }
+		error = dprc_close(&restool.mc_io, 0, dprc_handle);
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			goto out;
+		}
 
 	}
 
@@ -1321,15 +1321,15 @@ static int parse_dpni_v8(FILE *fp, struct obj_list *curr)
 		goto out;
 	}
 
-	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle, 
+	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle,
 				       &dpni_attr);
 
-        if (error < 0) {
-                mc_status = flib_error_to_mc_status(error);
-                ERROR_PRINTF("MC error: %s (status %#x)\n",
-                             mc_status_to_string(mc_status), mc_status);
-                goto out;
-        }
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
 
 	assert(curr->id == dpni_attr.id);
 	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
@@ -1451,15 +1451,15 @@ static int parse_dpni_v9(FILE *fp, struct obj_list *curr)
 		goto out;
 	}
 
-	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle, &dpni_attr,
-				       &dpni_extended_cfg);
+	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle,
+				       &dpni_attr, &dpni_extended_cfg);
 
-        if (error < 0) {
-                mc_status = flib_error_to_mc_status(error);
-                ERROR_PRINTF("MC error: %s (status %#x)\n",
-                             mc_status_to_string(mc_status), mc_status);
-                goto out;
-        }
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
 
 	assert(curr->id == dpni_attr.id);
 	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
@@ -1672,7 +1672,7 @@ static int parse_dpdmux_v8(FILE *fp, struct obj_list *curr)
 	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n",
 		(uint32_t)dpdmux_attr.num_ifs + 1);
 	fprintf(fp, "\t\t\tcontrol_if = <%#x>;\n",
-                (uint32_t)dpdmux_attr.control_if);
+		(uint32_t)dpdmux_attr.control_if);
 
 	error = 0;
 
@@ -1894,7 +1894,8 @@ static int parse_dpsw_v9(FILE *fp, struct obj_list *curr)
 	}
 
 	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
-	error = dpsw_get_attributes_v9(&restool.mc_io, 0, dpsw_handle, &dpsw_attr);
+	error = dpsw_get_attributes_v9(&restool.mc_io, 0, dpsw_handle,
+				       &dpsw_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2009,17 +2010,15 @@ static int write_objects(void)
 				parse_dpni_v8(fp, curr_obj);
 			else if (restool.mc_fw_version.major == 9)
 				parse_dpni_v9(fp, curr_obj);
-                }
+		}
 
 
 		/* following objects have possible connections and interface*/
 		if (strcmp(curr_obj->type, "dpdmux") == 0) {
-			if (restool.mc_fw_version.major == 8) {
+			if (restool.mc_fw_version.major == 8)
 				parse_dpdmux_v8(fp, curr_obj);
-			}
-			else if (restool.mc_fw_version.major == 9) {
+			else if (restool.mc_fw_version.major == 9)
 				parse_dpdmux_v9(fp, curr_obj);
-			}
 		}
 
 		if (strcmp(curr_obj->type, "dpsw") == 0) {
@@ -2134,8 +2133,8 @@ int dpl_generate(void)
 
 	if (restool.obj_name != NULL) {
 		error = parse_object_name(restool.obj_name, "dprc", &dprc_id);
-        	if (error < 0)
-                	return error;
+		if (error < 0)
+			return error;
 	}
 
 	FILE *fp = stdout;

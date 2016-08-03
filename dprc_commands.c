@@ -308,15 +308,15 @@ C_ASSERT(ARRAY_SIZE(dprc_disconnect_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  * dpl generate command options
  */
 enum dpl_generate_options {
-        GENERATE_OPT_HELP = 0,
+	GENERATE_OPT_HELP = 0,
 };
 
 struct option dpl_generate_options[] = {
-        [GENERATE_OPT_HELP] = {
-                .name = "help",
-        },
+	[GENERATE_OPT_HELP] = {
+		.name = "help",
+	},
 
-        { 0 },
+	{ 0 },
 };
 
 C_ASSERT(ARRAY_SIZE(dpl_generate_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
@@ -347,7 +347,7 @@ static int cmd_dprc_help(void)
 		"   connect      - connects 2 objects, creating a link between them.\n"
 		"   disconnect   - removes the link between two objects. Either endpoint can\n"
 		"		   be specified as the target of the operation.\n"
-		"   generate-dpl - generate DPL syntax for the specified container\n" 
+		"   generate-dpl - generate DPL syntax for the specified container\n"
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
 		"\n";
@@ -704,7 +704,7 @@ static int cmd_dprc_show(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprc show <container>\n"	
+		"Usage: restool dprc show <container>\n"
 		"\n";
 
 	uint32_t dprc_id;
@@ -1600,7 +1600,7 @@ static int cmd_dprc_assign(void)
 		"To move dpni.2 from dprc.1 to dprc.4 and set dpni.2 to be plugged:\n"
 		"  $ restool dprc assign dprc.1 --child=dprc.4 --object=dpni.2 --plugged=1\n"
 		"To set dpni.2 in container dprc.1 to be plugged:\n"
-		"  $ restool dprc assign dprc.1 --object=dprc.2 --plugged=1\n"		
+		"  $ restool dprc assign dprc.1 --object=dprc.2 --plugged=1\n"
 		"\n";
 
 	return do_dprc_assign_or_unassign(usage_msg, true);
@@ -2016,9 +2016,9 @@ out:
 
 static int cmd_dpl_generate(void)
 {
-        int error;
+	int error;
 
-        static const char usage_msg[] =
+	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dprc generate-dpl <container>\n"
 		"   <container> specifies the name of the container\n"
@@ -2032,14 +2032,14 @@ static int cmd_dpl_generate(void)
 		"   $ restool dprc generate-dpl dprc.1\n"
 		"\n";
 
-        if (restool.cmd_option_mask & ONE_BIT_MASK(GENERATE_OPT_HELP)) {
-                printf(usage_msg);
-                restool.cmd_option_mask &= ~ONE_BIT_MASK(GENERATE_OPT_HELP);
-                return 0;
-        }
-	
+	if (restool.cmd_option_mask & ONE_BIT_MASK(GENERATE_OPT_HELP)) {
+		printf(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(GENERATE_OPT_HELP);
+		return 0;
+	}
+
 	error = dpl_generate();
-	
+
 	return error;
 }
 
@@ -2097,8 +2097,8 @@ struct object_command dprc_commands[] = {
 	  .cmd_func = cmd_dprc_disconnect },
 
 	{ .cmd_name = "generate-dpl",
-          .options = dpl_generate_options,
-          .cmd_func = cmd_dpl_generate },
+	  .options = dpl_generate_options,
+	  .cmd_func = cmd_dpl_generate },
 
 	{ .cmd_name = NULL },
 };

@@ -171,7 +171,7 @@ struct dpni_cfg_v9 {
 int dpni_create_v9(struct fsl_mc_io		  *mc_io,
 		   uint32_t			  cmd_flags,
 		   const struct dpni_cfg_v9	  *cfg,
-                   const struct dpni_extended_cfg *ext_cfg,
+		   const struct dpni_extended_cfg *ext_cfg,
 		   uint16_t			  *token);
 
 /**

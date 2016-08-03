@@ -164,13 +164,13 @@ out:
 static int cmd_dpdbg_info(void)
 {
 	static const char usage_msg[] =
-        "\n"
-        "Usage: restool dpdbg info <dpdbg-object>\n"
-        "\n"
-        "EXAMPLE:\n"
-        "Display information about dpdbg.5:\n"
-        "   $ restool dpdbg info dpdbg.5\n"
-        "\n";
+		"\n"
+		"Usage: restool dpdbg info <dpdbg-object>\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Display information about dpdbg.5:\n"
+		"   $ restool dpdbg info dpdbg.5\n"
+		"\n";
 
 	uint32_t obj_id;
 	int error;

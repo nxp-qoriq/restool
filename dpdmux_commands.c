@@ -614,12 +614,11 @@ static int cmd_dpdmux_info(uint16_t obj_version)
 	error = parse_object_name(restool.obj_name, "dpdmux", &obj_id);
 	if (error < 0)
 		goto out;
-	if (obj_version == 8) {
+	if (obj_version == 8)
 		error = print_dpdmux_info(obj_id);
-	}
-	else if (obj_version == 9) {
+	else if (obj_version == 9)
 		error = print_dpdmux_info_v9(obj_id);
-	}
+
 out:
 	return error;
 }
@@ -1109,7 +1108,8 @@ static int create_dpdmux_v9(const char *usage_msg)
 		dpdmux_cfg.adv.max_mc_groups = 0;
 	}
 
-	error = dpdmux_create_v9(&restool.mc_io, 0, &dpdmux_cfg, &dpdmux_handle);
+	error = dpdmux_create_v9(&restool.mc_io, 0, &dpdmux_cfg,
+				 &dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",

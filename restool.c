@@ -169,7 +169,7 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 };
 /**
  * Individual object structs to hold the mapping of the MC Version
- * (major part only) to a corresponding object version(major part 
+ * (major part only) to a corresponding object version(major part
  * only) supported by the MC.  Used in the lookup table below
  */
 struct version_table dpaiop_version_table[] = {
@@ -256,22 +256,22 @@ struct version_table dprtc_version_table[] = {
  * supported object version
  */
 struct lut_entry version_lut[] = {
-        { .object = "dpaiop", .versions_table = dpaiop_version_table },
-        { .object = "dpbp",   .versions_table = dpbp_version_table   },
-        { .object = "dpci",   .versions_table = dpci_version_table   },
-        { .object = "dpcon",  .versions_table = dpcon_version_table  },
-        { .object = "dpdcei", .versions_table = dpcei_version_table  },
-        { .object = "dpdmai", .versions_table = dpmai_version_table  },
-        { .object = "dpdmux", .versions_table = dpdmux_version_table },
-        { .object = "dpio",   .versions_table = dpio_version_table   },
-        { .object = "dpmac",  .versions_table = dpmac_version_table  },
-        { .object = "dpmcp",  .versions_table = dpmcp_version_table  },
-        { .object = "dpni",   .versions_table = dpni_version_table   },
-        { .object = "dprc",   .versions_table = dprc_version_table   },
-        { .object = "dpseci", .versions_table = dpseci_version_table },
-        { .object = "dpsw",   .versions_table = dpsw_version_table   },
-        { .object = "dpdbg",  .versions_table = dpdbg_version_table  },
-        { .object = "dprtc",  .versions_table = dprtc_version_table  },
+	{ .object = "dpaiop", .versions_table = dpaiop_version_table },
+	{ .object = "dpbp",   .versions_table = dpbp_version_table   },
+	{ .object = "dpci",   .versions_table = dpci_version_table   },
+	{ .object = "dpcon",  .versions_table = dpcon_version_table  },
+	{ .object = "dpdcei", .versions_table = dpcei_version_table  },
+	{ .object = "dpdmai", .versions_table = dpmai_version_table  },
+	{ .object = "dpdmux", .versions_table = dpdmux_version_table },
+	{ .object = "dpio",   .versions_table = dpio_version_table   },
+	{ .object = "dpmac",  .versions_table = dpmac_version_table  },
+	{ .object = "dpmcp",  .versions_table = dpmcp_version_table  },
+	{ .object = "dpni",   .versions_table = dpni_version_table   },
+	{ .object = "dprc",   .versions_table = dprc_version_table   },
+	{ .object = "dpseci", .versions_table = dpseci_version_table },
+	{ .object = "dpsw",   .versions_table = dpsw_version_table   },
+	{ .object = "dpdbg",  .versions_table = dpdbg_version_table  },
+	{ .object = "dprtc",  .versions_table = dprtc_version_table  },
 };
 
 struct restool restool;
@@ -704,8 +704,8 @@ static void print_usage_v9(void)
 		"  <object-name> is a string containing object type and ID (e.g. dpni.7)\n"
 		"\n";
 
-        printf(usage_msg);
-        restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
+	printf(usage_msg);
+	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
 }
 
 static void print_try_help(void)
@@ -954,30 +954,27 @@ static uint16_t get_obj_version(const char *obj_type)
 	/*
 	 * get the specific object version lookup table
 	 */
-	for (i = 0; i < ARRAY_SIZE(version_lut); i++){
-		if (strcmp(obj_type, version_lut[i].object) == 0) {
+	for (i = 0; i < ARRAY_SIZE(version_lut); i++) {
+		if (strcmp(obj_type, version_lut[i].object) == 0)
 			lut_obj_entry = &version_lut[i];
-		}
 	}
 
 	if (lut_obj_entry == NULL) {
-        	ERROR_PRINTF("error: invalid object type \'%s\'\n", obj_type);
+		ERROR_PRINTF("error: invalid object type \'%s\'\n", obj_type);
 		goto out;
 	}
 
 	/*
-	 * find the corresponding supported object version number from the MC Version
+	 * find the supported object version number from the MC Version
 	 */
 	versions_table = lut_obj_entry->versions_table;
-	for (i = 0; versions_table[i].mc_major_version != 0; i++){
-                if (mc_major_version == versions_table[i].mc_major_version) {
-                        obj_version = versions_table[i].object_version;
-		}
-        }
+	for (i = 0; versions_table[i].mc_major_version != 0; i++) {
+		if (mc_major_version == versions_table[i].mc_major_version)
+			obj_version = versions_table[i].object_version;
+	}
 
 	if (obj_version == 0) {
-                ERROR_PRINTF("error: invalid MC firmware version %d" 
-			     " for object type \'%s\'\n",
+		ERROR_PRINTF("error: invalid MC firmware version %d for object type \'%s\'\n",
 			     mc_major_version, obj_type);
 		goto out;
 	}
@@ -986,14 +983,14 @@ out:
 	return obj_version;
 }
 
-static struct object_command* get_obj_cmd(const char *obj_type,
+static struct object_command *get_obj_cmd(const char *obj_type,
 					  const char *cmd_name)
 {
-        unsigned int i;
-        const struct object_cmd_parser *obj_cmd_parser = NULL;
+	unsigned int i;
+	const struct object_cmd_parser *obj_cmd_parser = NULL;
 	const struct obj_command_versions *obj_cmd_versions;
-        struct object_command *obj_commands;
-        struct object_command *obj_cmd = NULL;
+	struct object_command *obj_commands;
+	struct object_command *obj_cmd = NULL;
 	uint16_t obj_version;
 
 	/*
@@ -1013,28 +1010,27 @@ static struct object_command* get_obj_cmd(const char *obj_type,
 	}
 
 	/*
-         * lookup object version number supported by MC firmware version
-         */
+	 * lookup object version number supported by MC firmware version
+	 */
 	obj_version = get_obj_version(obj_type);
-	if (obj_version == 0) {
+	if (obj_version == 0)
 		goto out;
-	}
 
 	/*
-	 * Fins the right object_command struct assosiates with version
+	 * Find the right object_command struct assosiates with version
 	 */
 	obj_cmd_versions = obj_cmd_parser->obj_commands_versions;
 	for (i = 0; obj_cmd_versions[i].obj_commands != NULL; i++) {
-		if (obj_version ==  obj_cmd_versions[i].version) {
+		if (obj_version ==  obj_cmd_versions[i].version)
 			obj_commands = obj_cmd_versions[i].obj_commands;
-		}
 	}
 
 	if (obj_commands == NULL) {
-		ERROR_PRINTF("error: invalid object version \'%u\'\n", obj_version);
+		ERROR_PRINTF("error: invalid object version \'%u\'\n",
+			     obj_version);
 		goto out;
 	}
-	
+
 	/*
 	 * Lookup object-level command:
 	 */
@@ -1063,7 +1059,7 @@ static int parse_obj_command(const char *obj_type,
 {
 	int error;
 	int next_argv_index;
-        struct object_command *obj_cmd = NULL;
+	struct object_command *obj_cmd = NULL;
 	struct timespec start_time = { 0 };
 	struct timespec end_time = { 0 };
 	struct timespec latency = { 0 };
@@ -1100,7 +1096,7 @@ static int parse_obj_command(const char *obj_type,
 			error = -EINVAL;
 			goto out;
 		}
-	} else { 
+	} else {
 		if (argc != 1) {
 			ERROR_PRINTF("Invalid command line\n");
 			print_try_help();
@@ -1320,13 +1316,12 @@ int main(int argc, char *argv[])
 			goto out;
 		}
 
-		if (restool.global_option_mask & ONE_BIT_MASK(GLOBAL_OPT_HELP)) {
-			if (restool.mc_fw_version.major == 8) {
+		if (restool.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_HELP)) {
+			if (restool.mc_fw_version.major == 8)
 				print_usage();  /* print help message */
-			}
-			else if (restool.mc_fw_version.major == 9) {
+			else if (restool.mc_fw_version.major == 9)
 				print_usage_v9();  /* print help message */
-			}
 		}
 
 		if (restool.global_option_mask &
@@ -1408,9 +1403,8 @@ int main(int argc, char *argv[])
 					  cmd_name,
 					  num_remaining_args - 1,
 					  &argv[next_argv_index + 1]);
-		if (error < 0) {
+		if (error < 0)
 			goto out;
-		}
 	}
 
 	DEBUG_PRINTF("calling sytem()\n");
