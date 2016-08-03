@@ -596,6 +596,9 @@ The options are:
 							Valid range is [1-8]. Default value is 8.
 	-t, --max-tcs=NUM_TCS				Maximum number of traffic classes.
 							Default value is 1.
+	-k, --max-dist-key-size=KEY_SIZE		Maximum key size for the distribution.
+							Also sets DPNI_OPT_FS_MASK_SUPPORT as an option.
+							Default value is 24.
 
 <endpoint> is one of the following:
 	dpmac.X 					X is the index of the dpmac object
@@ -643,12 +646,13 @@ create_dpni() {
 	# Restrictions: max-tcs must be 1, max-senders must be 8.
 	# Set mac addr to all-zero, allowing the Eth driver to randomly
 	# allocate one.
-	dpni=$($restool --script dpni create		\
-		--mac-addr="$mac_addr"			\
-		--max-senders="$max_senders"		\
-		--max-tcs="$max_tcs"			\
-		--max-dist-per-tc="$max_dist_per_tc"	\
-		--options="$options"			\
+	dpni=$($restool --script dpni create			\
+		--mac-addr="$mac_addr"				\
+		--max-senders="$max_senders"			\
+		--max-tcs="$max_tcs"				\
+		--max-dist-per-tc="$max_dist_per_tc"		\
+		--options="$options"				\
+		$max_dist_key_size_arg				\
 	)
 	if [ -z "$dpni" ]; then
 		echo "Error: dpni object was not created!"
@@ -720,6 +724,10 @@ process_addni() {
 			-t=* | --max-tcs=*)
 				max_tcs="${i#*=}"
 				;;
+			-k=* | --max-dist-key-size=*)
+				max_dist_key_size="${i#*=}"
+				options="$options,DPNI_OPT_FS_MASK_SUPPORT"
+				;;
 			*(dprc.+([0-9])/)dpmac.+([0-9]))
 				no_link=0
 				endpoint="${i#*=}"
@@ -742,6 +750,9 @@ process_addni() {
 				;;
 		esac
 	done
+
+	# create optional --max-dist-key-size argument
+	[ ! -z "$max_dist_key_size" ] &&  max_dist_key_size_arg="--max-dist-key-size=$max_dist_key_size"
 
 	# Check if --no-link the endpoint have been provided otherwise display the usage
 	if [ $no_link -eq 0 ] && [ -z "$endpoint" ]; then
