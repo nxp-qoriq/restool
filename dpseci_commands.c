@@ -419,22 +419,8 @@ static int cmd_dpseci_create(void)
 				error);
 			return error;
 		}
-	} else if (restool.cmd_option_mask &
-		   ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
-		ERROR_PRINTF("options should be both on or both off");
-		printf(usage_msg);
-		return -EINVAL;
-	} else if (restool.cmd_option_mask &
-		   ONE_BIT_MASK(CREATE_OPT_PRIORITIES)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_PRIORITIES);
-		ERROR_PRINTF("options should be both on or both off");
-		printf(usage_msg);
-		return -EINVAL;
 	} else {
-		ERROR_PRINTF("--num-queues and --priorities options missing\n");
+		ERROR_PRINTF("--num-queues and --priorities must be set\n");
 		printf(usage_msg);
 		return -EINVAL;
 	}
