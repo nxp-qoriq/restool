@@ -447,8 +447,9 @@ bool find_obj(char *obj_type, uint32_t obj_id)
 				obj_type, &target_obj_desc,
 				&target_parent_dprc_id, &found);
 
-	if (!found && error < 0) {
-		printf("%s.%u does not exist\n", obj_type, obj_id);
+	if (!found) {
+		if (error == 0)
+			printf("%s.%u does not exist\n", obj_type, obj_id);
 		return false;
 	}
 
