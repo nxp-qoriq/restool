@@ -356,8 +356,9 @@ static int cmd_dpci_create(void)
 		str = restool.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
 		val = strtol(str, &endptr, 0);
 
-		if (STRTOL_ERROR(str, endptr, val, errno)/* ||
-		    (val < 1 || val > 2)*/) {
+		if (STRTOL_ERROR(str, endptr, val, errno) ||
+		    (val < 1 || val > 2)) {
+			ERROR_PRINTF("Invalid value: num-priorities option\n");
 			printf(usage_msg);
 			return -EINVAL;
 		}
