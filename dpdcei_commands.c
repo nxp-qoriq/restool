@@ -279,7 +279,7 @@ static int cmd_dpdcei_info(void)
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
@@ -287,7 +287,7 @@ static int cmd_dpdcei_info(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -341,7 +341,7 @@ static int cmd_dpdcei_create(void)
 	struct dpdcei_attr dpdcei_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
@@ -349,7 +349,7 @@ static int cmd_dpdcei_create(void)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
 			     restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -367,7 +367,7 @@ static int cmd_dpdcei_create(void)
 		}
 	} else {
 		ERROR_PRINTF("--engine option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -386,7 +386,7 @@ static int cmd_dpdcei_create(void)
 		dpdcei_cfg.priority = (uint8_t)val;
 	} else {
 		ERROR_PRINTF("--priority option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -435,14 +435,14 @@ static int cmd_dpdcei_destroy(void)
 
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}

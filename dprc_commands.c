@@ -366,7 +366,7 @@ static int cmd_dprc_sync(void)
 		"\n";
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(SYNC_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(SYNC_OPT_HELP);
 		return 0;
 	}
@@ -374,7 +374,7 @@ static int cmd_dprc_sync(void)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF(
 			"Unexpected argument: \'%s\'\n\n", restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -475,7 +475,7 @@ static int cmd_dprc_list(void)
 		"\n";
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(LIST_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(LIST_OPT_HELP);
 		return 0;
 	}
@@ -483,7 +483,7 @@ static int cmd_dprc_list(void)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF(
 			"Unexpected argument: \'%s\'\n\n", restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -715,7 +715,7 @@ static int cmd_dprc_show(void)
 	const char *res_type;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(SHOW_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(SHOW_OPT_HELP);
 		error = 0;
 		goto out;
@@ -723,7 +723,7 @@ static int cmd_dprc_show(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -754,7 +754,7 @@ static int cmd_dprc_show(void)
 		error = check_resource_type(
 			restool.cmd_option_args[SHOW_OPT_RES_TYPE]);
 		if (error < 0) {
-			printf(usage_msg);
+			puts(usage_msg);
 			goto out;
 		}
 		res_type = restool.cmd_option_args[SHOW_OPT_RES_TYPE];
@@ -921,7 +921,7 @@ static int cmd_dprc_info(void)
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
@@ -929,7 +929,7 @@ static int cmd_dprc_info(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1088,7 +1088,7 @@ static int cmd_dprc_create_child(void)
 	bool has_label = false;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		error = 0;
 		goto out;
@@ -1096,7 +1096,7 @@ static int cmd_dprc_create_child(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1141,7 +1141,7 @@ static int cmd_dprc_create_child(void)
 			ERROR_PRINTF("object label length exceeding %d\n",
 					MC_OBJ_LABEL_MAX_LENGTH);
 			error = -EINVAL;
-			printf(usage_msg);
+			puts(usage_msg);
 			goto out;
 		}
 	} else {
@@ -1184,7 +1184,7 @@ static int cmd_dprc_destroy_child(void)
 	bool found = false;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		error = 0;
 		goto out;
@@ -1340,7 +1340,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 	struct dprc_res_req res_req;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(ASSIGN_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(ASSIGN_OPT_HELP);
 		error = 0;
 		goto out;
@@ -1348,7 +1348,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<parent-container> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1388,7 +1388,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		error = check_resource_type(
 			restool.cmd_option_args[ASSIGN_OPT_RES_TYPE]);
 		if (error < 0) {
-			printf(usage_msg);
+			puts(usage_msg);
 			goto out;
 		}
 		strcpy(res_req.type,
@@ -1397,7 +1397,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		if (!(restool.cmd_option_mask &
 		    ONE_BIT_MASK(ASSIGN_OPT_COUNT))) {
 			ERROR_PRINTF("--count option missing\n");
-			printf(usage_msg);
+			puts(usage_msg);
 			error = -EINVAL;
 			goto out;
 		}
@@ -1488,7 +1488,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				ERROR_PRINTF(
 					"change plugged state? --plugged option required\n"
 					"move objects? child-container should be different from parent-container\n");
-				printf(usage_msg);
+				puts(usage_msg);
 				error = -EINVAL;
 				goto out;
 			}
@@ -1519,7 +1519,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 		}
 	} else { /* invalid command case */
 		ERROR_PRINTF("Invalid command line\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1660,7 +1660,7 @@ static int cmd_dprc_set_label(void)
 
 	memset(&target_obj_desc, 0, sizeof(target_obj_desc));
 	if (restool.cmd_option_mask & ONE_BIT_MASK(SET_LABEL_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_LABEL_OPT_HELP);
 		error = 0;
 		goto out;
@@ -1668,7 +1668,7 @@ static int cmd_dprc_set_label(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1682,7 +1682,7 @@ static int cmd_dprc_set_label(void)
 
 	if (strcmp(obj_type, "dprc") == 0 && obj_id == restool.root_dprc_id) {
 		ERROR_PRINTF("CANNOT set label for root dprc, i.e. dprc.1\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1693,19 +1693,19 @@ static int cmd_dprc_set_label(void)
 		    MC_OBJ_LABEL_MAX_LENGTH) {
 			ERROR_PRINTF("label length > %d characters\n",
 					MC_OBJ_LABEL_MAX_LENGTH);
-			printf(usage_msg);
+			puts(usage_msg);
 			error = -EINVAL;
 			goto out;
 		}
 		if (strlen(restool.cmd_option_args[SET_LABEL_OPT_LABEL]) == 0) {
 			ERROR_PRINTF("label length = 0 charcter\n");
-			printf(usage_msg);
+			puts(usage_msg);
 			error = -EINVAL;
 			goto out;
 		}
 	} else {
 		ERROR_PRINTF("missing --label option\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1825,7 +1825,7 @@ static int cmd_dprc_connect(void)
 	};
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_HELP);
 		error = 0;
 		goto out;
@@ -1833,7 +1833,7 @@ static int cmd_dprc_connect(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<parent-container> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1855,7 +1855,7 @@ static int cmd_dprc_connect(void)
 
 	if (!(restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_ENDPOINT1))) {
 		ERROR_PRINTF("--endpoint1 option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1872,7 +1872,7 @@ static int cmd_dprc_connect(void)
 
 	if (!(restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_ENDPOINT2))) {
 		ERROR_PRINTF("--endpoint2 option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1942,7 +1942,7 @@ static int cmd_dprc_disconnect(void)
 	struct dprc_endpoint endpoint;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DISCONNECT_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(DISCONNECT_OPT_HELP);
 		error = 0;
 		goto out;
@@ -1950,7 +1950,7 @@ static int cmd_dprc_disconnect(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<parent-container> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -1973,7 +1973,7 @@ static int cmd_dprc_disconnect(void)
 	if (!(restool.cmd_option_mask &
 	    ONE_BIT_MASK(DISCONNECT_OPT_ENDPOINT))) {
 		ERROR_PRINTF("--endpoint option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -2033,7 +2033,7 @@ static int cmd_dpl_generate(void)
 		"\n";
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(GENERATE_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(GENERATE_OPT_HELP);
 		return 0;
 	}

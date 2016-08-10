@@ -321,7 +321,7 @@ static int cmd_dpaiop_info(void)
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
@@ -329,7 +329,7 @@ static int cmd_dpaiop_info(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -366,7 +366,7 @@ static int cmd_dpaiop_create(void)
 	uint32_t obj_id;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
@@ -374,7 +374,7 @@ static int cmd_dpaiop_create(void)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
 			     restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -387,7 +387,7 @@ static int cmd_dpaiop_create(void)
 
 		if (STRTOL_ERROR(str, endptr, val, errno) ||
 		    (val != 0)) {
-			printf(usage_msg);
+			puts(usage_msg);
 			return -EINVAL;
 		}
 
@@ -404,14 +404,14 @@ static int cmd_dpaiop_create(void)
 			restool.cmd_option_args[CREATE_OPT_AIOP_CONTAINER],
 			"dprc", &obj_id);
 		if (error < 0) {
-			printf(usage_msg);
+			puts(usage_msg);
 			return error;
 		}
 
 		dpaiop_cfg.aiop_container_id = obj_id;
 	} else {
 		ERROR_PRINTF("--aiop-container option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -461,14 +461,14 @@ static int cmd_dpaiop_destroy(void)
 	bool dpaiop_opened = false;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}

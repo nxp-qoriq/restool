@@ -296,7 +296,7 @@ static int cmd_dpseci_info(void)
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
@@ -304,7 +304,7 @@ static int cmd_dpseci_info(void)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -381,7 +381,7 @@ static int cmd_dpseci_create(void)
 	char *endptr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
@@ -389,7 +389,7 @@ static int cmd_dpseci_create(void)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
 			     restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -421,7 +421,7 @@ static int cmd_dpseci_create(void)
 		}
 	} else {
 		ERROR_PRINTF("--num-queues and --priorities must be set\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -470,14 +470,14 @@ static int cmd_dpseci_destroy(void)
 	bool dpseci_opened = false;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}

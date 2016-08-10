@@ -508,7 +508,7 @@ static int cmd_dpsw_info(uint16_t obj_version)
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
@@ -516,7 +516,7 @@ static int cmd_dpsw_info(uint16_t obj_version)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -599,7 +599,7 @@ static int create_dpsw(const char *usage_msg)
 	struct dpsw_attr dpsw_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
@@ -607,7 +607,7 @@ static int create_dpsw(const char *usage_msg)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
 			     restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -812,7 +812,7 @@ static int create_dpsw_v9(const char *usage_msg)
 	struct dpsw_attr dpsw_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
@@ -820,7 +820,7 @@ static int create_dpsw_v9(const char *usage_msg)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
 			     restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -1029,14 +1029,14 @@ static int cmd_dpsw_destroy(void)
 	bool dpsw_opened = false;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}

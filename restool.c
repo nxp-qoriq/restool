@@ -659,7 +659,7 @@ static void print_usage(void)
 		"  <object-name> is a string containing object type and ID (e.g. dpni.7)\n"
 		"\n";
 
-	printf(usage_msg);
+	puts(usage_msg);
 	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
 }
 
@@ -703,7 +703,7 @@ static void print_usage_v9(void)
 		"  <object-name> is a string containing object type and ID (e.g. dpni.7)\n"
 		"\n";
 
-	printf(usage_msg);
+	puts(usage_msg);
 	restool.global_option_mask &= ~ONE_BIT_MASK(GLOBAL_OPT_HELP);
 }
 
@@ -856,7 +856,7 @@ static int parse_global_options(int argc, char *argv[],
 				return str_len;
 			}
 
-			size_buff = sprintf(restool.specified_dev_file, optarg);
+			size_buff = sprintf(restool.specified_dev_file, "%s", optarg);
 			if (size_buff != str_len) {
 				ERROR_PRINTF("sprintf failed\n");
 				return -1;

@@ -598,7 +598,7 @@ static int cmd_dpdmux_info(uint16_t obj_version)
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_HELP);
 		error = 0;
 		goto out;
@@ -606,7 +606,7 @@ static int cmd_dpdmux_info(uint16_t obj_version)
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
@@ -735,7 +735,7 @@ static int create_dpdmux(const char *usage_msg)
 	struct dpdmux_attr dpdmux_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
 		return 0;
 	}
@@ -743,7 +743,7 @@ static int create_dpdmux(const char *usage_msg)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
 			     restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -809,7 +809,7 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.num_ifs = (uint16_t)val;
 	} else {
 		ERROR_PRINTF("--num-ifs option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -830,7 +830,7 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.control_if = val;
 	} else {
 		ERROR_PRINTF("--control-if option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -991,7 +991,7 @@ static int create_dpdmux_v9(const char *usage_msg)
 	struct dpdmux_attr_v9 dpdmux_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP_V9)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP_V9);
 		return 0;
 	}
@@ -999,7 +999,7 @@ static int create_dpdmux_v9(const char *usage_msg)
 	if (restool.obj_name != NULL) {
 		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
 			     restool.obj_name);
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -1065,7 +1065,7 @@ static int create_dpdmux_v9(const char *usage_msg)
 		dpdmux_cfg.num_ifs = (uint16_t)val;
 	} else {
 		ERROR_PRINTF("--num-ifs option missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		return -EINVAL;
 	}
 
@@ -1189,14 +1189,14 @@ static int cmd_dpdmux_destroy(void)
 
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		printf(usage_msg);
+		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
 		return 0;
 	}
 
 	if (restool.obj_name == NULL) {
 		ERROR_PRINTF("<object> argument missing\n");
-		printf(usage_msg);
+		puts(usage_msg);
 		error = -EINVAL;
 		goto out;
 	}
