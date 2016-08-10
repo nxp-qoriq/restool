@@ -56,6 +56,13 @@ CFLAGS = ${EXTRA_CFLAGS} \
           -Werror \
           -Wundef
 
+VERSION=$(shell test -d .git && git describe)
+ifeq ($(VERSION),)
+VERSION=v1.3
+endif
+
+override CFLAGS += -DVERSION=\"${VERSION}\"
+
 LDFLAGS = -static -Wl,--hash-style=gnu
 
 PREFIX = $(DESTDIR)/sbin
