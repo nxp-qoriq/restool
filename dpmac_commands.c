@@ -394,12 +394,10 @@ static int cmd_dpmac_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dpmac create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"--mac-id=<number>\n"
-		"   Where <number> specifies the id of the hardware MAC associated with\n"
-		"   the DPMAC object.\n"
+		"Usage: restool dpmac create --mac-id=<number>\n"
+		"   --mac-id=<number>\n"
+		"      Where <number> specifies the id of the hardware MAC associated with\n"
+		"      the DPMAC object.\n"
 		"\n"
 		"EXAMPLE:\n"
 		"create a DPMAC with specified mac id:\n"
