@@ -65,8 +65,8 @@ override CFLAGS += -DVERSION=\"${VERSION}\"
 
 LDFLAGS = -static -Wl,--hash-style=gnu
 
-PREFIX = $(DESTDIR)/sbin
-EXEC_PREFIX = $(DESTDIR)/usr/sbin
+PREFIX = $(DESTDIR)/usr/bin
+EXEC_PREFIX = $(DESTDIR)/usr/bin
 
 HEADER_DEPENDENCIES = $(subst .o,.d,$(OBJS))
 
