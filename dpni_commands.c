@@ -968,13 +968,8 @@ static int create_dpni(const char *usage_msg)
 			return error;
 		}
 	} else {
-		if (dpni_cfg.adv.max_tcs <= DPNI_MAX_TC) {
-			for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
-				dpni_cfg.adv.max_dist_per_tc[i] = 1;
-		} else {
-			ERROR_PRINTF("max_tcs is out of effective range\n");
-			return -EINVAL;
-		}
+		for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
+			dpni_cfg.adv.max_dist_per_tc[i] = 1;
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS)) {
@@ -1429,13 +1424,8 @@ static int create_dpni_v9(const char *usage_msg)
 			return error;
 		}
 	} else {
-		if (dpni_cfg.adv.max_tcs <= DPNI_MAX_TC) {
-			for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
-				dpni_extended_cfg.tc_cfg[i].max_dist = 1;
-		} else {
-			ERROR_PRINTF("max_tcs is out of effective range\n");
-			return -EINVAL;
-		}
+		for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
+			dpni_extended_cfg.tc_cfg[i].max_dist = 1;
 	}
 
 	if (restool.cmd_option_mask &
@@ -1453,13 +1443,8 @@ static int create_dpni_v9(const char *usage_msg)
 			return error;
 		}
 	} else {
-		if (dpni_cfg.adv.max_tcs <= DPNI_MAX_TC) {
-			for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
-				dpni_extended_cfg.tc_cfg[i].max_fs_entries = 1;
-		} else {
-			ERROR_PRINTF("max_tcs is out of effective range\n");
-			return -EINVAL;
-		}
+		for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
+			dpni_extended_cfg.tc_cfg[i].max_fs_entries = 1;
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS)) {
