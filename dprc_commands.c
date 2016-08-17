@@ -782,7 +782,7 @@ out:
 
 static void print_dprc_options(uint64_t options)
 {
-	if (options == 0 || (options & ~ALL_DPRC_OPTS) != 0) {
+	if ((options & ~ALL_DPRC_OPTS) != 0) {
 		printf("\tUnrecognized options found...\n");
 		return;
 	}

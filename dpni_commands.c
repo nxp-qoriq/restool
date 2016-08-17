@@ -277,7 +277,7 @@ static int cmd_dpni_help(void)
 
 static void print_dpni_options(uint32_t options)
 {
-	if (options == 0 || (options & ~ALL_DPNI_OPTS) != 0) {
+	if ((options & ~ALL_DPNI_OPTS) != 0) {
 		printf("\tUnrecognized options found...\n");
 		return;
 	}

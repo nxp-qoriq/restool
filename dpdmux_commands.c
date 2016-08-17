@@ -325,7 +325,7 @@ static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs)
 
 static void print_dpdmux_options(uint64_t options)
 {
-	if (options == 0 || (options & ~ALL_DPDMUX_OPTS) != 0) {
+	if ((options & ~ALL_DPDMUX_OPTS) != 0) {
 		printf("\tUnrecognized options found...\n");
 		return;
 	}
