@@ -200,7 +200,7 @@ struct version_table dpcei_version_table[] = {
 	{ .mc_major_version = 10, .object_version = 1 },
 	{ .mc_major_version = 0 }
 };
-struct version_table dpmai_version_table[] = {
+struct version_table dpdmai_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
 	{ .mc_major_version = 10, .object_version = 2 },
@@ -275,7 +275,7 @@ struct lut_entry version_lut[] = {
 	{ .object = "dpci",   .versions_table = dpci_version_table   },
 	{ .object = "dpcon",  .versions_table = dpcon_version_table  },
 	{ .object = "dpdcei", .versions_table = dpcei_version_table  },
-	{ .object = "dpdmai", .versions_table = dpmai_version_table  },
+	{ .object = "dpdmai", .versions_table = dpdmai_version_table },
 	{ .object = "dpdmux", .versions_table = dpdmux_version_table },
 	{ .object = "dpio",   .versions_table = dpio_version_table   },
 	{ .object = "dpmac",  .versions_table = dpmac_version_table  },
