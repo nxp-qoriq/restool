@@ -1808,7 +1808,7 @@ static int cmd_dprc_connect(void)
 		"\n"
 		"EXAMPLE:\n"
 		"To connect dpni.8 to dpsw.1.0:\n"
-		"   $ restool dprc disconnect dprc.1 --endpoint=dpsw.1.0\n"
+		"   $ restool dprc connect dprc.1 --endpoint1=dpsw.1.0 --endpoint2=dpni.8\n"
 		"\n";
 
 	uint16_t dprc_handle;
