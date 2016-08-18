@@ -173,79 +173,95 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 struct version_table dpaiop_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 1 },
 	{ .mc_major_version = 9, .object_version = 1 },
+	{ .mc_major_version = 10, .object_version = 1 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpbp_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
+	{ .mc_major_version = 10, .object_version = 2 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpci_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
+	{ .mc_major_version = 10, .object_version = 2 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpcon_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
+	{ .mc_major_version = 10, .object_version = 2 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpcei_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 1 },
 	{ .mc_major_version = 9, .object_version = 1 },
+	{ .mc_major_version = 10, .object_version = 1 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpmai_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
+	{ .mc_major_version = 10, .object_version = 2 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpdmux_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 4 },
 	{ .mc_major_version = 9, .object_version = 5 },
+	{ .mc_major_version = 10, .object_version = 5 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpio_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 3 },
 	{ .mc_major_version = 9, .object_version = 3 },
+	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpmac_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 3 },
 	{ .mc_major_version = 9, .object_version = 3 },
+	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpmcp_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 3 },
+	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpni_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 5 },
 	{ .mc_major_version = 9, .object_version = 6 },
+	{ .mc_major_version = 10, .object_version = 6 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dprc_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 5 },
 	{ .mc_major_version = 9, .object_version = 5 },
+	{ .mc_major_version = 10, .object_version = 5 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpseci_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 3 },
 	{ .mc_major_version = 9, .object_version = 3 },
+	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpsw_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 6 },
 	{ .mc_major_version = 9, .object_version = 7 },
+	{ .mc_major_version = 10, .object_version = 7 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpdbg_version_table[] = {
 	{ .mc_major_version = 9, .object_version = 1 },
+	{ .mc_major_version = 10, .object_version = 1 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dprtc_version_table[] = {
 	{ .mc_major_version = 9, .object_version = 1 },
+	{ .mc_major_version = 10, .object_version = 1 },
 	{ .mc_major_version = 0 }
 };
 
