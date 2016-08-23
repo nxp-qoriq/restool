@@ -336,8 +336,6 @@ static int cmd_dpdcei_create(void)
 	struct dpdcei_cfg dpdcei_cfg;
 	uint16_t dpdcei_handle;
 	long val;
-	char *str;
-	char *endptr;
 	struct dpdcei_attr dpdcei_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -373,16 +371,11 @@ static int cmd_dpdcei_create(void)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PRIORITY)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PRIORITY);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_PRIORITY];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 1 || val > 8)) {
-			ERROR_PRINTF("Invalid priority\n");
+		error = get_option_value(CREATE_OPT_PRIORITY, &val,
+					 "Invalid value: priority option",
+					 1, 8);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpdcei_cfg.priority = (uint8_t)val;
 	} else {
 		ERROR_PRINTF("--priority option missing\n");

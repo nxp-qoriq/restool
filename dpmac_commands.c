@@ -406,8 +406,6 @@ static int cmd_dpmac_create(void)
 
 	int error;
 	long val;
-	char *endptr;
-	char *str;
 	struct dpmac_cfg dpmac_cfg;
 	uint16_t dpmac_handle;
 	struct dpmac_attr dpmac_attr;
@@ -428,16 +426,11 @@ static int cmd_dpmac_create(void)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ID)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAC_ID);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAC_ID];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > INT32_MAX)) {
-			puts(usage_msg);
+		error = get_option_value(CREATE_OPT_MAC_ID, &val,
+					 "Invalid option: mac-id value",
+					 0, INT32_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpmac_cfg.mac_id = val;
 	} else {
 		ERROR_PRINTF("--mac-id option missing\n");

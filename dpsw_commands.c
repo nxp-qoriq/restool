@@ -594,8 +594,6 @@ static int create_dpsw(const char *usage_msg)
 	struct dpsw_cfg dpsw_cfg = {0};
 	uint16_t dpsw_handle;
 	long val;
-	char *str;
-	char *endptr;
 	struct dpsw_attr dpsw_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -613,16 +611,11 @@ static int create_dpsw(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_NUM_IFS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid number of interfaces\n");
+		error = get_option_value(CREATE_OPT_NUM_IFS, &val,
+					 "Invalid number of interfaces",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.num_ifs = (uint16_t)val;
 	} else {
 		dpsw_cfg.num_ifs = 4; /* Todo: default value not defined */
@@ -645,16 +638,11 @@ static int create_dpsw(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_VLANS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_VLANS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_VLANS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid max vlans\n");
+		error = get_option_value(CREATE_OPT_MAX_VLANS, &val,
+					 "Invalid max vlans",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.max_vlans = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_vlans = 0;
@@ -664,16 +652,10 @@ static int create_dpsw(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDBS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDBS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_FDBS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max FDB\n");
+		error = get_option_value(CREATE_OPT_MAX_FDBS, &val,
+					 "Invalid max FDB", 0, UINT8_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.max_fdbs = (uint8_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdbs = 0;
@@ -683,16 +665,11 @@ static int create_dpsw(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_FDB_ENTRIES];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid number of FDB entries\n");
+		error = get_option_value(CREATE_OPT_MAX_FDB_ENTRIES, &val,
+					 "Invalid number of FDB entries",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.max_fdb_entries = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdb_entries = 0;
@@ -702,16 +679,11 @@ static int create_dpsw(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_FDB_AGING_TIME];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid FDB aging time\n");
+		error = get_option_value(CREATE_OPT_FDB_AGING_TIME, &val,
+					 "Invalid FDB aging time",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.fdb_aging_time = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.fdb_aging_time = 0;
@@ -721,17 +693,11 @@ static int create_dpsw(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_FDB_MC_GROUPS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF(
-				"Invalid number of multicast groups in each FDB table\n");
+		error = get_option_value(CREATE_OPT_MAX_FDB_MC_GROUPS, &val,
+					 "Invalid number of multicast groups",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.max_fdb_mc_groups = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdb_mc_groups = 0;
@@ -807,8 +773,6 @@ static int create_dpsw_v9(const char *usage_msg)
 	struct dpsw_cfg_v9 dpsw_cfg = {0};
 	uint16_t dpsw_handle;
 	long val;
-	char *str;
-	char *endptr;
 	struct dpsw_attr dpsw_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -826,16 +790,11 @@ static int create_dpsw_v9(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_NUM_IFS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid number of interfaces\n");
+		error = get_option_value(CREATE_OPT_NUM_IFS, &val,
+					 "Invalid number of interfaces",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.num_ifs = (uint16_t)val;
 	} else {
 		dpsw_cfg.num_ifs = 4; /* Todo: default value not defined */
@@ -852,22 +811,17 @@ static int create_dpsw_v9(const char *usage_msg)
 				error);
 			return error;
 		}
-	} else { /* Todo: default option may change with spec */
+	} else {
 		dpsw_cfg.adv.options = 0;
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_VLANS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_VLANS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_VLANS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid max vlans\n");
+		error = get_option_value(CREATE_OPT_MAX_VLANS, &val,
+					 "Invalid max vlans",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.max_vlans = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_vlans = 0;
@@ -877,16 +831,10 @@ static int create_dpsw_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDBS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDBS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_FDBS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max FDB\n");
+		error = get_option_value(CREATE_OPT_MAX_FDBS, &val,
+					 "Invalid max FDB", 0, UINT8_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.max_fdbs = (uint8_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdbs = 0;
@@ -896,16 +844,11 @@ static int create_dpsw_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_FDB_ENTRIES];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid number of FDB entries\n");
+		error = get_option_value(CREATE_OPT_MAX_FDB_ENTRIES, &val,
+					 "Invalid number of FDB entries",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.max_fdb_entries = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdb_entries = 0;
@@ -915,16 +858,11 @@ static int create_dpsw_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_FDB_AGING_TIME];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid FDB aging time\n");
+		error = get_option_value(CREATE_OPT_FDB_AGING_TIME, &val,
+					 "Invalid FDB aging time",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.fdb_aging_time = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.fdb_aging_time = 0;
@@ -934,17 +872,11 @@ static int create_dpsw_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_FDB_MC_GROUPS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF(
-				"Invalid number of multicast groups in each FDB table\n");
+		error = get_option_value(CREATE_OPT_MAX_FDB_MC_GROUPS, &val,
+					 "Invalid number of multicast groups",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpsw_cfg.adv.max_fdb_mc_groups = (uint16_t)val;
 	} else {
 		dpsw_cfg.adv.max_fdb_mc_groups = 0;

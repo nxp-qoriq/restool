@@ -884,8 +884,6 @@ static int create_dpni(const char *usage_msg)
 	struct dpni_cfg dpni_cfg;
 	uint16_t dpni_handle;
 	long val;
-	char *str;
-	char *endptr;
 	struct dpni_attr dpni_attr;
 
 	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
@@ -938,16 +936,10 @@ static int create_dpni(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_TCS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_TCS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_TCS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > DPNI_MAX_TC)) {
-			ERROR_PRINTF("Invalid max tcs\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_TCS, &val,
+					 "Invalid max tcs", 0, DPNI_MAX_TC);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_tcs = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_tcs = 1; /* set default value 1 */
@@ -975,16 +967,10 @@ static int create_dpni(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS)) {
 		restool.cmd_option_mask &=
 				~ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_SENDERS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max senders\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_SENDERS, &val,
+					 "Invalid max senders", 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_senders = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_senders = 1;
@@ -994,16 +980,10 @@ static int create_dpni(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_UNICAST_FILTERS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max unicast filters\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_UNICAST_FILTERS, &val,
+					 "Invalid max unicast filters", 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_unicast_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_unicast_filters = 0;
@@ -1013,16 +993,11 @@ static int create_dpni(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_MULTICAST_FILTERS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max multicast filters\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_MULTICAST_FILTERS, &val,
+					 "Invalid max multicast filters",
+					 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_multicast_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_multicast_filters = 0;
@@ -1032,16 +1007,11 @@ static int create_dpni(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_VLAN_FILTERS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max vlan filters\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_VLAN_FILTERS, &val,
+					 "Invalid max vlan filters",
+					 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_vlan_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_vlan_filters = 0;
@@ -1051,16 +1021,10 @@ static int create_dpni(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_QOS_ENTRIES];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max qos entries\n");
-			return -EINVAL;
-		}
-		printf("max qos entries = %ld\n", val);
+		error = get_option_value(CREATE_OPT_MAX_QOS_ENTRIES, &val,
+					 "Invalid max qos", 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_qos_entries = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_qos_entries = 0;
@@ -1070,16 +1034,10 @@ static int create_dpni(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_QOS_KEY_SIZE];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max qos key size\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_QOS_KEY_SIZE, &val,
+					 "Invalid max qos key size", 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_qos_key_size = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_qos_key_size = 0;
@@ -1089,19 +1047,11 @@ static int create_dpni(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE);
-		dpni_cfg.adv.max_dist_key_size = (uint8_t)strtol(
-			restool.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE],
-			(char **)NULL, 0);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max dist key size\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_DIST_KEY_SIZE, &val,
+					 "Invalid max dist key size",
+					 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_dist_key_size = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_dist_key_size = 0;
@@ -1336,8 +1286,6 @@ static int create_dpni_v9(const char *usage_msg)
 	struct dpni_cfg_v9 dpni_cfg;
 	struct dpni_extended_cfg dpni_extended_cfg;
 	long val;
-	char *str;
-	char *endptr;
 	struct dpni_attr_v9 dpni_attr;
 
 	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
@@ -1391,19 +1339,13 @@ static int create_dpni_v9(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_TCS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_TCS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_TCS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > DPNI_MAX_TC)) {
-			ERROR_PRINTF("Invalid max tcs\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_TCS, &val,
+					 "Invalid max tcs", 0, DPNI_MAX_TC);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_tcs = (uint8_t)val;
 	} else {
-		dpni_cfg.adv.max_tcs = 1; /* set default value 1 */
+		dpni_cfg.adv.max_tcs = 1;
 	}
 
 	if (restool.cmd_option_mask &
@@ -1447,16 +1389,10 @@ static int create_dpni_v9(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS)) {
 		restool.cmd_option_mask &=
 				~ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_SENDERS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max senders\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_SENDERS, &val,
+					 "Invalid max senders", 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_senders = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_senders = 1;
@@ -1466,16 +1402,10 @@ static int create_dpni_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_UNICAST_FILTERS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max unicast filters\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_UNICAST_FILTERS, &val,
+					 "Invalid max unicast filters", 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_unicast_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_unicast_filters = 0;
@@ -1485,16 +1415,11 @@ static int create_dpni_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_MULTICAST_FILTERS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max multicast filters\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_MULTICAST_FILTERS, &val,
+					 "Invalid max multicast filters",
+					 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_multicast_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_multicast_filters = 0;
@@ -1504,16 +1429,11 @@ static int create_dpni_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_VLAN_FILTERS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max vlan filters\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_VLAN_FILTERS, &val,
+					 "Invalid max vlan filters",
+					 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_vlan_filters = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_vlan_filters = 0;
@@ -1523,16 +1443,10 @@ static int create_dpni_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_QOS_ENTRIES];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max qos entries\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_QOS_ENTRIES, &val,
+					 "Invalid max qos", 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_qos_entries = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_qos_entries = 0;
@@ -1542,16 +1456,10 @@ static int create_dpni_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_QOS_KEY_SIZE];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max qos key size\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_QOS_KEY_SIZE, &val,
+					 "Invalid max qos key size", 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_qos_key_size = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_qos_key_size = 0;
@@ -1561,19 +1469,11 @@ static int create_dpni_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE);
-		dpni_cfg.adv.max_dist_key_size = (uint8_t)strtol(
-			restool.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE],
-			(char **)NULL, 0);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_DIST_KEY_SIZE];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid max dist key size\n");
-			return -EINVAL;
-		}
-
+		error = get_option_value(CREATE_OPT_MAX_DIST_KEY_SIZE, &val,
+					 "Invalid max dist key size",
+					 0, UINT8_MAX);
+		if (error)
+			return error;
 		dpni_cfg.adv.max_dist_key_size = (uint8_t)val;
 	} else {
 		dpni_cfg.adv.max_dist_key_size = 0;

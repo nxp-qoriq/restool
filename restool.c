@@ -632,6 +632,26 @@ void print_unexpected_options_error(uint32_t option_mask,
 	}
 }
 
+int get_option_value(int option, long *value, const char *error_msg, int min, int max)
+{
+	char *str, *endptr;
+	long val;
+
+	errno = 0;
+	str = restool.cmd_option_args[option];
+	val = strtol(str, &endptr, 0);
+
+	if (STRTOL_ERROR(str, endptr, val, errno) ||
+	    (val < min || val > max)) {
+		ERROR_PRINTF("%s\n", error_msg);
+		return -EINVAL;
+	}
+
+	*value = val;
+
+	return 0;
+}
+
 static void print_usage(void)
 {
 	static const char usage_msg[] =

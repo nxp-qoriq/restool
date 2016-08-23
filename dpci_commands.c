@@ -330,8 +330,6 @@ static int cmd_dpci_create(void)
 
 	int error;
 	long val;
-	char *endptr;
-	char *str;
 	struct dpci_cfg dpci_cfg;
 	uint16_t dpci_handle;
 	struct dpci_attr dpci_attr;
@@ -352,16 +350,11 @@ static int cmd_dpci_create(void)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 1 || val > 2)) {
-			ERROR_PRINTF("Invalid value: num-priorities option\n");
-			puts(usage_msg);
+		error = get_option_value(CREATE_OPT_NUM_PRIORITIES, &val,
+					 "Invalid value: num-priorities option",
+					 1, 2);
+		if (error)
 			return -EINVAL;
-		}
 
 		dpci_cfg.num_of_priorities = (uint8_t)val;
 	} else {

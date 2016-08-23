@@ -300,8 +300,6 @@ static int cmd_dpcon_create(void)
 
 	int error;
 	long val;
-	char *endptr;
-	char *str;
 	struct dpcon_cfg dpcon_cfg;
 	uint16_t dpcon_handle;
 	struct dpcon_attr dpcon_attr;
@@ -322,15 +320,11 @@ static int cmd_dpcon_create(void)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 1 || val > 8)) {
-			puts(usage_msg);
+		error = get_option_value(CREATE_OPT_NUM_PRIORITIES, &val,
+					 "Invalid value: num-priorities option",
+					 1, 8);
+		if (error)
 			return -EINVAL;
-		}
 
 		dpcon_cfg.num_priorities = (uint8_t)val;
 	} else {

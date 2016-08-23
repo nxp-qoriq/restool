@@ -321,8 +321,6 @@ static int cmd_dpio_create(void)
 
 	int error;
 	long val;
-	char *endptr;
-	char *str;
 	struct dpio_cfg dpio_cfg;
 	uint16_t dpio_handle;
 	struct dpio_attr dpio_attr;
@@ -362,16 +360,11 @@ static int cmd_dpio_create(void)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_NUM_PRIORITIES];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 1 || val > 8)) {
-			puts(usage_msg);
+		error = get_option_value(CREATE_OPT_NUM_PRIORITIES, &val,
+					 "Invalid value: num-priorities option",
+					 0, 8);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpio_cfg.num_priorities = (uint8_t)val;
 	} else {
 		dpio_cfg.num_priorities = 8;

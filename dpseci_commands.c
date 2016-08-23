@@ -377,8 +377,6 @@ static int cmd_dpseci_create(void)
 	uint16_t dpseci_handle;
 	struct dpseci_attr dpseci_attr;
 	long val;
-	char *str;
-	char *endptr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -399,14 +397,11 @@ static int cmd_dpseci_create(void)
 			~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_PRIORITIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_NUM_QUEUES];
-		val = strtol(str, &endptr, 0);
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 1 || val > DPSECI_PRIO_NUM)) {
-			ERROR_PRINTF("Invalid number of queues range\n");
+		error = get_option_value(CREATE_OPT_NUM_QUEUES, &val,
+					 "Invalid number of queues range",
+					 1, DPSECI_PRIO_NUM);
+		if (error)
 			return -EINVAL;
-		}
 		dpseci_cfg.num_tx_queues = val;
 		dpseci_cfg.num_rx_queues = val;
 
@@ -432,7 +427,6 @@ static int cmd_dpseci_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-
 	memset(&dpseci_attr, 0, sizeof(struct dpseci_attr));
 	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle,
 					&dpseci_attr);

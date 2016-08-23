@@ -730,8 +730,6 @@ static int create_dpdmux(const char *usage_msg)
 	struct dpdmux_cfg dpdmux_cfg = {0};
 	uint16_t dpdmux_handle;
 	long val;
-	char *str;
-	char *endptr;
 	struct dpdmux_attr dpdmux_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -796,16 +794,11 @@ static int create_dpdmux(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_NUM_IFS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid number of interfaces\n");
+		error = get_option_value(CREATE_OPT_NUM_IFS, &val,
+					 "Invalid number of interfaces",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpdmux_cfg.num_ifs = (uint16_t)val;
 	} else {
 		ERROR_PRINTF("--num-ifs option missing\n");
@@ -815,18 +808,11 @@ static int create_dpdmux(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_CONTROL_IF)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_CONTROL_IF);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_CONTROL_IF];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX) ||
-		    (val > dpdmux_cfg.num_ifs - 1)) {
-			ERROR_PRINTF("Invalid control interface\n"
-				"control interface range from 0 to [num-ifs - 1]\n");
+		error = get_option_value(CREATE_OPT_CONTROL_IF, &val,
+					 "Invalid control interface",
+					 0, dpdmux_cfg.num_ifs - 1);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpdmux_cfg.control_if = val;
 	} else {
 		ERROR_PRINTF("--control-if option missing\n");
@@ -838,16 +824,11 @@ static int create_dpdmux(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_DMAT_ENTRIES];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid max DPDMUX address table\n");
+		error = get_option_value(CREATE_OPT_MAX_DMAT_ENTRIES, &val,
+					 "Invalid max DPDMUX address table",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpdmux_cfg.adv.max_dmat_entries = (uint16_t)val;
 	} else {
 		dpdmux_cfg.adv.max_dmat_entries = 0;
@@ -857,17 +838,11 @@ static int create_dpdmux(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_MC_GROUPS)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_MC_GROUPS);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_MC_GROUPS];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF(
-			"Invalid max multicast group in DPDMUX table\n");
+		error = get_option_value(CREATE_OPT_MAX_MC_GROUPS, &val,
+					 "Invalid max multicast group",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpdmux_cfg.adv.max_mc_groups = (uint16_t)val;
 	} else {
 		dpdmux_cfg.adv.max_mc_groups = 0;
@@ -986,8 +961,6 @@ static int create_dpdmux_v9(const char *usage_msg)
 	struct dpdmux_cfg_v9 dpdmux_cfg = {0};
 	uint16_t dpdmux_handle;
 	long val;
-	char *str;
-	char *endptr;
 	struct dpdmux_attr_v9 dpdmux_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP_V9)) {
@@ -1052,16 +1025,11 @@ static int create_dpdmux_v9(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS_V9)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS_V9);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_NUM_IFS_V9];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid number of interfaces\n");
+		error = get_option_value(CREATE_OPT_NUM_IFS_V9, &val,
+					 "Invalid number of interfaces",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpdmux_cfg.num_ifs = (uint16_t)val;
 	} else {
 		ERROR_PRINTF("--num-ifs option missing\n");
@@ -1073,16 +1041,11 @@ static int create_dpdmux_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES_V9)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES_V9);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_DMAT_ENTRIES_V9];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF("Invalid max DPDMUX address table\n");
+		error = get_option_value(CREATE_OPT_MAX_DMAT_ENTRIES_V9, &val,
+					 "Invalid max DPDMUX address table",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpdmux_cfg.adv.max_dmat_entries = (uint16_t)val;
 	} else {
 		dpdmux_cfg.adv.max_dmat_entries = 0;
@@ -1092,17 +1055,11 @@ static int create_dpdmux_v9(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_MC_GROUPS_V9)) {
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_MAX_MC_GROUPS_V9);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_MAX_MC_GROUPS_V9];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val < 0 || val > UINT16_MAX)) {
-			ERROR_PRINTF(
-			"Invalid max multicast group in DPDMUX table\n");
+		error = get_option_value(CREATE_OPT_MAX_MC_GROUPS_V9, &val,
+					 "Invalid max multicast group",
+					 0, UINT16_MAX);
+		if (error)
 			return -EINVAL;
-		}
-
 		dpdmux_cfg.adv.max_mc_groups = (uint16_t)val;
 	} else {
 		dpdmux_cfg.adv.max_mc_groups = 0;

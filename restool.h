@@ -333,6 +333,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 int check_resource_type(char *res_type);
 bool in_use(const char *obj, const char *situation);
 void print_new_obj(char *type, int id, const char *parent);
+int get_option_value(int option, long *value, const char *error_msg, int min, int max);
 
 extern struct restool restool;
 extern struct object_command dprc_commands[];
