@@ -1368,9 +1368,11 @@ int main(int argc, char *argv[])
 		if (restool.global_option_mask &
 		    ONE_BIT_MASK(GLOBAL_OPT_HELP)) {
 			if (restool.mc_fw_version.major == 8)
-				print_usage();  /* print help message */
+				print_usage();
 			else if (restool.mc_fw_version.major == 9)
-				print_usage_v9();  /* print help message */
+				print_usage_v9();
+			else if (restool.mc_fw_version.major == 10)
+				print_usage_v9();
 		}
 
 		if (restool.global_option_mask &
