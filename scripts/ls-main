@@ -160,12 +160,12 @@ check_endpoint() {
 has_endpoint() {
 	if [ "$toe" == "dpdmux" ]; then
 		itf_id=$(echo "$1" | sed "s/\(dpdmux\.[0-9]*\.\)//g")
-		ep=$($restool "$toe" info "$1" | grep "interface $itf_id" | sed "s/.*interface $itf_id: \([^ ]*\)\,.*/\1/")
+		ep=$($restool "$toe" info "$1" | awk "/interface $itf_id/{getline; print}" | sed "s/.*connection: //")
 	else
 		ep=$($restool "$toe" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
 	fi
 
-	if [[ "$ep" != *"No object associated"* ]]; then
+	if [[ "$ep" != *"No object associated"* && "$ep" != *"none"* ]]; then
 		echo "$1 is already linked to $ep"
 		exit 1
 	fi
@@ -229,12 +229,12 @@ get_endpoint() {
 
 	if [ "$too" == "dpdmux" ]; then
 		itf_id=$(echo "$1" | sed "s/\(dpdmux\.[0-9]*\.\)//g")
-		end_point=$($restool "$too" info "$1" | grep "interface $itf_id" | sed "s/.*interface $itf_id: \([^ ]*\)\,.*/\1/")
+		end_point=$($restool "$too" info "$1" | awk "/interface $itf_id/{getline; print}" | sed "s/.*connection: //")
 	else
 		end_point=$($restool "$too" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
 	fi
 
-	if [[ "$end_point" != *"No object associated"* ]]; then
+	if [[ "$end_point" != *"No object associated"* && "$end_point" != *"none"* ]]; then
 		echo "$end_point"
 	fi
 }
