@@ -412,47 +412,11 @@ static int cmd_dpdcei_create(void)
 	return 0;
 }
 
-static int cmd_dpdcei_destroy(void)
+static int destroy_dpdcei_v8(uint32_t dpdcei_id)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpdcei destroy <dpdcei-object>\n"
-		"   e.g. restool dpdcei destroy dpdcei.9\n"
-		"\n";
-
-	int error;
-	int error2;
-	uint32_t dpdcei_id;
-	uint16_t dpdcei_handle;
 	bool dpdcei_opened = false;
-
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name == NULL) {
-		ERROR_PRINTF("<object> argument missing\n");
-		puts(usage_msg);
-		error = -EINVAL;
-		goto out;
-	}
-
-	if (in_use(restool.obj_name, "destroyed")) {
-		error = -EBUSY;
-		goto out;
-	}
-
-	error = parse_object_name(restool.obj_name, "dpdcei", &dpdcei_id);
-	if (error < 0)
-		goto out;
-
-	if (!find_obj("dpdcei", dpdcei_id)) {
-		error = -EINVAL;
-		goto out;
-	}
+	uint16_t dpdcei_handle;
+	int error, error2;
 
 	error = dpdcei_open(&restool.mc_io, 0, dpdcei_id, &dpdcei_handle);
 	if (error < 0) {
@@ -493,6 +457,58 @@ out:
 	}
 
 	return error;
+}
+
+static int destroy_dpdcei(int mc_fw_version)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpdcei destroy <dpdcei-object>\n"
+		"   e.g. restool dpdcei destroy dpdcei.9\n"
+		"\n";
+
+	int error;
+	uint32_t dpdcei_id;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name == NULL) {
+		ERROR_PRINTF("<object> argument missing\n");
+		puts(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (in_use(restool.obj_name, "destroyed")) {
+		error = -EBUSY;
+		goto out;
+	}
+
+	error = parse_object_name(restool.obj_name, "dpdcei", &dpdcei_id);
+	if (error < 0)
+		goto out;
+
+	if (!find_obj("dpdcei", dpdcei_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = destroy_dpdcei_v8(dpdcei_id);
+	else
+		return -EINVAL;
+
+out:
+	return error;
+}
+
+static int cmd_dpdcei_destroy(void)
+{
+	return destroy_dpdcei(MC_FW_VERSION_8);
 }
 
 struct object_command dpdcei_commands[] = {

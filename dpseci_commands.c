@@ -449,46 +449,11 @@ static int cmd_dpseci_create(void)
 	return 0;
 }
 
-static int cmd_dpseci_destroy(void)
+static int destroy_dpseci_v8(uint32_t dpseci_id)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpseci destroy <dpseci-object>\n"
-		"   e.g. restool dpseci destroy dpseci.9\n"
-		"\n";
-
-	int error;
-	int error2;
-	uint32_t dpseci_id;
-	uint16_t dpseci_handle;
 	bool dpseci_opened = false;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name == NULL) {
-		ERROR_PRINTF("<object> argument missing\n");
-		puts(usage_msg);
-		error = -EINVAL;
-		goto out;
-	}
-
-	if (in_use(restool.obj_name, "destroyed")) {
-		error = -EBUSY;
-		goto out;
-	}
-
-	error = parse_object_name(restool.obj_name, "dpseci", &dpseci_id);
-	if (error < 0)
-		goto out;
-
-	if (!find_obj("dpseci", dpseci_id)) {
-		error = -EINVAL;
-		goto out;
-	}
+	uint16_t dpseci_handle;
+	int error, error2;
 
 	error = dpseci_open(&restool.mc_io, 0, dpseci_id, &dpseci_handle);
 	if (error < 0) {
@@ -529,6 +494,57 @@ out:
 	}
 
 	return error;
+}
+
+static int destroy_dpseci(int mc_fw_version)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpseci destroy <dpseci-object>\n"
+		"   e.g. restool dpseci destroy dpseci.9\n"
+		"\n";
+
+	int error;
+	uint32_t dpseci_id;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name == NULL) {
+		ERROR_PRINTF("<object> argument missing\n");
+		puts(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (in_use(restool.obj_name, "destroyed")) {
+		error = -EBUSY;
+		goto out;
+	}
+
+	error = parse_object_name(restool.obj_name, "dpseci", &dpseci_id);
+	if (error < 0)
+		goto out;
+
+	if (!find_obj("dpseci", dpseci_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = destroy_dpseci_v8(dpseci_id);
+	else
+		return -EINVAL;
+out:
+	return error;
+}
+
+static int cmd_dpseci_destroy(void)
+{
+	return destroy_dpseci(MC_FW_VERSION_8);
 }
 
 struct object_command dpseci_commands[] = {

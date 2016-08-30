@@ -399,46 +399,11 @@ static int cmd_dpio_create(void)
 	return 0;
 }
 
-static int cmd_dpio_destroy(void)
+static int destroy_dpio_v8(uint32_t dpio_id)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpio destroy <dpio-object>\n"
-		"   e.g. restool dpio destroy dpio.9\n"
-		"\n";
-
-	int error;
-	int error2;
-	uint32_t dpio_id;
-	uint16_t dpio_handle;
 	bool dpio_opened = false;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name == NULL) {
-		ERROR_PRINTF("<object> argument missing\n");
-		puts(usage_msg);
-		error = -EINVAL;
-		goto out;
-	}
-
-	if (in_use(restool.obj_name, "destroyed")) {
-		error = -EBUSY;
-		goto out;
-	}
-
-	error = parse_object_name(restool.obj_name, "dpio", &dpio_id);
-	if (error < 0)
-		goto out;
-
-	if (!find_obj("dpio", dpio_id)) {
-		error = -EINVAL;
-		goto out;
-	}
+	uint16_t dpio_handle;
+	int error, error2;
 
 	error = dpio_open(&restool.mc_io, 0, dpio_id, &dpio_handle);
 	if (error < 0) {
@@ -479,6 +444,58 @@ out:
 	}
 
 	return error;
+}
+
+static int destroy_dpio(int mc_fw_version)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpio destroy <dpio-object>\n"
+		"   e.g. restool dpio destroy dpio.9\n"
+		"\n";
+
+	int error;
+	uint32_t dpio_id;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name == NULL) {
+		ERROR_PRINTF("<object> argument missing\n");
+		puts(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (in_use(restool.obj_name, "destroyed")) {
+		error = -EBUSY;
+		goto out;
+	}
+
+	error = parse_object_name(restool.obj_name, "dpio", &dpio_id);
+	if (error < 0)
+		goto out;
+
+	if (!find_obj("dpio", dpio_id)) {
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = destroy_dpio_v8(dpio_id);
+	else
+		return -EINVAL;
+
+out:
+	return error;
+}
+
+static int cmd_dpio_destroy(void)
+{
+	return destroy_dpio(MC_FW_VERSION_8);
 }
 
 struct object_command dpio_commands[] = {

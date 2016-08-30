@@ -41,6 +41,10 @@
 #include "fsl_mc_ioctl.h"
 #include "mc_v8/fsl_mc_cmd.h"
 
+#define MC_FW_VERSION_8		8
+#define MC_FW_VERSION_9		9
+#define MC_FW_VERSION_10	10
+
 /**
  * MC object type string max length (without including the null terminator)
  */
