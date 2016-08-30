@@ -74,7 +74,6 @@ C_ASSERT(ARRAY_SIZE(dpaiop_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  */
 enum dpaiop_create_options {
 	CREATE_OPT_HELP = 0,
-	CREATE_OPT_AIOP_ID,
 	CREATE_OPT_AIOP_CONTAINER,
 };
 
@@ -82,13 +81,6 @@ static struct option dpaiop_create_options[] = {
 	[CREATE_OPT_HELP] = {
 		.name = "help",
 		.has_arg = 0,
-		.flag = NULL,
-		.val = 0,
-	},
-
-	[CREATE_OPT_AIOP_ID] = {
-		.name = "aiop-id",
-		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
 	},
@@ -357,9 +349,6 @@ static int cmd_dpaiop_create(void)
 		"\n";
 
 	int error;
-	long val;
-	char *endptr;
-	char *str;
 	struct dpaiop_cfg dpaiop_cfg;
 	uint16_t dpaiop_handle;
 	struct dpaiop_attr dpaiop_attr;
@@ -376,24 +365,6 @@ static int cmd_dpaiop_create(void)
 			     restool.obj_name);
 		puts(usage_msg);
 		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_AIOP_ID)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_AIOP_ID);
-		errno = 0;
-		str = restool.cmd_option_args[CREATE_OPT_AIOP_ID];
-		val = strtol(str, &endptr, 0);
-
-		if (STRTOL_ERROR(str, endptr, val, errno) ||
-		    (val != 0)) {
-			puts(usage_msg);
-			return -EINVAL;
-		}
-
-		dpaiop_cfg.aiop_id = val;
-	} else {
-		dpaiop_cfg.aiop_id = 0;
 	}
 
 	if (restool.cmd_option_mask &
