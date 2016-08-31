@@ -149,6 +149,7 @@ static const struct obj_command_versions dprtc_command_versions[] = {
 
 static const struct obj_command_versions dpdmai_command_versions[] = {
 	{ .version = 2, .obj_commands = dpdmai_commands },
+	{ .version = 3, .obj_commands = dpdmai_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 
@@ -208,7 +209,7 @@ struct version_table dpcei_version_table[] = {
 struct version_table dpdmai_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
-	{ .mc_major_version = 10, .object_version = 2 },
+	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpdmux_version_table[] = {
