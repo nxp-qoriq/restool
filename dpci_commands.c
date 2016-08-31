@@ -38,6 +38,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v8/fsl_dpci.h"
+#include "mc_v10/fsl_dpci.h"
 
 enum mc_cmd_status mc_status;
 
@@ -234,6 +235,106 @@ out:
 	return error;
 }
 
+static int print_dpci_attr_v10(uint32_t dpci_id,
+			       struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpci_peer_attr dpci_peer_attr;
+	struct dpci_attr_v10 dpci_attr;
+	uint16_t obj_major, obj_minor;
+	uint16_t dpci_handle;
+	bool dpci_opened = false;
+	int error, error2;
+	int link_state;
+
+	error = dpci_open(&restool.mc_io, 0, dpci_id, &dpci_handle);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	dpci_opened = true;
+	if (!dpci_handle) {
+		DEBUG_PRINTF(
+			"dpci_open() returned invalid handle (auth 0) for dpci.%u\n",
+			dpci_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpci_attr, 0, sizeof(dpci_attr));
+	error = dpci_get_attributes_v10(&restool.mc_io, 0,
+					dpci_handle, &dpci_attr);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpci_id == (uint32_t)dpci_attr.id);
+
+	error = dpci_get_peer_attributes(&restool.mc_io, 0, dpci_handle,
+					 &dpci_peer_attr);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	error = dpci_get_link_state(&restool.mc_io, 0, dpci_handle,
+					&link_state);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	error = dpci_get_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpci version: %u.%u\n", obj_major, obj_minor);
+	printf("dpci id: %d\n", dpci_id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	printf("num_of_priorities: %u\n",
+	       (unsigned int)dpci_attr.num_of_priorities);
+	printf("connected peer: ");
+	if (-1 == dpci_peer_attr.peer_id) {
+		printf("no peer\n");
+	} else {
+		printf("dpci.%d\n", dpci_peer_attr.peer_id);
+		printf("peer's num_of_priorities: %u\n",
+		       (unsigned int)dpci_peer_attr.num_of_priorities);
+	}
+	printf("link status: %d - ", link_state);
+	link_state == 0 ? printf("down\n") :
+	link_state == 1 ? printf("up\n") : printf("error state\n");
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+out:
+	if (dpci_opened) {
+		error2 = dpci_close(&restool.mc_io, 0, dpci_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpci_info(uint32_t dpci_id, int mc_fw_version)
 {
 	int error;
@@ -256,6 +357,8 @@ static int print_dpci_info(uint32_t dpci_id, int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpci_attr(dpci_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpci_attr_v10(dpci_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -314,6 +417,11 @@ static int cmd_dpci_info(void)
 	return info_dpci(MC_FW_VERSION_8);
 }
 
+static int cmd_dpci_info_v10(void)
+{
+	return info_dpci(MC_FW_VERSION_10);
+}
+
 static int create_dpci_v8(struct dpci_cfg *dpci_cfg)
 {
 	struct dpci_attr dpci_attr;
@@ -345,6 +453,23 @@ static int create_dpci_v8(struct dpci_cfg *dpci_cfg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
+
+	return 0;
+}
+
+static int create_dpci_v10(struct dpci_cfg *dpci_cfg)
+{
+	uint32_t dpci_id;
+	int error;
+
+	error = dpci_create_v10(&restool.mc_io, 0, 0, dpci_cfg, &dpci_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpci", dpci_id, NULL);
 
 	return 0;
 }
@@ -402,6 +527,8 @@ static int create_dpci(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error  = create_dpci_v8(&dpci_cfg);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error  = create_dpci_v10(&dpci_cfg);
 	else
 		return -EINVAL;
 
@@ -411,6 +538,11 @@ static int create_dpci(int mc_fw_version)
 static int cmd_dpci_create(void)
 {
 	return create_dpci(MC_FW_VERSION_8);
+}
+
+static int cmd_dpci_create_v10(void)
+{
+	return create_dpci(MC_FW_VERSION_10);
 }
 
 static int destroy_dpci_v8(uint32_t dpci_id)
@@ -460,6 +592,24 @@ out:
 	return error;
 }
 
+static int destroy_dpci_v10(uint32_t dpci_id)
+{
+	int error;
+
+	error = dpci_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				 0, dpci_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpci.%u is destroyed\n", dpci_id);
+
+out:
+	return error;
+}
+
 static int destroy_dpci(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -500,6 +650,8 @@ static int destroy_dpci(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = destroy_dpci_v8(dpci_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpci_v10(dpci_id);
 	else
 		return -EINVAL;
 
@@ -510,6 +662,11 @@ out:
 static int cmd_dpci_destroy(void)
 {
 	return destroy_dpci(MC_FW_VERSION_8);
+}
+
+static int cmd_dpci_destroy_v10(void)
+{
+	return destroy_dpci(MC_FW_VERSION_10);
 }
 
 struct object_command dpci_commands[] = {
@@ -528,6 +685,26 @@ struct object_command dpci_commands[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpci_destroy_options,
 	  .cmd_func = cmd_dpci_destroy },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpci_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpci_help },
+
+	{ .cmd_name = "info",
+	  .options = dpci_info_options,
+	  .cmd_func = cmd_dpci_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpci_create_options,
+	  .cmd_func = cmd_dpci_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpci_destroy_options,
+	  .cmd_func = cmd_dpci_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };
