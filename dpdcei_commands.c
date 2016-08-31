@@ -38,6 +38,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v8/fsl_dpdcei.h"
+#include "mc_v10/fsl_dpdcei.h"
 
 enum mc_cmd_status mc_status;
 
@@ -227,6 +228,77 @@ out:
 	return error;
 }
 
+static int print_dpdcei_attr_v10(uint32_t dpdcei_id,
+				 struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpdcei_attr_v10 dpdcei_attr;
+	uint16_t obj_major, obj_minor;
+	bool dpdcei_opened = false;
+	uint16_t dpdcei_handle;
+	int error;
+
+	error = dpdcei_open(&restool.mc_io, 0, dpdcei_id, &dpdcei_handle);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpdcei_opened = true;
+	if (!dpdcei_handle) {
+		DEBUG_PRINTF(
+			"dpdcei_open() returned invalid handle (auth 0) for dpdcei.%u\n",
+			dpdcei_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpdcei_attr, 0, sizeof(dpdcei_attr));
+	error = dpdcei_get_attributes_v10(&restool.mc_io, 0, dpdcei_handle,
+					  &dpdcei_attr);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpdcei_id == (uint32_t)dpdcei_attr.id);
+
+	error = dpdcei_get_version_v10(&restool.mc_io, 0,
+				       &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpdcei version: %u.%u\n", obj_major, obj_minor);
+	printf("dpdcei id: %d\n", dpdcei_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_dpdcei_engine(dpdcei_attr.engine);
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+
+out:
+	if (dpdcei_opened) {
+		int error2;
+
+		error2 = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpdcei_info(uint32_t dpdcei_id, int mc_fw_version)
 {
 	int error;
@@ -249,6 +321,8 @@ static int print_dpdcei_info(uint32_t dpdcei_id, int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpdcei_attr(dpdcei_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpdcei_attr_v10(dpdcei_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -307,6 +381,11 @@ static int cmd_dpdcei_info(void)
 	return info_dpdcei(MC_FW_VERSION_8);
 }
 
+static int cmd_dpdcei_info_v10(void)
+{
+	return info_dpdcei(MC_FW_VERSION_10);
+}
+
 static int parse_dpdcei_engine(char *engine_str, enum dpdcei_engine *engine)
 {
 	if (strcmp(engine_str, "DPDCEI_ENGINE_COMPRESSION") == 0) {
@@ -355,6 +434,24 @@ static int create_dpdcei_v8(struct dpdcei_cfg *dpdcei_cfg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
+
+	return 0;
+}
+
+static int create_dpdcei_v10(struct dpdcei_cfg *dpdcei_cfg)
+{
+	uint32_t dpdcei_id;
+	int error;
+
+	error = dpdcei_create_v10(&restool.mc_io, 0, 0,
+				  dpdcei_cfg, &dpdcei_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpdcei", dpdcei_id, NULL);
 
 	return 0;
 }
@@ -425,6 +522,8 @@ static int create_dpdcei(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = create_dpdcei_v8(&dpdcei_cfg);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = create_dpdcei_v10(&dpdcei_cfg);
 	else
 		return -EINVAL;
 
@@ -434,6 +533,11 @@ static int create_dpdcei(int mc_fw_version)
 static int cmd_dpdcei_create(void)
 {
 	return create_dpdcei(MC_FW_VERSION_8);
+}
+
+static int cmd_dpdcei_create_v10(void)
+{
+	return create_dpdcei(MC_FW_VERSION_10);
 }
 
 static int destroy_dpdcei_v8(uint32_t dpdcei_id)
@@ -483,6 +587,24 @@ out:
 	return error;
 }
 
+static int destroy_dpdcei_v10(uint32_t dpdcei_id)
+{
+	int error;
+
+	error = dpdcei_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				   0, dpdcei_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpdcei.%u is destroyed\n", dpdcei_id);
+
+out:
+	return error;
+}
+
 static int destroy_dpdcei(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -523,6 +645,8 @@ static int destroy_dpdcei(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = destroy_dpdcei_v8(dpdcei_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpdcei_v10(dpdcei_id);
 	else
 		return -EINVAL;
 
@@ -533,6 +657,11 @@ out:
 static int cmd_dpdcei_destroy(void)
 {
 	return destroy_dpdcei(MC_FW_VERSION_8);
+}
+
+static int cmd_dpdcei_destroy_v10(void)
+{
+	return destroy_dpdcei(MC_FW_VERSION_10);
 }
 
 struct object_command dpdcei_commands[] = {
@@ -551,6 +680,26 @@ struct object_command dpdcei_commands[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpdcei_destroy_options,
 	  .cmd_func = cmd_dpdcei_destroy },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpdcei_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpdcei_help },
+
+	{ .cmd_name = "info",
+	  .options = dpdcei_info_options,
+	  .cmd_func = cmd_dpdcei_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpdcei_create_options,
+	  .cmd_func = cmd_dpdcei_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpdcei_destroy_options,
+	  .cmd_func = cmd_dpdcei_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };
