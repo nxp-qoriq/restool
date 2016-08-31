@@ -39,6 +39,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v8/fsl_dpio.h"
+#include "mc_v10/fsl_dpio.h"
 
 enum mc_cmd_status mc_status;
 
@@ -224,6 +225,89 @@ out:
 	return error;
 }
 
+static int print_dpio_attr_v10(uint32_t dpio_id,
+			       struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpio_attr_v10 dpio_attr;
+	bool dpio_opened = false;
+	uint16_t dpio_handle;
+	uint16_t obj_major, obj_minor;
+	int error;
+
+	error = dpio_open(&restool.mc_io, 0, dpio_id, &dpio_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpio_opened = true;
+	if (0 == dpio_handle) {
+		DEBUG_PRINTF(
+			"dpio_open() returned invalid handle (auth 0) for dpio.%u\n",
+			dpio_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpio_attr, 0, sizeof(dpio_attr));
+	error = dpio_get_attributes_v10(&restool.mc_io, 0,
+					dpio_handle, &dpio_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpio_id == (uint32_t)dpio_attr.id);
+
+	error = dpio_get_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpio version: %u.%u\n", obj_major, obj_minor);
+	printf("dpio id: %d\n", dpio_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	printf(
+		"offset of qbman software portal cache-enabled area: %#llx\n",
+		(unsigned long long)dpio_attr.qbman_portal_ce_offset);
+	printf(
+		"offset of qbman software portal cache-inhibited area: %#llx\n",
+		(unsigned long long)dpio_attr.qbman_portal_ci_offset);
+	printf("qbman software portal id: %#x\n",
+	       (unsigned int)dpio_attr.qbman_portal_id);
+	printf("dpio channel mode is: ");
+	dpio_attr.channel_mode == 0 ? printf("DPIO_NO_CHANNEL\n") :
+	dpio_attr.channel_mode == 1 ? printf("DPIO_LOCAL_CHANNEL\n") :
+	printf("wrong mode\n");
+	printf("number of priorities is: %#x\n",
+	       (unsigned int)dpio_attr.num_priorities);
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+
+out:
+	if (dpio_opened) {
+		int error2;
+
+		error2 = dpio_close(&restool.mc_io, 0, dpio_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpio_info(uint32_t dpio_id, int mc_fw_version)
 {
 	int error;
@@ -246,6 +330,8 @@ static int print_dpio_info(uint32_t dpio_id, int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpio_attr(dpio_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpio_attr_v10(dpio_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -304,6 +390,11 @@ static int cmd_dpio_info(void)
 	return info_dpio(MC_FW_VERSION_8);
 }
 
+static int cmd_dpio_info_v10(void)
+{
+	return info_dpio(MC_FW_VERSION_10);
+}
+
 static int create_dpio_v8(struct dpio_cfg *dpio_cfg)
 {
 	struct dpio_attr dpio_attr;
@@ -337,6 +428,23 @@ static int create_dpio_v8(struct dpio_cfg *dpio_cfg)
 	}
 
 	return 0;
+}
+
+static int create_dpio_v10(struct dpio_cfg *dpio_cfg)
+{
+	uint32_t dpio_id;
+	int error;
+
+	error = dpio_create_v10(&restool.mc_io, 0, 0, dpio_cfg, &dpio_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpio", dpio_id, NULL);
+
+	return error;
 }
 
 static int create_dpio(int mc_fw_version)
@@ -411,6 +519,8 @@ static int create_dpio(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = create_dpio_v8(&dpio_cfg);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = create_dpio_v10(&dpio_cfg);
 	else
 		return -EINVAL;
 
@@ -422,6 +532,12 @@ static int cmd_dpio_create(void)
 	return create_dpio(MC_FW_VERSION_8);
 
 }
+
+static int cmd_dpio_create_v10(void)
+{
+	return create_dpio(MC_FW_VERSION_10);
+}
+
 static int destroy_dpio_v8(uint32_t dpio_id)
 {
 	bool dpio_opened = false;
@@ -469,6 +585,24 @@ out:
 	return error;
 }
 
+static int destroy_dpio_v10(uint32_t dpio_id)
+{
+	int error;
+
+	error = dpio_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				 0, dpio_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpio.%u is destroyed\n", dpio_id);
+
+out:
+	return error;
+}
+
 static int destroy_dpio(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -509,6 +643,8 @@ static int destroy_dpio(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = destroy_dpio_v8(dpio_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpio_v10(dpio_id);
 	else
 		return -EINVAL;
 
@@ -519,6 +655,11 @@ out:
 static int cmd_dpio_destroy(void)
 {
 	return destroy_dpio(MC_FW_VERSION_8);
+}
+
+static int cmd_dpio_destroy_v10(void)
+{
+	return destroy_dpio(MC_FW_VERSION_10);
 }
 
 struct object_command dpio_commands[] = {
@@ -537,6 +678,26 @@ struct object_command dpio_commands[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpio_destroy_options,
 	  .cmd_func = cmd_dpio_destroy },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpio_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpio_help },
+
+	{ .cmd_name = "info",
+	  .options = dpio_info_options,
+	  .cmd_func = cmd_dpio_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpio_create_options,
+	  .cmd_func = cmd_dpio_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpio_destroy_options,
+	  .cmd_func = cmd_dpio_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };
