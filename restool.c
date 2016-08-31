@@ -120,6 +120,7 @@ static const struct obj_command_versions dpseci_command_versions[] = {
 static const struct obj_command_versions dpdmux_command_versions[] = {
 	{ .version = 4, .obj_commands = dpdmux_commands },
 	{ .version = 5, .obj_commands = dpdmux_commands_v9 },
+	{ .version = 6, .obj_commands = dpdmux_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpmcp_command_versions[] = {
@@ -221,7 +222,7 @@ struct version_table dpdmai_version_table[] = {
 struct version_table dpdmux_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 4 },
 	{ .mc_major_version = 9, .object_version = 5 },
-	{ .mc_major_version = 10, .object_version = 5 },
+	{ .mc_major_version = 10, .object_version = 6 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpio_version_table[] = {
