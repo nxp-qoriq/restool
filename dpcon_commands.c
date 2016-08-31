@@ -38,6 +38,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v8/fsl_dpcon.h"
+#include "mc_v10/fsl_dpcon.h"
 
 enum mc_cmd_status mc_status;
 
@@ -206,6 +207,80 @@ out:
 	return error;
 }
 
+static int print_dpcon_attr_v10(uint32_t dpcon_id,
+				struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpcon_attr_v10 dpcon_attr;
+	uint16_t obj_major, obj_minor;
+	bool dpcon_opened = false;
+	uint16_t dpcon_handle;
+	int error;
+
+	error = dpcon_open(&restool.mc_io, 0, dpcon_id, &dpcon_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpcon_opened = true;
+	if (0 == dpcon_handle) {
+		DEBUG_PRINTF(
+			"dpcon_open() returned invalid handle (auth 0) for dpcon.%u\n",
+			dpcon_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpcon_attr, 0, sizeof(dpcon_attr));
+	error = dpcon_get_attributes_v10(&restool.mc_io, 0, dpcon_handle,
+					 &dpcon_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpcon_id == (uint32_t)dpcon_attr.id);
+
+	error = dpcon_get_version_v10(&restool.mc_io, 0,
+				      &obj_major, &obj_minor);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpcon version: %u.%u\n", obj_major, obj_minor);
+	printf("dpcon id: %d\n", dpcon_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	printf("qbman channel id to be used by dequeue operation: %u\n",
+		dpcon_attr.qbman_ch_id);
+	printf("number of priorities for the DPCON channel: %u\n",
+		dpcon_attr.num_priorities);
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+
+out:
+	if (dpcon_opened) {
+		int error2;
+
+		error2 = dpcon_close(&restool.mc_io, 0, dpcon_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpcon_info(uint32_t dpcon_id, int mc_fw_version)
 {
 	int error;
@@ -228,6 +303,8 @@ static int print_dpcon_info(uint32_t dpcon_id, int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpcon_attr(dpcon_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpcon_attr_v10(dpcon_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -286,6 +363,11 @@ static int cmd_dpcon_info(void)
 	return info_dpcon(MC_FW_VERSION_8);
 }
 
+static int cmd_dpcon_info_v10(void)
+{
+	return info_dpcon(MC_FW_VERSION_10);
+}
+
 static int create_dpcon_v8(struct dpcon_cfg *dpcon_cfg)
 {
 	struct dpcon_attr dpcon_attr;
@@ -318,6 +400,23 @@ static int create_dpcon_v8(struct dpcon_cfg *dpcon_cfg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
+
+	return 0;
+}
+
+static int create_dpcon_v10(struct dpcon_cfg *dpcon_cfg)
+{
+	uint32_t dpcon_id;
+	int error;
+
+	error = dpcon_create_v10(&restool.mc_io, 0, 0, dpcon_cfg, &dpcon_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpcon", dpcon_id, NULL);
 
 	return 0;
 }
@@ -373,6 +472,8 @@ static int create_dpcon(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = create_dpcon_v8(&dpcon_cfg);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = create_dpcon_v10(&dpcon_cfg);
 	else
 		return -EINVAL;
 
@@ -382,6 +483,11 @@ static int create_dpcon(int mc_fw_version)
 static int cmd_dpcon_create(void)
 {
 	return create_dpcon(MC_FW_VERSION_8);
+}
+
+static int cmd_dpcon_create_v10(void)
+{
+	return create_dpcon(MC_FW_VERSION_10);
 }
 
 static int destroy_dpcon_v8(uint32_t dpcon_id)
@@ -431,6 +537,24 @@ out:
 	return error;
 }
 
+static int destroy_dpcon_v10(uint32_t dpcon_id)
+{
+	int error;
+
+	error = dpcon_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				  0, dpcon_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpcon.%u is destroyed\n", dpcon_id);
+
+out:
+	return error;
+}
+
 static int destroy_dpcon(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -471,6 +595,8 @@ static int destroy_dpcon(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = destroy_dpcon_v8(dpcon_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpcon_v10(dpcon_id);
 	else
 		return -EINVAL;
 
@@ -481,6 +607,11 @@ out:
 static int cmd_dpcon_destroy(void)
 {
 	return destroy_dpcon(MC_FW_VERSION_8);
+}
+
+static int cmd_dpcon_destroy_v10(void)
+{
+	return destroy_dpcon(MC_FW_VERSION_10);
 }
 
 struct object_command dpcon_commands[] = {
@@ -499,6 +630,26 @@ struct object_command dpcon_commands[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpcon_destroy_options,
 	  .cmd_func = cmd_dpcon_destroy },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpcon_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpcon_help },
+
+	{ .cmd_name = "info",
+	  .options = dpcon_info_options,
+	  .cmd_func = cmd_dpcon_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpcon_create_options,
+	  .cmd_func = cmd_dpcon_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpcon_destroy_options,
+	  .cmd_func = cmd_dpcon_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };
