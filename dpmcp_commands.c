@@ -38,6 +38,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v8/fsl_dpmcp.h"
+#include "mc_v10/fsl_dpmcp.h"
 
 enum mc_cmd_status mc_status;
 
@@ -194,6 +195,76 @@ out:
 	return error;
 }
 
+static int print_dpmcp_attr_v10(uint32_t dpmcp_id,
+			struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpmcp_attr_v10 dpmcp_attr;
+	uint16_t obj_major, obj_minor;
+	bool dpmcp_opened = false;
+	uint16_t dpmcp_handle;
+	int error;
+
+	error = dpmcp_open(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpmcp_opened = true;
+	if (0 == dpmcp_handle) {
+		DEBUG_PRINTF(
+			"dpmcp_open() returned invalid handle (auth 0) for dpmcp.%u\n",
+			dpmcp_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpmcp_attr, 0, sizeof(dpmcp_attr));
+	error = dpmcp_get_attributes_v10(&restool.mc_io, 0, dpmcp_handle,
+					&dpmcp_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpmcp_id == (uint32_t)dpmcp_attr.id);
+
+	error = dpmcp_get_version_v10(&restool.mc_io, 0,
+				      &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpmcp version: %u.%u\n", obj_major, obj_minor);
+	printf("dpmcp object id/portal id: %d\n", dpmcp_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+
+out:
+	if (dpmcp_opened) {
+		int error2;
+
+		error2 = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpmcp_info(uint32_t dpmcp_id, int mc_fw_version)
 {
 	int error;
@@ -216,6 +287,8 @@ static int print_dpmcp_info(uint32_t dpmcp_id, int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpmcp_attr(dpmcp_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpmcp_attr_v10(dpmcp_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -274,6 +347,12 @@ static int cmd_dpmcp_info(void)
 	return info_dpmcp(MC_FW_VERSION_8);
 }
 
+static int cmd_dpmcp_info_v10(void)
+{
+	return info_dpmcp(MC_FW_VERSION_10);
+}
+
+
 static int create_dpmcp_v8(struct dpmcp_cfg *dpmcp_cfg)
 {
 	struct dpmcp_attr dpmcp_attr;
@@ -310,6 +389,23 @@ static int create_dpmcp_v8(struct dpmcp_cfg *dpmcp_cfg)
 	return 0;
 }
 
+static int create_dpmcp_v10(struct dpmcp_cfg *dpmcp_cfg)
+{
+	uint32_t dpmcp_id;
+	int error;
+
+	error = dpmcp_create_v10(&restool.mc_io, 0, 0, dpmcp_cfg, &dpmcp_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpmcp", dpmcp_id, NULL);
+
+	return 0;
+}
+
 static int create_dpmcp(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -317,8 +413,8 @@ static int create_dpmcp(int mc_fw_version)
 		"Usage: restool dpmcp create\n"
 		"\n";
 
-	int error;
 	struct dpmcp_cfg dpmcp_cfg = {0};
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -336,7 +432,9 @@ static int create_dpmcp(int mc_fw_version)
 	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
 
 	if (mc_fw_version == MC_FW_VERSION_8)
-		error = create_dpmcp_v8(&dpmcp_cfg);
+		error= create_dpmcp_v8(&dpmcp_cfg);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error= create_dpmcp_v10(&dpmcp_cfg);
 	else
 		return -EINVAL;
 
@@ -346,6 +444,11 @@ static int create_dpmcp(int mc_fw_version)
 static int cmd_dpmcp_create(void)
 {
 	return create_dpmcp(MC_FW_VERSION_8);
+}
+
+static int cmd_dpmcp_create_v10(void)
+{
+	return create_dpmcp(MC_FW_VERSION_10);
 }
 
 static int destroy_dpmcp_v8(uint32_t dpmcp_id)
@@ -359,7 +462,7 @@ static int destroy_dpmcp_v8(uint32_t dpmcp_id)
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out;
+		goto out_v8;
 	}
 	dpmcp_opened = true;
 	if (0 == dpmcp_handle) {
@@ -367,7 +470,7 @@ static int destroy_dpmcp_v8(uint32_t dpmcp_id)
 			"dpmcp_open() returned invalid handle (auth 0) for dpmcp.%u\n",
 			dpmcp_id);
 		error = -ENOENT;
-		goto out;
+		goto out_v8;
 	}
 
 	error = dpmcp_destroy(&restool.mc_io, 0, dpmcp_handle);
@@ -375,12 +478,12 @@ static int destroy_dpmcp_v8(uint32_t dpmcp_id)
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out;
+		goto out_v8;
 	}
 	dpmcp_opened = false;
 	printf("dpmcp.%u is destroyed\n", dpmcp_id);
 
-out:
+out_v8:
 	if (dpmcp_opened) {
 		error2 = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
 		if (error2 < 0) {
@@ -392,6 +495,24 @@ out:
 		}
 	}
 
+	return error;
+}
+
+static int destroy_dpmcp_v10(uint32_t dpmcp_id)
+{
+	int error;
+
+	error = dpmcp_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				 0, dpmcp_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpmcp.%u is destroyed\n", dpmcp_id);
+
+out:
 	return error;
 }
 
@@ -435,6 +556,8 @@ static int destroy_dpmcp(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = destroy_dpmcp_v8(dpmcp_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpmcp_v10(dpmcp_id);
 	else
 		return -EINVAL;
 
@@ -445,6 +568,11 @@ out:
 static int cmd_dpmcp_destroy(void)
 {
 	return destroy_dpmcp(MC_FW_VERSION_8);
+}
+
+static int cmd_dpmcp_destroy_v10(void)
+{
+	return destroy_dpmcp(MC_FW_VERSION_10);
 }
 
 struct object_command dpmcp_commands[] = {
@@ -463,6 +591,26 @@ struct object_command dpmcp_commands[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpmcp_destroy_options,
 	  .cmd_func = cmd_dpmcp_destroy },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpmcp_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpmcp_help },
+
+	{ .cmd_name = "info",
+	  .options = dpmcp_info_options,
+	  .cmd_func = cmd_dpmcp_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpmcp_create_options,
+	  .cmd_func = cmd_dpmcp_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpmcp_destroy_options,
+	  .cmd_func = cmd_dpmcp_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };
