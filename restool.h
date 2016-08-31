@@ -366,6 +366,7 @@ extern struct object_command dpaiop_commands[];
 extern struct object_command dpaiop_commands_v10[];
 extern struct object_command dpdbg_commands[];
 extern struct object_command dprtc_commands[];
+extern struct object_command dprtc_commands_v10[];
 extern struct object_command dpdmai_commands[];
 extern struct object_command dpdmai_commands_v10[];
 

@@ -52,6 +52,7 @@ OBJS = restool.o \
        mc_v10/dpio.o \
        mc_v10/dpmac.o \
        mc_v10/dpmcp.o \
+       mc_v10/dprtc.o \
        mc_v8/fsl_mc_sys.o
 
 CFLAGS = ${EXTRA_CFLAGS} \

@@ -37,6 +37,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v9/fsl_dprtc.h"
+#include "mc_v10/fsl_dprtc.h"
 
 enum mc_cmd_status mc_status;
 
@@ -192,6 +193,75 @@ out:
 	return error;
 }
 
+static int print_dprtc_attr_v10(uint32_t dprtc_id,
+				struct dprc_obj_desc *target_obj_desc)
+{
+	struct dprtc_attr_v10 dprtc_attr;
+	uint16_t obj_major, obj_minor;
+	bool dprtc_opened = false;
+	uint16_t dprtc_handle;
+	int error;
+
+	error = dprtc_open(&restool.mc_io, 0, dprtc_id, &dprtc_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dprtc_opened = true;
+	if (0 == dprtc_handle) {
+		DEBUG_PRINTF(
+			"dprtc_open() returned invalid handle (auth 0) for dprtc.%u\n",
+			dprtc_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dprtc_attr, 0, sizeof(dprtc_attr));
+	error = dprtc_get_attributes_v10(&restool.mc_io, 0, dprtc_handle,
+					 &dprtc_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dprtc_id == (uint32_t)dprtc_attr.id);
+
+	error = dprtc_get_version_v10(&restool.mc_io, 0,
+				      &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dprtc version: %u.%u\n", obj_major, obj_minor);
+	printf("dprtc id: %d\n", dprtc_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+out:
+	if (dprtc_opened) {
+		int error2;
+
+		error2 = dprtc_close(&restool.mc_io, 0, dprtc_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dprtc_info(uint32_t dprtc_id, int mc_fw_version)
 {
 	int error;
@@ -214,6 +284,8 @@ static int print_dprtc_info(uint32_t dprtc_id, int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = print_dprtc_attr(dprtc_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dprtc_attr_v10(dprtc_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -272,6 +344,11 @@ static int cmd_dprtc_info(void)
 	return info_dprtc(MC_FW_VERSION_8);
 }
 
+static int cmd_dprtc_info_v10(void)
+{
+	return info_dprtc(MC_FW_VERSION_10);
+}
+
 static int create_dprtc_v8(struct dprtc_cfg *dprtc_cfg)
 {
 	struct dprtc_attr dprtc_attr;
@@ -308,6 +385,23 @@ static int create_dprtc_v8(struct dprtc_cfg *dprtc_cfg)
 	return 0;
 }
 
+static int create_dprtc_v10(struct dprtc_cfg *dprtc_cfg)
+{
+	uint32_t dprtc_id;
+	int error;
+
+	error = dprtc_create_v10(&restool.mc_io, 0, 0, dprtc_cfg, &dprtc_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dprtc", dprtc_id, NULL);
+
+	return 0;
+}
+
 static int create_dprtc(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -333,6 +427,8 @@ static int create_dprtc(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = create_dprtc_v8(&dprtc_cfg);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = create_dprtc_v10(&dprtc_cfg);
 	else
 		return -EINVAL;
 
@@ -342,6 +438,11 @@ static int create_dprtc(int mc_fw_version)
 static int cmd_dprtc_create(void)
 {
 	return create_dprtc(MC_FW_VERSION_8);
+}
+
+static int cmd_dprtc_create_v10(void)
+{
+	return create_dprtc(MC_FW_VERSION_10);
 }
 
 static int destroy_dprtc_v8(uint32_t dprtc_id)
@@ -355,7 +456,7 @@ static int destroy_dprtc_v8(uint32_t dprtc_id)
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out;
+		goto out_v8;
 	}
 	dprtc_opened = true;
 	if (0 == dprtc_handle) {
@@ -363,7 +464,7 @@ static int destroy_dprtc_v8(uint32_t dprtc_id)
 			"dprtc_open() returned invalid handle (auth 0) for dprtc.%u\n",
 			dprtc_id);
 		error = -ENOENT;
-		goto out;
+		goto out_v8;
 	}
 
 	error = dprtc_destroy(&restool.mc_io, 0, dprtc_handle);
@@ -371,12 +472,12 @@ static int destroy_dprtc_v8(uint32_t dprtc_id)
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out;
+		goto out_v8;
 	}
 	dprtc_opened = false;
 	printf("dprtc.%u is destroyed\n", dprtc_id);
 
-out:
+out_v8:
 	if (dprtc_opened) {
 		error2 = dprtc_close(&restool.mc_io, 0, dprtc_handle);
 		if (error2 < 0) {
@@ -388,6 +489,24 @@ out:
 		}
 	}
 
+	return error;
+}
+
+static int destroy_dprtc_v10(uint32_t dprtc_id)
+{
+	int error;
+
+	error = dprtc_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				 0, dprtc_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dprtc.%u is destroyed\n", dprtc_id);
+
+out:
 	return error;
 }
 
@@ -431,6 +550,8 @@ static int destroy_dprtc(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = destroy_dprtc_v8(dprtc_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dprtc_v10(dprtc_id);
 	else
 		return -EINVAL;
 
@@ -441,6 +562,11 @@ out:
 static int cmd_dprtc_destroy(void)
 {
 	return destroy_dprtc(MC_FW_VERSION_8);
+}
+
+static int cmd_dprtc_destroy_v10(void)
+{
+	return destroy_dprtc(MC_FW_VERSION_10);
 }
 
 struct object_command dprtc_commands[] = {
@@ -459,6 +585,26 @@ struct object_command dprtc_commands[] = {
 	{ .cmd_name = "destroy",
 	  .options = dprtc_destroy_options,
 	  .cmd_func = cmd_dprtc_destroy },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dprtc_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dprtc_help },
+
+	{ .cmd_name = "info",
+	  .options = dprtc_info_options,
+	  .cmd_func = cmd_dprtc_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dprtc_create_options,
+	  .cmd_func = cmd_dprtc_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dprtc_destroy_options,
+	  .cmd_func = cmd_dprtc_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };
