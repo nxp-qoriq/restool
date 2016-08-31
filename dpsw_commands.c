@@ -39,6 +39,7 @@
 #include "utils.h"
 #include "mc_v8/fsl_dpsw.h"
 #include "mc_v9/fsl_dpsw.h"
+#include "mc_v10/fsl_dpsw.h"
 
 #define ALL_DPSW_OPTS (			\
 	DPSW_OPT_FLOODING_DIS |		\
@@ -423,6 +424,86 @@ out:
 	return error;
 }
 
+static int print_dpsw_attr_v10(uint32_t dpsw_id,
+			       struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpsw_attr_v10 dpsw_attr;
+	uint16_t obj_major, obj_minor;
+	bool dpsw_opened = false;
+	uint16_t dpsw_handle;
+	int error;
+
+	error = dpsw_open(&restool.mc_io, 0, dpsw_id, &dpsw_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpsw_opened = true;
+	if (0 == dpsw_handle) {
+		DEBUG_PRINTF(
+			"dpsw_open() returned invalid handle (auth 0) for dpsw.%u\n",
+			dpsw_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
+	error = dpsw_get_attributes_v10(&restool.mc_io, 0, dpsw_handle,
+					&dpsw_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpsw_id == (uint32_t)dpsw_attr.id);
+
+	error = dpsw_get_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpsw version: %u.%u\n", obj_major, obj_minor);
+	printf("dpsw id: %d\n", dpsw_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_dpsw_endpoint(dpsw_id, dpsw_attr.num_ifs);
+	printf("dpsw_attr.options value is: %#llx\n",
+	       (unsigned long long)dpsw_attr.options);
+	print_dpsw_options(dpsw_attr.options);
+	printf("max VLANs: %u\n", (uint32_t)dpsw_attr.max_vlans);
+	printf("max FDBs: %u\n", (uint32_t)dpsw_attr.max_fdbs);
+	printf("frame storage memory size: %u\n",
+	       (uint32_t)dpsw_attr.mem_size);
+	printf("number of interfaces: %u\n", (uint32_t)dpsw_attr.num_ifs);
+	printf("current number of VLANs: %u\n", (uint32_t)dpsw_attr.num_vlans);
+	printf("current number of FDBs: %u\n", (uint32_t)dpsw_attr.num_fdbs);
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+
+out:
+	if (dpsw_opened) {
+		int error2;
+
+		error2 = dpsw_close(&restool.mc_io, 0, dpsw_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpsw_info(uint32_t dpsw_id, int mc_fw_version)
 {
 	int error;
@@ -447,6 +528,8 @@ static int print_dpsw_info(uint32_t dpsw_id, int mc_fw_version)
 		error = print_dpsw_attr(dpsw_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpsw_attr_v9(dpsw_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpsw_attr_v10(dpsw_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -509,6 +592,11 @@ static int cmd_dpsw_info(void)
 static int cmd_dpsw_info_v9(void)
 {
 	return info_dpsw(MC_FW_VERSION_9);
+}
+
+static int cmd_dpsw_info_v10(void)
+{
+	return info_dpsw(MC_FW_VERSION_10);
 }
 
 #define OPTION_MAP_ENTRY(_option)	{#_option, _option}
@@ -911,6 +999,165 @@ static int cmd_dpsw_create_v9(void)
 	return create_dpsw_v9(usage_msg);
 }
 
+static int create_dpsw_v10(const char *usage_msg)
+{
+	struct dpsw_cfg_v9 dpsw_cfg = {0};
+	uint32_t dpsw_id;
+	int error;
+	long val;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name != NULL) {
+		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
+			     restool.obj_name);
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
+		error = get_option_value(CREATE_OPT_NUM_IFS, &val,
+				     "Invalid number of interfaces\n",
+				     0, UINT16_MAX);
+		if (error)
+			return error;
+		dpsw_cfg.num_ifs = (uint16_t)val;
+	} else {
+		dpsw_cfg.num_ifs = 4; /* Todo: default value not defined */
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+		error = parse_dpsw_create_options(
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
+				&dpsw_cfg.adv.options);
+		if (error < 0) {
+			DEBUG_PRINTF(
+				"parse_dpsw_create_options() failed with error %d, cannot get options-mask\n",
+				error);
+			return error;
+		}
+	} else { /* Todo: default option may change with spec */
+		dpsw_cfg.adv.options = 0;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_VLANS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_VLANS);
+		error = get_option_value(CREATE_OPT_MAX_VLANS, &val,
+				     "Invalid max vlans\n", 9, UINT16_MAX);
+		if (error)
+			return error;
+		dpsw_cfg.adv.max_vlans = (uint16_t)val;
+	} else {
+		dpsw_cfg.adv.max_vlans = 0;
+	}
+
+	if (restool.cmd_option_mask &
+	    ONE_BIT_MASK(CREATE_OPT_MAX_FDBS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_FDBS);
+		error = get_option_value(CREATE_OPT_MAX_FDBS, &val,
+				     "Invalid max FDB\n", 0, UINT8_MAX);
+		if (error)
+			return error;
+		dpsw_cfg.adv.max_fdbs = (uint8_t)val;
+	} else {
+		dpsw_cfg.adv.max_fdbs = 0;
+	}
+
+	if (restool.cmd_option_mask &
+	    ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES);
+		error = get_option_value(CREATE_OPT_MAX_FDB_ENTRIES, &val,
+				     "Invalid number of FDB entries\n",
+				     0, UINT16_MAX);
+		if (error)
+			return error;
+		dpsw_cfg.adv.max_fdb_entries = (uint16_t)val;
+	} else {
+		dpsw_cfg.adv.max_fdb_entries = 0;
+	}
+
+	if (restool.cmd_option_mask &
+	    ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME);
+		error = get_option_value(CREATE_OPT_FDB_AGING_TIME, &val,
+				     "Invalid FDB aging time\n", 0, UINT16_MAX);
+		if (error)
+			return error;
+		dpsw_cfg.adv.fdb_aging_time = (uint16_t)val;
+	} else {
+		dpsw_cfg.adv.fdb_aging_time = 0;
+	}
+
+	if (restool.cmd_option_mask &
+	    ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS);
+		error = get_option_value(CREATE_OPT_MAX_FDB_MC_GROUPS, &val,
+				     "Invalid number of multicast groups\n",
+				     0, UINT16_MAX);
+		if (error)
+			return error;
+		dpsw_cfg.adv.max_fdb_mc_groups = (uint16_t)val;
+	} else {
+		dpsw_cfg.adv.max_fdb_mc_groups = 0;
+	}
+
+	error = dpsw_create_v10(&restool.mc_io, 0, 0, &dpsw_cfg, &dpsw_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpsw", dpsw_id, NULL);
+
+	return error;
+}
+
+static int cmd_dpsw_create_v10(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpsw create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPSW by default options\n"
+		"--num-ifs=<number>\n"
+		"	Number of external and internal interfaces.\n"
+		"--options=<options-mask>\n"
+		"   Where <options-mask> is a comma separated list of DPSW options:\n"
+		"	DPSW_OPT_FLOODING_DIS\n"
+		"	DPSW_OPT_MULTICAST_DIS\n"
+		"	DPSW_OPT_CTRL_IF_DIS\n"
+		"	DPSW_OPT_FLOODING_METERING_DIS\n"
+		"	DPSW_OPT_METERING_EN\n"
+		"--max-vlans=<number>\n"
+		"	Maximum number of VLAN's. Default is 16.\n"
+		"--max-fdbs=<number>\n"
+		"	Maximum Number of FDB's. Default is 16.\n"
+		"--max-fdb-entries=<number>\n"
+		"	Number of FDB entries. Default is 1024;\n"
+		"--fdb-aging-time=<number>\n"
+		"	Default FDB aging time in seconds. Default is 300 seconds.\n"
+		"--max-fdb-mc-groups=<number>\n"
+		"	Number of multicast groups in each FDB table. Default is 32.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPSW object with all default options:\n"
+		"   $ restool dpsw create\n"
+		"\n";
+
+	return create_dpsw_v10(usage_msg);
+}
+
 static int destroy_dpsw_v8(uint32_t dpsw_id)
 {
 	bool dpsw_opened = false;
@@ -958,6 +1205,24 @@ out:
 	return error;
 }
 
+static int destroy_dpsw_v10(uint32_t dpsw_id)
+{
+	int error;
+
+	error = dpsw_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				 0, dpsw_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpsw.%u is destroyed\n", dpsw_id);
+
+out:
+	return error;
+}
+
 static int destroy_dpsw(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -998,6 +1263,8 @@ static int destroy_dpsw(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = destroy_dpsw_v8(dpsw_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpsw_v10(dpsw_id);
 	else
 		return -EINVAL;
 
@@ -1015,6 +1282,10 @@ static int cmd_dpsw_destroy_v9(void)
 	return destroy_dpsw(MC_FW_VERSION_9);
 }
 
+static int cmd_dpsw_destroy_v10(void)
+{
+	return destroy_dpsw(MC_FW_VERSION_10);
+}
 
 struct object_command dpsw_commands[] = {
 	{ .cmd_name = "help",
@@ -1052,6 +1323,26 @@ struct object_command dpsw_commands_v9[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpsw_destroy_options,
 	  .cmd_func = cmd_dpsw_destroy_v9 },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpsw_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpsw_help },
+
+	{ .cmd_name = "info",
+	  .options = dpsw_info_options,
+	  .cmd_func = cmd_dpsw_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpsw_create_options,
+	  .cmd_func = cmd_dpsw_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpsw_destroy_options,
+	  .cmd_func = cmd_dpsw_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };

@@ -349,6 +349,7 @@ extern struct object_command dpbp_commands[];
 extern struct object_command dpbp_commands_v10[];
 extern struct object_command dpsw_commands[];
 extern struct object_command dpsw_commands_v9[];
+extern struct object_command dpsw_commands_v10[];
 extern struct object_command dpci_commands[];
 extern struct object_command dpci_commands_v10[];
 extern struct object_command dpcon_commands[];
