@@ -358,6 +358,7 @@ extern struct object_command dpdmux_commands[];
 extern struct object_command dpdmux_commands_v9[];
 extern struct object_command dpmcp_commands[];
 extern struct object_command dpmac_commands[];
+extern struct object_command dpmac_commands_v10[];
 extern struct object_command dpdcei_commands[];
 extern struct object_command dpdcei_commands_v10[];
 extern struct object_command dpaiop_commands[];
