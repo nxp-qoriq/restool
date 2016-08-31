@@ -40,6 +40,7 @@
 #include "utils.h"
 #include "mc_v8/fsl_dpni.h"
 #include "mc_v9/fsl_dpni.h"
+#include "mc_v10/fsl_dpni.h"
 
 #define ALL_DPNI_OPTS (					\
 	DPNI_OPT_ALLOW_DIST_KEY_PER_TC |		\
@@ -125,6 +126,12 @@ enum dpni_create_options {
 	CREATE_OPT_MAX_QOS_ENTRIES,
 	CREATE_OPT_MAX_QOS_KEY_SIZE,
 	CREATE_OPT_MAX_DIST_KEY_SIZE,
+	CREATE_OPT_NUM_QUEUES,
+	CREATE_OPT_NUM_TCS,
+	CREATE_OPT_MAC_ENTRIES,
+	CREATE_OPT_VLAN_ENTRIES,
+	CREATE_OPT_QOS_ENTRIES,
+	CREATE_OPT_FS_ENTRIES,
 };
 
 static struct option dpni_create_options[] = {
@@ -219,6 +226,48 @@ static struct option dpni_create_options[] = {
 		.val = 0,
 	},
 
+	[CREATE_OPT_NUM_QUEUES] = {
+		.name = "num-queues",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_NUM_TCS] = {
+		.name = "num-tcs",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_MAC_ENTRIES] = {
+		.name = "mac-entries",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_VLAN_ENTRIES] = {
+		.name = "vlan-entries",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_QOS_ENTRIES] = {
+		.name = "qos-entries",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_FS_ENTRIES] = {
+		.name = "fs-entries",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
 	{ 0 },
 };
 
@@ -256,6 +305,32 @@ static const struct flib_ops dpni_ops_v9 = {
 	.obj_close = dpni_close,
 	.obj_get_irq_mask = dpni_get_irq_mask,
 	.obj_get_irq_status = dpni_get_irq_status_v9,
+};
+
+#define DPNI_STATS_PER_PAGE_V10 6
+
+static const char *dpni_stats_v10[][DPNI_STATS_PER_PAGE_V10] = {
+	{
+	"ingress_all_frames",
+	"ingress_all_bytes",
+	"ingress_multicast_frames",
+	"ingress_multicast_bytes",
+	"ingress_broadcast_frames",
+	"ingress_broadcast_bytes",
+	}, {
+	"egress_all_frames",
+	"egress_all_bytes",
+	"egress_multicast_frames",
+	"egress_multicast_bytes",
+	"egress_broadcast_frames",
+	"egress_broadcast_bytes",
+	}, {
+	"ingress_filtered_frames",
+	"ingress_discarded_frames",
+	"ingress_nobuffer_discards",
+	"egress_discarded_frames",
+	"egress_confirmed_frames",
+	},
 };
 
 static int cmd_dpni_help(void)
@@ -620,6 +695,125 @@ out:
 	return error;
 }
 
+static void dpni_print_stats(const char *strings[],
+			     union dpni_statistics_v10 dpni_stats)
+{
+	uint64_t *stat;
+	int i;
+
+	stat = (uint64_t *)&dpni_stats.raw;
+	for (i = 0; i < DPNI_STATS_PER_PAGE_V10; i++) {
+		printf("%s: %lu\n", strings[i], *stat);
+		stat++;
+	}
+}
+
+static int print_dpni_attr_v10(uint32_t dpni_id,
+			      struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpni_attr_v10 dpni_attr;
+	union dpni_statistics_v10 dpni_stats;
+	uint16_t dpni_handle, dpni_major, dpni_minor;
+	struct dpni_link_state link_state;
+	bool dpni_opened = false;
+	int error = 0;
+	int error2;
+	unsigned int page;
+
+	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpni_opened = true;
+	if (0 == dpni_handle) {
+		DEBUG_PRINTF(
+			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
+			dpni_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpni_attr, 0, sizeof(dpni_attr));
+	error = dpni_get_attributes_v10(&restool.mc_io, 0,
+					dpni_handle, &dpni_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	error = dpni_get_version_v10(&restool.mc_io, 0,
+				     &dpni_major, &dpni_minor);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	memset(&link_state, 0, sizeof(link_state));
+	error = dpni_get_link_state(&restool.mc_io, 0, dpni_handle,
+				    &link_state);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpni version: %u.%u\n", dpni_major, dpni_minor);
+	printf("dpni id: %d\n", dpni_id);
+
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	print_dpni_endpoint(dpni_id);
+	printf("link status: %d - ", link_state.up);
+	link_state.up == 0 ? printf("down\n") :
+	link_state.up == 1 ? printf("up\n") : printf("error state\n");
+
+	printf("dpni_attr.options value is: %#lx\n",
+	       (unsigned long)dpni_attr.options);
+	print_dpni_options(dpni_attr.options);
+
+	printf("num_queues: %u\n", (uint32_t)dpni_attr.num_queues);
+	printf("num_tcs: %u\n", (uint32_t)dpni_attr.num_tcs);
+	printf("mac_filter_entries: %u\n",
+	       (uint32_t)dpni_attr.mac_filter_entries);
+	printf("vlan_filter_entries: %u\n",
+	       (uint32_t)dpni_attr.vlan_filter_entries);
+	printf("qos_entries: %u\n", (uint32_t)dpni_attr.qos_entries);
+	printf("fs_entries: %u\n", (uint32_t)dpni_attr.fs_entries);
+	printf("qos_key_size: %u\n", (uint32_t)dpni_attr.qos_key_size);
+	printf("fs_key_size: %u\n", (uint32_t)dpni_attr.fs_key_size);
+
+	for (page = 0; page < 3; page++) {
+		error = dpni_get_statistics_v10(&restool.mc_io, 0,
+						dpni_handle, page, &dpni_stats);
+		dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+	}
+
+	print_obj_label(target_obj_desc);
+
+out:
+	if (dpni_opened) {
+
+		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpni_info(uint32_t dpni_id, int mc_fw_version)
 {
 	int error;
@@ -644,6 +838,8 @@ static int print_dpni_info(uint32_t dpni_id, int mc_fw_version)
 		error = print_dpni_attr(dpni_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpni_attr_v9(dpni_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpni_attr_v10(dpni_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -706,6 +902,11 @@ static int cmd_dpni_info(void)
 static int cmd_dpni_info_v9(void)
 {
 	return info_dpni(MC_FW_VERSION_9);
+}
+
+static int cmd_dpni_info_v10(void)
+{
+	return info_dpni(MC_FW_VERSION_10);
 }
 
 #define OPTION_MAP_ENTRY(_option)	{#_option, _option}
@@ -1538,6 +1739,188 @@ static int cmd_dpni_create_v9(void)
 	return create_dpni_v9(usage_msg);
 }
 
+static int parse_dpni_create_options_v10(char *options_str, uint32_t *options)
+{
+	static const struct {
+		const char *str;
+		uint32_t value;
+	} options_map[] = {
+		OPTION_MAP_ENTRY(DPNI_OPT_TX_FRM_RELEASE),
+		OPTION_MAP_ENTRY(DPNI_OPT_NO_MAC_FILTER),
+		OPTION_MAP_ENTRY(DPNI_OPT_HAS_POLICING),
+		OPTION_MAP_ENTRY(DPNI_OPT_SHARED_CONGESTION),
+		OPTION_MAP_ENTRY(DPNI_OPT_HAS_KEY_MASKING),
+		OPTION_MAP_ENTRY(DPNI_OPT_NO_FS),
+	};
+	char *cursor = NULL;
+	char *opt_str = strtok_r(options_str, ",", &cursor);
+	uint32_t options_mask = 0;
+
+	DEBUG_PRINTF("opt_str = %s\n", opt_str);
+
+	while (opt_str != NULL) {
+		unsigned int i;
+
+		for (i = 0; i < ARRAY_SIZE(options_map); ++i) {
+			if (strcmp(opt_str, options_map[i].str) == 0) {
+				options_mask |= options_map[i].value;
+				break;
+			}
+		}
+
+		if (i == ARRAY_SIZE(options_map)) {
+			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
+			return -EINVAL;
+		}
+
+		opt_str = strtok_r(NULL, ", ", &cursor);
+		DEBUG_PRINTF("opt_str = %s\n", opt_str);
+	}
+
+	*options = options_mask;
+
+	return 0;
+}
+
+static int create_dpni_v10(const char *usage_msg)
+{
+	struct dpni_cfg_v10 dpni_cfg;
+	uint32_t dpni_id;
+	long value;
+	int error;
+
+	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name != NULL) {
+		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
+			     restool.obj_name);
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+		error = parse_dpni_create_options_v10(
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
+				&dpni_cfg.options);
+		if (error) {
+			DEBUG_PRINTF("parse_dpni_create_options_v10() = %d\n",
+				     error);
+			return error;
+		}
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
+		error = get_option_value(CREATE_OPT_NUM_QUEUES, &value,
+				     "Invalid num-queues value\n", 0, 8);
+		if (error)
+			return error;
+		dpni_cfg.num_queues = (uint8_t)value;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_TCS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_TCS);
+		error = get_option_value(CREATE_OPT_NUM_TCS, &value,
+				     "Invalid num-tcs value\n", 0, 8);
+		dpni_cfg.num_tcs = (uint8_t)value;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ENTRIES)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ENTRIES);
+		error = get_option_value(CREATE_OPT_MAC_ENTRIES, &value,
+				     "Invalid mac-entries value\n", 0, 80);
+		if (error)
+			return error;
+		dpni_cfg.mac_filter_entries = (uint8_t)value;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_VLAN_ENTRIES)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_VLAN_ENTRIES);
+		error = get_option_value(CREATE_OPT_VLAN_ENTRIES, &value,
+				     "Invalid vlan-entries value\n", 0, 16);
+		if (error)
+			return error;
+		dpni_cfg.vlan_filter_entries = (uint8_t)value;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_QOS_ENTRIES)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_QOS_ENTRIES);
+		error = get_option_value(CREATE_OPT_QOS_ENTRIES, &value,
+				     "Invalid qos-entries value\n", 0, 64);
+		if (error)
+			return error;
+		dpni_cfg.qos_entries = (uint8_t)value;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_FS_ENTRIES)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_FS_ENTRIES);
+		error = get_option_value(CREATE_OPT_FS_ENTRIES, &value,
+				     "Invalid fs-entries value\n", 0, 1024);
+		if (error)
+			return error;
+		dpni_cfg.fs_entries = (uint16_t)value;
+	}
+
+	error = dpni_create_v10(&restool.mc_io, 0, 0, &dpni_cfg, &dpni_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpni", dpni_id, NULL);
+
+	return 0;
+}
+static int cmd_dpni_create_v10(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpni create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--mac-addr=<addr>\n"
+		"   String specifying primary MAC address (e.g. 00:00:05:00:00:05).\n"
+		"--options=<options-mask>\n"
+		"   Where <options-mask> is a comma or space separated list of DPNI options:\n"
+		"	DPNI_OPT_TX_FRM_RELEASE\n"
+		"	DPNI_OPT_NO_MAC_FILTER\n"
+		"	DPNI_OPT_HAS_POLICING\n"
+		"	DPNI_OPT_SHARED_CONGESTION\n"
+		"	DPNI_OPT_HAS_KEY_MASKING\n"
+		"	DPNI_OPT_NO_FS\n"
+		"--num-queues=<number>\n"
+		"   Number of TX/RX queues use for traffic distribution.\n"
+		"   Used to distribute traffic to multiple GPP cores,\n"
+		"   Defaults to one queue. Maximim supported value is 8\n"
+		"--num-tcs=<number>\n"
+		"   Number of traffic classes (TCs), reserved for the DPNI.\n"
+		"   Defaults to one TC. Maximum supported value is 8\n"
+		"--mac-entries=<number>\n"
+		"   Number of entries in the MAC address filtering table.\n"
+		"   Allows both unicast and multicast entries.\n"
+		"   By default, there are 80 entries.Maximum supported value is 80.\n"
+		"--vlan-entries=<number>\n"
+		"   Number of entries in the VLAN address filtering table\n"
+		"   By default, VLAN filtering is disabled. Maximum values is 16\n"
+		"--qos-entries=<number>\n"
+		"   Number of entries in the QoS classification table.\n"
+		"   Ignored of DPNI has a single TC. By default, set to 64.\n"
+		"--fs-entries=<number>\n"
+		"   Number of entries in the flow steering table.\n"
+		"   Defaults to 64. Maximum value is 1024\n"
+		"\n";
+
+	return create_dpni_v10(usage_msg);
+}
+
 static int destroy_dpni_v8(uint32_t dpni_id)
 {
 	bool dpni_opened = false;
@@ -1585,6 +1968,20 @@ out:
 	return error;
 }
 
+static int destroy_dpni_v10(uint32_t dpni_id)
+{
+	int error;
+
+	error = dpni_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				 0, dpni_id);
+	if (error)
+		goto out;
+	printf("dpni.%u is destroyed\n", dpni_id);
+
+out:
+	return error;
+}
+
 static int destroy_dpni(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -1625,9 +2022,10 @@ static int destroy_dpni(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = destroy_dpni_v8(dpni_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpni_v10(dpni_id);
 	else
 		return -EINVAL;
-
 out:
 	return error;
 }
@@ -1640,6 +2038,11 @@ static int cmd_dpni_destroy(void)
 static int cmd_dpni_destroy_v9(void)
 {
 	return destroy_dpni(MC_FW_VERSION_9);
+}
+
+static int cmd_dpni_destroy_v10(void)
+{
+	return destroy_dpni(MC_FW_VERSION_10);
 }
 
 struct object_command dpni_commands[] = {
@@ -1678,6 +2081,26 @@ struct object_command dpni_commands_v9[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpni_destroy_options,
 	  .cmd_func = cmd_dpni_destroy_v9 },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpni_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpni_help },
+
+	{ .cmd_name = "info",
+	  .options = dpni_info_options,
+	  .cmd_func = cmd_dpni_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpni_create_options,
+	  .cmd_func = cmd_dpni_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpni_destroy_options,
+	  .cmd_func = cmd_dpni_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };

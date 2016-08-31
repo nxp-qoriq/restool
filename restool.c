@@ -84,6 +84,7 @@ static const struct obj_command_versions dprc_command_versions[] = {
 static const struct obj_command_versions dpni_command_versions[] = {
 	{ .version = 5, .obj_commands = dpni_commands },
 	{ .version = 6, .obj_commands = dpni_commands_v9 },
+	{ .version = 7, .obj_commands = dpni_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpio_command_versions[] = {
@@ -246,7 +247,7 @@ struct version_table dpmcp_version_table[] = {
 struct version_table dpni_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 5 },
 	{ .mc_major_version = 9, .object_version = 6 },
-	{ .mc_major_version = 10, .object_version = 6 },
+	{ .mc_major_version = 10, .object_version = 7 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dprc_version_table[] = {

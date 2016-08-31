@@ -343,6 +343,7 @@ extern struct restool restool;
 extern struct object_command dprc_commands[];
 extern struct object_command dpni_commands[];
 extern struct object_command dpni_commands_v9[];
+extern struct object_command dpni_commands_v10[];
 extern struct object_command dpio_commands[];
 extern struct object_command dpio_commands_v10[];
 extern struct object_command dpbp_commands[];
