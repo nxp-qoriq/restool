@@ -38,6 +38,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v8/fsl_dpseci.h"
+#include "mc_v10/fsl_dpseci.h"
 
 enum mc_cmd_status mc_status;
 
@@ -244,6 +245,110 @@ out:
 	return error;
 }
 
+static int print_dpseci_attr_v10(uint32_t dpseci_id,
+				 struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpseci_tx_queue_attr tx_attr;
+	struct dpseci_attr_v10 dpseci_attr;
+	uint16_t obj_major, obj_minor;
+	bool dpseci_opened = false;
+	uint16_t dpseci_handle;
+	uint8_t *priorities;
+	int error;
+
+	error = dpseci_open(&restool.mc_io, 0, dpseci_id, &dpseci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpseci_opened = true;
+	if (0 == dpseci_handle) {
+		DEBUG_PRINTF(
+			"dpseci_open() returned invalid handle (auth 0) for dpseci.%u\n",
+			dpseci_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpseci_attr, 0, sizeof(dpseci_attr));
+	error = dpseci_get_attributes_v10(&restool.mc_io, 0, dpseci_handle,
+					  &dpseci_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpseci_id == (uint32_t)dpseci_attr.id);
+
+	error = dpseci_get_version_v10(&restool.mc_io, 0,
+				       &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpseci version: %u.%u\n", obj_major, obj_minor);
+	printf("dpseci id: %d\n", dpseci_attr.id);
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	printf("number of transmit queues: %u\n", dpseci_attr.num_tx_queues);
+	printf("number of receive queues: %u\n", dpseci_attr.num_rx_queues);
+
+	priorities = malloc(dpseci_attr.num_tx_queues * sizeof(*priorities));
+	if (priorities == NULL) {
+		ERROR_PRINTF("malloc failed\n");
+		error = -errno;
+		goto out;
+	}
+
+	for (int i = 0; i < dpseci_attr.num_tx_queues; i++) {
+		error = dpseci_get_tx_queue(&restool.mc_io, 0, dpseci_handle,
+					    i, &tx_attr);
+
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			free(priorities);
+			goto out;
+		}
+
+		priorities[i] = tx_attr.priority;
+	}
+	printf("tx priorities: ");
+	for (int i = 0; i < dpseci_attr.num_tx_queues-1; i++)
+		printf("%d,", priorities[i]);
+
+	printf("%d\n", priorities[dpseci_attr.num_tx_queues-1]);
+
+	free(priorities);
+
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+
+out:
+	if (dpseci_opened) {
+		int error2;
+
+		error2 = dpseci_close(&restool.mc_io, 0, dpseci_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpseci_info(uint32_t dpseci_id, int mc_fw_version)
 {
 	int error;
@@ -266,6 +371,8 @@ static int print_dpseci_info(uint32_t dpseci_id, int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpseci_attr(dpseci_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpseci_attr_v10(dpseci_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -322,6 +429,11 @@ out:
 static int cmd_dpseci_info(void)
 {
 	return info_dpseci(MC_FW_VERSION_8);
+}
+
+static int cmd_dpseci_info_v10(void)
+{
+	return info_dpseci(MC_FW_VERSION_10);
 }
 
 static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities,
@@ -396,6 +508,24 @@ static int create_dpseci_v8(struct dpseci_cfg *dpseci_cfg)
 	return 0;
 }
 
+static int create_dpseci_v10(struct dpseci_cfg *dpseci_cfg)
+{
+	uint32_t dpseci_id;
+	int error;
+
+	error = dpseci_create_v10(&restool.mc_io, 0, 0,
+				  dpseci_cfg, &dpseci_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpseci", dpseci_id, NULL);
+
+	return 0;
+}
+
 static int create_dpseci(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -461,6 +591,8 @@ static int create_dpseci(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = create_dpseci_v8(&dpseci_cfg);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = create_dpseci_v10(&dpseci_cfg);
 	else
 		return -EINVAL;
 
@@ -470,6 +602,11 @@ static int create_dpseci(int mc_fw_version)
 static int cmd_dpseci_create(void)
 {
 	return create_dpseci(MC_FW_VERSION_8);
+}
+
+static int cmd_dpseci_create_v10(void)
+{
+	return create_dpseci(MC_FW_VERSION_10);
 }
 
 static int destroy_dpseci_v8(uint32_t dpseci_id)
@@ -515,7 +652,24 @@ out:
 				error = error2;
 		}
 	}
+	return error;
+}
 
+static int destroy_dpseci_v10(uint32_t dpseci_id)
+{
+	int error;
+
+	error = dpseci_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				 0, dpseci_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpseci.%u is destroyed\n", dpseci_id);
+
+out:
 	return error;
 }
 
@@ -559,8 +713,11 @@ static int destroy_dpseci(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = destroy_dpseci_v8(dpseci_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpseci_v10(dpseci_id);
 	else
 		return -EINVAL;
+
 out:
 	return error;
 }
@@ -568,6 +725,11 @@ out:
 static int cmd_dpseci_destroy(void)
 {
 	return destroy_dpseci(MC_FW_VERSION_8);
+}
+
+static int cmd_dpseci_destroy_v10(void)
+{
+	return destroy_dpseci(MC_FW_VERSION_10);
 }
 
 struct object_command dpseci_commands[] = {
@@ -586,6 +748,26 @@ struct object_command dpseci_commands[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpseci_destroy_options,
 	  .cmd_func = cmd_dpseci_destroy },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpseci_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpseci_help },
+
+	{ .cmd_name = "info",
+	  .options = dpseci_info_options,
+	  .cmd_func = cmd_dpseci_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpseci_create_options,
+	  .cmd_func = cmd_dpseci_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpseci_destroy_options,
+	  .cmd_func = cmd_dpseci_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };
