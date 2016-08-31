@@ -341,7 +341,44 @@ static int cmd_dpaiop_info(void)
 	return info_dpaiop(MC_FW_VERSION_8);
 }
 
-static int cmd_dpaiop_create(void)
+static int create_dpaiop_v8(struct dpaiop_cfg *dpaiop_cfg)
+{
+	struct dpaiop_attr dpaiop_attr;
+	uint16_t dpaiop_handle;
+	int error;
+
+	error = dpaiop_create(&restool.mc_io, 0, dpaiop_cfg, &dpaiop_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	memset(&dpaiop_attr, 0, sizeof(struct dpaiop_attr));
+	error = dpaiop_get_attributes(&restool.mc_io, 0, dpaiop_handle,
+					&dpaiop_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpaiop", dpaiop_attr.id,
+		restool.cmd_option_args[CREATE_OPT_AIOP_CONTAINER]);
+
+	error = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpaiop(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -356,8 +393,6 @@ static int cmd_dpaiop_create(void)
 
 	int error;
 	struct dpaiop_cfg dpaiop_cfg;
-	uint16_t dpaiop_handle;
-	struct dpaiop_attr dpaiop_attr;
 	uint32_t obj_id;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -392,35 +427,17 @@ static int cmd_dpaiop_create(void)
 		return -EINVAL;
 	}
 
-	error = dpaiop_create(&restool.mc_io, 0, &dpaiop_cfg, &dpaiop_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpaiop_attr, 0, sizeof(struct dpaiop_attr));
-	error = dpaiop_get_attributes(&restool.mc_io, 0, dpaiop_handle,
-					&dpaiop_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpaiop", dpaiop_attr.id,
-		restool.cmd_option_args[CREATE_OPT_AIOP_CONTAINER]);
-
-	error = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dpaiop_v8(&dpaiop_cfg);
+	else
+		return -EINVAL;
 
 	return 0;
+}
+
+static int cmd_dpaiop_create(void)
+{
+	return create_dpaiop(MC_FW_VERSION_8);
 }
 
 static int destroy_dpaiop_v8(uint32_t dpaiop_id)

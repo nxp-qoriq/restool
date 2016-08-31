@@ -304,7 +304,42 @@ static int cmd_dpio_info(void)
 	return info_dpio(MC_FW_VERSION_8);
 }
 
-static int cmd_dpio_create(void)
+static int create_dpio_v8(struct dpio_cfg *dpio_cfg)
+{
+	struct dpio_attr dpio_attr;
+	uint16_t dpio_handle;
+	int error;
+
+	error = dpio_create(&restool.mc_io, 0, dpio_cfg, &dpio_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	memset(&dpio_attr, 0, sizeof(struct dpio_attr));
+	error = dpio_get_attributes(&restool.mc_io, 0, dpio_handle, &dpio_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpio", dpio_attr.id, NULL);
+
+	error = dpio_close(&restool.mc_io, 0, dpio_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpio(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -328,8 +363,6 @@ static int cmd_dpio_create(void)
 	int error;
 	long val;
 	struct dpio_cfg dpio_cfg;
-	uint16_t dpio_handle;
-	struct dpio_attr dpio_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -376,35 +409,19 @@ static int cmd_dpio_create(void)
 		dpio_cfg.num_priorities = 8;
 	}
 
-	error = dpio_create(&restool.mc_io, 0, &dpio_cfg, &dpio_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dpio_v8(&dpio_cfg);
+	else
+		return -EINVAL;
 
-	memset(&dpio_attr, 0, sizeof(struct dpio_attr));
-	error = dpio_get_attributes(&restool.mc_io, 0, dpio_handle, &dpio_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpio", dpio_attr.id, NULL);
-
-	error = dpio_close(&restool.mc_io, 0, dpio_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
+	return error;
 }
 
+static int cmd_dpio_create(void)
+{
+	return create_dpio(MC_FW_VERSION_8);
+
+}
 static int destroy_dpio_v8(uint32_t dpio_id)
 {
 	bool dpio_opened = false;

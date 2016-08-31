@@ -286,7 +286,43 @@ static int cmd_dpcon_info(void)
 	return info_dpcon(MC_FW_VERSION_8);
 }
 
-static int cmd_dpcon_create(void)
+static int create_dpcon_v8(struct dpcon_cfg *dpcon_cfg)
+{
+	struct dpcon_attr dpcon_attr;
+	uint16_t dpcon_handle;
+	int error;
+
+	error = dpcon_create(&restool.mc_io, 0, dpcon_cfg, &dpcon_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	memset(&dpcon_attr, 0, sizeof(struct dpcon_attr));
+	error = dpcon_get_attributes(&restool.mc_io, 0, dpcon_handle,
+					&dpcon_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpcon", dpcon_attr.id, NULL);
+
+	error = dpcon_close(&restool.mc_io, 0, dpcon_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpcon(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -307,8 +343,6 @@ static int cmd_dpcon_create(void)
 	int error;
 	long val;
 	struct dpcon_cfg dpcon_cfg;
-	uint16_t dpcon_handle;
-	struct dpcon_attr dpcon_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -337,34 +371,17 @@ static int cmd_dpcon_create(void)
 		dpcon_cfg.num_priorities = 1;
 	}
 
-	error = dpcon_create(&restool.mc_io, 0, &dpcon_cfg, &dpcon_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dpcon_v8(&dpcon_cfg);
+	else
+		return -EINVAL;
 
-	memset(&dpcon_attr, 0, sizeof(struct dpcon_attr));
-	error = dpcon_get_attributes(&restool.mc_io, 0, dpcon_handle,
-					&dpcon_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpcon", dpcon_attr.id, NULL);
+	return error;
+}
 
-	error = dpcon_close(&restool.mc_io, 0, dpcon_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
+static int cmd_dpcon_create(void)
+{
+	return create_dpcon(MC_FW_VERSION_8);
 }
 
 static int destroy_dpcon_v8(uint32_t dpcon_id)

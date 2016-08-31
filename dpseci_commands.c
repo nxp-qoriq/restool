@@ -361,7 +361,42 @@ static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities,
 	return 0;
 }
 
-static int cmd_dpseci_create(void)
+static int create_dpseci_v8(struct dpseci_cfg *dpseci_cfg)
+{
+	struct dpseci_attr dpseci_attr;
+	uint16_t dpseci_handle;
+	int error;
+
+	error = dpseci_create(&restool.mc_io, 0, dpseci_cfg, &dpseci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	memset(&dpseci_attr, 0, sizeof(struct dpseci_attr));
+	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle,
+					&dpseci_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpseci", dpseci_attr.id, NULL);
+
+	error = dpseci_close(&restool.mc_io, 0, dpseci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpseci(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -380,8 +415,6 @@ static int cmd_dpseci_create(void)
 
 	int error;
 	struct dpseci_cfg dpseci_cfg = { 0 };
-	uint16_t dpseci_handle;
-	struct dpseci_attr dpseci_attr;
 	long val;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -426,33 +459,17 @@ static int cmd_dpseci_create(void)
 		return -EINVAL;
 	}
 
-	error = dpseci_create(&restool.mc_io, 0, &dpseci_cfg, &dpseci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	memset(&dpseci_attr, 0, sizeof(struct dpseci_attr));
-	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle,
-					&dpseci_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpseci", dpseci_attr.id, NULL);
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dpseci_v8(&dpseci_cfg);
+	else
+		return -EINVAL;
 
-	error = dpseci_close(&restool.mc_io, 0, dpseci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
+	return error;
+}
 
-	return 0;
+static int cmd_dpseci_create(void)
+{
+	return create_dpseci(MC_FW_VERSION_8);
 }
 
 static int destroy_dpseci_v8(uint32_t dpseci_id)

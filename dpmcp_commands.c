@@ -274,34 +274,13 @@ static int cmd_dpmcp_info(void)
 	return info_dpmcp(MC_FW_VERSION_8);
 }
 
-static int cmd_dpmcp_create(void)
+static int create_dpmcp_v8(struct dpmcp_cfg *dpmcp_cfg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpmcp create\n"
-		"\n";
-
-	int error;
-	struct dpmcp_cfg dpmcp_cfg = {0};
-	uint16_t dpmcp_handle;
 	struct dpmcp_attr dpmcp_attr;
+	uint16_t dpmcp_handle;
+	int error;
 
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name != NULL) {
-		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     restool.obj_name);
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
-
-	error = dpmcp_create(&restool.mc_io, 0, &dpmcp_cfg, &dpmcp_handle);
+	error = dpmcp_create(&restool.mc_io, 0, dpmcp_cfg, &dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -329,6 +308,44 @@ static int cmd_dpmcp_create(void)
 	}
 
 	return 0;
+}
+
+static int create_dpmcp(int mc_fw_version)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpmcp create\n"
+		"\n";
+
+	int error;
+	struct dpmcp_cfg dpmcp_cfg = {0};
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name != NULL) {
+		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
+			     restool.obj_name);
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
+
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dpmcp_v8(&dpmcp_cfg);
+	else
+		return -EINVAL;
+
+	return error;
+}
+
+static int cmd_dpmcp_create(void)
+{
+	return create_dpmcp(MC_FW_VERSION_8);
 }
 
 static int destroy_dpmcp_v8(uint32_t dpmcp_id)

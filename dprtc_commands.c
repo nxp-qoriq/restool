@@ -272,32 +272,13 @@ static int cmd_dprtc_info(void)
 	return info_dprtc(MC_FW_VERSION_8);
 }
 
-static int cmd_dprtc_create(void)
+static int create_dprtc_v8(struct dprtc_cfg *dprtc_cfg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dprtc create\n"
-		"\n";
-
-	int error;
-	struct dprtc_cfg dprtc_cfg;
-	uint16_t dprtc_handle;
 	struct dprtc_attr dprtc_attr;
+	uint16_t dprtc_handle;
+	int error;
 
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name != NULL) {
-		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     restool.obj_name);
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	error = dprtc_create(&restool.mc_io, 0, &dprtc_cfg, &dprtc_handle);
+	error = dprtc_create(&restool.mc_io, 0, dprtc_cfg, &dprtc_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -323,7 +304,44 @@ static int cmd_dprtc_create(void)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
+
 	return 0;
+}
+
+static int create_dprtc(int mc_fw_version)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dprtc create\n"
+		"\n";
+
+	int error;
+	struct dprtc_cfg dprtc_cfg;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name != NULL) {
+		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
+			     restool.obj_name);
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dprtc_v8(&dprtc_cfg);
+	else
+		return -EINVAL;
+
+	return error;
+}
+
+static int cmd_dprtc_create(void)
+{
+	return create_dprtc(MC_FW_VERSION_8);
 }
 
 static int destroy_dprtc_v8(uint32_t dprtc_id)

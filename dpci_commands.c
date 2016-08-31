@@ -314,7 +314,42 @@ static int cmd_dpci_info(void)
 	return info_dpci(MC_FW_VERSION_8);
 }
 
-static int cmd_dpci_create(void)
+static int create_dpci_v8(struct dpci_cfg *dpci_cfg)
+{
+	struct dpci_attr dpci_attr;
+	uint16_t dpci_handle;
+	int error;
+
+	error = dpci_create(&restool.mc_io, 0, dpci_cfg, &dpci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	memset(&dpci_attr, 0, sizeof(struct dpci_attr));
+	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpci", dpci_attr.id, NULL);
+
+	error = dpci_close(&restool.mc_io, 0, dpci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpci(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -337,8 +372,6 @@ static int cmd_dpci_create(void)
 	int error;
 	long val;
 	struct dpci_cfg dpci_cfg;
-	uint16_t dpci_handle;
-	struct dpci_attr dpci_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -367,32 +400,17 @@ static int cmd_dpci_create(void)
 		dpci_cfg.num_of_priorities = 1;
 	}
 
-	error = dpci_create(&restool.mc_io, 0, &dpci_cfg, &dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error  = create_dpci_v8(&dpci_cfg);
+	else
+		return -EINVAL;
 
-	memset(&dpci_attr, 0, sizeof(struct dpci_attr));
-	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpci", dpci_attr.id, NULL);
+	return error;
+}
 
-	error = dpci_close(&restool.mc_io, 0, dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	return 0;
+static int cmd_dpci_create(void)
+{
+	return create_dpci(MC_FW_VERSION_8);
 }
 
 static int destroy_dpci_v8(uint32_t dpci_id)

@@ -323,7 +323,43 @@ static int parse_dpdcei_engine(char *engine_str, enum dpdcei_engine *engine)
 	return -EINVAL;
 }
 
-static int cmd_dpdcei_create(void)
+static int create_dpdcei_v8(struct dpdcei_cfg *dpdcei_cfg)
+{
+	struct dpdcei_attr dpdcei_attr;
+	uint16_t dpdcei_handle;
+	int error;
+
+	error = dpdcei_create(&restool.mc_io, 0, dpdcei_cfg, &dpdcei_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	memset(&dpdcei_attr, 0, sizeof(struct dpdcei_attr));
+	error = dpdcei_get_attributes(&restool.mc_io, 0, dpdcei_handle,
+					&dpdcei_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpdcei", dpdcei_attr.id, NULL);
+
+	error = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpdcei(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -340,9 +376,7 @@ static int cmd_dpdcei_create(void)
 
 	int error;
 	struct dpdcei_cfg dpdcei_cfg;
-	uint16_t dpdcei_handle;
 	long val;
-	struct dpdcei_attr dpdcei_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -389,33 +423,17 @@ static int cmd_dpdcei_create(void)
 		return -EINVAL;
 	}
 
-	error = dpdcei_create(&restool.mc_io, 0, &dpdcei_cfg, &dpdcei_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dpdcei_v8(&dpdcei_cfg);
+	else
+		return -EINVAL;
 
-	memset(&dpdcei_attr, 0, sizeof(struct dpdcei_attr));
-	error = dpdcei_get_attributes(&restool.mc_io, 0, dpdcei_handle,
-					&dpdcei_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpdcei", dpdcei_attr.id, NULL);
+	return error;
+}
 
-	error = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	return 0;
+static int cmd_dpdcei_create(void)
+{
+	return create_dpdcei(MC_FW_VERSION_8);
 }
 
 static int destroy_dpdcei_v8(uint32_t dpdcei_id)

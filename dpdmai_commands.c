@@ -319,7 +319,43 @@ static int parse_dpdmai_priorities(char *priorities_str, uint8_t *priorities,
 	return 0;
 }
 
-static int cmd_dpdmai_create(void)
+static int create_dpdmai_v8(struct dpdmai_cfg *dpdmai_cfg)
+{
+	struct dpdmai_attr dpdmai_attr;
+	uint16_t dpdmai_handle;
+	int error;
+
+	error = dpdmai_create(&restool.mc_io, 0, dpdmai_cfg, &dpdmai_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	memset(&dpdmai_attr, 0, sizeof(struct dpdmai_attr));
+	error = dpdmai_get_attributes(&restool.mc_io, 0, dpdmai_handle,
+					&dpdmai_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpdmai", dpdmai_attr.id, NULL);
+
+	error = dpdmai_close(&restool.mc_io, 0, dpdmai_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpdmai(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -340,8 +376,6 @@ static int cmd_dpdmai_create(void)
 
 	int error;
 	struct dpdmai_cfg dpdmai_cfg = { { 0 } };
-	uint16_t dpdmai_handle;
-	struct dpdmai_attr dpdmai_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -374,34 +408,17 @@ static int cmd_dpdmai_create(void)
 		dpdmai_cfg.priorities[1] = 2;
 	}
 
-	error = dpdmai_create(&restool.mc_io, 0, &dpdmai_cfg, &dpdmai_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dpdmai_v8(&dpdmai_cfg);
+	else
+		return -EINVAL;
 
-	memset(&dpdmai_attr, 0, sizeof(struct dpdmai_attr));
-	error = dpdmai_get_attributes(&restool.mc_io, 0, dpdmai_handle,
-					&dpdmai_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpdmai", dpdmai_attr.id, NULL);
+	return error;
+}
 
-	error = dpdmai_close(&restool.mc_io, 0, dpdmai_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
+static int cmd_dpdmai_create(void)
+{
+	return create_dpdmai(MC_FW_VERSION_8);
 }
 
 static int destroy_dpdmai_v8(uint32_t dpdmai_id)

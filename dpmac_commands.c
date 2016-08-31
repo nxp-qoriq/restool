@@ -396,7 +396,43 @@ static int cmd_dpmac_info(void)
 	return info_dpmac(MC_FW_VERSION_8);
 }
 
-static int cmd_dpmac_create(void)
+static int create_dpmac_v8(struct dpmac_cfg *dpmac_cfg)
+{
+	struct dpmac_attr dpmac_attr;
+	uint16_t dpmac_handle;
+	int error;
+
+	error = dpmac_create(&restool.mc_io, 0, dpmac_cfg, &dpmac_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	memset(&dpmac_attr, 0, sizeof(struct dpmac_attr));
+	error = dpmac_get_attributes(&restool.mc_io, 0, dpmac_handle,
+					&dpmac_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpmac", dpmac_attr.id, NULL);
+
+	error = dpmac_close(&restool.mc_io, 0, dpmac_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpmac(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -413,8 +449,6 @@ static int cmd_dpmac_create(void)
 	int error;
 	long val;
 	struct dpmac_cfg dpmac_cfg;
-	uint16_t dpmac_handle;
-	struct dpmac_attr dpmac_attr;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -444,34 +478,17 @@ static int cmd_dpmac_create(void)
 		return -EINVAL;
 	}
 
-	error = dpmac_create(&restool.mc_io, 0, &dpmac_cfg, &dpmac_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = create_dpmac_v8(&dpmac_cfg);
+	else
+		return -EINVAL;
 
-	memset(&dpmac_attr, 0, sizeof(struct dpmac_attr));
-	error = dpmac_get_attributes(&restool.mc_io, 0, dpmac_handle,
-					&dpmac_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpmac", dpmac_attr.id, NULL);
+	return error;
+}
 
-	error = dpmac_close(&restool.mc_io, 0, dpmac_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
+static int cmd_dpmac_create(void)
+{
+	return create_dpmac(MC_FW_VERSION_8);
 }
 
 static int destroy_dpmac_v8(uint32_t dpmac_id)
