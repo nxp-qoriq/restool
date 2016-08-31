@@ -131,6 +131,7 @@ static const struct obj_command_versions dpdcei_command_versions[] = {
 };
 static const struct obj_command_versions dpaiop_command_versions[] = {
 	{ .version = 1, .obj_commands = dpaiop_commands },
+	{ .version = 2, .obj_commands = dpaiop_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpdbg_command_versions[] = {
@@ -173,7 +174,7 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
 struct version_table dpaiop_version_table[] = {
 	{ .mc_major_version = 8, .object_version = 1 },
 	{ .mc_major_version = 9, .object_version = 1 },
-	{ .mc_major_version = 10, .object_version = 1 },
+	{ .mc_major_version = 10, .object_version = 2 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpbp_version_table[] = {

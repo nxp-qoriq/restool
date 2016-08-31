@@ -38,6 +38,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v8/fsl_dpaiop.h"
+#include "mc_v10/fsl_dpaiop.h"
 
 enum mc_cmd_status mc_status;
 
@@ -261,6 +262,106 @@ out:
 	return error;
 }
 
+static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
+			struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpaiop_attr_v10 dpaiop_attr;
+	uint16_t dpaiop_token;
+	uint16_t obj_major, obj_minor;
+
+	int error;
+	struct dpaiop_sl_version dpaiop_sl_version;
+	uint32_t state;
+	bool dpaiop_opened = false;
+
+	error = dpaiop_open(&restool.mc_io, 0, dpaiop_id, &dpaiop_token);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpaiop_opened = true;
+	if (!dpaiop_token) {
+		DEBUG_PRINTF(
+			"dpaiop_open() returned invalid handle (auth 0) for dpaiop.%u\n",
+			dpaiop_id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	/* get object attributes */
+	memset(&dpaiop_attr, 0, sizeof(dpaiop_attr));
+	error = dpaiop_get_attributes_v10(&restool.mc_io, 0,
+					  dpaiop_token, &dpaiop_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpaiop_id == (uint32_t)dpaiop_attr.id);
+	printf("dpaiop id: %d\n", dpaiop_attr.id);
+
+	/* get object version */
+	error = dpaiop_get_version_v10(&restool.mc_io, 0,
+				       &obj_major, &obj_minor);
+	printf("dpaiop version: %u.%u\n", obj_major, obj_minor);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	/* print object state */
+	printf("plugged state: %splugged\n",
+		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+
+	/* get object server layer */
+	memset(&dpaiop_sl_version, 0, sizeof(dpaiop_sl_version));
+	error = dpaiop_get_sl_version(&restool.mc_io, 0, dpaiop_token,
+					&dpaiop_sl_version);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpaiop server layer version: %u.%u.%u\n",
+		dpaiop_sl_version.major,
+		dpaiop_sl_version.minor,
+		dpaiop_sl_version.revision);
+
+	error = dpaiop_get_state(&restool.mc_io, 0, dpaiop_token, &state);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	print_dpaiop_state(state);
+	print_obj_label(target_obj_desc);
+
+	error = 0;
+
+out:
+	if (dpaiop_opened) {
+		int error2;
+
+		error2 = dpaiop_close(&restool.mc_io, 0, dpaiop_token);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int print_dpaiop_info(uint32_t dpaiop_id, int mc_fw_version)
 {
 	int error;
@@ -283,6 +384,8 @@ static int print_dpaiop_info(uint32_t dpaiop_id, int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpaiop_attr(dpaiop_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = print_dpaiop_attr_v10(dpaiop_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -341,6 +444,11 @@ static int cmd_dpaiop_info(void)
 	return info_dpaiop(MC_FW_VERSION_8);
 }
 
+static int cmd_dpaiop_info_v10(void)
+{
+	return info_dpaiop(MC_FW_VERSION_10);
+}
+
 static int create_dpaiop_v8(struct dpaiop_cfg *dpaiop_cfg)
 {
 	struct dpaiop_attr dpaiop_attr;
@@ -374,6 +482,26 @@ static int create_dpaiop_v8(struct dpaiop_cfg *dpaiop_cfg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
+
+	return 0;
+}
+
+static int create_dpaiop_v10(struct dpaiop_cfg *dpaiop_cfg)
+{
+	uint32_t dpaiop_id;
+	int error;
+
+	error = dpaiop_create_v10(&restool.mc_io, 0,
+				  restool.root_dprc_handle,
+				  dpaiop_cfg, &dpaiop_id);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status),
+			     mc_status);
+		return error;
+	}
+	print_new_obj("dpaiop", dpaiop_id, NULL);
 
 	return 0;
 }
@@ -429,6 +557,8 @@ static int create_dpaiop(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = create_dpaiop_v8(&dpaiop_cfg);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = create_dpaiop_v10(&dpaiop_cfg);
 	else
 		return -EINVAL;
 
@@ -438,6 +568,11 @@ static int create_dpaiop(int mc_fw_version)
 static int cmd_dpaiop_create(void)
 {
 	return create_dpaiop(MC_FW_VERSION_8);
+}
+
+static int cmd_dpaiop_create_v10(void)
+{
+	return create_dpaiop(MC_FW_VERSION_10);
 }
 
 static int destroy_dpaiop_v8(uint32_t dpaiop_id)
@@ -487,6 +622,24 @@ out:
 	return error;
 }
 
+static int destroy_dpaiop_v10(uint32_t dpaiop_id)
+{
+	int error = 0;
+
+	error = dpaiop_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+				   0, dpaiop_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	printf("dpaiop.%u is destroyed\n", dpaiop_id);
+
+out:
+	return error;
+}
+
 static int destroy_dpaiop(int mc_fw_version)
 {
 	static const char usage_msg[] =
@@ -526,6 +679,8 @@ static int destroy_dpaiop(int mc_fw_version)
 
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = destroy_dpaiop_v8(dpaiop_id);
+	else if (mc_fw_version == MC_FW_VERSION_10)
+		error = destroy_dpaiop_v10(dpaiop_id);
 	else
 		return -EINVAL;
 
@@ -536,6 +691,11 @@ out:
 static int cmd_dpaiop_destroy(void)
 {
 	return destroy_dpaiop(MC_FW_VERSION_8);
+}
+
+static int cmd_dpaiop_destroy_v10(void)
+{
+	return destroy_dpaiop(MC_FW_VERSION_10);
 }
 
 struct object_command dpaiop_commands[] = {
@@ -554,6 +714,26 @@ struct object_command dpaiop_commands[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpaiop_destroy_options,
 	  .cmd_func = cmd_dpaiop_destroy },
+
+	{ .cmd_name = NULL },
+};
+
+struct object_command dpaiop_commands_v10[] = {
+	{ .cmd_name = "help",
+	  .options = NULL,
+	  .cmd_func = cmd_dpaiop_help },
+
+	{ .cmd_name = "info",
+	  .options = dpaiop_info_options,
+	  .cmd_func = cmd_dpaiop_info_v10 },
+
+	{ .cmd_name = "create",
+	  .options = dpaiop_create_options,
+	  .cmd_func = cmd_dpaiop_create_v10 },
+
+	{ .cmd_name = "destroy",
+	  .options = dpaiop_destroy_options,
+	  .cmd_func = cmd_dpaiop_destroy_v10 },
 
 	{ .cmd_name = NULL },
 };
