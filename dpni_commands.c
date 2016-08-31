@@ -480,39 +480,6 @@ out:
 	return error;
 }
 
-static int print_dpni_info(uint32_t dpni_id)
-{
-	int error;
-	struct dprc_obj_desc target_obj_desc;
-	uint32_t target_parent_dprc_id;
-	bool found = false;
-
-	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_id,
-				restool.root_dprc_handle, 0, dpni_id,
-				"dpni", &target_obj_desc,
-				&target_parent_dprc_id, &found);
-	if (error < 0)
-		goto out;
-
-	if (strcmp(target_obj_desc.type, "dpni")) {
-		printf("dpni.%d does not exist\n", dpni_id);
-		return -EINVAL;
-	}
-
-	error = print_dpni_attr(dpni_id, &target_obj_desc);
-	if (error < 0)
-		goto out;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_obj_verbose(&target_obj_desc, &dpni_ops);
-	}
-
-out:
-	return error;
-}
-
 static int print_dpni_attr_v9(uint32_t dpni_id,
 			      struct dprc_obj_desc *target_obj_desc)
 {
@@ -653,7 +620,7 @@ out:
 	return error;
 }
 
-static int print_dpni_info_v9(uint32_t dpni_id)
+static int print_dpni_info(uint32_t dpni_id, int mc_fw_version)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
@@ -673,7 +640,10 @@ static int print_dpni_info_v9(uint32_t dpni_id)
 		return -EINVAL;
 	}
 
-	error = print_dpni_attr_v9(dpni_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = print_dpni_attr(dpni_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpni_attr_v9(dpni_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -686,7 +656,7 @@ out:
 	return error;
 }
 
-static int cmd_dpni_info(uint32_t mc_version)
+static int info_dpni(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -722,24 +692,20 @@ static int cmd_dpni_info(uint32_t mc_version)
 	if (error < 0)
 		goto out;
 
-	if (mc_version == 8)
-		error = print_dpni_info(obj_id);
-	else if (mc_version == 9)
-		error = print_dpni_info_v9(obj_id);
+	error = print_dpni_info(obj_id, mc_fw_version);
 
 out:
 	return error;
 }
 
-static int cmd_dpni_info_wrapper_v8(void)
+static int cmd_dpni_info(void)
 {
-	int error = cmd_dpni_info(8);
-	return error;
+	return info_dpni(MC_FW_VERSION_8);
 }
-static int cmd_dpni_info_wrapper_v9(void)
+
+static int cmd_dpni_info_v9(void)
 {
-	int error = cmd_dpni_info(9);
-	return error;
+	return info_dpni(MC_FW_VERSION_9);
 }
 
 #define OPTION_MAP_ENTRY(_option)	{#_option, _option}
@@ -1683,7 +1649,7 @@ struct object_command dpni_commands[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpni_info_options,
-	  .cmd_func = cmd_dpni_info_wrapper_v8 },
+	  .cmd_func = cmd_dpni_info },
 
 	{ .cmd_name = "create",
 	  .options = dpni_create_options,
@@ -1703,7 +1669,7 @@ struct object_command dpni_commands_v9[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpni_info_options,
-	  .cmd_func = cmd_dpni_info_wrapper_v9 },
+	  .cmd_func = cmd_dpni_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dpni_create_options,

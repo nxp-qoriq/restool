@@ -442,39 +442,6 @@ out:
 	return error;
 }
 
-static int print_dpdmux_info(uint32_t dpdmux_id)
-{
-	int error;
-	struct dprc_obj_desc target_obj_desc;
-	uint32_t target_parent_dprc_id;
-	bool found = false;
-
-	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_id,
-				restool.root_dprc_handle, 0, dpdmux_id,
-				"dpdmux", &target_obj_desc,
-				&target_parent_dprc_id, &found);
-	if (error < 0)
-		goto out;
-
-	if (strcmp(target_obj_desc.type, "dpdmux")) {
-		printf("dpdmux.%d does not exist\n", dpdmux_id);
-		return -EINVAL;
-	}
-
-	error = print_dpdmux_attr(dpdmux_id, &target_obj_desc);
-	if (error < 0)
-		goto out;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_obj_verbose(&target_obj_desc, &dpdmux_ops);
-	}
-
-out:
-	return error;
-}
-
 static int print_dpdmux_attr_v9(uint32_t dpdmux_id,
 			struct dprc_obj_desc *target_obj_desc)
 {
@@ -546,7 +513,7 @@ out:
 	return error;
 }
 
-static int print_dpdmux_info_v9(uint32_t dpdmux_id)
+static int print_dpdmux_info(uint32_t dpdmux_id, int mc_fw_version)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
@@ -566,7 +533,10 @@ static int print_dpdmux_info_v9(uint32_t dpdmux_id)
 		return -EINVAL;
 	}
 
-	error = print_dpdmux_attr_v9(dpdmux_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_8)
+		error = print_dpdmux_attr(dpdmux_id, &target_obj_desc);
+	else if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpdmux_attr_v9(dpdmux_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -579,7 +549,7 @@ out:
 	return error;
 }
 
-static int cmd_dpdmux_info(uint16_t obj_version)
+static int info_dpdmux(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -614,25 +584,21 @@ static int cmd_dpdmux_info(uint16_t obj_version)
 	error = parse_object_name(restool.obj_name, "dpdmux", &obj_id);
 	if (error < 0)
 		goto out;
-	if (obj_version == 8)
-		error = print_dpdmux_info(obj_id);
-	else if (obj_version == 9)
-		error = print_dpdmux_info_v9(obj_id);
+
+	error = print_dpdmux_info(obj_id, mc_fw_version);
 
 out:
 	return error;
 }
 
-static int cmd_dpdmux_info_wrapper_v8(void)
+static int cmd_dpdmux_info(void)
 {
-	int error = cmd_dpdmux_info(8);
-	return error;
+	return info_dpdmux(MC_FW_VERSION_8);
 }
 
-static int cmd_dpdmux_info_wrapper_v9(void)
+static int cmd_dpdmux_info_v9(void)
 {
-	int error = cmd_dpdmux_info(9);
-	return error;
+	return info_dpdmux(MC_FW_VERSION_9);
 }
 
 #define OPTION_MAP_ENTRY(_option)	{#_option, _option}
@@ -1241,7 +1207,7 @@ struct object_command dpdmux_commands[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpdmux_info_options,
-	  .cmd_func = cmd_dpdmux_info_wrapper_v8 },
+	  .cmd_func = cmd_dpdmux_info },
 
 	{ .cmd_name = "create",
 	  .options = dpdmux_create_options,
@@ -1261,7 +1227,7 @@ struct object_command dpdmux_commands_v9[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpdmux_info_options,
-	  .cmd_func = cmd_dpdmux_info_wrapper_v9 },
+	  .cmd_func = cmd_dpdmux_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dpdmux_create_options_v9,

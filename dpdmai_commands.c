@@ -202,7 +202,7 @@ out:
 	return error;
 }
 
-static int print_dpdmai_info(uint32_t dpdmai_id)
+static int print_dpdmai_info(uint32_t dpdmai_id, int mc_fw_version)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
@@ -222,7 +222,8 @@ static int print_dpdmai_info(uint32_t dpdmai_id)
 		return -EINVAL;
 	}
 
-	error = print_dpdmai_attr(dpdmai_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpdmai_attr(dpdmai_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -235,7 +236,7 @@ out:
 	return error;
 }
 
-static int cmd_dpdmai_info(void)
+static int info_dpdmai(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -271,9 +272,14 @@ static int cmd_dpdmai_info(void)
 	if (error < 0)
 		goto out;
 
-	error = print_dpdmai_info(obj_id);
+	error = print_dpdmai_info(obj_id, mc_fw_version);
 out:
 	return error;
+}
+
+static int cmd_dpdmai_info(void)
+{
+	return info_dpdmai(MC_FW_VERSION_8);
 }
 
 static int parse_dpdmai_priorities(char *priorities_str, uint8_t *priorities,

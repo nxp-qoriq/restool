@@ -192,7 +192,7 @@ out:
 	return error;
 }
 
-static int print_dprtc_info(uint32_t dprtc_id)
+static int print_dprtc_info(uint32_t dprtc_id, int mc_fw_version)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
@@ -212,7 +212,8 @@ static int print_dprtc_info(uint32_t dprtc_id)
 		return -EINVAL;
 	}
 
-	error = print_dprtc_attr(dprtc_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
+		error = print_dprtc_attr(dprtc_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -225,7 +226,7 @@ out:
 	return error;
 }
 
-static int cmd_dprtc_info(void)
+static int info_dprtc(int mc_fw_version)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -261,9 +262,14 @@ static int cmd_dprtc_info(void)
 	if (error < 0)
 		goto out;
 
-	error = print_dprtc_info(obj_id);
+	error = print_dprtc_info(obj_id, mc_fw_version);
 out:
 	return error;
+}
+
+static int cmd_dprtc_info(void)
+{
+	return info_dprtc(MC_FW_VERSION_8);
 }
 
 static int cmd_dprtc_create(void)
