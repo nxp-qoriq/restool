@@ -1950,6 +1950,8 @@ static int cmd_dpni_create_v10(void)
 		"--fs-entries=<number>\n"
 		"   Number of entries in the flow steering table.\n"
 		"   Defaults to 64. Maximum value is 1024\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"\n";
 
 	return create_dpni_v10(usage_msg);

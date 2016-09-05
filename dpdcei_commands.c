@@ -572,7 +572,7 @@ static int cmd_dpdcei_create_v10(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dpdcei create --engine=<engine> --priority=<number>\n"
+		"Usage: restool dpdcei create --engine=<engine> --priority=<number> [OPTIONS]\n"
 		"\n"
 		"--engine=<engine>\n"
 		"   compression or decompression engine to be selected.\n"
@@ -581,6 +581,12 @@ static int cmd_dpdcei_create_v10(void)
 		"	DPDCEI_ENGINE_DECOMPRESSION\n"
 		"--priority=<number>\n"
 		"   Priority for DCE hardware processing (valid values 1-8)\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPSW by default options\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
 		"\n";
 
 	return create_dpdcei(MC_FW_VERSION_10, usage_msg);

@@ -631,10 +631,16 @@ static int cmd_dpmac_create_v10(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dpmac create --mac-id=<number>\n"
+		"Usage: restool dpmac create --mac-id=<number> [OPTIONS]\n"
 		"   --mac-id=<number>\n"
 		"      Where <number> specifies the id of the hardware MAC associated with\n"
 		"      the DPMAC object.\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPSW by default options\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
 		"\n"
 		"EXAMPLE:\n"
 		"create a DPMAC with specified mac id:\n"

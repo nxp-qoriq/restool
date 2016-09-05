@@ -1371,6 +1371,9 @@ static int cmd_dpdmux_create_v10(void)
 		"   Maximum entries in DPDMUX address table. Default is 64.\n"
 		"--max-mc-groups=<number>\n"
 		"   Number of multicast groups in DPDMUX address table. Default is 32 groups.\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
 		"\n";
 
 	return create_dpdmux_v10(usage_msg);
