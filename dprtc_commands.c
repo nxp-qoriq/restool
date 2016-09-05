@@ -74,12 +74,20 @@ C_ASSERT(ARRAY_SIZE(dprtc_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  */
 enum dprtc_create_options {
 	CREATE_OPT_HELP = 0,
+	CREATE_OPT_PARENT_DPRC,
 };
 
 static struct option dprtc_create_options[] = {
 	[CREATE_OPT_HELP] = {
 		.name = "help",
 		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_PARENT_DPRC] = {
+		.name = "container",
+		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
 	},
@@ -387,17 +395,43 @@ static int create_dprtc_v8(struct dprtc_cfg *dprtc_cfg)
 
 static int create_dprtc_v10(struct dprtc_cfg *dprtc_cfg)
 {
-	uint32_t dprtc_id;
+	uint32_t dprtc_id, dprc_id;
+	uint16_t dprc_handle;
+	bool dprc_opened;
 	int error;
 
-	error = dprtc_create_v10(&restool.mc_io, 0, 0, dprtc_cfg, &dprtc_id);
+	dprc_handle = restool.root_dprc_handle;
+	dprc_opened = false;
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC);
+		error = parse_object_name(
+				restool.cmd_option_args[CREATE_OPT_PARENT_DPRC],
+				"dprc", &dprc_id);
+		if (error)
+			return error;
+
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+		dprc_opened = true;
+	}
+
+	error = dprtc_create_v10(&restool.mc_io, dprc_handle,
+				 0, dprtc_cfg, &dprtc_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	print_new_obj("dprtc", dprtc_id, NULL);
+
+	if (dprc_opened) {
+		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
+		print_new_obj("dprtc", dprtc_id,
+			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
+	} else {
+		print_new_obj("dprtc", dprtc_id, NULL);
+	}
 
 	return 0;
 }

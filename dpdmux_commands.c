@@ -161,6 +161,7 @@ enum dpdmux_create_options_v9 {
 	CREATE_OPT_OPTIONS_V9,
 	CREATE_OPT_MAX_DMAT_ENTRIES_V9,
 	CREATE_OPT_MAX_MC_GROUPS_V9,
+	CREATE_OPT_PARENT_DPRC,
 };
 
 static struct option dpdmux_create_options_v9[] = {
@@ -208,6 +209,13 @@ static struct option dpdmux_create_options_v9[] = {
 
 	[CREATE_OPT_MAX_MC_GROUPS_V9] = {
 		.name = "max-mc-groups",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_PARENT_DPRC] = {
+		.name = "container",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -1188,7 +1196,9 @@ static int cmd_dpdmux_create_v9(void)
 static int create_dpdmux_v10(const char* usage_msg)
 {
 	struct dpdmux_cfg_v9 dpdmux_cfg = {0};
-	uint32_t dpdmux_id;
+	uint32_t dpdmux_id, dprc_id;
+	uint16_t dprc_handle;
+	bool dprc_opened;
 	int error;
 	long val;
 
@@ -1294,7 +1304,23 @@ static int create_dpdmux_v10(const char* usage_msg)
 		dpdmux_cfg.adv.max_mc_groups = 0;
 	}
 
-	error = dpdmux_create_v10(&restool.mc_io, 0, 0,
+	dprc_handle = restool.root_dprc_handle;
+	dprc_opened = false;
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC);
+		error = parse_object_name(
+				restool.cmd_option_args[CREATE_OPT_PARENT_DPRC],
+				"dprc", &dprc_id);
+		if (error)
+			return error;
+
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+		dprc_opened = true;
+	}
+
+	error = dpdmux_create_v10(&restool.mc_io, dprc_handle, 0,
 				  &dpdmux_cfg, &dpdmux_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -1302,7 +1328,14 @@ static int create_dpdmux_v10(const char* usage_msg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	print_new_obj("dpdmux", dpdmux_id, NULL);
+
+	if (dprc_opened) {
+		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
+		print_new_obj("dpdmux", dpdmux_id,
+			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
+	} else {
+		print_new_obj("dpdmux", dpdmux_id, NULL);
+	}
 
 	return 0;
 }

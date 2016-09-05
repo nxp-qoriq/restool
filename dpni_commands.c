@@ -132,6 +132,7 @@ enum dpni_create_options {
 	CREATE_OPT_VLAN_ENTRIES,
 	CREATE_OPT_QOS_ENTRIES,
 	CREATE_OPT_FS_ENTRIES,
+	CREATE_OPT_PARENT_DPRC,
 };
 
 static struct option dpni_create_options[] = {
@@ -263,6 +264,13 @@ static struct option dpni_create_options[] = {
 
 	[CREATE_OPT_FS_ENTRIES] = {
 		.name = "fs-entries",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_PARENT_DPRC] = {
+		.name = "container",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -1785,7 +1793,9 @@ static int parse_dpni_create_options_v10(char *options_str, uint32_t *options)
 static int create_dpni_v10(const char *usage_msg)
 {
 	struct dpni_cfg_v10 dpni_cfg;
-	uint32_t dpni_id;
+	uint32_t dpni_id, dprc_id;
+	uint16_t dprc_handle;
+	bool dprc_opened;
 	long value;
 	int error;
 
@@ -1868,14 +1878,38 @@ static int create_dpni_v10(const char *usage_msg)
 		dpni_cfg.fs_entries = (uint16_t)value;
 	}
 
-	error = dpni_create_v10(&restool.mc_io, 0, 0, &dpni_cfg, &dpni_id);
+	dprc_handle = restool.root_dprc_handle;
+	dprc_opened = false;
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC);
+		error = parse_object_name(
+				restool.cmd_option_args[CREATE_OPT_PARENT_DPRC],
+				"dprc", &dprc_id);
+		if (error)
+			return error;
+
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+		dprc_opened = true;
+	}
+
+	error = dpni_create_v10(&restool.mc_io, dprc_handle, 0,
+				&dpni_cfg, &dpni_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	print_new_obj("dpni", dpni_id, NULL);
+
+	if (dprc_opened) {
+		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
+		print_new_obj("dpni", dpni_id,
+			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
+	} else {
+		print_new_obj("dpni", dpni_id, NULL);
+	}
 
 	return 0;
 }

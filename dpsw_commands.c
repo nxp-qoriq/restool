@@ -90,6 +90,7 @@ enum dpsw_create_options {
 	CREATE_OPT_MAX_FDB_ENTRIES,
 	CREATE_OPT_FDB_AGING_TIME,
 	CREATE_OPT_MAX_FDB_MC_GROUPS,
+	CREATE_OPT_PARENT_DPRC,
 };
 
 static struct option dpsw_create_options[] = {
@@ -144,6 +145,13 @@ static struct option dpsw_create_options[] = {
 
 	[CREATE_OPT_MAX_FDB_MC_GROUPS] = {
 		.name = "max-fdb-mc-groups",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_PARENT_DPRC] = {
+		.name = "container",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -1002,7 +1010,9 @@ static int cmd_dpsw_create_v9(void)
 static int create_dpsw_v10(const char *usage_msg)
 {
 	struct dpsw_cfg_v9 dpsw_cfg = {0};
-	uint32_t dpsw_id;
+	uint32_t dpsw_id, dprc_id;
+	uint16_t dprc_handle;
+	bool dprc_opened;
 	int error;
 	long val;
 
@@ -1110,14 +1120,38 @@ static int create_dpsw_v10(const char *usage_msg)
 		dpsw_cfg.adv.max_fdb_mc_groups = 0;
 	}
 
-	error = dpsw_create_v10(&restool.mc_io, 0, 0, &dpsw_cfg, &dpsw_id);
+	dprc_handle = restool.root_dprc_handle;
+	dprc_opened = false;
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC);
+		error = parse_object_name(
+				restool.cmd_option_args[CREATE_OPT_PARENT_DPRC],
+				"dprc", &dprc_id);
+		if (error)
+			return error;
+
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+		dprc_opened = true;
+	}
+
+	error = dpsw_create_v10(&restool.mc_io, dprc_handle, 0,
+				&dpsw_cfg, &dpsw_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	print_new_obj("dpsw", dpsw_id, NULL);
+
+	if (dprc_opened) {
+		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
+		print_new_obj("dpsw", dpsw_id,
+			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
+	} else {
+		print_new_obj("dpsw", dpsw_id, NULL);
+	}
 
 	return error;
 }
