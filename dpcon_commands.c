@@ -455,24 +455,8 @@ static int create_dpcon_v10(struct dpcon_cfg *dpcon_cfg)
 	return 0;
 }
 
-static int create_dpcon(int mc_fw_version)
+static int create_dpcon(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpcon create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPCON by default options\n"
-		"--num-priorities=<number>\n"
-		"   Valid values for <number> are 1-8. Default value is 1.\n"
-		"\n"
-		"EXAMPLES:\n"
-		"Create a DPCON object with all default options:\n"
-		"   $ restool dpcon create\n"
-		"Create a DPCON with 4 priorities:\n"
-		"   $ restool dpcon create --num-priorities=4\n"
-		"\n";
-
 	int error;
 	long val;
 	struct dpcon_cfg dpcon_cfg;
@@ -516,12 +500,44 @@ static int create_dpcon(int mc_fw_version)
 
 static int cmd_dpcon_create(void)
 {
-	return create_dpcon(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpcon create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPCON by default options\n"
+		"--num-priorities=<number>\n"
+		"   Valid values for <number> are 1-8. Default value is 1.\n"
+		"\n"
+		"EXAMPLES:\n"
+		"Create a DPCON object with all default options:\n"
+		"   $ restool dpcon create\n"
+		"Create a DPCON with 4 priorities:\n"
+		"   $ restool dpcon create --num-priorities=4\n"
+		"\n";
+
+	return create_dpcon(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpcon_create_v10(void)
 {
-	return create_dpcon(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpcon create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPCON by default options\n"
+		"--num-priorities=<number>\n"
+		"   Valid values for <number> are 1-8. Default value is 1.\n"
+		"\n"
+		"EXAMPLES:\n"
+		"Create a DPCON object with all default options:\n"
+		"   $ restool dpcon create\n"
+		"Create a DPCON with 4 priorities:\n"
+		"   $ restool dpcon create --num-priorities=4\n"
+		"\n";
+
+	return create_dpcon(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpcon_v8(uint32_t dpcon_id)

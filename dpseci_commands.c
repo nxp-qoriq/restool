@@ -559,23 +559,8 @@ static int create_dpseci_v10(struct dpseci_cfg *dpseci_cfg)
 	return 0;
 }
 
-static int create_dpseci(int mc_fw_version)
+static int create_dpseci(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpseci create --num-queues=<count> --priorities=<pri1,pri2,...>\n"
-		"   --num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
-		"   --priorities=<priority1,priority2, ...,priority8>\n"
-		"      DPSECI supports num-queues priorities that can be individually set.\n"
-		"      if --num-queues=3, then --priorities=X,Y,Z\n"
-		"      Valid values for <priorityN> are 1-8.\n"
-		"   --num-queues and --priorities must both be specified\n"
-		"\n"
-		"EXAMPLE:\n"
-		"Create a DPSECI with 2 rx/tx queues, 2,4 priorities:\n"
-		"   $ restool dpseci create --num-queues=2 --priorities=2,4\n"
-		"\n";
-
 	int error;
 	struct dpseci_cfg dpseci_cfg = { 0 };
 	long val;
@@ -634,12 +619,42 @@ static int create_dpseci(int mc_fw_version)
 
 static int cmd_dpseci_create(void)
 {
-	return create_dpseci(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpseci create --num-queues=<count> --priorities=<pri1,pri2,...>\n"
+		"   --num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
+		"   --priorities=<priority1,priority2, ...,priority8>\n"
+		"      DPSECI supports num-queues priorities that can be individually set.\n"
+		"      if --num-queues=3, then --priorities=X,Y,Z\n"
+		"      Valid values for <priorityN> are 1-8.\n"
+		"   --num-queues and --priorities must both be specified\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPSECI with 2 rx/tx queues, 2,4 priorities:\n"
+		"   $ restool dpseci create --num-queues=2 --priorities=2,4\n"
+		"\n";
+
+	return create_dpseci(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpseci_create_v10(void)
 {
-	return create_dpseci(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpseci create --num-queues=<count> --priorities=<pri1,pri2,...>\n"
+		"   --num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
+		"   --priorities=<priority1,priority2, ...,priority8>\n"
+		"      DPSECI supports num-queues priorities that can be individually set.\n"
+		"      if --num-queues=3, then --priorities=X,Y,Z\n"
+		"      Valid values for <priorityN> are 1-8.\n"
+		"   --num-queues and --priorities must both be specified\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPSECI with 2 rx/tx queues, 2,4 priorities:\n"
+		"   $ restool dpseci create --num-queues=2 --priorities=2,4\n"
+		"\n";
+
+	return create_dpseci(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpseci_v8(uint32_t dpseci_id)

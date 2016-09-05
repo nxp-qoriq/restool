@@ -508,26 +508,8 @@ static int create_dpci_v10(struct dpci_cfg *dpci_cfg)
 	return 0;
 }
 
-static int create_dpci(int mc_fw_version)
+static int create_dpci(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpci create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPCI by default options\n"
-		"--num-priorities=<number>\n"
-		"   specifies the number of priorities\n"
-		"   valid values are 1-2\n"
-		"   Default value is 1\n"
-		"\n"
-		"EXAMPLES:\n"
-		"Create a DPCI object with all default options:\n"
-		"   $ restool dpci create\n"
-		"Create a DPCI object with 2 priorities:\n"
-		"   $ restool dpci create --num-priorities=2\n"
-		"\n";
-
 	int error;
 	long val;
 	struct dpci_cfg dpci_cfg;
@@ -571,12 +553,48 @@ static int create_dpci(int mc_fw_version)
 
 static int cmd_dpci_create(void)
 {
-	return create_dpci(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpci create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPCI by default options\n"
+		"--num-priorities=<number>\n"
+		"   specifies the number of priorities\n"
+		"   valid values are 1-2\n"
+		"   Default value is 1\n"
+		"\n"
+		"EXAMPLES:\n"
+		"Create a DPCI object with all default options:\n"
+		"   $ restool dpci create\n"
+		"Create a DPCI object with 2 priorities:\n"
+		"   $ restool dpci create --num-priorities=2\n"
+		"\n";
+
+	return create_dpci(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpci_create_v10(void)
 {
-	return create_dpci(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpci create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPCI by default options\n"
+		"--num-priorities=<number>\n"
+		"   specifies the number of priorities\n"
+		"   valid values are 1-2\n"
+		"   Default value is 1\n"
+		"\n"
+		"EXAMPLES:\n"
+		"Create a DPCI object with all default options:\n"
+		"   $ restool dpci create\n"
+		"Create a DPCI object with 2 priorities:\n"
+		"   $ restool dpci create --num-priorities=2\n"
+		"\n";
+
+	return create_dpci(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpci_v8(uint32_t dpci_id)

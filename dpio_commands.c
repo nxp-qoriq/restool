@@ -481,27 +481,8 @@ static int create_dpio_v10(struct dpio_cfg *dpio_cfg)
 	return error;
 }
 
-static int create_dpio(int mc_fw_version)
+static int create_dpio(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpio create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPIO by default options\n"
-		"--channel-mode=<mode>\n"
-		"   Where <mode> is one of:\n"
-		"	DPIO_LOCAL_CHANNEL\n"
-		"	DPIO_NO_CHANNEL\n"
-		"   Default value is DPIO_LOCAL_CHANNEL\n"
-		"--num-priorities=<number>\n"
-		"   Valid values for <number> are 1-8. Default value is 8.\n"
-		"\n"
-		"EXAMPLE:\n"
-		"Create a DPIO object with all default options:\n"
-		"   $ restool dpio create\n"
-		"\n";
-
 	int error;
 	long val;
 	struct dpio_cfg dpio_cfg;
@@ -563,13 +544,51 @@ static int create_dpio(int mc_fw_version)
 
 static int cmd_dpio_create(void)
 {
-	return create_dpio(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpio create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPIO by default options\n"
+		"--channel-mode=<mode>\n"
+		"   Where <mode> is one of:\n"
+		"	DPIO_LOCAL_CHANNEL\n"
+		"	DPIO_NO_CHANNEL\n"
+		"   Default value is DPIO_LOCAL_CHANNEL\n"
+		"--num-priorities=<number>\n"
+		"   Valid values for <number> are 1-8. Default value is 8.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPIO object with all default options:\n"
+		"   $ restool dpio create\n"
+		"\n";
+
+	return create_dpio(MC_FW_VERSION_8, usage_msg);
 
 }
 
 static int cmd_dpio_create_v10(void)
 {
-	return create_dpio(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpio create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPIO by default options\n"
+		"--channel-mode=<mode>\n"
+		"   Where <mode> is one of:\n"
+		"	DPIO_LOCAL_CHANNEL\n"
+		"	DPIO_NO_CHANNEL\n"
+		"   Default value is DPIO_LOCAL_CHANNEL\n"
+		"--num-priorities=<number>\n"
+		"   Valid values for <number> are 1-8. Default value is 8.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPIO object with all default options:\n"
+		"   $ restool dpio create\n"
+		"\n";
+
+	return create_dpio(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpio_v8(uint32_t dpio_id)

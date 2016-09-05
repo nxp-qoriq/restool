@@ -489,21 +489,8 @@ static int create_dpdcei_v10(struct dpdcei_cfg *dpdcei_cfg)
 	return 0;
 }
 
-static int create_dpdcei(int mc_fw_version)
+static int create_dpdcei(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpdcei create --engine=<engine> --priority=<number>\n"
-		"\n"
-		"--engine=<engine>\n"
-		"   compression or decompression engine to be selected.\n"
-		"   A valid value is one of the following:\n"
-		"	DPDCEI_ENGINE_COMPRESSION\n"
-		"	DPDCEI_ENGINE_DECOMPRESSION\n"
-		"--priority=<number>\n"
-		"   Priority for DCE hardware processing (valid values 1-8)\n"
-		"\n";
-
 	int error;
 	struct dpdcei_cfg dpdcei_cfg;
 	long val;
@@ -565,12 +552,38 @@ static int create_dpdcei(int mc_fw_version)
 
 static int cmd_dpdcei_create(void)
 {
-	return create_dpdcei(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpdcei create --engine=<engine> --priority=<number>\n"
+		"\n"
+		"--engine=<engine>\n"
+		"   compression or decompression engine to be selected.\n"
+		"   A valid value is one of the following:\n"
+		"	DPDCEI_ENGINE_COMPRESSION\n"
+		"	DPDCEI_ENGINE_DECOMPRESSION\n"
+		"--priority=<number>\n"
+		"   Priority for DCE hardware processing (valid values 1-8)\n"
+		"\n";
+
+	return create_dpdcei(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpdcei_create_v10(void)
 {
-	return create_dpdcei(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpdcei create --engine=<engine> --priority=<number>\n"
+		"\n"
+		"--engine=<engine>\n"
+		"   compression or decompression engine to be selected.\n"
+		"   A valid value is one of the following:\n"
+		"	DPDCEI_ENGINE_COMPRESSION\n"
+		"	DPDCEI_ENGINE_DECOMPRESSION\n"
+		"--priority=<number>\n"
+		"   Priority for DCE hardware processing (valid values 1-8)\n"
+		"\n";
+
+	return create_dpdcei(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpdcei_v8(uint32_t dpdcei_id)

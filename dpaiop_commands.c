@@ -538,19 +538,8 @@ static int create_dpaiop_v10(struct dpaiop_cfg *dpaiop_cfg)
 	return 0;
 }
 
-static int create_dpaiop(int mc_fw_version)
+static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpaiop create --aiop-container=<container-name>\n"
-		"   --aiop-container=<container-name>\n"
-		"      Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
-		"\n"
-		"EXAMPLE:\n"
-		"create a DPAIOP\n"
-		"   $ restool dpaiop create --aiop-container=dprc.3\n"
-		"\n";
-
 	int error;
 	struct dpaiop_cfg dpaiop_cfg;
 	uint32_t obj_id;
@@ -599,12 +588,34 @@ static int create_dpaiop(int mc_fw_version)
 
 static int cmd_dpaiop_create(void)
 {
-	return create_dpaiop(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpaiop create --aiop-container=<container-name>\n"
+		"   --aiop-container=<container-name>\n"
+		"      Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"create a DPAIOP\n"
+		"   $ restool dpaiop create --aiop-container=dprc.3\n"
+		"\n";
+
+	return create_dpaiop(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpaiop_create_v10(void)
 {
-	return create_dpaiop(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpaiop create --aiop-container=<container-name>\n"
+		"   --aiop-container=<container-name>\n"
+		"      Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"create a DPAIOP\n"
+		"   $ restool dpaiop create --aiop-container=dprc.3\n"
+		"\n";
+
+	return create_dpaiop(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpaiop_v8(uint32_t dpaiop_id)

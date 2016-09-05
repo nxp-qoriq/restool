@@ -436,13 +436,8 @@ static int create_dprtc_v10(struct dprtc_cfg *dprtc_cfg)
 	return 0;
 }
 
-static int create_dprtc(int mc_fw_version)
+static int create_dprtc(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dprtc create\n"
-		"\n";
-
 	int error;
 	struct dprtc_cfg dprtc_cfg;
 
@@ -471,12 +466,22 @@ static int create_dprtc(int mc_fw_version)
 
 static int cmd_dprtc_create(void)
 {
-	return create_dprtc(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dprtc create\n"
+		"\n";
+
+	return create_dprtc(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dprtc_create_v10(void)
 {
-	return create_dprtc(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dprtc create\n"
+		"\n";
+
+	return create_dprtc(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dprtc_v8(uint32_t dprtc_id)

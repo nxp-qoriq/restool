@@ -485,25 +485,8 @@ static int create_dpdmai_v10(struct dpdmai_cfg *dpdmai_cfg)
 	return 0;
 }
 
-static int create_dpdmai(int mc_fw_version)
+static int create_dpdmai(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpdmai create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPDMAI by default options\n"
-		"default is: restool dpdmai create --priorities=1,2\n"
-		"--priorities=<priority1,priority2>\n"
-		"   Valid values for <priorityN> are 1-8.\n"
-		"\n"
-		"EXAMPLES:\n"
-		"create a DPDMAI object with all default options:\n"
-		"   $ restool dpdmai create\n"
-		"create a DPDMAI with 2,4 priorities:\n"
-		"   $ restool dpdmai create --priorities=2,4\n"
-		"\n";
-
 	int error;
 	struct dpdmai_cfg dpdmai_cfg = { { 0 } };
 
@@ -550,12 +533,47 @@ static int create_dpdmai(int mc_fw_version)
 
 static int cmd_dpdmai_create(void)
 {
-	return create_dpdmai(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpdmai create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPDMAI by default options\n"
+		"default is: restool dpdmai create --priorities=1,2\n"
+		"--priorities=<priority1,priority2>\n"
+		"   Valid values for <priorityN> are 1-8.\n"
+		"\n"
+		"EXAMPLES:\n"
+		"create a DPDMAI object with all default options:\n"
+		"   $ restool dpdmai create\n"
+		"create a DPDMAI with 2,4 priorities:\n"
+		"   $ restool dpdmai create --priorities=2,4\n"
+		"\n";
+
+
+	return create_dpdmai(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpdmai_create_v10(void)
 {
-	return create_dpdmai(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpdmai create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPDMAI by default options\n"
+		"default is: restool dpdmai create --priorities=1,2\n"
+		"--priorities=<priority1,priority2>\n"
+		"   Valid values for <priorityN> are 1-8.\n"
+		"\n"
+		"EXAMPLES:\n"
+		"create a DPDMAI object with all default options:\n"
+		"   $ restool dpdmai create\n"
+		"create a DPDMAI with 2,4 priorities:\n"
+		"   $ restool dpdmai create --priorities=2,4\n"
+		"\n";
+
+	return create_dpdmai(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpdmai_v8(uint32_t dpdmai_id)

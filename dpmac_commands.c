@@ -566,20 +566,8 @@ static int create_dpmac_v10(struct dpmac_cfg *dpmac_cfg)
 	return 0;
 }
 
-static int create_dpmac(int mc_fw_version)
+static int create_dpmac(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpmac create --mac-id=<number>\n"
-		"   --mac-id=<number>\n"
-		"      Where <number> specifies the id of the hardware MAC associated with\n"
-		"      the DPMAC object.\n"
-		"\n"
-		"EXAMPLE:\n"
-		"create a DPMAC with specified mac id:\n"
-		"   $ restool dpmac create --mac-id=4\n"
-		"\n";
-
 	int error;
 	long val;
 	struct dpmac_cfg dpmac_cfg;
@@ -624,12 +612,36 @@ static int create_dpmac(int mc_fw_version)
 
 static int cmd_dpmac_create(void)
 {
-	return create_dpmac(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpmac create --mac-id=<number>\n"
+		"   --mac-id=<number>\n"
+		"      Where <number> specifies the id of the hardware MAC associated with\n"
+		"      the DPMAC object.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"create a DPMAC with specified mac id:\n"
+		"   $ restool dpmac create --mac-id=4\n"
+		"\n";
+
+	return create_dpmac(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpmac_create_v10(void)
 {
-	return create_dpmac(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpmac create --mac-id=<number>\n"
+		"   --mac-id=<number>\n"
+		"      Where <number> specifies the id of the hardware MAC associated with\n"
+		"      the DPMAC object.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"create a DPMAC with specified mac id:\n"
+		"   $ restool dpmac create --mac-id=4\n"
+		"\n";
+
+	return create_dpmac(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpmac_v8(uint32_t dpmac_id)

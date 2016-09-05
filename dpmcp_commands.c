@@ -440,13 +440,8 @@ static int create_dpmcp_v10(struct dpmcp_cfg *dpmcp_cfg)
 	return 0;
 }
 
-static int create_dpmcp(int mc_fw_version)
+static int create_dpmcp(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpmcp create\n"
-		"\n";
-
 	struct dpmcp_cfg dpmcp_cfg = {0};
 	int error;
 
@@ -477,12 +472,22 @@ static int create_dpmcp(int mc_fw_version)
 
 static int cmd_dpmcp_create(void)
 {
-	return create_dpmcp(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpmcp create\n"
+		"\n";
+
+	return create_dpmcp(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpmcp_create_v10(void)
 {
-	return create_dpmcp(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpmcp create\n"
+		"\n";
+
+	return create_dpmcp(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpmcp_v8(uint32_t dpmcp_id)

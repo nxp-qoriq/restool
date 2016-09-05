@@ -438,13 +438,8 @@ static int create_dpbp_v10(struct dpbp_cfg *dpbp_cfg)
 	return 0;
 }
 
-static int create_dpbp(int mc_fw_version)
+static int create_dpbp(int mc_fw_version, const char *usage_msg)
 {
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpbp create\n"
-		"\n";
-
 	int error;
 	struct dpbp_cfg dpbp_cfg;
 
@@ -473,12 +468,22 @@ static int create_dpbp(int mc_fw_version)
 
 static int cmd_dpbp_create(void)
 {
-	return create_dpbp(MC_FW_VERSION_8);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpbp create\n"
+		"\n";
+
+	return create_dpbp(MC_FW_VERSION_8, usage_msg);
 }
 
 static int cmd_dpbp_create_v10(void)
 {
-	return create_dpbp(MC_FW_VERSION_10);
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpbp create\n"
+		"\n";
+
+	return create_dpbp(MC_FW_VERSION_10, usage_msg);
 }
 
 static int destroy_dpbp_v8(uint32_t dpbp_id)
