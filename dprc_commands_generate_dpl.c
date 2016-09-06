@@ -34,6 +34,7 @@
 #include <errno.h>
 #include <assert.h>
 #include <getopt.h>
+#include <ctype.h>
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
@@ -50,6 +51,7 @@
 #include "mc_v8/fsl_dpmac.h"
 #include "mc_v8/fsl_dpmcp.h"
 #include "mc_v9/fsl_dpni.h"
+#include "mc_v10/fsl_dpni.h"
 #include "mc_v8/fsl_dprc.h"
 #include "mc_v9/fsl_dprtc.h"
 #include "mc_v8/fsl_dpseci.h"
@@ -85,6 +87,12 @@
 	DPNI_OPT_IPF |					\
 	DPNI_OPT_VLAN_MANIPULATION |			\
 	DPNI_OPT_QOS_MASK_SUPPORT |			\
+	DPNI_OPT_TX_FRM_RELEASE |			\
+	DPNI_OPT_NO_MAC_FILTER |			\
+	DPNI_OPT_HAS_POLICING |				\
+	DPNI_OPT_SHARED_CONGESTION |			\
+	DPNI_OPT_HAS_KEY_MASKING |			\
+	DPNI_OPT_NO_FS |				\
 	DPNI_OPT_FS_MASK_SUPPORT)
 
 struct dpni_config {
@@ -498,14 +506,61 @@ static void parse_obj_label(FILE *fp, char *label)
 		fprintf(fp, "\t\t\t\t\tlabel = \"%s\";\n", label);
 }
 
+static char *to_upper(char *string)
+{
+	int length, i;
+	char *upper_string;
+
+	length = strlen(string);
+	upper_string = malloc(length * sizeof(char));
+	if (!upper_string) {
+		ERROR_PRINTF("Could not alloc memory!");
+		return NULL;
+	}
+
+	for (i = 0; i < length; i++)
+		upper_string[i] = toupper(string[i]);
+	upper_string[i] = '\0';
+
+	return upper_string;
+}
+
+static int write_obj_set(char *obj_type, int start_index, int end_index)
+{
+	char *obj_type_upper;
+	FILE *fp = stdout;
+	int i;
+
+	obj_type_upper = to_upper(obj_type);
+	if (!obj_type_upper)
+		return -ENOMEM;
+
+	fprintf(fp, "\n");
+	fprintf(fp, "\t\t\t\t/* -------------- %ss --------------*/\n", obj_type_upper);
+	fprintf(fp, "\t\t\t\tobj_set@%s {\n", obj_type);
+	fprintf(fp, "\t\t\t\t\ttype = \"%s\";\n", obj_type);
+	fprintf(fp, "\t\t\t\t\tids = <");
+
+	for (i = start_index; i <= end_index; i++)
+		fprintf(fp, "%d ", i);
+
+	fprintf(fp, ">;\n");
+	fprintf(fp, "\t\t\t\t};\n");
+
+	free(obj_type_upper);
+	return 0;
+}
+
 static int write_containers(void)
 {
 	struct container_list *curr_cont;
 	struct obj_list *curr_obj;
 	struct obj_list *prev_obj;
+	char curr_obj_type[OBJ_TYPE_MAX_LENGTH];
+	int remain, obj_set_start, error;
+	int curr_obj_id;
 	int obj_num = 99;
 	int base = 100;
-	int remain;
 	FILE *fp = stdout;
 
 	fprintf(fp,
@@ -521,6 +576,7 @@ static int write_containers(void)
 		obj_num = 99;
 		prev_obj = NULL;
 		curr_obj = curr_cont->obj;
+		memset(curr_obj_type, 0, OBJ_TYPE_MAX_LENGTH);
 
 		fprintf(fp, "\n");
 		fprintf(fp, "\t\tdprc@%d {\n", curr_cont->id);
@@ -547,15 +603,43 @@ static int write_containers(void)
 				remain = obj_num % base;
 				obj_num = obj_num + base - remain;
 			}
-			fprintf(fp, "\n");
-			fprintf(fp, "\t\t\t\tobj@%d {\n", obj_num);
-			fprintf(fp, "\t\t\t\t\tobj_name = \"%s@%d\";\n",
-				curr_obj->type, curr_obj->id);
-			parse_obj_label(fp, curr_obj->label);
-			fprintf(fp, "\t\t\t\t};\n");
+
+			if (restool.mc_fw_version.major <= MC_FW_VERSION_9) {
+				fprintf(fp, "\n");
+				fprintf(fp, "\t\t\t\tobj@%d {\n", obj_num);
+				fprintf(fp, "\t\t\t\t\tobj_name = \"%s@%d\";\n",
+					curr_obj->type, curr_obj->id);
+				parse_obj_label(fp, curr_obj->label);
+				fprintf(fp, "\t\t\t\t};\n");
+			} else if (restool.mc_fw_version.major == MC_FW_VERSION_10) {
+				if (curr_obj_type[0] == '\0') {
+					memcpy(curr_obj_type, curr_obj->type, OBJ_TYPE_MAX_LENGTH);
+					curr_obj_id = curr_obj->id;
+					obj_set_start = curr_obj->id;
+				} else if (strcmp(curr_obj_type, curr_obj->type)) {
+					error = write_obj_set(curr_obj_type, obj_set_start, curr_obj_id);
+					if (error) {
+						ERROR_PRINTF("write_obj_set() failed with error = %d\n", error);
+						return error;
+					}
+
+					obj_set_start = curr_obj->id;
+					memcpy(curr_obj_type, curr_obj->type, OBJ_TYPE_MAX_LENGTH);
+					curr_obj_id = curr_obj->id;
+				} else {
+					curr_obj_id = curr_obj->id;
+				}
+			}
+
 			obj_num++;
 			prev_obj = curr_obj;
 			curr_obj = curr_obj->next;
+		}
+
+		error = write_obj_set(curr_obj_type, obj_set_start, curr_obj_id);
+		if (error) {
+			ERROR_PRINTF("write_obj_set() failed with error = %d\n", error);
+			return error;
 		}
 
 		fprintf(fp, "\t\t\t};\n");
@@ -1175,6 +1259,50 @@ static void parse_dpni_options(FILE *fp, uint32_t options)
 	fprintf(fp, "%s\n", buf);
 }
 
+static void parse_dpni_options_v10(FILE *fp, uint32_t options)
+{
+	char buf[500];
+	int len;
+
+	if ((options & ~ALL_DPNI_OPTS) != 0)
+		fprintf(fp, "\t\t\t/* Unrecognized options found... */\n");
+
+	snprintf(buf, 14, "\t\t\toptions = ");
+
+	if (options & DPNI_OPT_TX_FRM_RELEASE) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_TX_FRM_RELEASE\", ");
+	}
+
+	if (options & DPNI_OPT_HAS_POLICING) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_HAS_POLICING\", ");
+	}
+	if (options & DPNI_OPT_SHARED_CONGESTION) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_SHARED_CONGESTION\", ");
+	}
+
+	if (options & DPNI_OPT_HAS_KEY_MASKING) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_HAS_KEY_MASKING\", ");
+	}
+
+	if (options & DPNI_OPT_NO_FS) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_NO_FS\", ");
+	}
+
+	len = strlen(buf);
+	if (13 == len)
+		return;
+
+	buf[len-2] = ';';
+	buf[len-1] = '\0';
+
+	fprintf(fp, "%s\n", buf);
+}
+
 static int parse_endpoint_dpl(struct obj_list *curr_obj, uint16_t num_ifs)
 {
 	struct dprc_endpoint endpoint1;
@@ -1547,6 +1675,69 @@ static int parse_dpni_v9(FILE *fp, struct obj_list *curr)
 out:
 	if (dpni_opened) {
 		int error2;
+
+		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpni_attr_v10 dpni_attr;
+	uint16_t dpni_handle;
+	bool dpni_opened = false;
+	int error = 0;
+	int error2;
+
+	error = dpni_open(&restool.mc_io, 0, curr->id, &dpni_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpni_opened = true;
+	if (0 == dpni_handle) {
+		DEBUG_PRINTF(
+			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpni_attr, 0, sizeof(dpni_attr));
+	error = dpni_get_attributes_v10(&restool.mc_io, 0,
+					dpni_handle, &dpni_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	parse_endpoint_dpl(curr, 1000);
+
+	fprintf(fp, "\t\t\ttype = \"DPNI_TYPE_NIC\";\n");
+
+	parse_dpni_options_v10(fp, dpni_attr.options);
+
+	fprintf(fp, "\t\t\tnum_queues = <%u>;\n", dpni_attr.num_queues);
+	fprintf(fp, "\t\t\tnum_tcs = <%u>;\n", dpni_attr.num_tcs);
+	fprintf(fp, "\t\t\tmac_filter_entries = <%u>;\n", dpni_attr.mac_filter_entries);
+	fprintf(fp, "\t\t\tvlan_filter_entries = <%u>;\n", dpni_attr.vlan_filter_entries);
+	fprintf(fp, "\t\t\tfs_entries = <%u>;\n", dpni_attr.fs_entries);
+	fprintf(fp, "\t\t\tqos_entries = <%u>;\n", dpni_attr.qos_entries);
+
+out:
+	if (dpni_opened) {
 
 		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
 		if (error2 < 0) {
@@ -2010,6 +2201,8 @@ static int write_objects(void)
 				parse_dpni_v8(fp, curr_obj);
 			else if (restool.mc_fw_version.major == 9)
 				parse_dpni_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpni_v10(fp, curr_obj);
 		}
 
 
