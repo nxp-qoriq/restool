@@ -2141,6 +2141,7 @@ int dpl_generate(void)
 
 	fprintf(fp, "/dts-v1/;\n");
 	fprintf(fp, "/ {\n");
+	fprintf(fp, "\tdpl-version = <%d>;\n", restool.mc_fw_version.major);
 
 	error = parse_layout(dprc_id);
 	if (error) {
