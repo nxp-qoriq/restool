@@ -666,6 +666,23 @@ int get_option_value(int option, long *value, const char *error_msg, int min, in
 	return 0;
 }
 
+int get_parent_dprc_id(uint32_t obj_id, char *obj_type, uint32_t *parent_dprc_id)
+{
+	struct dprc_obj_desc target_obj_desc;
+	bool found = false;
+	int error;
+
+	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0, obj_id,
+				obj_type, &target_obj_desc,
+				parent_dprc_id, &found);
+	if (error || strcmp(target_obj_desc.type, obj_type))
+		return -EINVAL;
+
+	return 0;
+}
+
 static void print_usage(void)
 {
 	static const char usage_msg[] =

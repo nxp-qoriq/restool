@@ -338,6 +338,7 @@ int check_resource_type(char *res_type);
 bool in_use(const char *obj, const char *situation);
 void print_new_obj(char *type, int id, const char *parent);
 int get_option_value(int option, long *value, const char *error_msg, int min, int max);
+int get_parent_dprc_id(uint32_t obj_id, char *obj_type, uint32_t *parent_dprc_id);
 
 extern struct restool restool;
 extern struct object_command dprc_commands[];
