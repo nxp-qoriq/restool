@@ -451,8 +451,10 @@ int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
 
 			DEBUG_PRINTF("exiting %s.%u\n", obj_desc.type,
 					obj_desc.id);
-			if (found2)
+			if (found2) {
+				*found = found;
 				goto out;
+			}
 		} else {
 			continue;
 		}
