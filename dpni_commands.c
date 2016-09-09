@@ -2006,15 +2006,32 @@ out:
 
 static int destroy_dpni_v10(uint32_t dpni_id)
 {
+	uint16_t dprc_handle;
+	uint32_t dprc_id;
 	int error;
 
-	error = dpni_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+	dprc_handle = restool.root_dprc_handle;
+	dprc_id = restool.root_dprc_id;
+	error = get_parent_dprc_id(dpni_id, "dpni", &dprc_id);
+	if (error)
+		return error;
+
+	if (dprc_id != restool.root_dprc_id) {
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+	}
+
+	error = dpni_destroy_v10(&restool.mc_io, dprc_handle,
 				 0, dpni_id);
 	if (error)
 		goto out;
 	printf("dpni.%u is destroyed\n", dpni_id);
 
 out:
+	if (dprc_id != restool.root_dprc_id)
+		error = dprc_close(&restool.mc_io, 0, dprc_handle);
+
 	return error;
 }
 

@@ -628,9 +628,23 @@ out:
 
 static int destroy_dpdmai_v10(uint32_t dpdmai_id)
 {
+	uint16_t dprc_handle;
+	uint32_t dprc_id;
 	int error;
 
-	error = dpdmai_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+	dprc_handle = restool.root_dprc_handle;
+	dprc_id = restool.root_dprc_id;
+	error = get_parent_dprc_id(dpdmai_id, "dpdmai", &dprc_id);
+	if (error)
+		return error;
+
+	if (dprc_id != restool.root_dprc_id) {
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+	}
+
+	error = dpdmai_destroy_v10(&restool.mc_io, dprc_handle,
 				   0, dpdmai_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -641,6 +655,9 @@ static int destroy_dpdmai_v10(uint32_t dpdmai_id)
 	printf("dpdmai.%u is destroyed\n", dpdmai_id);
 
 out:
+	if (dprc_id != restool.root_dprc_id)
+		error = dprc_close(&restool.mc_io, 0, dprc_handle);
+
 	return error;
 }
 

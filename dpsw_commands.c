@@ -1244,9 +1244,23 @@ out:
 
 static int destroy_dpsw_v10(uint32_t dpsw_id)
 {
+	uint16_t dprc_handle;
+	uint32_t dprc_id;
 	int error;
 
-	error = dpsw_destroy_v10(&restool.mc_io, restool.root_dprc_handle,
+	dprc_handle = restool.root_dprc_handle;
+	dprc_id = restool.root_dprc_id;
+	error = get_parent_dprc_id(dpsw_id, "dpsw", &dprc_id);
+	if (error)
+		return error;
+
+	if (dprc_id != restool.root_dprc_id) {
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+	}
+
+	error = dpsw_destroy_v10(&restool.mc_io, dprc_handle,
 				 0, dpsw_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -1257,6 +1271,9 @@ static int destroy_dpsw_v10(uint32_t dpsw_id)
 	printf("dpsw.%u is destroyed\n", dpsw_id);
 
 out:
+	if (dprc_id != restool.root_dprc_id)
+		error = dprc_close(&restool.mc_io, 0, dprc_handle);
+
 	return error;
 }
 
