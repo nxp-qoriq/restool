@@ -848,10 +848,10 @@ static int parse_dpdcei(FILE *fp, struct obj_list *curr)
 
 	switch (dpdcei_attr.engine) {
 	case DPDCEI_ENGINE_COMPRESSION:
-		fprintf(fp, "engine = \"DPDCEI_ENGINE_COMPRESSION\";\n");
+		fprintf(fp, "\t\t\tengine = \"DPDCEI_ENGINE_COMPRESSION\";\n");
 		break;
 	case DPDCEI_ENGINE_DECOMPRESSION:
-		fprintf(fp, "engine = \"DPDCEI_ENGINE_DECOMPRESSION\";\n");
+		fprintf(fp, "\t\t\tengine = \"DPDCEI_ENGINE_DECOMPRESSION\";\n");
 		break;
 	default:
 		assert(false);
