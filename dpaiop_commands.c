@@ -480,8 +480,7 @@ static int create_dpaiop_v8(struct dpaiop_cfg *dpaiop_cfg)
 			     mc_status_to_string(mc_status), mc_status);
 		return error;
 	}
-	print_new_obj("dpaiop", dpaiop_attr.id,
-		restool.cmd_option_args[CREATE_OPT_AIOP_CONTAINER]);
+	print_new_obj("dpaiop", dpaiop_attr.id, NULL);
 
 	error = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
 	if (error < 0) {
