@@ -405,6 +405,32 @@ static void print_dpni_options(uint32_t options)
 		printf("\tDPNI_OPT_FS_MASK_SUPPORT\n");
 }
 
+static void print_dpni_options_v10(uint32_t options)
+{
+	if ((options & ~ALL_DPNI_OPTS) != 0) {
+		printf("\tUnrecognized options found...\n");
+		return;
+	}
+
+	if (options & DPNI_OPT_TX_FRM_RELEASE)
+		printf("\tDPNI_OPT_TX_FRM_RELEASE\n");
+
+	if (options & DPNI_OPT_NO_MAC_FILTER)
+		printf("\tDPNI_OPT_NO_MAC_FILTER\n");
+
+	if (options & DPNI_OPT_HAS_POLICING)
+		printf("\tDPNI_OPT_HAS_POLICING\n");
+
+	if (options & DPNI_OPT_SHARED_CONGESTION)
+		printf("\tDPNI_OPT_SHARED_CONGESTION\n");
+
+	if (options & DPNI_OPT_HAS_KEY_MASKING)
+		printf("\tDPNI_OPT_HAS_KEY_MASKING\n");
+
+	if (options & DPNI_OPT_NO_FS)
+		printf("\tDPNI_OPT_NO_FS\n");
+}
+
 static int print_dpni_endpoint(uint32_t target_id)
 {
 	struct dprc_endpoint endpoint1;
@@ -785,7 +811,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 
 	printf("dpni_attr.options value is: %#lx\n",
 	       (unsigned long)dpni_attr.options);
-	print_dpni_options(dpni_attr.options);
+	print_dpni_options_v10(dpni_attr.options);
 
 	printf("num_queues: %u\n", (uint32_t)dpni_attr.num_queues);
 	printf("num_tcs: %u\n", (uint32_t)dpni_attr.num_tcs);
