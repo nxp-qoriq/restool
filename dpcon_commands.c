@@ -266,7 +266,7 @@ static int print_dpcon_attr_v10(uint32_t dpcon_id,
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf("qbman channel id to be used by dequeue operation: %u\n",
 		dpcon_attr.qbman_ch_id);
-	printf("number of priorities for the DPCON channel: %u\n",
+	printf("num_priorities: %u\n",
 		dpcon_attr.num_priorities);
 	print_obj_label(target_obj_desc);
 

@@ -312,7 +312,7 @@ static int print_dpci_attr_v10(uint32_t dpci_id,
 	printf("dpci id: %d\n", dpci_id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	printf("num_of_priorities: %u\n",
+	printf("num_priorities: %u\n",
 	       (unsigned int)dpci_attr.num_of_priorities);
 	printf("connected peer: ");
 	if (-1 == dpci_peer_attr.peer_id) {
