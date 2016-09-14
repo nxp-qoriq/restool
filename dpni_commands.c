@@ -1839,6 +1839,8 @@ static int create_dpni_v10(const char *usage_msg)
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_TCS);
 		error = get_option_value(CREATE_OPT_NUM_TCS, &value,
 				     "Invalid num-tcs value\n", 0, 8);
+		if (error)
+			return error;
 		dpni_cfg.num_tcs = (uint8_t)value;
 	}
 
