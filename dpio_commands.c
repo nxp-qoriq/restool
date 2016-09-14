@@ -524,7 +524,7 @@ static int create_dpio(int mc_fw_version, const char *usage_msg)
 			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
 		error = get_option_value(CREATE_OPT_NUM_PRIORITIES, &val,
 					 "Invalid value: num-priorities option",
-					 0, 8);
+					 1, 8);
 		if (error)
 			return -EINVAL;
 		dpio_cfg.num_priorities = (uint8_t)val;

@@ -1033,7 +1033,7 @@ static int create_dpsw_v10(const char *usage_msg)
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
 		error = get_option_value(CREATE_OPT_NUM_IFS, &val,
 				     "Invalid number of interfaces\n",
-				     0, UINT16_MAX);
+				     1, UINT16_MAX);
 		if (error)
 			return error;
 		dpsw_cfg.num_ifs = (uint16_t)val;
@@ -1059,7 +1059,7 @@ static int create_dpsw_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_VLANS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_VLANS);
 		error = get_option_value(CREATE_OPT_MAX_VLANS, &val,
-				     "Invalid max vlans\n", 9, UINT16_MAX);
+				     "Invalid max vlans\n", 1, UINT16_MAX);
 		if (error)
 			return error;
 		dpsw_cfg.adv.max_vlans = (uint16_t)val;
@@ -1071,7 +1071,7 @@ static int create_dpsw_v10(const char *usage_msg)
 	    ONE_BIT_MASK(CREATE_OPT_MAX_FDBS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_FDBS);
 		error = get_option_value(CREATE_OPT_MAX_FDBS, &val,
-				     "Invalid max FDB\n", 0, UINT8_MAX);
+				     "Invalid max FDB\n", 1, UINT8_MAX);
 		if (error)
 			return error;
 		dpsw_cfg.adv.max_fdbs = (uint8_t)val;
@@ -1085,7 +1085,7 @@ static int create_dpsw_v10(const char *usage_msg)
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_ENTRIES);
 		error = get_option_value(CREATE_OPT_MAX_FDB_ENTRIES, &val,
 				     "Invalid number of FDB entries\n",
-				     0, UINT16_MAX);
+				     1, UINT16_MAX);
 		if (error)
 			return error;
 		dpsw_cfg.adv.max_fdb_entries = (uint16_t)val;
@@ -1098,7 +1098,7 @@ static int create_dpsw_v10(const char *usage_msg)
 		restool.cmd_option_mask &=
 			~ONE_BIT_MASK(CREATE_OPT_FDB_AGING_TIME);
 		error = get_option_value(CREATE_OPT_FDB_AGING_TIME, &val,
-				     "Invalid FDB aging time\n", 0, UINT16_MAX);
+				     "Invalid FDB aging time\n", 1, UINT16_MAX);
 		if (error)
 			return error;
 		dpsw_cfg.adv.fdb_aging_time = (uint16_t)val;
@@ -1112,7 +1112,7 @@ static int create_dpsw_v10(const char *usage_msg)
 			~ONE_BIT_MASK(CREATE_OPT_MAX_FDB_MC_GROUPS);
 		error = get_option_value(CREATE_OPT_MAX_FDB_MC_GROUPS, &val,
 				     "Invalid number of multicast groups\n",
-				     0, UINT16_MAX);
+				     1, UINT16_MAX);
 		if (error)
 			return error;
 		dpsw_cfg.adv.max_fdb_mc_groups = (uint16_t)val;

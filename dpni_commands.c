@@ -1855,7 +1855,7 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
 		error = get_option_value(CREATE_OPT_NUM_QUEUES, &value,
-				     "Invalid num-queues value\n", 0, 8);
+				     "Invalid num-queues value\n", 1, 8);
 		if (error)
 			return error;
 		dpni_cfg.num_queues = (uint8_t)value;
@@ -1864,7 +1864,7 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_TCS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_TCS);
 		error = get_option_value(CREATE_OPT_NUM_TCS, &value,
-				     "Invalid num-tcs value\n", 0, 8);
+				     "Invalid num-tcs value\n", 1, 8);
 		if (error)
 			return error;
 		dpni_cfg.num_tcs = (uint8_t)value;
@@ -1873,7 +1873,7 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ENTRIES)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ENTRIES);
 		error = get_option_value(CREATE_OPT_MAC_ENTRIES, &value,
-				     "Invalid mac-entries value\n", 0, 80);
+				     "Invalid mac-entries value\n", 1, 80);
 		if (error)
 			return error;
 		dpni_cfg.mac_filter_entries = (uint8_t)value;
@@ -1882,7 +1882,7 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_VLAN_ENTRIES)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_VLAN_ENTRIES);
 		error = get_option_value(CREATE_OPT_VLAN_ENTRIES, &value,
-				     "Invalid vlan-entries value\n", 0, 16);
+				     "Invalid vlan-entries value\n", 1, 16);
 		if (error)
 			return error;
 		dpni_cfg.vlan_filter_entries = (uint8_t)value;
@@ -1891,7 +1891,7 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_QOS_ENTRIES)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_QOS_ENTRIES);
 		error = get_option_value(CREATE_OPT_QOS_ENTRIES, &value,
-				     "Invalid qos-entries value\n", 0, 64);
+				     "Invalid qos-entries value\n", 1, 64);
 		if (error)
 			return error;
 		dpni_cfg.qos_entries = (uint8_t)value;
@@ -1900,7 +1900,7 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_FS_ENTRIES)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_FS_ENTRIES);
 		error = get_option_value(CREATE_OPT_FS_ENTRIES, &value,
-				     "Invalid fs-entries value\n", 0, 1024);
+				     "Invalid fs-entries value\n", 1, 1024);
 		if (error)
 			return error;
 		dpni_cfg.fs_entries = (uint16_t)value;
