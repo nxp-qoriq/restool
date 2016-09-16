@@ -582,7 +582,7 @@ static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 	else
 		return -EINVAL;
 
-	return 0;
+	return error;
 }
 
 static int cmd_dpaiop_create(void)
