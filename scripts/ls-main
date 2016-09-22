@@ -627,13 +627,8 @@ create_dpni() {
 	done
 
 	dpni=$($restool --script dpni create			\
-		--num-queues="$num_queues"			\
-		--num-tcs="$num_tcs"				\
-		--mac-entries="$mac_entries"			\
-		--vlan-entries="$vlan_entries"			\
-		--qos-entries="$qos_entries"			\
-		--fs-entries="$fs_entries"			\
 		--options="$options"				\
+		$dpni_args					\
 	)
 
 	if [ -z "$dpni" ]; then
@@ -654,12 +649,7 @@ process_addni() {
 	no_link=0
 	options=
 	label=
-	num_queues=0
-	num_tcs=0
-	mac_entries=0
-	vlan_entries=0
-	qos_entries=0
-	fs_entries=0
+	dpni_args=""
 
 	#Endpoint object provided as argument
 	endpoint=
@@ -680,6 +670,7 @@ process_addni() {
 					echo "Invalid num_queues=$num_queues. Valid range is [1-8]."
 					exit 1
 				fi
+				dpni_args=$args" --num-queues="$num_queues
 				;;
 			-t=* | --num-tcs=*)
 				num_tcs="${i#*=}"
@@ -687,6 +678,7 @@ process_addni() {
 					echo "Invalid num_tcs=$num_queues. Valid range is [1-8]."
 					exit 1
 				fi
+				dpni_args=$args" --num-tcs="$num_tcs
 				;;
 			-m=* | --mac-entries=*)
 				mac_entries="${i#*=}"
@@ -694,6 +686,7 @@ process_addni() {
 					echo "Invalid mac_entries=$mac_entries. Valid range is [1-80]."
 					exit 1
 				fi
+				dpni_args=$args" --mac-entries="$mac_entries
 				;;
 			-v=* | --vlan-entries=*)
 				vlan_entries="${i#*=}"
@@ -701,6 +694,7 @@ process_addni() {
 					echo "Invalid vlan_entries=$vlan_entries. Valid range is [1-16]."
 					exit 1
 				fi
+				dpni_args=$args" --vlan-entries="$vlan_entries
 				;;
 			-q=* | --qos-entries=*)
 				qos_entries="${i#*=}"
@@ -708,6 +702,7 @@ process_addni() {
 					echo "Invalid qos_entries=$qos_entries. Valid range is [1-64]."
 					exit 1
 				fi
+				dpni_args=$args" --qos-entries="$qos_entries
 				;;
 			-f=* | --fs-entries=*)
 				fs_entries="${i#*=}"
@@ -715,6 +710,7 @@ process_addni() {
 					echo "Invalid fs_entries=$fs_entries. Valid range is [1-1024]."
 					exit 1
 				fi
+				dpni_args=$args" --fs-entries="$fs_entries
 				;;
 			-l=* | --label=*)
 				label="${i#*=}"
