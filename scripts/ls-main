@@ -585,7 +585,7 @@ The options are:
 							DPNI_OPT_TX_FRM_RELEASE, DPNI_OPT_NO_MAC_FILTER,
 							DPNI_OPT_HAS_POLICING, DPNI_OPT_SHARED_CONGESTION,
 							DPNI_OPT_HAS_KEY_MASKING, DPNI_OPT_NO_FS.
-	-q, --num-queues=NUM_QUEUES			Number of TX/RX queues use for traffic distribution.
+	-nq, --num-queues=NUM_QUEUES			Number of TX/RX queues use for traffic distribution.
 							Valid range [1-8]. Default value is 1.
 	-t, --num-tcs=NUM_TCS				Number of traffic classes (TCs) reserved for the DPNI.
 							Valid range [1-8]. Default value is 1.
@@ -674,7 +674,7 @@ process_addni() {
 				usage_addni
 				exit 1
 				;;
-			-q=* | --num-queues=*)
+			-nq=* | --num-queues=*)
 				num_queues="${i#*=}"
 				if [ "$num_queues" -gt 8]; then
 					echo "Invalid num_queues=$num_queues. Valid range is [1-8]."
