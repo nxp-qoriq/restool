@@ -676,42 +676,42 @@ process_addni() {
 				;;
 			-nq=* | --num-queues=*)
 				num_queues="${i#*=}"
-				if [ "$num_queues" -gt 8]; then
+				if [[ "$num_queues" -gt 8 || "$num_queues" -lt 1 ]]; then
 					echo "Invalid num_queues=$num_queues. Valid range is [1-8]."
 					exit 1
 				fi
 				;;
 			-t=* | --num-tcs=*)
 				num_tcs="${i#*=}"
-				if [ "$num_tcs" -gt 8]; then
+				if [[ "$num_tcs" -gt 8 || "$num_tcs" -lt 1 ]]; then
 					echo "Invalid num_tcs=$num_queues. Valid range is [1-8]."
 					exit 1
 				fi
 				;;
 			-m=* | --mac-entries=*)
 				mac_entries="${i#*=}"
-				if [ "$mac_entries" -gt 80]; then
+				if [[ "$mac_entries" -gt 80 || "$mac_entries" -lt 1 ]]; then
 					echo "Invalid mac_entries=$mac_entries. Valid range is [1-80]."
 					exit 1
 				fi
 				;;
 			-v=* | --vlan-entries=*)
 				vlan_entries="${i#*=}"
-				if [ "$vlan_entries" -gt 16]; then
+				if [[ "$vlan_entries" -gt 16 || "$vlan_entries" -lt 1 ]]; then
 					echo "Invalid vlan_entries=$vlan_entries. Valid range is [1-16]."
 					exit 1
 				fi
 				;;
 			-q=* | --qos-entries=*)
 				qos_entries="${i#*=}"
-				if [ "$qos_entries" -gt 64]; then
+				if [[ "$qos_entries" -gt 64 || "$qos_entries" -lt 1 ]]; then
 					echo "Invalid qos_entries=$qos_entries. Valid range is [1-64]."
 					exit 1
 				fi
 				;;
 			-f=* | --fs-entries=*)
 				fs_entries="${i#*=}"
-				if [ "$fs_entries" -gt 1024]; then
+				if [[ "$fs_entries" -gt 1024 || "$fs_entries" -lt 1 ]]; then
 					echo "Invalid fs_entries=$fs_entries. Valid range is [1-1024]."
 					exit 1
 				fi
