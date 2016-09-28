@@ -575,6 +575,9 @@ static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 		return -EINVAL;
 	}
 
+	/* make sure that aiop_id is set to 0 */
+	dpaiop_cfg.aiop_id = 0;
+
 	if (mc_fw_version == MC_FW_VERSION_8)
 		error = create_dpaiop_v8(&dpaiop_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
