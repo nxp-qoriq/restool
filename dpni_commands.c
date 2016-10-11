@@ -338,6 +338,7 @@ static const char *dpni_stats_v10[][DPNI_STATS_PER_PAGE_V10] = {
 	"ingress_nobuffer_discards",
 	"egress_discarded_frames",
 	"egress_confirmed_frames",
+	""
 	},
 };
 
@@ -737,6 +738,8 @@ static void dpni_print_stats(const char *strings[],
 
 	stat = (uint64_t *)&dpni_stats.raw;
 	for (i = 0; i < DPNI_STATS_PER_PAGE_V10; i++) {
+		if (strcmp(strings[i], "\0") == 0)
+			break;
 		printf("%s: %lu\n", strings[i], *stat);
 		stat++;
 	}
