@@ -1951,8 +1951,6 @@ static int cmd_dpni_create_v10(void)
 		"Usage: restool dpni create [OPTIONS]\n"
 		"\n"
 		"OPTIONS:\n"
-		"--mac-addr=<addr>\n"
-		"   String specifying primary MAC address (e.g. 00:00:05:00:00:05).\n"
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma or space separated list of DPNI options:\n"
 		"	DPNI_OPT_TX_FRM_RELEASE\n"
