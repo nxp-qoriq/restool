@@ -304,3 +304,22 @@ int dpni_get_taildrop_v10(struct fsl_mc_io *mc_io,
 
 	return 0;
 }
+
+int dpni_set_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
+				  uint32_t cmd_flags,
+				  uint16_t token,
+				  const uint8_t mac_addr[6])
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_SET_PRIM_MAC,
+					  cmd_flags,
+					  token);
+	DPNI_CMD_SET_PRIMARY_MAC_ADDR(cmd, mac_addr);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+

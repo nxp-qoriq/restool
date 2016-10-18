@@ -578,6 +578,7 @@ usage_addni() {
 	echo "Usage: $0 [OPTIONS] <endpoint>
 The options are:
 	-h, --help					This message.
+	--mac-addr=<addr>				String specifying primary MAC address (e.g. 00:00:05:00:00:05)
 	-l, --label=LABEL				The label of the resulting DPNI object associated to the
 							network interface. Maximum length must be 15 characters.
 	-n, --no-link					The network interface will not be linked to any endpoint
@@ -631,6 +632,10 @@ create_dpni() {
 		$dpni_args					\
 	)
 
+	if [ -n "$mac_addr" ]; then
+		$restool dpni update $dpni --mac-addr=$mac_addr
+	fi
+
 	if [ -z "$dpni" ]; then
 		echo "Error: dpni object was not created!"
 		return 1
@@ -663,6 +668,13 @@ process_addni() {
 			-h | --help)
 				usage_addni
 				exit 1
+				;;
+			--mac-addr=*)
+				mac_addr="${i#*=}"
+				if [[ ! "$mac_addr" =~ ^([a-fA-F0-9]{2}:){5}[a-fA-F0-9]{2}$ ]]; then
+					echo "Invalid MAC address: $mac_addr"
+					exit 1
+				fi
 				;;
 			-nq=* | --num-queues=*)
 				num_queues="${i#*=}"

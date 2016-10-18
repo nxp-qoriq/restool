@@ -301,6 +301,31 @@ static struct option dpni_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpni_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+enum dpni_update_options_v10 {
+	UPDATE_OPT_HELP = 0,
+	UPDATE_MAC_ADDR,
+};
+
+static struct option dpni_update_options_v10[] = {
+	[UPDATE_OPT_HELP] = {
+		.name = "help",
+		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[UPDATE_MAC_ADDR] = {
+		.name = "mac-addr",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dpni_update_options_v10) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
 static const struct flib_ops dpni_ops = {
 	.obj_open = dpni_open,
 	.obj_close = dpni_close,
@@ -358,6 +383,25 @@ static int cmd_dpni_help(void)
 	printf(help_msg);
 	return 0;
 }
+
+static int cmd_dpni_help_v10(void)
+{
+	static const char help_msg[] =
+		"\n"
+		"Usage: restool dpni <command> [--help] [ARGS...]\n"
+		"Where <command> can be:\n"
+		"   info - displays detailed information about a DPNI object.\n"
+		"   create - creates a new child DPNI under the root DPRC.\n"
+		"   destroy - destroys a child DPNI under the root DPRC.\n"
+		"   update - update attributes of already created DPNI. \n"
+		"\n"
+		"For command-specific help, use the --help option of each command.\n"
+		"\n";
+
+	printf(help_msg);
+	return 0;
+}
+
 
 static void print_dpni_options(uint32_t options)
 {
@@ -2127,6 +2171,79 @@ static int cmd_dpni_destroy_v10(void)
 	return destroy_dpni(MC_FW_VERSION_10);
 }
 
+static int update_dpni_v10(const char *usage_msg)
+{
+	uint8_t mac_addr[6];
+	uint16_t dpni_handle;
+	uint32_t dpni_id;
+	int error = 0;
+	bool minimal_options = false;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name == NULL) {
+		ERROR_PRINTF("Should provide a dpni!\n");
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	error = parse_object_name(restool.obj_name, "dpni", &dpni_id);
+	if (error) {
+		puts(usage_msg);
+		goto out;
+	}
+
+	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
+	if (error) {
+		ERROR_PRINTF("Could not open specified object!\n");
+		puts(usage_msg);
+		goto out;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(UPDATE_MAC_ADDR)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(UPDATE_MAC_ADDR);
+		error  = parse_dpni_mac_addr(
+				restool.cmd_option_args[UPDATE_MAC_ADDR],
+				mac_addr);
+
+		error = dpni_set_primary_mac_addr_v10(&restool.mc_io, 0,
+						      dpni_handle, mac_addr);
+		if (error)
+			ERROR_PRINTF("dpni_set_primary_mac_addr_v10() = %d\n", error);
+
+		minimal_options = true;
+	}
+
+	dpni_close(&restool.mc_io, 0, dpni_handle);
+out:
+
+	if (!minimal_options && !error) {
+		ERROR_PRINTF("Specify at least an option to update!\n");
+		puts(usage_msg);
+	}
+
+	return error;
+}
+
+
+static int cmd_dpni_update_v10(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpni update dpni.X [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"   --mac-addr=<addr>\n"
+		"	String specifying primary MAC address (e.g. 00:00:05:00:00:05).\n"
+		"\n";
+
+	return update_dpni_v10(usage_msg);
+}
+
 struct object_command dpni_commands[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
@@ -2170,7 +2287,7 @@ struct object_command dpni_commands_v9[] = {
 struct object_command dpni_commands_v10[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
-	  .cmd_func = cmd_dpni_help },
+	  .cmd_func = cmd_dpni_help_v10 },
 
 	{ .cmd_name = "info",
 	  .options = dpni_info_options,
@@ -2183,6 +2300,10 @@ struct object_command dpni_commands_v10[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpni_destroy_options,
 	  .cmd_func = cmd_dpni_destroy_v10 },
+
+	{ .cmd_name = "update",
+	  .options = dpni_update_options_v10,
+	  .cmd_func = cmd_dpni_update_v10 },
 
 	{ .cmd_name = NULL },
 };

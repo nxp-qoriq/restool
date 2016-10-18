@@ -643,4 +643,18 @@ int dpni_get_taildrop_v10(struct fsl_mc_io *mc_io,
 			 uint8_t q_index,
 			 struct dpni_taildrop_v10 *taildrop);
 
+/**
+ * dpni_set_primary_mac_addr_v10() - Set the primary MAC address
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPNI object
+ * @mac_addr:	MAC address to set as primary address
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpni_set_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
+				  uint32_t cmd_flags,
+				  uint16_t token,
+				  const uint8_t mac_addr[6]);
+
 #endif /* __FSL_DPNI_v10_H */
