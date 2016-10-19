@@ -526,6 +526,14 @@ static int print_dpni_endpoint(uint32_t target_id)
 	return 0;
 }
 
+static void print_mac_address(uint8_t mac_addr[6])
+{
+	printf("mac address: ");
+	for (int j = 0; j < 5; ++j)
+		printf("%02x:", mac_addr[j]);
+	printf("%02x\n", mac_addr[5]);
+}
+
 static int print_dpni_attr(uint32_t dpni_id,
 			struct dprc_obj_desc *target_obj_desc)
 {
@@ -591,10 +599,7 @@ static int print_dpni_attr(uint32_t dpni_id,
 	printf("link status: %d - ", link_state.up);
 	link_state.up == 0 ? printf("down\n") :
 	link_state.up == 1 ? printf("up\n") : printf("error state\n");
-	printf("mac address: ");
-	for (int j = 0; j < 5; ++j)
-		printf("%02x:", mac_addr[j]);
-	printf("%02x\n", mac_addr[5]);
+	print_mac_address(mac_addr);
 	printf("dpni_attr.options value is: %#lx\n",
 	       (unsigned long)dpni_attr.options);
 	print_dpni_options(dpni_attr.options);
@@ -704,10 +709,7 @@ static int print_dpni_attr_v9(uint32_t dpni_id,
 	printf("link status: %d - ", link_state.up);
 	link_state.up == 0 ? printf("down\n") :
 	link_state.up == 1 ? printf("up\n") : printf("error state\n");
-	printf("mac address: ");
-	for (int j = 0; j < 5; ++j)
-		printf("%02x:", mac_addr[j]);
-	printf("%02x\n", mac_addr[5]);
+	print_mac_address(mac_addr);
 	printf("dpni_attr.options value is: %#lx\n",
 	       (unsigned long)dpni_attr.options);
 	print_dpni_options(dpni_attr.options);
