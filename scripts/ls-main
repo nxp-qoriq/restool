@@ -760,6 +760,11 @@ process_addni() {
 		esac
 	done
 
+	# if no --num-queues is specified then set it to number of cores
+	if [[ $dpni_args != *"--num-queues"* ]]; then
+		dpni_args=$dpni_args" --num-queues="$(nproc)
+	fi
+
 	# Check if --no-link the endpoint have been provided otherwise display the usage
 	if [ $no_link -eq 0 ] && [ -z "$endpoint" ]; then
 		usage_addni
