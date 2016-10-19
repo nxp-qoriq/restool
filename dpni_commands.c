@@ -799,6 +799,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	uint16_t dpni_handle, dpni_major, dpni_minor;
 	struct dpni_link_state link_state;
 	bool dpni_opened = false;
+	uint8_t mac_addr[6];
 	int error = 0;
 	int error2;
 	unsigned int page;
@@ -838,6 +839,15 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 		goto out;
 	}
 
+	error = dpni_get_primary_mac_addr(&restool.mc_io, 0,
+					dpni_handle, mac_addr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
 	memset(&link_state, 0, sizeof(link_state));
 	error = dpni_get_link_state(&restool.mc_io, 0, dpni_handle,
 				    &link_state);
@@ -857,6 +867,8 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	printf("link status: %d - ", link_state.up);
 	link_state.up == 0 ? printf("down\n") :
 	link_state.up == 1 ? printf("up\n") : printf("error state\n");
+
+	print_mac_address(mac_addr);
 
 	printf("dpni_attr.options value is: %#lx\n",
 	       (unsigned long)dpni_attr.options);
