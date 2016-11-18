@@ -582,6 +582,7 @@ The options are:
 	-l, --label=LABEL				The label of the resulting DPNI object associated to the
 							network interface. Maximum length must be 15 characters.
 	-n, --no-link					The network interface will not be linked to any endpoint
+	--loopback					The network interface will be configured in loopback mode
 	-o, --options=OPTIONS				Comma separated options. Supported values are:
 							DPNI_OPT_TX_FRM_RELEASE, DPNI_OPT_NO_MAC_FILTER,
 							DPNI_OPT_HAS_POLICING, DPNI_OPT_SHARED_CONGESTION,
@@ -651,6 +652,7 @@ create_dpni() {
 }
 
 process_addni() {
+	loopback=0
 	no_link=0
 	options=
 	label=
@@ -731,8 +733,10 @@ process_addni() {
 				# In case both "-n" option and the end point are provided ignore the "-n"
 				if [ -z "$endpoint" ]; then
 					no_link=1
-					endpoint=none
 				fi
+				;;
+			--loopback)
+				loopback=1
 				;;
 			-o=* | --options=*)
 				options="${i#*=}"
@@ -760,20 +764,26 @@ process_addni() {
 		esac
 	done
 
+	# if both endpoint and --loopback are provided output error
+	if [ ! -z "$endpoint" ] && [ $loopback -eq 1 ]; then
+		echo "Invalid arguments: cannot provide --loopback alongside -n or endpoint"
+		exit 1
+	fi
+
 	# if no --num-queues is specified then set it to number of cores
 	if [[ $dpni_args != *"--num-queues"* ]]; then
 		dpni_args=$dpni_args" --num-queues="$(nproc)
 	fi
 
 	# Check if --no-link the endpoint have been provided otherwise display the usage
-	if [ $no_link -eq 0 ] && [ -z "$endpoint" ]; then
+	if [ $no_link -eq 0 ] && [ -z "$endpoint" ] && [ $loopback -eq 0 ]; then
 		usage_addni
 		exit 1
 	fi
 
 	get_root_container
 
-	if [ $no_link -eq 0 ]; then
+	if [ ! -z "$endpoint" ]; then
 		type_of_endpoint "$endpoint"
 
 		if [ "$toe" == "dpmac" ]; then
@@ -796,7 +806,12 @@ process_addni() {
 	create_dpni
 
 	# Make a link in case there is an end point specified
-	if [ $no_link -eq 0 ]; then
+	if [ ! -z $endpoint ]; then
+		connect "$dpni" "$endpoint"
+	fi
+
+	if [ $loopback -eq 1 ]; then
+		endpoint=$dpni
 		connect "$dpni" "$endpoint"
 	fi
 
