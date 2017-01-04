@@ -513,7 +513,7 @@ static int cmd_dpcon_create(void)
 		"Create a DPCON object with all default options:\n"
 		"   $ restool dpcon create\n"
 		"Create a DPCON with 4 priorities:\n"
-		"   $ restool dpcon create --num-priorities=4\n"
+		"   $ restool dpcon create --num-priorities=2\n"
 		"\n";
 
 	return create_dpcon(MC_FW_VERSION_8, usage_msg);
@@ -537,7 +537,7 @@ static int cmd_dpcon_create_v10(void)
 		"Create a DPCON object with all default options:\n"
 		"   $ restool dpcon create\n"
 		"Create a DPCON with 4 priorities:\n"
-		"   $ restool dpcon create --num-priorities=4\n"
+		"   $ restool dpcon create --num-priorities=2\n"
 		"\n";
 
 	return create_dpcon(MC_FW_VERSION_10, usage_msg);
