@@ -2105,19 +2105,33 @@ static int destroy_dpni_v10(uint32_t dpni_id)
 
 	if (dprc_id != restool.root_dprc_id) {
 		error = open_dprc(dprc_id, &dprc_handle);
-		if (error)
+		if (error) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
 			return error;
+		}
 	}
 
 	error = dpni_destroy_v10(&restool.mc_io, dprc_handle,
 				 0, dpni_id);
-	if (error)
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			mc_status_to_string(mc_status), mc_status);
 		goto out;
+	}
 	printf("dpni.%u is destroyed\n", dpni_id);
 
 out:
-	if (dprc_id != restool.root_dprc_id)
+	if (dprc_id != restool.root_dprc_id) {
 		error = dprc_close(&restool.mc_io, 0, dprc_handle);
+		if (error) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
+		}
+	}
 
 	return error;
 }
