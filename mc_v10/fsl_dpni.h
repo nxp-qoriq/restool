@@ -109,6 +109,16 @@ struct fsl_mc_io;
  */
 #define DPNI_OPT_NO_FS					0x000020
 
+/**
+ *  * Enable the Order Restoration support
+ *   */
+#define DPNI_OPT_HAS_OPR				0x000040
+
+/**
+ *  * Order Point Records are shared for the entire TC
+ *   */
+#define DPNI_OPT_OPR_PER_TC				0x000080
+
 /* DPNI configuration options */
 
 /**
@@ -158,6 +168,8 @@ struct dpni_cfg_v10 {
 	 * 		DPNI_OPT_SHARED_CONGESTION
 	 * 		DPNI_OPT_HAS_KEY_MASKING
 	 * 		DPNI_OPT_NO_FS
+	 * 		DPNI_OPT_HAS_OPR
+	 * 		DPNI_OPT_OPR_PER_TC
 	 * @fs_entries: Number of entries in the flow steering table.
 	 * 		This table is used to select the ingress queue for ingress traffic,
 	 * 		targeting a GPP core or another. In addition it can	be used to

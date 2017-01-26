@@ -57,6 +57,17 @@
 	DPNI_OPT_QOS_MASK_SUPPORT |			\
 	DPNI_OPT_FS_MASK_SUPPORT)
 
+
+#define ALL_DPNI_OPTS_V10 (				\
+	DPNI_OPT_TX_FRM_RELEASE |			\
+	DPNI_OPT_NO_MAC_FILTER |			\
+	DPNI_OPT_HAS_POLICING |				\
+	DPNI_OPT_SHARED_CONGESTION |			\
+	DPNI_OPT_HAS_KEY_MASKING |			\
+	DPNI_OPT_NO_FS |				\
+	DPNI_OPT_HAS_OPR |				\
+	DPNI_OPT_OPR_PER_TC)
+
 enum mc_cmd_status mc_status;
 
 /**
@@ -374,7 +385,7 @@ static struct option_entry options_map_v9[] = {
 };
 static unsigned int options_num_v9 = ARRAY_SIZE(options_map_v9);
 
-static struct option_entry options_map_v10[] = {
+static struct option_entry options_map_v10_0[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_TX_FRM_RELEASE),
 	OPTION_MAP_ENTRY(DPNI_OPT_NO_MAC_FILTER),
 	OPTION_MAP_ENTRY(DPNI_OPT_HAS_POLICING),
@@ -382,7 +393,19 @@ static struct option_entry options_map_v10[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_HAS_KEY_MASKING),
 	OPTION_MAP_ENTRY(DPNI_OPT_NO_FS),
 };
-static unsigned int options_num_v10 = ARRAY_SIZE(options_map_v10);
+static unsigned int options_num_v10_0 = ARRAY_SIZE(options_map_v10_0);
+
+static struct option_entry options_map_v10_1[] = {
+	OPTION_MAP_ENTRY(DPNI_OPT_TX_FRM_RELEASE),
+	OPTION_MAP_ENTRY(DPNI_OPT_NO_MAC_FILTER),
+	OPTION_MAP_ENTRY(DPNI_OPT_HAS_POLICING),
+	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_CONGESTION),
+	OPTION_MAP_ENTRY(DPNI_OPT_HAS_KEY_MASKING),
+	OPTION_MAP_ENTRY(DPNI_OPT_NO_FS),
+	OPTION_MAP_ENTRY(DPNI_OPT_HAS_OPR),
+	OPTION_MAP_ENTRY(DPNI_OPT_OPR_PER_TC),
+};
+static unsigned int options_num_v10_1 = ARRAY_SIZE(options_map_v10_1);
 
 #define DPNI_STATS_PER_PAGE_V10 6
 
@@ -496,7 +519,7 @@ static void print_dpni_options(uint32_t options)
 
 static void print_dpni_options_v10(uint32_t options)
 {
-	if ((options & ~ALL_DPNI_OPTS) != 0) {
+	if ((options & ~ALL_DPNI_OPTS_V10) != 0) {
 		printf("\tUnrecognized options found...\n");
 		return;
 	}
@@ -518,6 +541,13 @@ static void print_dpni_options_v10(uint32_t options)
 
 	if (options & DPNI_OPT_NO_FS)
 		printf("\tDPNI_OPT_NO_FS\n");
+
+	if (options & DPNI_OPT_HAS_OPR)
+		printf("\tDPNI_OPT_HAS_OPR\n");
+
+	if (options & DPNI_OPT_OPR_PER_TC)
+		printf("\tDPNI_OPT_OPR_PER_TC\n");
+
 }
 
 static int print_dpni_endpoint(uint32_t target_id)
@@ -1800,11 +1830,20 @@ static int create_dpni_v10(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_generic_create_options(
-				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				(uint64_t *)&dpni_cfg.options,
-				options_map_v10,
-				options_num_v10);
+
+		if (restool.mc_fw_version.minor == 0)
+			error = parse_generic_create_options(
+					restool.cmd_option_args[CREATE_OPT_OPTIONS],
+					(uint64_t *)&dpni_cfg.options,
+					options_map_v10_0,
+					options_num_v10_0);
+		else if (restool.mc_fw_version.minor == 1)
+			error = parse_generic_create_options(
+					restool.cmd_option_args[CREATE_OPT_OPTIONS],
+					(uint64_t *)&dpni_cfg.options,
+					options_map_v10_1,
+					options_num_v10_1);
+
 		if (error) {
 			DEBUG_PRINTF("parse_generic_create_options() = %d\n",
 				     error);
@@ -1903,7 +1942,7 @@ static int create_dpni_v10(const char *usage_msg)
 }
 static int cmd_dpni_create_v10(void)
 {
-	static const char usage_msg[] =
+	static const char usage_msg_v10_0[] =
 		"\n"
 		"Usage: restool dpni create [OPTIONS]\n"
 		"\n"
@@ -1940,7 +1979,50 @@ static int cmd_dpni_create_v10(void)
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"\n";
 
-	return create_dpni_v10(usage_msg);
+	static const char usage_msg_v10_1[] =
+		"\n"
+		"Usage: restool dpni create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--options=<options-mask>\n"
+		"   Where <options-mask> is a comma or space separated list of DPNI options:\n"
+		"	DPNI_OPT_TX_FRM_RELEASE\n"
+		"	DPNI_OPT_NO_MAC_FILTER\n"
+		"	DPNI_OPT_HAS_POLICING\n"
+		"	DPNI_OPT_SHARED_CONGESTION\n"
+		"	DPNI_OPT_HAS_KEY_MASKING\n"
+		"	DPNI_OPT_NO_FS\n"
+		"	DPNI_OPT_HAS_OPR\n"
+		"	DPNI_OPT_OPR_PER_TC\n"
+		"--num-queues=<number>\n"
+		"   Number of TX/RX queues use for traffic distribution.\n"
+		"   Used to distribute traffic to multiple GPP cores,\n"
+		"   Defaults to one queue. Maximim supported value is 8\n"
+		"--num-tcs=<number>\n"
+		"   Number of traffic classes (TCs), reserved for the DPNI.\n"
+		"   Defaults to one TC. Maximum supported value is 8\n"
+		"--mac-entries=<number>\n"
+		"   Number of entries in the MAC address filtering table.\n"
+		"   Allows both unicast and multicast entries.\n"
+		"   By default, there are 80 entries.Maximum supported value is 80.\n"
+		"--vlan-entries=<number>\n"
+		"   Number of entries in the VLAN address filtering table\n"
+		"   By default, VLAN filtering is disabled. Maximum values is 16\n"
+		"--qos-entries=<number>\n"
+		"   Number of entries in the QoS classification table.\n"
+		"   Ignored of DPNI has a single TC. By default, set to 64.\n"
+		"--fs-entries=<number>\n"
+		"   Number of entries in the flow steering table.\n"
+		"   Defaults to 64. Maximum value is 1024\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"\n";
+
+	if (restool.mc_fw_version.minor == 0)
+		return create_dpni_v10(usage_msg_v10_0);
+	else if (restool.mc_fw_version.minor == 1)
+		return create_dpni_v10(usage_msg_v10_1);
+	return -EINVAL;
 }
 
 static int destroy_dpni_v8(uint32_t dpni_id)
