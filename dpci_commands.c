@@ -77,6 +77,7 @@ enum dpci_create_options {
 	CREATE_OPT_HELP = 0,
 	CREATE_OPT_NUM_PRIORITIES,
 	CREATE_OPT_PARENT_DPRC,
+	CREATE_OPT_OPTIONS,
 };
 
 static struct option dpci_create_options[] = {
@@ -96,6 +97,13 @@ static struct option dpci_create_options[] = {
 
 	[CREATE_OPT_PARENT_DPRC] = {
 		.name = "container",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_OPTIONS] = {
+		.name = "options",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -132,6 +140,12 @@ static const struct flib_ops dpci_ops = {
 	.obj_get_irq_mask = dpci_get_irq_mask,
 	.obj_get_irq_status = dpci_get_irq_status,
 };
+
+static struct option_entry options_map_v10[] = {
+	OPTION_MAP_ENTRY(DPCI_OPT_HAS_OPR),
+	OPTION_MAP_ENTRY(DPCI_OPT_OPR_SHARED),
+};
+static unsigned int options_num_v10 = ARRAY_SIZE(options_map_v10);
 
 static int cmd_dpci_help(void)
 {
@@ -430,89 +444,13 @@ static int cmd_dpci_info_v10(void)
 	return info_dpci(MC_FW_VERSION_10);
 }
 
-static int create_dpci_v8(struct dpci_cfg *dpci_cfg)
+static int create_dpci_v8(const char *usage_msg)
 {
 	struct dpci_attr dpci_attr;
+	struct dpci_cfg dpci_cfg;
 	uint16_t dpci_handle;
 	int error;
-
-	error = dpci_create(&restool.mc_io, 0, dpci_cfg, &dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpci_attr, 0, sizeof(struct dpci_attr));
-	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpci", dpci_attr.id, NULL);
-
-	error = dpci_close(&restool.mc_io, 0, dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
-}
-
-static int create_dpci_v10(struct dpci_cfg *dpci_cfg)
-{
-	uint32_t dpci_id, dprc_id;
-	uint16_t dprc_handle;
-	bool dprc_opened;
-	int error;
-
-	dprc_handle = restool.root_dprc_handle;
-	dprc_opened = false;
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC);
-		error = parse_object_name(
-				restool.cmd_option_args[CREATE_OPT_PARENT_DPRC],
-				"dprc", &dprc_id);
-		if (error)
-			return error;
-
-		error = open_dprc(dprc_id, &dprc_handle);
-		if (error)
-			return error;
-		dprc_opened = true;
-	}
-
-	error = dpci_create_v10(&restool.mc_io, dprc_handle, 0, dpci_cfg, &dpci_id);
-	if (error) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	if (dprc_opened) {
-		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
-		print_new_obj("dpci", dpci_id,
-			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
-	} else {
-		print_new_obj("dpci", dpci_id, NULL);
-
-	}
-
-	return 0;
-}
-
-static int create_dpci(int mc_fw_version, const char *usage_msg)
-{
-	int error;
 	long val;
-	struct dpci_cfg dpci_cfg;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -541,14 +479,125 @@ static int create_dpci(int mc_fw_version, const char *usage_msg)
 		dpci_cfg.num_of_priorities = 1;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error  = create_dpci_v8(&dpci_cfg);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error  = create_dpci_v10(&dpci_cfg);
-	else
-		return -EINVAL;
+	error = dpci_create(&restool.mc_io, 0, &dpci_cfg, &dpci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
 
-	return error;
+	memset(&dpci_attr, 0, sizeof(struct dpci_attr));
+	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpci", dpci_attr.id, NULL);
+
+	error = dpci_close(&restool.mc_io, 0, dpci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpci_v10(const char *usage_msg)
+{
+	struct dpci_cfg_v10 dpci_cfg;
+	uint32_t dpci_id, dprc_id;
+	uint16_t dprc_handle;
+	bool dprc_opened;
+	int error;
+	long val;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name != NULL) {
+		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
+			     restool.obj_name);
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	if (restool.mc_fw_version.minor >= 1) {
+		if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+			restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+			error = parse_generic_create_options(
+					restool.cmd_option_args[CREATE_OPT_OPTIONS],
+					(uint64_t *)&dpci_cfg.options,
+					options_map_v10,
+					options_num_v10);
+			if (error < 0) {
+				DEBUG_PRINTF(
+					"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
+					error);
+				return error;
+			}
+		}
+	}
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
+		error = get_option_value(CREATE_OPT_NUM_PRIORITIES, &val,
+					 "Invalid value: num-priorities option",
+					 1, 2);
+		if (error)
+			return -EINVAL;
+
+		dpci_cfg.num_of_priorities = (uint8_t)val;
+	} else {
+		dpci_cfg.num_of_priorities = 1;
+	}
+
+	dprc_handle = restool.root_dprc_handle;
+	dprc_opened = false;
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC);
+		error = parse_object_name(
+				restool.cmd_option_args[CREATE_OPT_PARENT_DPRC],
+				"dprc", &dprc_id);
+		if (error)
+			return error;
+
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+		dprc_opened = true;
+	}
+
+	if (restool.mc_fw_version.minor == 0)
+		error = dpci_create_v10_0(&restool.mc_io, dprc_handle, 0, &dpci_cfg, &dpci_id);
+	else
+		error = dpci_create_v10_1(&restool.mc_io, dprc_handle, 0, &dpci_cfg, &dpci_id);
+
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	if (dprc_opened) {
+		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
+		print_new_obj("dpci", dpci_id,
+			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
+	} else {
+		print_new_obj("dpci", dpci_id, NULL);
+
+	}
+
+	return 0;
 }
 
 static int cmd_dpci_create(void)
@@ -571,12 +620,12 @@ static int cmd_dpci_create(void)
 		"   $ restool dpci create --num-priorities=2\n"
 		"\n";
 
-	return create_dpci(MC_FW_VERSION_8, usage_msg);
+	return create_dpci_v8(usage_msg);
 }
 
 static int cmd_dpci_create_v10(void)
 {
-	static const char usage_msg[] =
+	static const char usage_msg_0[] =
 		"\n"
 		"Usage: restool dpci create [OPTIONS]\n"
 		"\n"
@@ -597,7 +646,37 @@ static int cmd_dpci_create_v10(void)
 		"   $ restool dpci create --num-priorities=2\n"
 		"\n";
 
-	return create_dpci(MC_FW_VERSION_10, usage_msg);
+	static const char usage_msg_1[] =
+		"\n"
+		"Usage: restool dpci create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPCI by default options\n"
+		"--options=<options-mask>\n"
+		"   Where <options-mask> is a comma or space separated list of DPCI options:\n"
+		"	DPCI_OPT_HAS_OPR\n"
+		"	DPCI_OPT_OPR_SHARED\n"
+		"--num-priorities=<number>\n"
+		"   specifies the number of priorities\n"
+		"   valid values are 1-2\n"
+		"   Default value is 1\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"\n"
+		"EXAMPLES:\n"
+		"Create a DPCI object with all default options:\n"
+		"   $ restool dpci create\n"
+		"Create a DPCI object with 2 priorities:\n"
+		"   $ restool dpci create --num-priorities=2\n"
+		"\n";
+
+	if (restool.mc_fw_version.minor == 0)
+		return create_dpci_v10(usage_msg_0);
+	else
+		return create_dpci_v10(usage_msg_1);
+
+	return -EINVAL;
 }
 
 static int destroy_dpci_v8(uint32_t dpci_id)

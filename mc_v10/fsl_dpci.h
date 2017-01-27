@@ -41,6 +41,31 @@
 struct fsl_mc_io;
 
 /**
+ * Enable the Order Restoration support
+ */
+#define DPCI_OPT_HAS_OPR					0x000040
+
+/**
+ * Order Point Records are shared for the entire DPCI
+ */
+#define DPCI_OPT_OPR_SHARED					0x000080
+
+/**
+ * struct dpci_cfg - Structure representing DPCI configuration
+ * @options: Any combination of the following options:
+ *		DPCI_OPT_HAS_OPR
+ *		DPCI_OPT_OPR_SHARED
+ * @num_of_priorities:	Number of receive priorities (queues) for the DPCI;
+ *			note, that the number of transmit priorities (queues)
+ *			is determined by the number of receive priorities of
+ *			the peer DPCI object
+ */
+struct dpci_cfg_v10 {
+	uint32_t options;
+	uint8_t num_of_priorities;
+};
+
+/**
  * dpci_create() - Create the DPCI object.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
@@ -62,10 +87,16 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_create_v10(struct fsl_mc_io	*mc_io,
+int dpci_create_v10_0(struct fsl_mc_io	*mc_io,
 		uint16_t dprc_token,
 		uint32_t		cmd_flags,
-		const struct dpci_cfg	*cfg,
+		const struct dpci_cfg_v10 *cfg,
+		uint32_t *obj_id);
+
+int dpci_create_v10_1(struct fsl_mc_io	*mc_io,
+		uint16_t dprc_token,
+		uint32_t		cmd_flags,
+		const struct dpci_cfg_v10 *cfg,
 		uint32_t *obj_id);
 
 /**
