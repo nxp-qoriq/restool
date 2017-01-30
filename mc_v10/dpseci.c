@@ -34,20 +34,46 @@
 #include "fsl_dpseci.h"
 #include "fsl_dpseci_cmd.h"
 
-int dpseci_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpseci_cfg	*cfg,
-		uint32_t	*obj_id)
+int dpseci_create_v10_0(struct fsl_mc_io *mc_io,
+		uint16_t dprc_token,
+		uint32_t cmd_flags,
+		const struct dpseci_cfg_v10 *cfg,
+		uint32_t *obj_id)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 
 	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_CREATE,
+	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_CREATE_V1,
 					  cmd_flags,
 					  dprc_token);
-	DPSECI_CMD_CREATE(cmd, cfg);
+	DPSECI_CMD_CREATE_V1(cmd, cfg);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	CMD_CREATE_RSP_GET_OBJ_ID_PARAM0(cmd, *obj_id);
+
+	return 0;
+}
+
+int dpseci_create_v10_1(struct fsl_mc_io *mc_io,
+		uint16_t dprc_token,
+		uint32_t cmd_flags,
+		const struct dpseci_cfg_v10 *cfg,
+		uint32_t *obj_id)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_CREATE_V2,
+					  cmd_flags,
+					  dprc_token);
+	DPSECI_CMD_CREATE_V2(cmd, cfg);
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);

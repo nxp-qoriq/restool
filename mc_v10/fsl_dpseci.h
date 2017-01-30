@@ -41,7 +41,36 @@
 struct fsl_mc_io;
 
 /**
- * dpseci_create() - Create the DPSECI object
+ * Enable the Order Restoration support
+ */
+#define DPSECI_OPT_HAS_OPR				0x000040
+
+/**
+ * Order Point Records are shared for the entire DPSECI
+ */
+#define DPSECI_OPT_OPR_SHARED				0x000080
+
+/**
+ * struct dpseci_cfg_v10 - Structure representing DPSECI configuration
+ * @options: Any combination of the following options:
+ *		DPSECI_OPT_HAS_OPR
+ *		DPSECI_OPT_OPR_SHARED
+ * @num_tx_queues: num of queues towards the SEC
+ * @num_rx_queues: num of queues back from the SEC
+ * @priorities: Priorities for the SEC hardware processing;
+ *		each place in the array is the priority of the tx queue
+ *		towards the SEC,
+ *		valid priorities are configured with values 1-8;
+ */
+struct dpseci_cfg_v10 {
+	uint32_t options;
+	uint8_t num_tx_queues;
+	uint8_t num_rx_queues;
+	uint8_t priorities[DPSECI_PRIO_NUM];
+};
+
+/**
+ * dpseci_create_v10() - Create the DPSECI object
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -62,11 +91,17 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpseci_cfg	*cfg,
-		uint32_t	*obj_id);
+int dpseci_create_v10_0(struct fsl_mc_io *mc_io,
+		        uint16_t dprc_token,
+		        uint32_t cmd_flags,
+		        const struct dpseci_cfg_v10 *cfg,
+		        uint32_t *obj_id);
+
+int dpseci_create_v10_1(struct fsl_mc_io *mc_io,
+		        uint16_t dprc_token,
+		        uint32_t cmd_flags,
+		        const struct dpseci_cfg_v10 *cfg,
+		        uint32_t *obj_id);
 
 /**
  * dpseci_destroy() - Destroy the DPSECI object and release all its resources.

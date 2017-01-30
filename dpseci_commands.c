@@ -78,6 +78,7 @@ enum dpseci_create_options {
 	CREATE_OPT_NUM_QUEUES,
 	CREATE_OPT_PRIORITIES,
 	CREATE_OPT_PARENT_DPRC,
+	CREATE_OPT_OPTIONS,
 };
 
 static struct option dpseci_create_options[] = {
@@ -104,6 +105,13 @@ static struct option dpseci_create_options[] = {
 
 	[CREATE_OPT_PARENT_DPRC] = {
 		.name = "container",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_OPTIONS] = {
+		.name = "options",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -140,6 +148,12 @@ static const struct flib_ops dpseci_ops = {
 	.obj_get_irq_mask = dpseci_get_irq_mask,
 	.obj_get_irq_status = dpseci_get_irq_status,
 };
+
+static struct option_entry options_map_v10_1[] = {
+	OPTION_MAP_ENTRY(DPSECI_OPT_HAS_OPR),
+	OPTION_MAP_ENTRY(DPSECI_OPT_OPR_SHARED),
+};
+static unsigned int options_num_v10_1 = ARRAY_SIZE(options_map_v10_1);
 
 static int cmd_dpseci_help(void)
 {
@@ -481,88 +495,12 @@ static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities,
 	return 0;
 }
 
-static int create_dpseci_v8(struct dpseci_cfg *dpseci_cfg)
+static int create_dpseci_v8(const char *usage_msg)
 {
+	struct dpseci_cfg dpseci_cfg = { 0 };
 	struct dpseci_attr dpseci_attr;
 	uint16_t dpseci_handle;
 	int error;
-
-	error = dpseci_create(&restool.mc_io, 0, dpseci_cfg, &dpseci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	memset(&dpseci_attr, 0, sizeof(struct dpseci_attr));
-	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle,
-					&dpseci_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpseci", dpseci_attr.id, NULL);
-
-	error = dpseci_close(&restool.mc_io, 0, dpseci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
-}
-
-static int create_dpseci_v10(struct dpseci_cfg *dpseci_cfg)
-{
-	uint32_t dpseci_id, dprc_id;
-	uint16_t dprc_handle;
-	bool dprc_opened;
-	int error;
-
-	dprc_handle = restool.root_dprc_handle;
-	dprc_opened = false;
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC);
-		error = parse_object_name(
-				restool.cmd_option_args[CREATE_OPT_PARENT_DPRC],
-				"dprc", &dprc_id);
-		if (error)
-			return error;
-
-		error = open_dprc(dprc_id, &dprc_handle);
-		if (error)
-			return error;
-		dprc_opened = true;
-	}
-
-	error = dpseci_create_v10(&restool.mc_io, dprc_handle, 0,
-				  dpseci_cfg, &dpseci_id);
-	if (error) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	if (dprc_opened) {
-		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
-		print_new_obj("dpseci", dpseci_id,
-			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
-	} else {
-		print_new_obj("dpseci", dpseci_id, NULL);
-	}
-
-	return 0;
-}
-
-static int create_dpseci(int mc_fw_version, const char *usage_msg)
-{
-	int error;
-	struct dpseci_cfg dpseci_cfg = { 0 };
 	long val;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -607,14 +545,140 @@ static int create_dpseci(int mc_fw_version, const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = create_dpseci_v8(&dpseci_cfg);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpseci_v10(&dpseci_cfg);
-	else
-		return -EINVAL;
+	error = dpseci_create(&restool.mc_io, 0, &dpseci_cfg, &dpseci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	memset(&dpseci_attr, 0, sizeof(struct dpseci_attr));
+	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle,
+					&dpseci_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	print_new_obj("dpseci", dpseci_attr.id, NULL);
 
-	return error;
+	error = dpseci_close(&restool.mc_io, 0, dpseci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	return 0;
+}
+
+static int create_dpseci_v10(const char *usage_msg)
+{
+	struct dpseci_cfg_v10 dpseci_cfg = { 0 };
+	uint32_t dpseci_id, dprc_id;
+	uint16_t dprc_handle;
+	bool dprc_opened;
+	int error;
+	long val;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name != NULL) {
+		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
+			     restool.obj_name);
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	if (restool.mc_fw_version.minor >= 1) {
+		if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+			restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+			error = parse_generic_create_options(
+					restool.cmd_option_args[CREATE_OPT_OPTIONS],
+					(uint64_t *)&dpseci_cfg.options,
+					options_map_v10_1,
+					options_num_v10_1);
+			if (error < 0) {
+				DEBUG_PRINTF(
+					"parse_generic_create_options failed with error %d, cannot get options-mask\n",
+					error);
+				return error;
+			}
+		}
+	}
+
+	if ((restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES)) &&
+	    (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PRIORITIES))) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_PRIORITIES);
+		error = get_option_value(CREATE_OPT_NUM_QUEUES, &val,
+					 "Invalid number of queues range",
+					 1, DPSECI_PRIO_NUM);
+		if (error)
+			return -EINVAL;
+		dpseci_cfg.num_tx_queues = val;
+		dpseci_cfg.num_rx_queues = val;
+
+		error = parse_dpseci_priorities(
+			restool.cmd_option_args[CREATE_OPT_PRIORITIES],
+			dpseci_cfg.priorities, val);
+		if (error < 0) {
+			DEBUG_PRINTF(
+				"parse_dpseci_priorities() failed with error %d, cannot get priorities.\n",
+				error);
+			return error;
+		}
+	} else {
+		ERROR_PRINTF("--num-queues and --priorities must be set\n");
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	dprc_handle = restool.root_dprc_handle;
+	dprc_opened = false;
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC);
+		error = parse_object_name(
+				restool.cmd_option_args[CREATE_OPT_PARENT_DPRC],
+				"dprc", &dprc_id);
+		if (error)
+			return error;
+
+		error = open_dprc(dprc_id, &dprc_handle);
+		if (error)
+			return error;
+		dprc_opened = true;
+	}
+
+	if (restool.mc_fw_version.minor == 0)
+		error = dpseci_create_v10_0(&restool.mc_io, dprc_handle, 0, &dpseci_cfg, &dpseci_id);
+	else
+		error = dpseci_create_v10_1(&restool.mc_io, dprc_handle, 0, &dpseci_cfg, &dpseci_id);
+
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+
+	if (dprc_opened) {
+		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
+		print_new_obj("dpseci", dpseci_id,
+			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
+	} else {
+		print_new_obj("dpseci", dpseci_id, NULL);
+	}
+
+	return 0;
 }
 
 static int cmd_dpseci_create(void)
@@ -634,12 +698,12 @@ static int cmd_dpseci_create(void)
 		"   $ restool dpseci create --num-queues=2 --priorities=2,4\n"
 		"\n";
 
-	return create_dpseci(MC_FW_VERSION_8, usage_msg);
+	return create_dpseci_v8(usage_msg);
 }
 
 static int cmd_dpseci_create_v10(void)
 {
-	static const char usage_msg[] =
+	static const char usage_msg_0[] =
 		"\n"
 		"Usage: restool dpseci create --num-queues=<count> --priorities=<pri1,pri2,...> [OPTIONS]\n"
 		"   --num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
@@ -660,7 +724,37 @@ static int cmd_dpseci_create_v10(void)
 		"   $ restool dpseci create --num-queues=2 --priorities=2,4\n"
 		"\n";
 
-	return create_dpseci(MC_FW_VERSION_10, usage_msg);
+	static const char usage_msg_1[] =
+		"\n"
+		"Usage: restool dpseci create --num-queues=<count> --priorities=<pri1,pri2,...> [OPTIONS]\n"
+		"   --num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
+		"   --priorities=<priority1,priority2, ...,priority8>\n"
+		"      DPSECI supports num-queues priorities that can be individually set.\n"
+		"      if --num-queues=3, then --priorities=X,Y,Z\n"
+		"      Valid values for <priorityN> are 1-8.\n"
+		"   --num-queues and --priorities must both be specified\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPSW by default options\n"
+		"--options=<optionm-mask>\n"
+		"   Where <options-mask> is a comma or space separated list of DPSECI options:\n"
+		"	DPSECI_OPT_OPR_SHARED\n"
+		"	DPSECI_OPT_HAS_OPR\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"Create a DPSECI with 2 rx/tx queues, 2,4 priorities:\n"
+		"   $ restool dpseci create --num-queues=2 --priorities=2,4\n"
+		"\n";
+
+	if (restool.mc_fw_version.minor == 0)
+		return create_dpseci_v10(usage_msg_0);
+	else
+		return create_dpseci_v10(usage_msg_1);
+
+	return -EINVAL;
 }
 
 static int destroy_dpseci_v8(uint32_t dpseci_id)

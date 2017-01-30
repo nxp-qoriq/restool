@@ -39,7 +39,8 @@
 /* Command IDs */
 #define DPSECI_CMDID_CLOSE                              (0x800 << 4) | (0x1)
 #define DPSECI_CMDID_OPEN                               (0x809 << 4) | (0x1)
-#define DPSECI_CMDID_CREATE                             (0x909 << 4) | (0x1)
+#define DPSECI_CMDID_CREATE_V1                          (0x909 << 4) | (0x1)
+#define DPSECI_CMDID_CREATE_V2                          (0x909 << 4) | (0x2)
 #define DPSECI_CMDID_DESTROY                            (0x989 << 4) | (0x1)
 #define DPSECI_CMDID_GET_VERSION                        (0xa09 << 4) | (0x1)
 
@@ -69,7 +70,7 @@
 	MC_CMD_OP(cmd, 0, 0,  32, int,      dpseci_id)
 
 /*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_CMD_CREATE(cmd, cfg) \
+#define DPSECI_CMD_CREATE_V1(cmd, cfg) \
 do { \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->priorities[0]);\
 	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  cfg->priorities[1]);\
@@ -81,6 +82,22 @@ do { \
 	MC_CMD_OP(cmd, 0, 56, 8,  uint8_t,  cfg->priorities[7]);\
 	MC_CMD_OP(cmd, 1, 0,  8,  uint8_t,  cfg->num_tx_queues);\
 	MC_CMD_OP(cmd, 1, 8,  8,  uint8_t,  cfg->num_rx_queues);\
+} while (0)
+
+/*                cmd, param, offset, width, type, arg_name */
+#define DPSECI_CMD_CREATE_V2(cmd, cfg) \
+do { \
+	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->priorities[0]);\
+	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  cfg->priorities[1]);\
+	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  cfg->priorities[2]);\
+	MC_CMD_OP(cmd, 0, 24, 8,  uint8_t,  cfg->priorities[3]);\
+	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  cfg->priorities[4]);\
+	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  cfg->priorities[5]);\
+	MC_CMD_OP(cmd, 0, 48, 8,  uint8_t,  cfg->priorities[6]);\
+	MC_CMD_OP(cmd, 0, 56, 8,  uint8_t,  cfg->priorities[7]);\
+	MC_CMD_OP(cmd, 1, 0,  8,  uint8_t,  cfg->num_tx_queues);\
+	MC_CMD_OP(cmd, 1, 8,  8,  uint8_t,  cfg->num_rx_queues);\
+	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->options);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
