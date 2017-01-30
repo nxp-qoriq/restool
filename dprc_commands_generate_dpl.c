@@ -2210,14 +2210,16 @@ static int write_objects(void)
 		if (strcmp(curr_obj->type, "dpdmux") == 0) {
 			if (restool.mc_fw_version.major == 8)
 				parse_dpdmux_v8(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 9)
+			else if (restool.mc_fw_version.major == 9 ||
+				 restool.mc_fw_version.major == 10)
 				parse_dpdmux_v9(fp, curr_obj);
 		}
 
 		if (strcmp(curr_obj->type, "dpsw") == 0) {
 			if (restool.mc_fw_version.major == 8)
 				parse_dpsw_v8(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 9)
+			else if (restool.mc_fw_version.major == 9 ||
+				 restool.mc_fw_version.major == 10)
 				parse_dpsw_v9(fp, curr_obj);
 		}
 
