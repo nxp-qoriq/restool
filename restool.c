@@ -1505,3 +1505,36 @@ out:
 
 	return error;
 }
+
+int parse_generic_create_options(char *options_str,
+				 uint64_t *options,
+				 struct option_entry options_map[],
+				 unsigned int num_options)
+{
+	char *cursor = NULL;
+	char *opt_str = strtok_r(options_str, ",", &cursor);
+	uint64_t options_mask = 0;
+	unsigned int i;
+
+	while (opt_str != NULL) {
+
+		for (i = 0; i < num_options; ++i) {
+			if (strcmp(opt_str, options_map[i].str) == 0) {
+				options_mask |= options_map[i].value;
+				break;
+			}
+		}
+
+		if (i == num_options) {
+			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
+			return -EINVAL;
+		}
+
+		opt_str = strtok_r(NULL, ",", &cursor);
+	}
+
+	*options = options_mask;
+
+	return 0;
+}
+

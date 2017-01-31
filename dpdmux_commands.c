@@ -247,6 +247,11 @@ static struct option dpdmux_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpdmux_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
+static struct option_entry options_map[] = {
+	OPTION_MAP_ENTRY(DPDMUX_OPT_BRIDGE_EN),
+};
+static unsigned options_num = ARRAY_SIZE(options_map);
+
 static const struct flib_ops dpdmux_ops = {
 	.obj_open = dpdmux_open,
 	.obj_close = dpdmux_close,
@@ -698,9 +703,6 @@ static int cmd_dpdmux_info_v10(void)
 	return info_dpdmux(MC_FW_VERSION_10);
 }
 
-#define OPTION_MAP_ENTRY(_option)	{#_option, _option}
-
-
 static int parse_dpdmux_manip(char *manip_str, enum dpdmux_manip *manip)
 {
 	if (strcmp(manip_str, "DPDMUX_MANIP_NONE") == 0) {
@@ -750,50 +752,13 @@ static int parse_dpdmux_method(char *method_str, enum dpdmux_method *method)
 /**
  * Create commands for mc version 8
  */
-
-static int parse_dpdmux_create_options(char *options_str, uint64_t *options)
-{
-	static const struct {
-		const char *str;
-		uint64_t value;
-	} options_map[] = {
-		OPTION_MAP_ENTRY(DPDMUX_OPT_BRIDGE_EN),
-	};
-
-	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ",", &cursor);
-	uint64_t options_mask = 0;
-
-	while (opt_str != NULL) {
-		unsigned int i;
-
-		for (i = 0; i < ARRAY_SIZE(options_map); ++i) {
-			if (strcmp(opt_str, options_map[i].str) == 0) {
-				options_mask |= options_map[i].value;
-				break;
-			}
-		}
-
-		if (i == ARRAY_SIZE(options_map)) {
-			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
-			return -EINVAL;
-		}
-
-		opt_str = strtok_r(NULL, ",", &cursor);
-	}
-
-	*options = options_mask;
-
-	return 0;
-}
-
 static int create_dpdmux(const char *usage_msg)
 {
-	int error;
 	struct dpdmux_cfg dpdmux_cfg = {0};
-	uint16_t dpdmux_handle;
-	long val;
 	struct dpdmux_attr dpdmux_attr;
+	uint16_t dpdmux_handle;
+	int error;
+	long val;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -810,12 +775,14 @@ static int create_dpdmux(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_dpdmux_create_options(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpdmux_cfg.adv.options);
+				&dpdmux_cfg.adv.options,
+				options_map,
+				options_num);
 		if (error < 0) {
 			DEBUG_PRINTF(
-				"parse_dpdmux_create_options() failed with error %d, cannot get options-mask\n",
+				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
 		}
@@ -982,42 +949,6 @@ static int cmd_dpdmux_create(void)
 /**
  * Create commands for mc version 9
  */
-static int parse_dpdmux_create_options_v9(char *options_str, uint64_t *options)
-{
-	static const struct {
-		const char *str;
-		uint64_t value;
-	} options_map[] = {
-		OPTION_MAP_ENTRY(DPDMUX_OPT_BRIDGE_EN),
-	};
-
-	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ",", &cursor);
-	uint64_t options_mask = 0;
-
-	while (opt_str != NULL) {
-		unsigned int i;
-
-		for (i = 0; i < ARRAY_SIZE(options_map); ++i) {
-			if (strcmp(opt_str, options_map[i].str) == 0) {
-				options_mask |= options_map[i].value;
-				break;
-			}
-		}
-
-		if (i == ARRAY_SIZE(options_map)) {
-			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
-			return -EINVAL;
-		}
-
-		opt_str = strtok_r(NULL, ",", &cursor);
-	}
-
-	*options = options_mask;
-
-	return 0;
-}
-
 static int create_dpdmux_v9(const char *usage_msg)
 {
 	int error;
@@ -1041,12 +972,14 @@ static int create_dpdmux_v9(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS_V9)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS_V9);
-		error = parse_dpdmux_create_options_v9(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS_V9],
-				&dpdmux_cfg.adv.options);
+				&dpdmux_cfg.adv.options,
+				options_map,
+				options_num);
 		if (error < 0) {
 			DEBUG_PRINTF(
-				"parse_dpdmux_create_options_v9() failed with error %d, cannot get options-mask\n",
+				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
 		}
@@ -1217,12 +1150,14 @@ static int create_dpdmux_v10(const char* usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS_V9)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS_V9);
-		error = parse_dpdmux_create_options(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS_V9],
-				&dpdmux_cfg.adv.options);
+				&dpdmux_cfg.adv.options,
+				options_map,
+				options_num);
 		if (error < 0) {
 			DEBUG_PRINTF(
-				"parse_dpdmux_create_options_v9() failed with error %d, cannot get options-mask\n",
+				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
 		}

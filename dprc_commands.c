@@ -328,6 +328,16 @@ static const struct flib_ops dprc_ops = {
 	.obj_get_irq_status = dprc_get_irq_status,
 };
 
+static struct option_entry options_map[] = {
+	OPTION_MAP_ENTRY(DPRC_CFG_OPT_SPAWN_ALLOWED),
+	OPTION_MAP_ENTRY(DPRC_CFG_OPT_ALLOC_ALLOWED),
+	OPTION_MAP_ENTRY(DPRC_CFG_OPT_OBJ_CREATE_ALLOWED),
+	OPTION_MAP_ENTRY(DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED),
+	OPTION_MAP_ENTRY(DPRC_CFG_OPT_AIOP),
+	OPTION_MAP_ENTRY(DPRC_CFG_OPT_IRQ_CFG_ALLOWED),
+};
+static unsigned int options_num = ARRAY_SIZE(options_map);
+
 static int cmd_dprc_help(void)
 {
 	static const char help_msg[] =
@@ -1008,51 +1018,6 @@ error:
 	return error;
 }
 
-#define OPTION_MAP_ENTRY(_option)   { #_option, _option }
-
-static int parse_create_options(char *options_str, uint64_t *options)
-{
-	static const struct {
-		const char *str;
-		uint64_t value;
-	} options_map[] = {
-		OPTION_MAP_ENTRY(DPRC_CFG_OPT_SPAWN_ALLOWED),
-		OPTION_MAP_ENTRY(DPRC_CFG_OPT_ALLOC_ALLOWED),
-		OPTION_MAP_ENTRY(DPRC_CFG_OPT_OBJ_CREATE_ALLOWED),
-		OPTION_MAP_ENTRY(DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED),
-		OPTION_MAP_ENTRY(DPRC_CFG_OPT_AIOP),
-		OPTION_MAP_ENTRY(DPRC_CFG_OPT_IRQ_CFG_ALLOWED),
-	};
-
-	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ", ", &cursor);
-	uint64_t options_mask = 0;
-
-	DEBUG_PRINTF("opt_str = %s\n", opt_str);
-
-	while (opt_str != NULL) {
-		unsigned int i;
-
-		for (i = 0; i < ARRAY_SIZE(options_map); i++) {
-			if (strcmp(opt_str, options_map[i].str) == 0) {
-				options_mask |= options_map[i].value;
-				break;
-			}
-		}
-
-		if (i == ARRAY_SIZE(options_map)) {
-			ERROR_PRINTF("Invalid option: \'%s\'\n", opt_str);
-			return -EINVAL;
-		}
-
-		opt_str = strtok_r(NULL, ", ", &cursor);
-		DEBUG_PRINTF("opt_str = %s\n", opt_str);
-	}
-
-	*options = options_mask;
-	return 0;
-}
-
 static int cmd_dprc_create_child(void)
 {
 	static const char usage_msg[] =
@@ -1079,13 +1044,12 @@ static int cmd_dprc_create_child(void)
 		"Create a child DPRC under parent dprc.1 with default options and a label string:\n"
 		"   $ restool dprc create dprc.1 --label=\"nadk's dprc\"\n"
 		"\n";
-
-	uint16_t dprc_handle;
-	int error;
 	bool dprc_opened = false;
-	uint32_t dprc_id;
-	uint64_t options = 0;
 	bool has_label = false;
+	uint64_t options = 0;
+	uint16_t dprc_handle;
+	uint32_t dprc_id;
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -1119,9 +1083,11 @@ static int cmd_dprc_create_child(void)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_create_options(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&options);
+				&options,
+				options_map,
+				options_num);
 		if (error < 0)
 			goto out;
 	} else {

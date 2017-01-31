@@ -340,6 +340,50 @@ static const struct flib_ops dpni_ops_v9 = {
 	.obj_get_irq_status = dpni_get_irq_status_v9,
 };
 
+static struct option_entry options_map[] = {
+	OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
+	OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
+	OPTION_MAP_ENTRY(DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED),
+	OPTION_MAP_ENTRY(DPNI_OPT_DIST_HASH),
+	OPTION_MAP_ENTRY(DPNI_OPT_DIST_FS),
+	OPTION_MAP_ENTRY(DPNI_OPT_UNICAST_FILTER),
+	OPTION_MAP_ENTRY(DPNI_OPT_MULTICAST_FILTER),
+	OPTION_MAP_ENTRY(DPNI_OPT_VLAN_FILTER),
+	OPTION_MAP_ENTRY(DPNI_OPT_IPR),
+	OPTION_MAP_ENTRY(DPNI_OPT_IPF),
+	OPTION_MAP_ENTRY(DPNI_OPT_VLAN_MANIPULATION),
+	OPTION_MAP_ENTRY(DPNI_OPT_QOS_MASK_SUPPORT),
+	OPTION_MAP_ENTRY(DPNI_OPT_FS_MASK_SUPPORT),
+};
+static unsigned int options_num = ARRAY_SIZE(options_map);
+
+static struct option_entry options_map_v9[] = {
+	OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
+	OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
+	OPTION_MAP_ENTRY(DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED),
+	OPTION_MAP_ENTRY(DPNI_OPT_DIST_HASH),
+	OPTION_MAP_ENTRY(DPNI_OPT_DIST_FS),
+	OPTION_MAP_ENTRY(DPNI_OPT_UNICAST_FILTER),
+	OPTION_MAP_ENTRY(DPNI_OPT_MULTICAST_FILTER),
+	OPTION_MAP_ENTRY(DPNI_OPT_VLAN_FILTER),
+	OPTION_MAP_ENTRY(DPNI_OPT_IPR),
+	OPTION_MAP_ENTRY(DPNI_OPT_IPF),
+	OPTION_MAP_ENTRY(DPNI_OPT_VLAN_MANIPULATION),
+	OPTION_MAP_ENTRY(DPNI_OPT_QOS_MASK_SUPPORT),
+	OPTION_MAP_ENTRY(DPNI_OPT_FS_MASK_SUPPORT),
+};
+static unsigned int options_num_v9 = ARRAY_SIZE(options_map_v9);
+
+static struct option_entry options_map_v10[] = {
+	OPTION_MAP_ENTRY(DPNI_OPT_TX_FRM_RELEASE),
+	OPTION_MAP_ENTRY(DPNI_OPT_NO_MAC_FILTER),
+	OPTION_MAP_ENTRY(DPNI_OPT_HAS_POLICING),
+	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_CONGESTION),
+	OPTION_MAP_ENTRY(DPNI_OPT_HAS_KEY_MASKING),
+	OPTION_MAP_ENTRY(DPNI_OPT_NO_FS),
+};
+static unsigned int options_num_v10 = ARRAY_SIZE(options_map_v10);
+
 #define DPNI_STATS_PER_PAGE_V10 6
 
 static const char *dpni_stats_v10[][DPNI_STATS_PER_PAGE_V10] = {
@@ -1004,59 +1048,6 @@ static int cmd_dpni_info_v10(void)
 	return info_dpni(MC_FW_VERSION_10);
 }
 
-#define OPTION_MAP_ENTRY(_option)	{#_option, _option}
-
-static int parse_dpni_create_options(char *options_str, uint32_t *options)
-{
-	static const struct {
-		const char *str;
-		uint32_t value;
-	} options_map[] = {
-		OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
-		OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
-		OPTION_MAP_ENTRY(DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED),
-		OPTION_MAP_ENTRY(DPNI_OPT_DIST_HASH),
-		OPTION_MAP_ENTRY(DPNI_OPT_DIST_FS),
-		OPTION_MAP_ENTRY(DPNI_OPT_UNICAST_FILTER),
-		OPTION_MAP_ENTRY(DPNI_OPT_MULTICAST_FILTER),
-		OPTION_MAP_ENTRY(DPNI_OPT_VLAN_FILTER),
-		OPTION_MAP_ENTRY(DPNI_OPT_IPR),
-		OPTION_MAP_ENTRY(DPNI_OPT_IPF),
-		OPTION_MAP_ENTRY(DPNI_OPT_VLAN_MANIPULATION),
-		OPTION_MAP_ENTRY(DPNI_OPT_QOS_MASK_SUPPORT),
-		OPTION_MAP_ENTRY(DPNI_OPT_FS_MASK_SUPPORT),
-	};
-
-	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ", ", &cursor);
-	uint32_t options_mask = 0;
-
-	DEBUG_PRINTF("opt_str = %s\n", opt_str);
-
-	while (opt_str != NULL) {
-		unsigned int i;
-
-		for (i = 0; i < ARRAY_SIZE(options_map); ++i) {
-			if (strcmp(opt_str, options_map[i].str) == 0) {
-				options_mask |= options_map[i].value;
-				break;
-			}
-		}
-
-		if (i == ARRAY_SIZE(options_map)) {
-			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
-			return -EINVAL;
-		}
-
-		opt_str = strtok_r(NULL, ", ", &cursor);
-		DEBUG_PRINTF("opt_str = %s\n", opt_str);
-	}
-
-	*options = options_mask;
-
-	return 0;
-}
-
 static int parse_dpni_mac_addr(char *mac_addr_str, uint8_t *mac_addr)
 {
 	char *cursor = NULL;
@@ -1142,11 +1133,11 @@ static int parse_dpni_max_dist_per_tc(char *max_dist_per_tc_str,
 
 static int create_dpni(const char *usage_msg)
 {
-	int error;
+	struct dpni_attr dpni_attr;
 	struct dpni_cfg dpni_cfg;
 	uint16_t dpni_handle;
+	int error;
 	long val;
-	struct dpni_attr dpni_attr;
 
 	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
 
@@ -1165,12 +1156,14 @@ static int create_dpni(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_dpni_create_options(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpni_cfg.adv.options);
+				(uint64_t *)&dpni_cfg.adv.options,
+				options_map,
+				options_num);
 		if (error < 0) {
 			DEBUG_PRINTF(
-				"parse_dpni_create_options() failed with error %d, cannot get options-mask\n",
+				"parse_dpni_generic_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
 		}
@@ -1403,61 +1396,6 @@ static int cmd_dpni_create(void)
 	return create_dpni(usage_msg);
 }
 
-
-#define OPTION_MAP_ENTRY(_option)	{#_option, _option}
-
-
-static int parse_dpni_create_options_v9(char *options_str, uint32_t *options)
-{
-	static const struct {
-		const char *str;
-		uint32_t value;
-	} options_map[] = {
-		OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
-		OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
-		OPTION_MAP_ENTRY(DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED),
-		OPTION_MAP_ENTRY(DPNI_OPT_DIST_HASH),
-		OPTION_MAP_ENTRY(DPNI_OPT_DIST_FS),
-		OPTION_MAP_ENTRY(DPNI_OPT_UNICAST_FILTER),
-		OPTION_MAP_ENTRY(DPNI_OPT_MULTICAST_FILTER),
-		OPTION_MAP_ENTRY(DPNI_OPT_VLAN_FILTER),
-		OPTION_MAP_ENTRY(DPNI_OPT_IPR),
-		OPTION_MAP_ENTRY(DPNI_OPT_IPF),
-		OPTION_MAP_ENTRY(DPNI_OPT_VLAN_MANIPULATION),
-		OPTION_MAP_ENTRY(DPNI_OPT_QOS_MASK_SUPPORT),
-		OPTION_MAP_ENTRY(DPNI_OPT_FS_MASK_SUPPORT),
-	};
-
-	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ", ", &cursor);
-	uint32_t options_mask = 0;
-
-	DEBUG_PRINTF("opt_str = %s\n", opt_str);
-
-	while (opt_str != NULL) {
-		unsigned int i;
-
-		for (i = 0; i < ARRAY_SIZE(options_map); ++i) {
-			if (strcmp(opt_str, options_map[i].str) == 0) {
-				options_mask |= options_map[i].value;
-				break;
-			}
-		}
-
-		if (i == ARRAY_SIZE(options_map)) {
-			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
-			return -EINVAL;
-		}
-
-		opt_str = strtok_r(NULL, ", ", &cursor);
-		DEBUG_PRINTF("opt_str = %s\n", opt_str);
-	}
-
-	*options = options_mask;
-
-	return 0;
-}
-
 static int parse_dpni_max_dist_per_tc_v9(char *max_dist_per_tc_str,
 	struct dpni_extended_cfg *dpni_extended_cfg, uint8_t max_tcs)
 {
@@ -1543,12 +1481,12 @@ static int parse_dpni_max_fs_entries_per_tc(char *max_fs_entries_per_tc_str,
 
 static int create_dpni_v9(const char *usage_msg)
 {
-	int error;
-	uint16_t dpni_handle;
-	struct dpni_cfg_v9 dpni_cfg;
 	struct dpni_extended_cfg dpni_extended_cfg;
-	long val;
 	struct dpni_attr_v9 dpni_attr;
+	struct dpni_cfg_v9 dpni_cfg;
+	uint16_t dpni_handle;
+	int error;
+	long val;
 
 	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
 	memset(&dpni_extended_cfg, 0, sizeof(dpni_extended_cfg));
@@ -1568,12 +1506,14 @@ static int create_dpni_v9(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_dpni_create_options_v9(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpni_cfg.adv.options);
+				(uint64_t *)&dpni_cfg.adv.options,
+				options_map_v9,
+				options_num_v9);
 		if (error < 0) {
 			DEBUG_PRINTF(
-				"parse_dpni_create_options_v9() failed with error %d, cannot get options-mask\n",
+				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
 		}
@@ -1834,49 +1774,6 @@ static int cmd_dpni_create_v9(void)
 	return create_dpni_v9(usage_msg);
 }
 
-static int parse_dpni_create_options_v10(char *options_str, uint32_t *options)
-{
-	static const struct {
-		const char *str;
-		uint32_t value;
-	} options_map[] = {
-		OPTION_MAP_ENTRY(DPNI_OPT_TX_FRM_RELEASE),
-		OPTION_MAP_ENTRY(DPNI_OPT_NO_MAC_FILTER),
-		OPTION_MAP_ENTRY(DPNI_OPT_HAS_POLICING),
-		OPTION_MAP_ENTRY(DPNI_OPT_SHARED_CONGESTION),
-		OPTION_MAP_ENTRY(DPNI_OPT_HAS_KEY_MASKING),
-		OPTION_MAP_ENTRY(DPNI_OPT_NO_FS),
-	};
-	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ",", &cursor);
-	uint32_t options_mask = 0;
-
-	DEBUG_PRINTF("opt_str = %s\n", opt_str);
-
-	while (opt_str != NULL) {
-		unsigned int i;
-
-		for (i = 0; i < ARRAY_SIZE(options_map); ++i) {
-			if (strcmp(opt_str, options_map[i].str) == 0) {
-				options_mask |= options_map[i].value;
-				break;
-			}
-		}
-
-		if (i == ARRAY_SIZE(options_map)) {
-			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
-			return -EINVAL;
-		}
-
-		opt_str = strtok_r(NULL, ", ", &cursor);
-		DEBUG_PRINTF("opt_str = %s\n", opt_str);
-	}
-
-	*options = options_mask;
-
-	return 0;
-}
-
 static int create_dpni_v10(const char *usage_msg)
 {
 	struct dpni_cfg_v10 dpni_cfg;
@@ -1903,11 +1800,13 @@ static int create_dpni_v10(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_dpni_create_options_v10(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpni_cfg.options);
+				(uint64_t *)&dpni_cfg.options,
+				options_map_v10,
+				options_num_v10);
 		if (error) {
-			DEBUG_PRINTF("parse_dpni_create_options_v10() = %d\n",
+			DEBUG_PRINTF("parse_generic_create_options() = %d\n",
 				     error);
 			return error;
 		}

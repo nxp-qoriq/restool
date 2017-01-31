@@ -196,6 +196,15 @@ static const struct flib_ops dpsw_ops_v9 = {
 	.obj_get_irq_status = dpsw_get_irq_status_v9,
 };
 
+static struct option_entry options_map[] = {
+	OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_DIS),
+	OPTION_MAP_ENTRY(DPSW_OPT_MULTICAST_DIS),
+	OPTION_MAP_ENTRY(DPSW_OPT_CTRL_IF_DIS),
+	OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_METERING_DIS),
+	OPTION_MAP_ENTRY(DPSW_OPT_METERING_EN),
+};
+static unsigned int options_num = ARRAY_SIZE(options_map);
+
 static int cmd_dpsw_help(void)
 {
 	static const char help_msg[] =
@@ -607,55 +616,13 @@ static int cmd_dpsw_info_v10(void)
 	return info_dpsw(MC_FW_VERSION_10);
 }
 
-#define OPTION_MAP_ENTRY(_option)	{#_option, _option}
-
-static int parse_dpsw_create_options(char *options_str, uint64_t *options)
-{
-	static const struct {
-		const char *str;
-		uint64_t value;
-	} options_map[] = {
-		OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_DIS),
-		OPTION_MAP_ENTRY(DPSW_OPT_MULTICAST_DIS),
-		OPTION_MAP_ENTRY(DPSW_OPT_CTRL_IF_DIS),
-		OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_METERING_DIS),
-		OPTION_MAP_ENTRY(DPSW_OPT_METERING_EN),
-	};
-
-	char *cursor = NULL;
-	char *opt_str = strtok_r(options_str, ",", &cursor);
-	uint64_t options_mask = 0;
-
-	while (opt_str != NULL) {
-		unsigned int i;
-
-		for (i = 0; i < ARRAY_SIZE(options_map); ++i) {
-			if (strcmp(opt_str, options_map[i].str) == 0) {
-				options_mask |= options_map[i].value;
-				break;
-			}
-		}
-
-		if (i == ARRAY_SIZE(options_map)) {
-			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
-			return -EINVAL;
-		}
-
-		opt_str = strtok_r(NULL, ",", &cursor);
-	}
-
-	*options = options_mask;
-
-	return 0;
-}
-
 static int create_dpsw(const char *usage_msg)
 {
-	int error;
 	struct dpsw_cfg dpsw_cfg = {0};
-	uint16_t dpsw_handle;
-	long val;
 	struct dpsw_attr dpsw_attr;
+	uint16_t dpsw_handle;
+	int error;
+	long val;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -684,12 +651,14 @@ static int create_dpsw(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_dpsw_create_options(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpsw_cfg.adv.options);
+				&dpsw_cfg.adv.options,
+				options_map,
+				options_num);
 		if (error < 0) {
 			DEBUG_PRINTF(
-				"parse_dpsw_create_options() failed with error %d, cannot get options-mask\n",
+				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
 		}
@@ -830,11 +799,11 @@ static int cmd_dpsw_create(void)
 
 static int create_dpsw_v9(const char *usage_msg)
 {
-	int error;
 	struct dpsw_cfg_v9 dpsw_cfg = {0};
-	uint16_t dpsw_handle;
-	long val;
 	struct dpsw_attr dpsw_attr;
+	uint16_t dpsw_handle;
+	int error;
+	long val;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -863,12 +832,14 @@ static int create_dpsw_v9(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_dpsw_create_options(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpsw_cfg.adv.options);
+				&dpsw_cfg.adv.options,
+				options_map,
+				options_num);
 		if (error < 0) {
 			DEBUG_PRINTF(
-				"parse_dpsw_create_options() failed with error %d, cannot get options-mask\n",
+				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
 		}
@@ -1043,12 +1014,14 @@ static int create_dpsw_v10(const char *usage_msg)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_dpsw_create_options(
+		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpsw_cfg.adv.options);
+				&dpsw_cfg.adv.options,
+				options_map,
+				options_num);
 		if (error < 0) {
 			DEBUG_PRINTF(
-				"parse_dpsw_create_options() failed with error %d, cannot get options-mask\n",
+				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
 		}

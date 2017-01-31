@@ -287,6 +287,15 @@ enum global_options {
 	GLOBAL_OPT_ROOT
 };
 
+/* object option map entry */
+
+#define OPTION_MAP_ENTRY(_option)	{#_option, _option}
+
+struct option_entry {
+	const char *str;
+	uint64_t value;
+};
+
 /**
  * define generic flib operations
  */
@@ -315,32 +324,56 @@ struct flib_ops {
 	flib_obj_get_irq_status_t *obj_get_irq_status;
 };
 
-int parse_object_name(const char *obj_name, char *expected_obj_type,
+/* functions used for parsing user command line argumments */
+int parse_object_name(const char *obj_name,
+		      char *expected_obj_type,
 		      uint32_t *obj_id);
 
-int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle);
+int parse_generic_create_options(char *options_str,
+				 uint64_t *options,
+				 struct option_entry options_map[],
+				 unsigned int num_options);
+
+int get_option_value(int option, long *value,
+		     const char *error_msg,
+		     int min, int max);
+
+/* functions used for printing the result of restool commands */
+const char *mc_status_to_string(enum mc_cmd_status status);
+
+enum mc_cmd_status flib_error_to_mc_status(int error);
 
 void print_unexpected_options_error(uint32_t option_mask,
 				    const struct option *options);
 
-enum mc_cmd_status flib_error_to_mc_status(int error);
-const char *mc_status_to_string(enum mc_cmd_status status);
+void print_obj_label(struct dprc_obj_desc *target_obj_desc);
+
+int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
+		      const struct flib_ops *ops);
+
+void print_new_obj(char *type, int id, const char *parent);
+
+/* functions used to handle generic object handling */
+int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle);
+
 int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
 			int nesting_level,
 			uint32_t target_id, char *target_type,
 			struct dprc_obj_desc *target_obj_desc,
 			uint32_t *target_parent_dprc_id, bool *found);
+
 bool find_obj(char *obj_type, uint32_t obj_id);
-void print_obj_label(struct dprc_obj_desc *target_obj_desc);
-int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
-			const struct flib_ops *ops);
+
 int check_resource_type(char *res_type);
+
 bool in_use(const char *obj, const char *situation);
-void print_new_obj(char *type, int id, const char *parent);
-int get_option_value(int option, long *value, const char *error_msg, int min, int max);
-int get_parent_dprc_id(uint32_t obj_id, char *obj_type, uint32_t *parent_dprc_id);
+
+int get_parent_dprc_id(uint32_t obj_id, char *obj_type,
+		       uint32_t *parent_dprc_id);
 
 extern struct restool restool;
+
+/* command maps for all MC objects */
 extern struct object_command dprc_commands[];
 extern struct object_command dpni_commands[];
 extern struct object_command dpni_commands_v9[];
