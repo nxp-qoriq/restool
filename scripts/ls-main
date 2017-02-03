@@ -84,7 +84,7 @@ create_dpio() {
 	local parent_container=$1
 
 	# Count the existing DPIO objects and create the rest up to 8
-	local cnt=$($restool dprc show "$root_c" | grep -c dpio)
+	local cnt=$($restool dprc show "$parent_container" | grep -c dpio)
 
 	if [ "$cnt" -ge 8 ]; then
 		return
@@ -93,7 +93,7 @@ create_dpio() {
 	for i in $(seq 1 $((8-cnt))); do
 		local obj=$($restool --script dpio create \
 			--channel-mode="DPIO_LOCAL_CHANNEL" \
-			--container=$parent_container
+			--container=$parent_container \
 			--num-priorities=8)
 		if [ -z "$obj" ]; then
 			echo "Error: dpio object was not created!"
@@ -247,6 +247,14 @@ get_endpoint() {
 	fi
 }
 
+object_exists() {
+	local parent_container=$1
+	local object=$2
+
+	object_exists_status=$($restool dprc show $parent_container | grep $object | wc -l)
+}
+
+
 #####################################################################
 ###              DPDMUX related functions                         ###
 #####################################################################
@@ -268,6 +276,7 @@ The options are:
 							Default value is 32.
 	-l, --label=LABEL				The label of the resulting object associated to the MUX.
 							Maximum length is 15 characters.
+	-c, --container <dprc.X>			Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
 
 The arguments are:
 	-d, --num-ifs=NUM_IFS				Number of virtual interfaces (excluding the uplink
@@ -305,18 +314,19 @@ create_dpdmux() {
 		--max-dmat-entries="$max_dmat_entries"			\
 		--max-mc-groups="$max_mc_groups"			\
 		--manip=DPDMUX_MANIP_NONE				\
+		--container="$container"				\
 	)
+
 	if [ -z "$dpdmux" ]; then
 		echo "Error: dpdmux object was not created!"
 		return 1
 	fi
 
-	# Make a link
-	connect "$container" "$dpdmux" "$endpoint"
+	# Connect the object to its specified endpoint
+	connect "$root_c" "$dpdmux" "$endpoint"
 
-	# Assign the newly-created DPDMUX to the Linux container and plug it
-	# in order to trigger the probe function.
-	$restool dprc assign "${root_c}" --object="${dpdmux}" --plugged=1
+	# Trigger the probe function for the dpdmux
+	$restool dprc assign "$container" --object="$dpdmux" --plugged=1
 
 	if [ -n "$label" ]; then
 		$restool dprc set-label "$dpdmux" --label="$label"
@@ -325,6 +335,8 @@ create_dpdmux() {
 
 # Process ls-addmux command
 process_addmux() {
+	get_root_container
+
 	# Comma separated list of DPDMUX options; default configured as VEB
 	options="DPDMUX_OPT_BRIDGE_EN"
 	# Number of virtual interfaces (excluding the uplink interface)
@@ -337,6 +349,8 @@ process_addmux() {
 	max_mc_groups=32
 	#Endpoint object provided as argument
 	endpoint=
+	# default parent container is the root container
+	container=$root_c
 
 	for i in "$@"
 	do
@@ -363,6 +377,9 @@ process_addmux() {
 			-l=* | --label=*)
 				label="${i#*=}"
 				;;
+			-c=* | --container=*)
+				container="${i#*=}"
+				;;
 			*(dprc.+([0-9])/)dpmac.+([0-9]))
 				endpoint="${i#*=}"
 				;;
@@ -383,8 +400,6 @@ process_addmux() {
 		exit 1
 	fi
 
-	get_root_container
-
 	type_of_endpoint "$endpoint"
 
 	if [ "$toe" == "dpmac" ]; then
@@ -403,15 +418,19 @@ process_addmux() {
 	# Create the MUX
 	create_dpdmux
 
-	if [ -d $SYS_DPRC/"$root_c"/"$dpdmux"/net ]; then
-		evb=$(ls $SYS_DPRC/"$root_c"/"$dpdmux"/net/ | grep -v "p")
+	# check the status
+	object_exists $container $dpdmux
+	if (( $object_exists_status == 1 )); then
+
+		if [ "$root_c" == "$container" ]; then
+			evb=$(ls $SYS_DPRC/"$root_c"/"$dpdmux"/net/ | grep -v "p")
+		fi
 
 		echo "Created EVB: $evb (object: $dpdmux, uplink: $endpoint)"
 		echo "Do not forget to connect devices to downlink(s)."
 	else
 		echo "EVB creation failed!"
 	fi
-
 }
 
 #####################################################################
@@ -441,6 +460,7 @@ The options are:
 							The number of endpoints can't be greater than the 'num-ifs'.
 	-l, --label=LABEL     				The label of the resulting object associated to the SWITCH.
 							Maximum length is 15 characters.
+	-c, --container <dprc.X>                        Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
 
 Usage examples:
 	ls-addsw
@@ -451,11 +471,11 @@ Usage examples:
 
 # Create a DPSW and its dependencies
 create_dpsw() {
-	create_dpmcp $root_c
+	create_dpmcp $container
 
         # Add dependencies if switch options does not disable control traffic
         if [[ ${options} != *"DPSW_OPT_CTRL_IF_DIS"* ]]; then
-                create_dpbp $root_c
+                create_dpbp $container
         fi
 
 	dpsw=$($restool --script dpsw create 				\
@@ -466,6 +486,7 @@ create_dpsw() {
 		--fdb-aging-time="$fdb_aging_time"			\
 		--max-fdb-mc-groups="$max_fdb_mc_groups"		\
 		--options="$options"					\
+		--container="$container"				\
 	)
 	if [ -z "$dpsw" ]; then
 		echo "Error: dpsw object was not created!"
@@ -475,13 +496,13 @@ create_dpsw() {
 	# Make a link in case there is an end point specified
 	index=0
 	for i in "${endpoint[@]}"; do
-		connect "$root_c" "$dpsw.$index" "$i"
+		connect $root_c "$dpsw.$index" "$i"
 		index=$((index + 1))
 	done
 
 	# Assign the newly-created DPSW to the Linux container and plug it
 	# in order to trigger the probe function.
-	$restool dprc assign "${root_c}" --object="${dpsw}" --plugged=1
+	$restool dprc assign $container --object="${dpsw}" --plugged=1
 
 	if [ -n "$label" ]; then
 		$restool dprc set-label "${dpsw}" --label="$label"
@@ -490,6 +511,8 @@ create_dpsw() {
 
 # Process ls-addsw command
 process_addsw() {
+	get_root_container
+
 	# Number of external and internal interfaces.
 	num_ifs=4
 	# Comma separated list of DPSW options
@@ -509,8 +532,7 @@ process_addsw() {
 	#Endpoint objects provided as argument
 	endpoint=()
 	ifcnt=0
-
-	get_root_container
+	container=$root_c
 
 	for i in "$@"
 	do
@@ -543,6 +565,9 @@ process_addsw() {
 			-l=* | --label=*)
 				label="${i#*=}"
 				;;
+			-c=* | --container=*)
+				container="${i#*=}"
+				;;
 			@(dpni|dpmac).+([0-9]))
 				endpoint[$ifcnt]="$(echo ${i#*=} | tr -d ,)"
 				ifcnt=$((ifcnt + 1))
@@ -572,15 +597,14 @@ process_addsw() {
 	# Create the SWITCH
 	create_dpsw
 
-	if [ -d $SYS_DPRC/"$root_c"/"$dpsw"/net ]; then
-		ethsw=$(ls $SYS_DPRC/"$root_c"/"$dpsw"/net/ | grep -v "p")
+	# check the status
+	object_exists $container $dpsw
+	if (( $object_exists_status == 1 )); then
 		echo "Created ETHSW object $dpsw with ${#endpoint[@]} ports"
 
 		if [ $num_ifs -gt ${#endpoint[@]} ]; then
 		    echo "Do not forget to connect devices to interface(s)."
 		fi
-	else
-		echo "Switch creation failed!"
 	fi
 }
 
@@ -613,6 +637,7 @@ The options are:
 							By default, set to 64.
 	-f, --fs-entries=FS_ENTRIES			Number of entries in the flow steering table.
 							Valid range [1-1024]. Default value is 64.
+	-c, --container <dprc.X>                        Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
 
 <endpoint> is one of the following:
 	dpmac.X 					X is the index of the dpmac object
@@ -630,10 +655,10 @@ create_dpni() {
 	no_of_dpcons=8
 
 	# Create private dependencies
-	create_dpbp $root_c
-	create_dpmcp $root_c
+	create_dpbp $container
+	create_dpmcp $container
 	for i in $(seq 1 ${no_of_dpcons}); do
-		create_dpcon $root_c
+		create_dpcon $container
 		if [ $? -ne 0 ]; then
 			break;
 		fi
@@ -655,7 +680,7 @@ create_dpni() {
 
 	# Assign the newly-created DPNI to the Linux container and plug it
 	# in order to trigger the probe function.
-	$restool dprc assign "$root_c" --object="$dpni" --plugged=1
+	$restool dprc assign $container --object=$dpni --plugged=1
 
 	if [ -n "$label" ]; then
 		$restool dprc set-label "$dpni" --label="$label"
@@ -663,16 +688,14 @@ create_dpni() {
 }
 
 process_addni() {
+	get_root_container
+	container=$root_c
+	dpni_args=""
 	loopback=0
+	endpoint=
 	no_link=0
 	options=
 	label=
-	dpni_args=""
-
-	#Endpoint object provided as argument
-	endpoint=
-
-	# The DPNI object created for the current network interface
 	dpni=
 
 	for i in "$@"
@@ -740,6 +763,10 @@ process_addni() {
 			-l=* | --label=*)
 				label="${i#*=}"
 				;;
+			-c=* | --container=*)
+				container="${i#*=}"
+				dpni_args=$dpni_args" --container="$container
+				;;
 			-n | --no-link)
 				# In case both "-n" option and the end point are provided ignore the "-n"
 				if [ -z "$endpoint" ]; then
@@ -792,8 +819,6 @@ process_addni() {
 		exit 1
 	fi
 
-	get_root_container
-
 	if [ ! -z "$endpoint" ]; then
 		type_of_endpoint "$endpoint"
 
@@ -811,10 +836,11 @@ process_addni() {
 		has_endpoint "$endpoint"
 	fi
 
-	create_dpio $root_c
+
+	create_dpio $container
 
 	# Create the DPNI object and Linux network interface
-	create_dpni $root_c
+	create_dpni
 
 	# Make a link in case there is an end point specified
 	if [ ! -z $endpoint ]; then
@@ -826,8 +852,12 @@ process_addni() {
 		connect "$root_c" "$dpni" "$endpoint"
 	fi
 
-	if [ -d $SYS_DPRC/"$root_c"/"$dpni"/net/ ]; then
-		ni=$(ls $SYS_DPRC/"$root_c"/"$dpni"/net/)
+	# check the status
+	object_exists $container $dpni
+	if (( $object_exists_status == 1 )); then
+		if [ "$root_c" == "$container" ]; then
+			ni=$(ls $SYS_DPRC/"$root_c"/"$dpni"/net/)
+		fi
 		echo "Created interface: $ni (object:$dpni, endpoint: $endpoint)"
 	else
 		echo "Network interface creation failed!"
