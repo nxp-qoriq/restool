@@ -1506,6 +1506,29 @@ out:
 	return error;
 }
 
+static int uint64t_from_string(uint64_t *result, char *string)
+{
+	int errno_saved;
+	char *p;
+
+	errno_saved = errno;
+	errno = 0;
+	*result = strtoull(string, &p, 0);
+
+	if (errno) {
+		DEBUG_PRINTF("Integer overflow occured while reading \"%s\"\n", string);
+		return -EINVAL;
+	}
+
+	if (string == p) {
+		DEBUG_PRINTF("No integer stored at \"%s\"\n", string);
+		return -EINVAL;
+	}
+
+	errno =  errno_saved;
+	return 0;
+}
+
 int parse_generic_create_options(char *options_str,
 				 uint64_t *options,
 				 struct option_entry options_map[],
@@ -1514,18 +1537,34 @@ int parse_generic_create_options(char *options_str,
 	char *cursor = NULL;
 	char *opt_str = strtok_r(options_str, ",", &cursor);
 	uint64_t options_mask = 0;
+	uint64_t debug_option;
+	bool option_found;
 	unsigned int i;
+	int error;
 
 	while (opt_str != NULL) {
 
+		option_found = false;
 		for (i = 0; i < num_options; ++i) {
 			if (strcmp(opt_str, options_map[i].str) == 0) {
 				options_mask |= options_map[i].value;
+				option_found = true;
 				break;
 			}
 		}
 
-		if (i == num_options) {
+		if (!option_found) {
+			/* debug options are given as hexa value */
+			error = uint64t_from_string(&debug_option, opt_str);
+			if (!error) {
+				DEBUG_PRINTF("Found debug option: 0x%x\n",
+					     (unsigned int)debug_option);
+				options_mask |= debug_option;
+				option_found = true;
+			}
+		}
+
+		if (!option_found) {
 			ERROR_PRINTF("Invalid option: '%s'\n", opt_str);
 			return -EINVAL;
 		}
