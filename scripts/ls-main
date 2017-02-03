@@ -124,10 +124,11 @@ create_dpcon() {
 # Connect two endpoints
 # The order of the two endpoint arguments is not relevant.
 connect() {
-	ep1=$1
-	ep2=$2
+	local container=$1
+	local ep1=$2
+	local ep2=$3
 
-	$restool dprc connect "$root_c" --endpoint1="$ep1" --endpoint2="$ep2"
+	$restool dprc connect "$container" --endpoint1="$ep1" --endpoint2="$ep2"
 }
 
 get_root_container() {
@@ -304,7 +305,7 @@ create_dpdmux() {
 	fi
 
 	# Make a link
-	connect "$dpdmux" "$endpoint"
+	connect "$container" "$dpdmux" "$endpoint"
 
 	# Assign the newly-created DPDMUX to the Linux container and plug it
 	# in order to trigger the probe function.
@@ -467,7 +468,7 @@ create_dpsw() {
 	# Make a link in case there is an end point specified
 	index=0
 	for i in "${endpoint[@]}"; do
-		connect "$dpsw.$index" "$i"
+		connect "$root_c" "$dpsw.$index" "$i"
 		index=$((index + 1))
 	done
 
@@ -812,12 +813,12 @@ process_addni() {
 
 	# Make a link in case there is an end point specified
 	if [ ! -z $endpoint ]; then
-		connect "$dpni" "$endpoint"
+		connect $root_c "$dpni" "$endpoint"
 	fi
 
 	if [ $loopback -eq 1 ]; then
 		endpoint=$dpni
-		connect "$dpni" "$endpoint"
+		connect "$root_c" "$dpni" "$endpoint"
 	fi
 
 	if [ -d $SYS_DPRC/"$root_c"/"$dpni"/net/ ]; then
