@@ -69,56 +69,63 @@ SYS_DPRC="/sys/bus/fsl-mc/drivers/fsl_mc_dprc"
 #####################################################################
 # Create a DPMCP object
 create_dpmcp() {
-	obj=$($restool --script dpmcp create)
+	local parent_container=$1
+	local obj=$($restool --script dpmcp create --container=$parent_container)
+
 	if [ -z "$obj" ]; then
 		echo "Error: dpmcp object was not created!"
 		return 1
 	fi
-	$restool dprc assign "$root_c" --object="$obj" --plugged=1
+	$restool dprc assign $parent_container --object="$obj" --plugged=1
 }
 
 # Create a DPIO object
 create_dpio() {
+	local parent_container=$1
+
 	# Count the existing DPIO objects and create the rest up to 8
-	cnt=$($restool dprc show "$root_c" | grep -c dpio)
+	local cnt=$($restool dprc show "$root_c" | grep -c dpio)
 
 	if [ "$cnt" -ge 8 ]; then
 		return
 	fi
 
 	for i in $(seq 1 $((8-cnt))); do
-		# only num_priorities=8 is supported
-		obj=$($restool --script dpio create \
+		local obj=$($restool --script dpio create \
 			--channel-mode="DPIO_LOCAL_CHANNEL" \
+			--container=$parent_container
 			--num-priorities=8)
 		if [ -z "$obj" ]; then
 			echo "Error: dpio object was not created!"
 			return 1
 		fi
-		$restool dprc assign "$root_c" --object="$obj" --plugged=1
+		$restool dprc assign $parent_container --object="$obj" --plugged=1
 	done
 }
 
 # Create a DPBP object
 create_dpbp() {
-	obj=$($restool --script dpbp create)
+	local parent_container=$1
+	local obj=$($restool --script dpbp create --container=$parent_container)
+
 	if [ -z "$obj" ]; then
 		echo "Error: dpbp object was not created!"
 		return 1
 	fi
-	$restool dprc assign "$root_c" --object="$obj" --plugged=1
+	$restool dprc assign $parent_container --object="$obj" --plugged=1
 }
 
 # Create a DPCON object
 create_dpcon() {
-	# only num_priorities=8 is supported
+	local parent_container=$1
+	local obj=$($restool --script dpcon create --num-priorities=2 \
+			--container=$parent_container)
 
-	obj=$($restool --script dpcon create --num-priorities=2)
 	if [ -z "$obj" ]; then
 		echo "Error: dpcon object was not created!"
 		return 1
 	fi
-	$restool dprc assign "$root_c" --object="$obj" --plugged=1
+	$restool dprc assign $parent_container --object="$obj" --plugged=1
 }
 
 # Connect two endpoints
@@ -283,7 +290,7 @@ Usage examples:
 
 # Create a DPDMUX and its dependencies
 create_dpdmux() {
-	create_dpmcp
+	create_dpmcp $root_c
 
 	if [ "$options" == "" ]; then
 		options_str=
@@ -444,11 +451,11 @@ Usage examples:
 
 # Create a DPSW and its dependencies
 create_dpsw() {
-	create_dpmcp
+	create_dpmcp $root_c
 
         # Add dependencies if switch options does not disable control traffic
         if [[ ${options} != *"DPSW_OPT_CTRL_IF_DIS"* ]]; then
-                create_dpbp
+                create_dpbp $root_c
         fi
 
 	dpsw=$($restool --script dpsw create 				\
@@ -620,15 +627,13 @@ Usage examples:
 
 # Create a DPNI and its private dependencies
 create_dpni() {
-
-	# TODO
 	no_of_dpcons=8
 
 	# Create private dependencies
-	create_dpbp
-	create_dpmcp
+	create_dpbp $root_c
+	create_dpmcp $root_c
 	for i in $(seq 1 ${no_of_dpcons}); do
-		create_dpcon
+		create_dpcon $root_c
 		if [ $? -ne 0 ]; then
 			break;
 		fi
@@ -806,10 +811,10 @@ process_addni() {
 		has_endpoint "$endpoint"
 	fi
 
-	create_dpio
+	create_dpio $root_c
 
 	# Create the DPNI object and Linux network interface
-	create_dpni
+	create_dpni $root_c
 
 	# Make a link in case there is an end point specified
 	if [ ! -z $endpoint ]; then
