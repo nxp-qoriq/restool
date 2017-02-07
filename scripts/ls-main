@@ -445,6 +445,11 @@ Usage examples:
 create_dpsw() {
 	create_dpmcp
 
+        # Add dependencies if switch options does not disable control traffic
+        if [[ ${options} != *"DPSW_OPT_CTRL_IF_DIS"* ]]; then
+                create_dpbp
+        fi
+
 	dpsw=$($restool --script dpsw create 				\
 		--num-ifs="$num_ifs"					\
 		--max-vlans="$max_vlans"  				\
@@ -561,7 +566,7 @@ process_addsw() {
 
 	if [ -d $SYS_DPRC/"$root_c"/"$dpsw"/net ]; then
 		ethsw=$(ls $SYS_DPRC/"$root_c"/"$dpsw"/net/ | grep -v "p")
-		echo "Created ETHSW: $ethsw (object: $dpsw, interfaces:  ${#endpoint[@]})"
+		echo "Created ETHSW object $dpsw with ${#endpoint[@]} ports"
 
 		if [ $num_ifs -gt ${#endpoint[@]} ]; then
 		    echo "Do not forget to connect devices to interface(s)."
