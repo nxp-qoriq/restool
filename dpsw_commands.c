@@ -1103,10 +1103,12 @@ static int create_dpsw_v10(const char *usage_msg)
 		if (error)
 			return error;
 
-		error = open_dprc(dprc_id, &dprc_handle);
-		if (error)
-			return error;
-		dprc_opened = true;
+		if (restool.root_dprc_id != dprc_id) {
+			error = open_dprc(dprc_id, &dprc_handle);
+			if (error)
+				return error;
+			dprc_opened = true;
+		}
 	}
 
 	error = dpsw_create_v10(&restool.mc_io, dprc_handle, 0,

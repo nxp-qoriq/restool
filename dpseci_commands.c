@@ -652,10 +652,12 @@ static int create_dpseci_v10(const char *usage_msg)
 		if (error)
 			return error;
 
-		error = open_dprc(dprc_id, &dprc_handle);
-		if (error)
-			return error;
-		dprc_opened = true;
+		if (restool.root_dprc_id != dprc_id) {
+			error = open_dprc(dprc_id, &dprc_handle);
+			if (error)
+				return error;
+			dprc_opened = true;
+		}
 	}
 
 	if (restool.mc_fw_version.minor == 0)
