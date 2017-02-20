@@ -32,7 +32,7 @@
 #ifndef __FSL_DPIO_V10_H
 #define __FSL_DPIO_V10_H
 
-#include "../mc_v8/fsl_dpio.h"
+#include "../mc_v9/fsl_dpio.h"
 
 /* Data Path I/O Portal API
  * Contains initialization APIs and runtime control APIs for DPIO

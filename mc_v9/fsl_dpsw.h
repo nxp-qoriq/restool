@@ -27,11 +27,56 @@
 #define __FSL_DPSW_V9_H
 
 #include "../mc_v8/fsl_net.h"
-#include "../mc_v8/fsl_dpsw.h"
 
-/* Data Path L2-Switch API
- * Contains API for handling DPSW topology and functionality
+/**
+ * dpsw_open() - Open a control session for the specified object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @dpsw_id:	DPSW unique ID
+ * @token:	Returned token; use in subsequent API calls
+ *
+ * This function can be used to open a control session for an
+ * already created object; an object may have been declared in
+ * the DPL or by calling the dpsw_create() function.
+ * This function returns a unique authentication token,
+ * associated with the specific object ID and the specific MC
+ * portal; this token must be used in all subsequent commands for
+ * this specific object
+ *
+ * Return:	'0' on Success; Error code otherwise.
  */
+int dpsw_open(struct fsl_mc_io	*mc_io,
+	      uint32_t		cmd_flags,
+	      int		dpsw_id,
+	      uint16_t		*token);
+
+/**
+ * dpsw_close() - Close the control session of the object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ *
+ * After this function is called, no further operations are
+ * allowed on the object without opening a new control session.
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpsw_close(struct fsl_mc_io *mc_io,
+	       uint32_t	cmd_flags,
+	       uint16_t	token);
+
+/* DPSW options */
+
+/* Disable flooding */
+#define DPSW_OPT_FLOODING_DIS		0x0000000000000001ULL
+/* Disable Multicast */
+#define DPSW_OPT_MULTICAST_DIS		0x0000000000000004ULL
+/* Support control interface */
+#define DPSW_OPT_CTRL_IF_DIS		0x0000000000000010ULL
+/* Disable flooding metering */
+#define DPSW_OPT_FLOODING_METERING_DIS  0x0000000000000020ULL
+/* Enable metering */
+#define DPSW_OPT_METERING_EN            0x0000000000000040ULL
 
 /**
  * enum dpsw_component_type - component type of a bridge
@@ -109,6 +154,30 @@ int dpsw_create_v9(struct fsl_mc_io	      *mc_io,
 		   uint16_t		      *token);
 
 /**
+ * dpsw_destroy() - Destroy the DPSW object and release all its resources.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ *
+ * Return:	'0' on Success; error code otherwise.
+ */
+int dpsw_destroy(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
+
+/**
+ * dpsw_destroy() - Destroy the DPSW object and release all its resources.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ *
+ * Return:	'0' on Success; error code otherwise.
+ */
+int dpsw_destroy(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
+
+/**
  * dpsw_get_irq_status() - Get the current status of any pending interrupts
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -184,5 +253,42 @@ int dpsw_get_attributes_v9(struct fsl_mc_io	*mc_io,
 			   uint32_t		cmd_flags,
 			   uint16_t		token,
 			   struct dpsw_attr_v9	*attr);
+
+/**
+ * dpsw_get_irq_mask() - Get interrupt mask.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPSW object
+ * @irq_index:	The interrupt index to configure
+ * @mask:		Returned event mask to trigger interrupt
+ *
+ * Every interrupt can have up to 32 causes and the interrupt model supports
+ * masking/unmasking each cause independently
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpsw_get_irq_mask(struct fsl_mc_io	*mc_io,
+		      uint32_t		cmd_flags,
+		      uint16_t		token,
+		      uint8_t		irq_index,
+		      uint32_t		*mask);
+
+/**
+ * dpsw_get_irq_status() - Get the current status of any pending interrupts
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPSW object
+ * @irq_index:	The interrupt index to configure
+ * @status:		Returned interrupts status - one bit per cause:
+ *					0 = no interrupt pending
+ *					1 = interrupt pending
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpsw_get_irq_status(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint8_t		irq_index,
+			uint32_t		*status);
 
 #endif /* __FSL_DPSW_V9_H */

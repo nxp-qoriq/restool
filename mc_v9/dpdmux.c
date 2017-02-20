@@ -24,10 +24,50 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../mc_v8/fsl_mc_sys.h"
+#include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpdmux.h"
 #include "fsl_dpdmux_cmd.h"
+
+int dpdmux_open(struct fsl_mc_io *mc_io,
+		uint32_t cmd_flags,
+		int dpdmux_id,
+		uint16_t *token)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_OPEN,
+					  cmd_flags,
+					  0);
+	DPDMUX_CMD_OPEN(cmd, dpdmux_id);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	*token = MC_CMD_HDR_READ_TOKEN(cmd.header);
+
+	return 0;
+}
+
+int dpdmux_close(struct fsl_mc_io *mc_io,
+		 uint32_t cmd_flags,
+		 uint16_t token)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_CLOSE,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
 
 
 int dpdmux_create_v9(struct fsl_mc_io *mc_io,
@@ -53,6 +93,21 @@ int dpdmux_create_v9(struct fsl_mc_io *mc_io,
 	*token = MC_CMD_HDR_READ_TOKEN(cmd.header);
 
 	return 0;
+}
+
+int dpdmux_destroy(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   uint16_t token)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_DESTROY,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
 }
 
 int dpdmux_get_irq_status_v9(struct fsl_mc_io *mc_io,
@@ -104,3 +159,56 @@ int dpdmux_get_attributes_v9(struct fsl_mc_io *mc_io,
 
 	return 0;
 }
+
+int dpdmux_get_irq_mask(struct fsl_mc_io *mc_io,
+			uint32_t cmd_flags,
+			uint16_t token,
+			uint8_t irq_index,
+			uint32_t *mask)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_IRQ_MASK,
+					  cmd_flags,
+					  token);
+	DPDMUX_CMD_GET_IRQ_MASK(cmd, irq_index);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPDMUX_RSP_GET_IRQ_MASK(cmd, *mask);
+
+	return 0;
+}
+
+int dpdmux_get_irq_status(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  uint8_t irq_index,
+			  uint32_t *status)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_IRQ_STATUS,
+					  cmd_flags,
+					  token);
+	DPDMUX_CMD_GET_IRQ_STATUS(cmd, irq_index, *status);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPDMUX_RSP_GET_IRQ_STATUS(cmd, *status);
+
+	return 0;
+}
+

@@ -32,7 +32,7 @@
 #ifndef __FSL_DPBP_V10_H
 #define __FSL_DPBP_V10_H
 
-#include "../mc_v8/fsl_dpbp.h"
+#include "../mc_v9/fsl_dpbp.h"
 
 /* Data Path Buffer Pool API
  * Contains initialization APIs and runtime control APIs for DPBP

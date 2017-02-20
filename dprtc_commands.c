@@ -141,8 +141,8 @@ static int cmd_dprtc_help(void)
 	return 0;
 }
 
-static int print_dprtc_attr(uint32_t dprtc_id,
-			struct dprc_obj_desc *target_obj_desc)
+static int print_dprtc_attr_v9(uint32_t dprtc_id,
+			       struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dprtc_handle;
 	int error;
@@ -290,8 +290,8 @@ static int print_dprtc_info(uint32_t dprtc_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = print_dprtc_attr(dprtc_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dprtc_attr_v9(dprtc_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dprtc_attr_v10(dprtc_id, &target_obj_desc);
 	if (error < 0)
@@ -347,9 +347,9 @@ out:
 	return error;
 }
 
-static int cmd_dprtc_info(void)
+static int cmd_dprtc_info_v9(void)
 {
-	return info_dprtc(MC_FW_VERSION_8);
+	return info_dprtc(MC_FW_VERSION_9);
 }
 
 static int cmd_dprtc_info_v10(void)
@@ -357,7 +357,7 @@ static int cmd_dprtc_info_v10(void)
 	return info_dprtc(MC_FW_VERSION_10);
 }
 
-static int create_dprtc_v8(struct dprtc_cfg *dprtc_cfg)
+static int create_dprtc_v9(struct dprtc_cfg *dprtc_cfg)
 {
 	struct dprtc_attr dprtc_attr;
 	uint16_t dprtc_handle;
@@ -456,8 +456,8 @@ static int create_dprtc(int mc_fw_version, const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = create_dprtc_v8(&dprtc_cfg);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = create_dprtc_v9(&dprtc_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = create_dprtc_v10(&dprtc_cfg);
 	else
@@ -466,14 +466,14 @@ static int create_dprtc(int mc_fw_version, const char *usage_msg)
 	return error;
 }
 
-static int cmd_dprtc_create(void)
+static int cmd_dprtc_create_v9(void)
 {
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dprtc create\n"
 		"\n";
 
-	return create_dprtc(MC_FW_VERSION_8, usage_msg);
+	return create_dprtc(MC_FW_VERSION_9, usage_msg);
 }
 
 static int cmd_dprtc_create_v10(void)
@@ -492,7 +492,7 @@ static int cmd_dprtc_create_v10(void)
 	return create_dprtc(MC_FW_VERSION_10, usage_msg);
 }
 
-static int destroy_dprtc_v8(uint32_t dprtc_id)
+static int destroy_dprtc_v9(uint32_t dprtc_id)
 {
 	bool dprtc_opened = false;
 	uint16_t dprtc_handle;
@@ -612,8 +612,8 @@ static int destroy_dprtc(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = destroy_dprtc_v8(dprtc_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dprtc_v9(dprtc_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dprtc_v10(dprtc_id);
 	else
@@ -623,9 +623,9 @@ out:
 	return error;
 }
 
-static int cmd_dprtc_destroy(void)
+static int cmd_dprtc_destroy_v9(void)
 {
-	return destroy_dprtc(MC_FW_VERSION_8);
+	return destroy_dprtc(MC_FW_VERSION_9);
 }
 
 static int cmd_dprtc_destroy_v10(void)
@@ -633,22 +633,22 @@ static int cmd_dprtc_destroy_v10(void)
 	return destroy_dprtc(MC_FW_VERSION_10);
 }
 
-struct object_command dprtc_commands[] = {
+struct object_command dprtc_commands_v9[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dprtc_help },
 
 	{ .cmd_name = "info",
 	  .options = dprtc_info_options,
-	  .cmd_func = cmd_dprtc_info },
+	  .cmd_func = cmd_dprtc_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dprtc_create_options,
-	  .cmd_func = cmd_dprtc_create },
+	  .cmd_func = cmd_dprtc_create_v9 },
 
 	{ .cmd_name = "destroy",
 	  .options = dprtc_destroy_options,
-	  .cmd_func = cmd_dprtc_destroy },
+	  .cmd_func = cmd_dprtc_destroy_v9 },
 
 	{ .cmd_name = NULL },
 };

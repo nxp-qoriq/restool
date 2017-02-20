@@ -38,7 +38,6 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpni.h"
 #include "mc_v9/fsl_dpni.h"
 #include "mc_v10/fsl_dpni.h"
 
@@ -351,23 +350,6 @@ static const struct flib_ops dpni_ops_v9 = {
 	.obj_get_irq_status = dpni_get_irq_status_v9,
 };
 
-static struct option_entry options_map[] = {
-	OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
-	OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
-	OPTION_MAP_ENTRY(DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED),
-	OPTION_MAP_ENTRY(DPNI_OPT_DIST_HASH),
-	OPTION_MAP_ENTRY(DPNI_OPT_DIST_FS),
-	OPTION_MAP_ENTRY(DPNI_OPT_UNICAST_FILTER),
-	OPTION_MAP_ENTRY(DPNI_OPT_MULTICAST_FILTER),
-	OPTION_MAP_ENTRY(DPNI_OPT_VLAN_FILTER),
-	OPTION_MAP_ENTRY(DPNI_OPT_IPR),
-	OPTION_MAP_ENTRY(DPNI_OPT_IPF),
-	OPTION_MAP_ENTRY(DPNI_OPT_VLAN_MANIPULATION),
-	OPTION_MAP_ENTRY(DPNI_OPT_QOS_MASK_SUPPORT),
-	OPTION_MAP_ENTRY(DPNI_OPT_FS_MASK_SUPPORT),
-};
-static unsigned int options_num = ARRAY_SIZE(options_map);
-
 static struct option_entry options_map_v9[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
 	OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
@@ -606,111 +588,6 @@ static void print_mac_address(uint8_t mac_addr[6])
 	for (int j = 0; j < 5; ++j)
 		printf("%02x:", mac_addr[j]);
 	printf("%02x\n", mac_addr[5]);
-}
-
-static int print_dpni_attr(uint32_t dpni_id,
-			struct dprc_obj_desc *target_obj_desc)
-{
-	uint16_t dpni_handle;
-	int error;
-	struct dpni_attr dpni_attr;
-	uint8_t mac_addr[6];
-	bool dpni_opened = false;
-	struct dpni_link_state link_state;
-
-	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpni_opened = true;
-	if (0 == dpni_handle) {
-		DEBUG_PRINTF(
-			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
-			dpni_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpni_attr, 0, sizeof(dpni_attr));
-	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle, &dpni_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpni_id == (uint32_t)dpni_attr.id);
-	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
-
-	error = dpni_get_primary_mac_addr(&restool.mc_io, 0,
-					dpni_handle, mac_addr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	memset(&link_state, 0, sizeof(link_state));
-	error = dpni_get_link_state(&restool.mc_io, 0, dpni_handle,
-					&link_state);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	printf("dpni version: %u.%u\n", dpni_attr.version.major,
-	       dpni_attr.version.minor);
-	printf("dpni id: %d\n", dpni_attr.id);
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpni_endpoint(dpni_id);
-	printf("link status: %d - ", link_state.up);
-	link_state.up == 0 ? printf("down\n") :
-	link_state.up == 1 ? printf("up\n") : printf("error state\n");
-	print_mac_address(mac_addr);
-	printf("dpni_attr.options value is: %#lx\n",
-	       (unsigned long)dpni_attr.options);
-	print_dpni_options(dpni_attr.options);
-	printf("max senders: %u\n", (uint32_t)dpni_attr.max_senders);
-	printf("max traffic classes: %u\n", (uint32_t)dpni_attr.max_tcs);
-	printf("max distribution's size per RX traffic class:\n");
-	for (int k = 0; k < dpni_attr.max_tcs; ++k)
-		printf("\tclass %d's size: %u\n", k,
-		       (uint32_t)dpni_attr.max_dist_per_tc[k]);
-	printf("max unicast filters: %u\n",
-	       (uint32_t)dpni_attr.max_unicast_filters);
-	printf("max multicast filters: %u\n",
-	       (uint32_t)dpni_attr.max_multicast_filters);
-	printf("max vlan filters: %u\n", (uint32_t)dpni_attr.max_vlan_filters);
-	printf("max QoS entries: %u\n", (uint32_t)dpni_attr.max_qos_entries);
-	printf("max QoS key size: %u\n", (uint32_t)dpni_attr.max_qos_key_size);
-	printf("max distribution key size: %u\n",
-	       (uint32_t)dpni_attr.max_dist_key_size);
-	print_obj_label(target_obj_desc);
-
-	error = 0;
-
-out:
-	if (dpni_opened) {
-		int error2;
-
-		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
 }
 
 static int print_dpni_attr_v9(uint32_t dpni_id,
@@ -1003,9 +880,7 @@ static int print_dpni_info(uint32_t dpni_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = print_dpni_attr(dpni_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_9)
+	if (mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpni_attr_v9(dpni_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpni_attr_v10(dpni_id, &target_obj_desc);
@@ -1063,11 +938,6 @@ out:
 	return error;
 }
 
-static int cmd_dpni_info(void)
-{
-	return info_dpni(MC_FW_VERSION_8);
-}
-
 static int cmd_dpni_info_v9(void)
 {
 	return info_dpni(MC_FW_VERSION_9);
@@ -1118,312 +988,6 @@ static int parse_dpni_mac_addr(char *mac_addr_str, uint8_t *mac_addr)
 	}
 
 	return 0;
-}
-
-static int parse_dpni_max_dist_per_tc(char *max_dist_per_tc_str,
-	uint8_t *max_dist_per_tc, uint8_t max_tcs)
-{
-	char *cursor = NULL;
-	char *endptr;
-	char *max_dist_str = strtok_r(max_dist_per_tc_str, ",", &cursor);
-	int i = 0;
-	long val;
-
-	while (max_dist_str != NULL) {
-		if (i >= DPNI_MAX_TC) {
-			ERROR_PRINTF("Invalid max-dist-per-tc\n");
-			ERROR_PRINTF("maximum number of traffic class <= %d\n",
-			     DPNI_MAX_TC);
-			return -EINVAL;
-		}
-
-		errno = 0;
-		val = strtol(max_dist_str, &endptr, 0);
-
-		if (STRTOL_ERROR(max_dist_str, endptr, val, errno) ||
-		    (val < 0 || val > UINT8_MAX)) {
-			ERROR_PRINTF("Invalid dist-size.\n");
-			return -EINVAL;
-		}
-
-		max_dist_per_tc[i] = (uint8_t)val;
-		max_dist_str = strtok_r(NULL, ",", &cursor);
-		++i;
-	}
-
-	if (max_tcs != i) {
-		ERROR_PRINTF(
-			"size of max_dist_per_tc does not match max_tcs: %u\n",
-			(unsigned int)max_tcs);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int create_dpni(const char *usage_msg)
-{
-	struct dpni_attr dpni_attr;
-	struct dpni_cfg dpni_cfg;
-	uint16_t dpni_handle;
-	int error;
-	long val;
-
-	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name != NULL) {
-		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     restool.obj_name);
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_generic_create_options(
-				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				(uint64_t *)&dpni_cfg.adv.options,
-				options_map,
-				options_num);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"parse_dpni_generic_options() failed with error %d, cannot get options-mask\n",
-				error);
-			return error;
-		}
-	} else {
-		dpni_cfg.adv.options = DPNI_OPT_UNICAST_FILTER |
-				       DPNI_OPT_MULTICAST_FILTER;
-	}
-
-	if (!(restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ADDR))) {
-		ERROR_PRINTF("--mac-addr option missing\n");
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ADDR);
-	error  = parse_dpni_mac_addr(
-			restool.cmd_option_args[CREATE_OPT_MAC_ADDR],
-			dpni_cfg.mac_addr);
-	if (error < 0) {
-		DEBUG_PRINTF(
-			"parse_dpni_mac_addr() failed with error %d, cannot get mac address\n",
-			error);
-		return error;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_TCS)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_TCS);
-		error = get_option_value(CREATE_OPT_MAX_TCS, &val,
-					 "Invalid max tcs", 0, DPNI_MAX_TC);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_tcs = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_tcs = 1; /* set default value 1 */
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_PER_TC)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_PER_TC);
-		error = parse_dpni_max_dist_per_tc(
-			restool.cmd_option_args[CREATE_OPT_MAX_DIST_PER_TC],
-			dpni_cfg.adv.max_dist_per_tc,
-			dpni_cfg.adv.max_tcs);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"parse_dpni_max_dist_per_tc() failed with error %d, cannot get maximum distribution's size per RX traffic-class\n",
-				error);
-			return error;
-		}
-	} else {
-		for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
-			dpni_cfg.adv.max_dist_per_tc[i] = 1;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS)) {
-		restool.cmd_option_mask &=
-				~ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS);
-		error = get_option_value(CREATE_OPT_MAX_SENDERS, &val,
-					 "Invalid max senders", 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_senders = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_senders = 1;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS);
-		error = get_option_value(CREATE_OPT_MAX_UNICAST_FILTERS, &val,
-					 "Invalid max unicast filters", 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_unicast_filters = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_unicast_filters = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS);
-		error = get_option_value(CREATE_OPT_MAX_MULTICAST_FILTERS, &val,
-					 "Invalid max multicast filters",
-					 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_multicast_filters = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_multicast_filters = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS);
-		error = get_option_value(CREATE_OPT_MAX_VLAN_FILTERS, &val,
-					 "Invalid max vlan filters",
-					 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_vlan_filters = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_vlan_filters = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES);
-		error = get_option_value(CREATE_OPT_MAX_QOS_ENTRIES, &val,
-					 "Invalid max qos", 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_qos_entries = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_qos_entries = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE);
-		error = get_option_value(CREATE_OPT_MAX_QOS_KEY_SIZE, &val,
-					 "Invalid max qos key size", 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_qos_key_size = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_qos_key_size = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE);
-		error = get_option_value(CREATE_OPT_MAX_DIST_KEY_SIZE, &val,
-					 "Invalid max dist key size",
-					 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_dist_key_size = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_dist_key_size = 0;
-	}
-
-	error = dpni_create(&restool.mc_io, 0, &dpni_cfg, &dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpni_attr, 0, sizeof(struct dpni_attr));
-	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle, &dpni_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpni", dpni_attr.id, NULL);
-
-	error = dpni_close(&restool.mc_io, 0, dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	return 0;
-}
-
-static int cmd_dpni_create(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpni create --mac-addr=<addr> [OPTIONS]\n"
-		"   --mac-addr=<addr>\n"
-		"	String specifying primary MAC address (e.g. 00:00:05:00:00:05).\n"
-		"\n"
-		"OPTIONS:\n"
-		"--max-senders=<number>\n"
-		"	maximum number of different senders;\n"
-		"	will be used as the number of dedicated TX flows;\n"
-		"	If it is not a power of two it will be rounded up to the next\n"
-		"	power of two value.\n"
-		"--options=<options-mask>\n"
-		"   Where <options-mask> is a comma or space separated list of DPNI options:\n"
-		"	DPNI_OPT_ALLOW_DIST_KEY_PER_TC\n"
-		"	DPNI_OPT_TX_CONF_DISABLED\n"
-		"	DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED\n"
-		"	DPNI_OPT_DIST_HASH\n"
-		"	DPNI_OPT_DIST_FS\n"
-		"	DPNI_OPT_UNICAST_FILTER\n"
-		"	DPNI_OPT_MULTICAST_FILTER\n"
-		"	DPNI_OPT_VLAN_FILTER\n"
-		"	DPNI_OPT_QOS_MASK_SUPPORT\n"
-		"	DPNI_OPT_FS_MASK_SUPPORT\n"
-		"--max-tcs=<number>\n"
-		"	Specifies the maximum number of traffic-classes\n"
-		"	0 will be treated as 1\n"
-		"--max-dist-per-tc=<dist-size>,<dist-size>,...\n"
-		"	Comma separated list of counts specifying the\n"
-		"	maximum distribution's size per RX traffic-class\n"
-		"--max-unicast-filters=<number>\n"
-		"	maximum number of unicast filters (0 will be treated as 16)\n"
-		"--max-multicast-filters=<number>\n"
-		"	maximum number of multicast filters (0 will be treated as 64)\n"
-		"--max-vlan-filters=<number>\n"
-		"	maximum number of vlan filters (0 will be treated as 16)\n"
-		"--max-qos-entries=<number>\n"
-		"	if max_tcs > 1, declares the maximum entries for\n"
-		"	the QoS table; '0' will be treated as '64'\n"
-		"--max-qos-key-size=<number>\n"
-		"	maximum key size for the QoS look-up;\n"
-		"	'0' will be treated as '24' which enough for IPv4 5-tuple\n"
-		"--max-dist-key-size=<number>\n"
-		"	maximum key size for the distribution;\n"
-		"	'0' will be treated as '24' which enough for IPv4 5-tuple\n"
-		"\n"
-		"EXAMPLE:\n"
-		"Create a DPNI object with all default options:\n"
-		"   $ restool dpni create --mac-addr=<addr>\n"
-		"\n";
-
-	return create_dpni(usage_msg);
 }
 
 static int parse_dpni_max_dist_per_tc_v9(char *max_dist_per_tc_str,
@@ -2027,7 +1591,7 @@ static int cmd_dpni_create_v10(void)
 	return -EINVAL;
 }
 
-static int destroy_dpni_v8(uint32_t dpni_id)
+static int destroy_dpni_v9(uint32_t dpni_id)
 {
 	bool dpni_opened = false;
 	uint16_t dpni_handle;
@@ -2157,19 +1721,14 @@ static int destroy_dpni(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpni_v8(dpni_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpni_v9(dpni_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpni_v10(dpni_id);
 	else
 		return -EINVAL;
 out:
 	return error;
-}
-
-static int cmd_dpni_destroy(void)
-{
-	return destroy_dpni(MC_FW_VERSION_8);
 }
 
 static int cmd_dpni_destroy_v9(void)
@@ -2254,26 +1813,6 @@ static int cmd_dpni_update_v10(void)
 
 	return update_dpni_v10(usage_msg);
 }
-
-struct object_command dpni_commands[] = {
-	{ .cmd_name = "help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpni_help },
-
-	{ .cmd_name = "info",
-	  .options = dpni_info_options,
-	  .cmd_func = cmd_dpni_info },
-
-	{ .cmd_name = "create",
-	  .options = dpni_create_options,
-	  .cmd_func = cmd_dpni_create },
-
-	{ .cmd_name = "destroy",
-	  .options = dpni_destroy_options,
-	  .cmd_func = cmd_dpni_destroy },
-
-	{ .cmd_name = NULL },
-};
 
 struct object_command dpni_commands_v9[] = {
 	{ .cmd_name = "help",

@@ -38,7 +38,6 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpdmux.h"
 #include "mc_v9/fsl_dpdmux.h"
 #include "mc_v10/fsl_dpdmux.h"
 
@@ -383,81 +382,8 @@ static void print_dpdmux_manip(enum dpdmux_manip manip)
 	}
 }
 
-static int print_dpdmux_attr(uint32_t dpdmux_id,
-			struct dprc_obj_desc *target_obj_desc)
-{
-	uint16_t dpdmux_handle;
-	int error;
-	struct dpdmux_attr dpdmux_attr;
-	bool dpdmux_opened = false;
-
-	error = dpdmux_open(&restool.mc_io, 0, dpdmux_id, &dpdmux_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpdmux_opened = true;
-	if (0 == dpdmux_handle) {
-		DEBUG_PRINTF(
-			"dpdmux_open() returned invalid handle (auth 0) for dpdmux.%u\n",
-			dpdmux_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle,
-					&dpdmux_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpdmux_id == (uint32_t)dpdmux_attr.id);
-
-	printf("dpdmux version: %u.%u\n", dpdmux_attr.version.major,
-	       dpdmux_attr.version.minor);
-	printf("dpdmux id: %d\n", dpdmux_attr.id);
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpdmux_endpoint(dpdmux_id, dpdmux_attr.num_ifs + 1);
-	printf("dpdmux_attr.options value is: %#llx\n",
-	       (unsigned long long)dpdmux_attr.options);
-	print_dpdmux_options(dpdmux_attr.options);
-	print_dpdmux_method(dpdmux_attr.method);
-	print_dpdmux_manip(dpdmux_attr.manip);
-	printf("number of interfaces (excluding the uplink interface): %u\n",
-		(uint32_t)dpdmux_attr.num_ifs);
-	printf("frame storage memory size: %u\n",
-		(uint32_t)dpdmux_attr.mem_size);
-	printf("control interface ID: %u\n",
-	       (uint32_t)dpdmux_attr.control_if);
-	print_obj_label(target_obj_desc);
-
-	error = 0;
-
-out:
-	if (dpdmux_opened) {
-		int error2;
-
-		error2 = dpdmux_close(&restool.mc_io, 0, dpdmux_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
 static int print_dpdmux_attr_v9(uint32_t dpdmux_id,
-			struct dprc_obj_desc *target_obj_desc)
+				struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpdmux_handle;
 	int error;
@@ -628,9 +554,7 @@ static int print_dpdmux_info(uint32_t dpdmux_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = print_dpdmux_attr(dpdmux_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_9)
+	if (mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpdmux_attr_v9(dpdmux_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpdmux_attr_v10(dpdmux_id, &target_obj_desc);
@@ -688,11 +612,6 @@ out:
 	return error;
 }
 
-static int cmd_dpdmux_info(void)
-{
-	return info_dpdmux(MC_FW_VERSION_8);
-}
-
 static int cmd_dpdmux_info_v9(void)
 {
 	return info_dpdmux(MC_FW_VERSION_9);
@@ -747,206 +666,6 @@ static int parse_dpdmux_method(char *method_str, enum dpdmux_method *method)
 
 /**
  * Dpdmux create commands
- */
-
-/**
- * Create commands for mc version 8
- */
-static int create_dpdmux(const char *usage_msg)
-{
-	struct dpdmux_cfg dpdmux_cfg = {0};
-	struct dpdmux_attr dpdmux_attr;
-	uint16_t dpdmux_handle;
-	int error;
-	long val;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name != NULL) {
-		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     restool.obj_name);
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_generic_create_options(
-				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpdmux_cfg.adv.options,
-				options_map,
-				options_num);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
-				error);
-			return error;
-		}
-	} else {
-		dpdmux_cfg.adv.options = 0;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_METHOD)) {
-		restool.cmd_option_mask &=
-				~ONE_BIT_MASK(CREATE_OPT_METHOD);
-		error = parse_dpdmux_method(
-			restool.cmd_option_args[CREATE_OPT_METHOD],
-			&dpdmux_cfg.method);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"parse_dpdmux_method() failed with error %d, cannot get dpdmux method\n",
-				error);
-			return error;
-		}
-	} else {
-		dpdmux_cfg.method = DPDMUX_METHOD_C_VLAN_MAC;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MANIP)) {
-		restool.cmd_option_mask &=
-				~ONE_BIT_MASK(CREATE_OPT_MANIP);
-		error = parse_dpdmux_manip(
-				restool.cmd_option_args[CREATE_OPT_MANIP],
-				&dpdmux_cfg.manip);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"parse_dpdmux_manip() failed with error %d, cannot get dpdmux manip\n",
-				error);
-			return error;
-		}
-	} else {
-		dpdmux_cfg.manip = DPDMUX_MANIP_NONE;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_IFS)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_IFS);
-		error = get_option_value(CREATE_OPT_NUM_IFS, &val,
-					 "Invalid number of interfaces",
-					 0, UINT16_MAX);
-		if (error)
-			return -EINVAL;
-		dpdmux_cfg.num_ifs = (uint16_t)val;
-	} else {
-		ERROR_PRINTF("--num-ifs option missing\n");
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_CONTROL_IF)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_CONTROL_IF);
-		error = get_option_value(CREATE_OPT_CONTROL_IF, &val,
-					 "Invalid control interface",
-					 0, dpdmux_cfg.num_ifs - 1);
-		if (error)
-			return -EINVAL;
-		dpdmux_cfg.control_if = val;
-	} else {
-		ERROR_PRINTF("--control-if option missing\n");
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES);
-		error = get_option_value(CREATE_OPT_MAX_DMAT_ENTRIES, &val,
-					 "Invalid max DPDMUX address table",
-					 0, UINT16_MAX);
-		if (error)
-			return -EINVAL;
-		dpdmux_cfg.adv.max_dmat_entries = (uint16_t)val;
-	} else {
-		dpdmux_cfg.adv.max_dmat_entries = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_MC_GROUPS)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_MC_GROUPS);
-		error = get_option_value(CREATE_OPT_MAX_MC_GROUPS, &val,
-					 "Invalid max multicast group",
-					 0, UINT16_MAX);
-		if (error)
-			return -EINVAL;
-		dpdmux_cfg.adv.max_mc_groups = (uint16_t)val;
-	} else {
-		dpdmux_cfg.adv.max_mc_groups = 0;
-	}
-
-	error = dpdmux_create(&restool.mc_io, 0, &dpdmux_cfg, &dpdmux_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpdmux_attr, 0, sizeof(struct dpdmux_attr));
-	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle,
-					&dpdmux_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpdmux", dpdmux_attr.id, NULL);
-
-	error = dpdmux_close(&restool.mc_io, 0, dpdmux_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	return 0;
-}
-
-static int cmd_dpdmux_create(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpdmux create --num-ifs=<number> --control-if=<interface-num> [OPTIONS]\n"
-		"   --num-ifs=<number>\n"
-		"      Number of virtual interfaces (excluding the uplink interface)\n"
-		"   --control-if=<interface-num>\n"
-		"      The initial control interface\n"
-		"      Ranges from 0 to [number-1].\n"
-		"      If --num-ifs=5, --control-ifs could be 0, 1, 2, 3, 4\n"
-		"\n"
-		"OPTIONS:\n"
-		"--method=<dmat-method>\n"
-		"   Where <dmat-method> defines the method of the DPDMUX address table.\n"
-		"   A valid value is one of the following:\n"
-		"	DPDMUX_METHOD_NONE\n"
-		"	DPDMUX_METHOD_C_VLAN_MAC\n"
-		"	DPDMUX_METHOD_MAC\n"
-		"	DPDMUX_METHOD_C_VLAN\n"
-		"   Default is DPDMUX_METHOD_C_VLAN_MAC\n"
-		"--manip=<manip>\n"
-		"   Where <manip> defines the DPDMUX required manipulation operation.\n"
-		"   A valid value is one of the following:\n"
-		"	DPDMUX_MANIP_NONE\n"
-		"   Default is DPDMUX_MANIP_NONE\n"
-		"--options=<options-mask>\n"
-		"   Where <options-mask> is a comma separated list of DPDMUX options:\n"
-		"	DPDMUX_OPT_BRIDGE_EN\n"
-		"   Default is 0\n"
-		"--max-dmat-entries=<number>\n"
-		"   Maximum entries in DPDMUX address table. Default is 64.\n"
-		"--max-mc-groups=<number>\n"
-		"   Number of multicast groups in DPDMUX address table. Default is 32 groups.\n"
-		"\n";
-
-	return create_dpdmux(usage_msg);
-}
-
-/**
  * Create commands for mc version 9
  */
 static int create_dpdmux_v9(const char *usage_msg)
@@ -1070,7 +789,7 @@ static int create_dpdmux_v9(const char *usage_msg)
 		return error;
 	}
 
-	memset(&dpdmux_attr, 0, sizeof(struct dpdmux_attr));
+	memset(&dpdmux_attr, 0, sizeof(struct dpdmux_attr_v9));
 	error = dpdmux_get_attributes_v9(&restool.mc_io, 0, dpdmux_handle,
 					&dpdmux_attr);
 	if (error < 0) {
@@ -1316,7 +1035,7 @@ static int cmd_dpdmux_create_v10(void)
 	return create_dpdmux_v10(usage_msg);
 }
 
-static int destroy_dpdmux_v8(uint32_t dpdmux_id)
+static int destroy_dpdmux_v9(uint32_t dpdmux_id)
 {
 	bool dpdmux_opened = false;
 	uint16_t dpdmux_handle;
@@ -1436,8 +1155,8 @@ static int destroy_dpdmux(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpdmux_v8(dpdmux_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpdmux_v9(dpdmux_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpdmux_v10(dpdmux_id);
 	else
@@ -1445,11 +1164,6 @@ static int destroy_dpdmux(int mc_fw_version)
 
 out:
 	return error;
-}
-
-static int cmd_dpdmux_destroy(void)
-{
-	return destroy_dpdmux(MC_FW_VERSION_8);
 }
 
 static int cmd_dpdmux_destroy_v9(void)
@@ -1461,26 +1175,6 @@ static int cmd_dpdmux_destroy_v10(void)
 {
 	return destroy_dpdmux(MC_FW_VERSION_10);
 }
-
-struct object_command dpdmux_commands[] = {
-	{ .cmd_name = "help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpdmux_help },
-
-	{ .cmd_name = "info",
-	  .options = dpdmux_info_options,
-	  .cmd_func = cmd_dpdmux_info },
-
-	{ .cmd_name = "create",
-	  .options = dpdmux_create_options,
-	  .cmd_func = cmd_dpdmux_create },
-
-	{ .cmd_name = "destroy",
-	  .options = dpdmux_destroy_options,
-	  .cmd_func = cmd_dpdmux_destroy },
-
-	{ .cmd_name = NULL },
-};
 
 struct object_command dpdmux_commands_v9[] = {
 	{ .cmd_name = "help",

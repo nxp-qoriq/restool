@@ -38,7 +38,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpbp.h"
+#include "mc_v9/fsl_dpbp.h"
 #include "mc_v10/fsl_dpbp.h"
 
 enum mc_cmd_status mc_status;
@@ -143,8 +143,8 @@ static int cmd_dpbp_help(void)
 	return 0;
 }
 
-static int print_dpbp_attr(uint32_t dpbp_id,
-			struct dprc_obj_desc *target_obj_desc)
+static int print_dpbp_attr_v9(uint32_t dpbp_id,
+			      struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpbp_handle;
 	int error;
@@ -293,8 +293,8 @@ static int print_dpbp_info(uint32_t dpbp_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpbp_attr(dpbp_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpbp_attr_v9(dpbp_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpbp_attr_v10(dpbp_id, &target_obj_desc);
 	if (error < 0)
@@ -350,9 +350,9 @@ out:
 	return error;
 }
 
-static int cmd_dpbp_info(void)
+static int cmd_dpbp_info_v9(void)
 {
-	return info_dpbp(MC_FW_VERSION_8);
+	return info_dpbp(MC_FW_VERSION_9);
 }
 
 static int cmd_dpbp_info_v10(void)
@@ -360,7 +360,7 @@ static int cmd_dpbp_info_v10(void)
 	return info_dpbp(MC_FW_VERSION_10);
 }
 
-static int create_dpbp_v8(struct dpbp_cfg *dpbp_cfg)
+static int create_dpbp_v9(struct dpbp_cfg *dpbp_cfg)
 {
 	struct dpbp_attr dpbp_attr;
 	uint16_t dpbp_handle;
@@ -458,8 +458,8 @@ static int create_dpbp(int mc_fw_version, const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = create_dpbp_v8(&dpbp_cfg);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = create_dpbp_v9(&dpbp_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = create_dpbp_v10(&dpbp_cfg);
 	else
@@ -468,14 +468,14 @@ static int create_dpbp(int mc_fw_version, const char *usage_msg)
 	return error;
 }
 
-static int cmd_dpbp_create(void)
+static int cmd_dpbp_create_v9(void)
 {
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpbp create\n"
 		"\n";
 
-	return create_dpbp(MC_FW_VERSION_8, usage_msg);
+	return create_dpbp(MC_FW_VERSION_9, usage_msg);
 }
 
 static int cmd_dpbp_create_v10(void)
@@ -494,7 +494,7 @@ static int cmd_dpbp_create_v10(void)
 	return create_dpbp(MC_FW_VERSION_10, usage_msg);
 }
 
-static int destroy_dpbp_v8(uint32_t dpbp_id)
+static int destroy_dpbp_v9(uint32_t dpbp_id)
 {
 	bool dpbp_opened = false;
 	uint16_t dpbp_handle;
@@ -614,8 +614,8 @@ static int destroy_dpbp(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = destroy_dpbp_v8(dpbp_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpbp_v9(dpbp_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpbp_v10(dpbp_id);
 	else
@@ -625,9 +625,9 @@ out:
 	return error;
 }
 
-static int cmd_dpbp_destroy(void)
+static int cmd_dpbp_destroy_v9(void)
 {
-	return destroy_dpbp(MC_FW_VERSION_8);
+	return destroy_dpbp(MC_FW_VERSION_9);
 }
 
 static int cmd_dpbp_destroy_v10(void)
@@ -635,22 +635,22 @@ static int cmd_dpbp_destroy_v10(void)
 	return destroy_dpbp(MC_FW_VERSION_10);
 }
 
-struct object_command dpbp_commands[] = {
+struct object_command dpbp_commands_v9[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpbp_help },
 
 	{ .cmd_name = "info",
 	  .options = dpbp_info_options,
-	  .cmd_func = cmd_dpbp_info },
+	  .cmd_func = cmd_dpbp_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dpbp_create_options,
-	  .cmd_func = cmd_dpbp_create },
+	  .cmd_func = cmd_dpbp_create_v9 },
 
 	{ .cmd_name = "destroy",
 	  .options = dpbp_destroy_options,
-	  .cmd_func = cmd_dpbp_destroy },
+	  .cmd_func = cmd_dpbp_destroy_v9 },
 
 	{ .cmd_name = NULL },
 };

@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpdcei.h"
+#include "mc_v9/fsl_dpdcei.h"
 #include "mc_v10/fsl_dpdcei.h"
 
 enum mc_cmd_status mc_status;
@@ -174,8 +174,8 @@ static void print_dpdcei_engine(enum dpdcei_engine engine)
 	}
 }
 
-static int print_dpdcei_attr(uint32_t dpdcei_id,
-			struct dprc_obj_desc *target_obj_desc)
+static int print_dpdcei_attr_v9(uint32_t dpdcei_id,
+				struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpdcei_handle;
 	int error;
@@ -327,8 +327,8 @@ static int print_dpdcei_info(uint32_t dpdcei_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpdcei_attr(dpdcei_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpdcei_attr_v9(dpdcei_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpdcei_attr_v10(dpdcei_id, &target_obj_desc);
 	if (error < 0)
@@ -384,9 +384,9 @@ out:
 	return error;
 }
 
-static int cmd_dpdcei_info(void)
+static int cmd_dpdcei_info_v9(void)
 {
-	return info_dpdcei(MC_FW_VERSION_8);
+	return info_dpdcei(MC_FW_VERSION_9);
 }
 
 static int cmd_dpdcei_info_v10(void)
@@ -410,7 +410,7 @@ static int parse_dpdcei_engine(char *engine_str, enum dpdcei_engine *engine)
 	return -EINVAL;
 }
 
-static int create_dpdcei_v8(struct dpdcei_cfg *dpdcei_cfg)
+static int create_dpdcei_v9(struct dpdcei_cfg *dpdcei_cfg)
 {
 	struct dpdcei_attr dpdcei_attr;
 	uint16_t dpdcei_handle;
@@ -542,8 +542,8 @@ static int create_dpdcei(int mc_fw_version, const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = create_dpdcei_v8(&dpdcei_cfg);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = create_dpdcei_v9(&dpdcei_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = create_dpdcei_v10(&dpdcei_cfg);
 	else
@@ -552,7 +552,7 @@ static int create_dpdcei(int mc_fw_version, const char *usage_msg)
 	return error;
 }
 
-static int cmd_dpdcei_create(void)
+static int cmd_dpdcei_create_v9(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -567,7 +567,7 @@ static int cmd_dpdcei_create(void)
 		"   Priority for DCE hardware processing (valid values 1-8)\n"
 		"\n";
 
-	return create_dpdcei(MC_FW_VERSION_8, usage_msg);
+	return create_dpdcei(MC_FW_VERSION_9, usage_msg);
 }
 
 static int cmd_dpdcei_create_v10(void)
@@ -594,7 +594,7 @@ static int cmd_dpdcei_create_v10(void)
 	return create_dpdcei(MC_FW_VERSION_10, usage_msg);
 }
 
-static int destroy_dpdcei_v8(uint32_t dpdcei_id)
+static int destroy_dpdcei_v9(uint32_t dpdcei_id)
 {
 	bool dpdcei_opened = false;
 	uint16_t dpdcei_handle;
@@ -714,8 +714,8 @@ static int destroy_dpdcei(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = destroy_dpdcei_v8(dpdcei_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpdcei_v9(dpdcei_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpdcei_v10(dpdcei_id);
 	else
@@ -725,9 +725,9 @@ out:
 	return error;
 }
 
-static int cmd_dpdcei_destroy(void)
+static int cmd_dpdcei_destroy_v9(void)
 {
-	return destroy_dpdcei(MC_FW_VERSION_8);
+	return destroy_dpdcei(MC_FW_VERSION_9);
 }
 
 static int cmd_dpdcei_destroy_v10(void)
@@ -735,22 +735,22 @@ static int cmd_dpdcei_destroy_v10(void)
 	return destroy_dpdcei(MC_FW_VERSION_10);
 }
 
-struct object_command dpdcei_commands[] = {
+struct object_command dpdcei_commands_v9[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpdcei_help },
 
 	{ .cmd_name = "info",
 	  .options = dpdcei_info_options,
-	  .cmd_func = cmd_dpdcei_info },
+	  .cmd_func = cmd_dpdcei_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dpdcei_create_options,
-	  .cmd_func = cmd_dpdcei_create },
+	  .cmd_func = cmd_dpdcei_create_v9 },
 
 	{ .cmd_name = "destroy",
 	  .options = dpdcei_destroy_options,
-	  .cmd_func = cmd_dpdcei_destroy },
+	  .cmd_func = cmd_dpdcei_destroy_v9 },
 
 	{ .cmd_name = NULL },
 };

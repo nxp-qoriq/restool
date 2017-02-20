@@ -32,7 +32,7 @@
 #ifndef __FSL_DPCON_V10_H
 #define __FSL_DPCON_V10_H
 
-#include "../mc_v8/fsl_dpcon.h"
+#include "../mc_v9/fsl_dpcon.h"
 
 /* Data Path Concentrator API
  * Contains initialization APIs and runtime control APIs for DPCON

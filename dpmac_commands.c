@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpmac.h"
+#include "mc_v9/fsl_dpmac.h"
 #include "mc_v10/fsl_dpmac.h"
 
 enum mc_cmd_status mc_status;
@@ -259,8 +259,8 @@ static void print_dpmac_eth_if(enum dpmac_eth_if eth_if)
 	}
 }
 
-static int print_dpmac_attr(uint32_t dpmac_id,
-			struct dprc_obj_desc *target_obj_desc)
+static int print_dpmac_attr_v9(uint32_t dpmac_id,
+			       struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpmac_handle;
 	int error;
@@ -420,8 +420,8 @@ static int print_dpmac_info(uint32_t dpmac_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpmac_attr(dpmac_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpmac_attr_v9(dpmac_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpmac_attr_v10(dpmac_id, &target_obj_desc);
 	if (error < 0)
@@ -477,9 +477,9 @@ out:
 	return error;
 }
 
-static int cmd_dpmac_info(void)
+static int cmd_dpmac_info_v9(void)
 {
-	return info_dpmac(MC_FW_VERSION_8);
+	return info_dpmac(MC_FW_VERSION_9);
 }
 
 static int cmd_dpmac_info_v10(void)
@@ -487,7 +487,7 @@ static int cmd_dpmac_info_v10(void)
 	return info_dpmac(MC_FW_VERSION_10);
 }
 
-static int create_dpmac_v8(struct dpmac_cfg *dpmac_cfg)
+static int create_dpmac_v9(struct dpmac_cfg *dpmac_cfg)
 {
 	struct dpmac_attr dpmac_attr;
 	uint16_t dpmac_handle;
@@ -602,8 +602,8 @@ static int create_dpmac(int mc_fw_version, const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = create_dpmac_v8(&dpmac_cfg);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = create_dpmac_v9(&dpmac_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = create_dpmac_v10(&dpmac_cfg);
 	else
@@ -612,7 +612,7 @@ static int create_dpmac(int mc_fw_version, const char *usage_msg)
 	return error;
 }
 
-static int cmd_dpmac_create(void)
+static int cmd_dpmac_create_v9(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -626,7 +626,7 @@ static int cmd_dpmac_create(void)
 		"   $ restool dpmac create --mac-id=4\n"
 		"\n";
 
-	return create_dpmac(MC_FW_VERSION_8, usage_msg);
+	return create_dpmac(MC_FW_VERSION_9, usage_msg);
 }
 
 static int cmd_dpmac_create_v10(void)
@@ -652,7 +652,7 @@ static int cmd_dpmac_create_v10(void)
 	return create_dpmac(MC_FW_VERSION_10, usage_msg);
 }
 
-static int destroy_dpmac_v8(uint32_t dpmac_id)
+static int destroy_dpmac_v9(uint32_t dpmac_id)
 {
 	bool dpmac_opened = false;
 	uint16_t dpmac_handle;
@@ -772,8 +772,8 @@ static int destroy_dpmac(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = destroy_dpmac_v8(dpmac_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpmac_v9(dpmac_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpmac_v10(dpmac_id);
 	else
@@ -783,9 +783,9 @@ out:
 	return error;
 }
 
-static int cmd_dpmac_destroy(void)
+static int cmd_dpmac_destroy_v9(void)
 {
-	return destroy_dpmac(MC_FW_VERSION_8);
+	return destroy_dpmac(MC_FW_VERSION_9);
 }
 
 static int cmd_dpmac_destroy_v10(void)
@@ -793,22 +793,22 @@ static int cmd_dpmac_destroy_v10(void)
 	return destroy_dpmac(MC_FW_VERSION_10);
 }
 
-struct object_command dpmac_commands[] = {
+struct object_command dpmac_commands_v9[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpmac_help },
 
 	{ .cmd_name = "info",
 	  .options = dpmac_info_options,
-	  .cmd_func = cmd_dpmac_info },
+	  .cmd_func = cmd_dpmac_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dpmac_create_options,
-	  .cmd_func = cmd_dpmac_create },
+	  .cmd_func = cmd_dpmac_create_v9 },
 
 	{ .cmd_name = "destroy",
 	  .options = dpmac_destroy_options,
-	  .cmd_func = cmd_dpmac_destroy },
+	  .cmd_func = cmd_dpmac_destroy_v9 },
 
 	{ .cmd_name = NULL },
 };

@@ -32,7 +32,6 @@
 #ifndef __FSL_DPDMUX_V10_H
 #define __FSL_DPDMUX_V10_H
 
-#include "../mc_v8/fsl_dpdmux.h"
 #include "../mc_v9/fsl_dpdmux.h"
 
 struct fsl_mc_io;

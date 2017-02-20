@@ -32,7 +32,7 @@
 #ifndef __FSL_DPMAC_V10_H
 #define __FSL_DPMAC_V10_H
 
-#include "../mc_v8/fsl_dpmac.h"
+#include "../mc_v9/fsl_dpmac.h"
 
 /* Data Path MAC API
  * Contains initialization APIs and runtime control APIs for DPMAC

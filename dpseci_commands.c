@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpseci.h"
+#include "mc_v9/fsl_dpseci.h"
 #include "mc_v10/fsl_dpseci.h"
 
 enum mc_cmd_status mc_status;
@@ -899,7 +899,7 @@ static int cmd_dpseci_destroy_v10(void)
 	return destroy_dpseci(MC_FW_VERSION_10);
 }
 
-struct object_command dpseci_commands[] = {
+struct object_command dpseci_commands_v9[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpseci_help },

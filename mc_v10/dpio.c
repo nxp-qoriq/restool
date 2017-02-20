@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#include "../mc_v8/fsl_mc_sys.h"
+#include "../mc_v9/fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpio.h"
 #include "fsl_dpio_cmd.h"

@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpaiop.h"
+#include "mc_v9/fsl_dpaiop.h"
 #include "mc_v10/fsl_dpaiop.h"
 
 enum mc_cmd_status mc_status;
@@ -390,7 +390,7 @@ static int print_dpaiop_info(uint32_t dpaiop_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
+	if (mc_fw_version == MC_FW_VERSION_9)
 		error = print_dpaiop_attr(dpaiop_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpaiop_attr_v10(dpaiop_id, &target_obj_desc);
@@ -449,7 +449,7 @@ out:
 
 static int cmd_dpaiop_info(void)
 {
-	return info_dpaiop(MC_FW_VERSION_8);
+	return info_dpaiop(MC_FW_VERSION_9);
 }
 
 static int cmd_dpaiop_info_v10(void)
@@ -457,7 +457,7 @@ static int cmd_dpaiop_info_v10(void)
 	return info_dpaiop(MC_FW_VERSION_10);
 }
 
-static int create_dpaiop_v8(struct dpaiop_cfg *dpaiop_cfg)
+static int create_dpaiop_v9(struct dpaiop_cfg *dpaiop_cfg)
 {
 	struct dpaiop_attr dpaiop_attr;
 	uint16_t dpaiop_handle;
@@ -580,8 +580,8 @@ static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 	/* make sure that aiop_id is set to 0 */
 	dpaiop_cfg.aiop_id = 0;
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = create_dpaiop_v8(&dpaiop_cfg);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = create_dpaiop_v9(&dpaiop_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = create_dpaiop_v10(&dpaiop_cfg);
 	else
@@ -603,7 +603,7 @@ static int cmd_dpaiop_create(void)
 		"   $ restool dpaiop create --aiop-container=dprc.3\n"
 		"\n";
 
-	return create_dpaiop(MC_FW_VERSION_8, usage_msg);
+	return create_dpaiop(MC_FW_VERSION_9, usage_msg);
 }
 
 static int cmd_dpaiop_create_v10(void)
@@ -628,7 +628,7 @@ static int cmd_dpaiop_create_v10(void)
 	return create_dpaiop(MC_FW_VERSION_10, usage_msg);
 }
 
-static int destroy_dpaiop_v8(uint32_t dpaiop_id)
+static int destroy_dpaiop_v9(uint32_t dpaiop_id)
 {
 	bool dpaiop_opened = false;
 	uint16_t dpaiop_handle;
@@ -747,8 +747,8 @@ static int destroy_dpaiop(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = destroy_dpaiop_v8(dpaiop_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpaiop_v9(dpaiop_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpaiop_v10(dpaiop_id);
 	else
@@ -760,7 +760,7 @@ out:
 
 static int cmd_dpaiop_destroy(void)
 {
-	return destroy_dpaiop(MC_FW_VERSION_8);
+	return destroy_dpaiop(MC_FW_VERSION_9);
 }
 
 static int cmd_dpaiop_destroy_v10(void)
@@ -768,7 +768,7 @@ static int cmd_dpaiop_destroy_v10(void)
 	return destroy_dpaiop(MC_FW_VERSION_10);
 }
 
-struct object_command dpaiop_commands[] = {
+struct object_command dpaiop_commands_v9[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpaiop_help },

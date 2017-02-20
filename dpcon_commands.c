@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpcon.h"
+#include "mc_v9/fsl_dpcon.h"
 #include "mc_v10/fsl_dpcon.h"
 
 enum mc_cmd_status mc_status;
@@ -150,8 +150,8 @@ static int cmd_dpcon_help(void)
 	return 0;
 }
 
-static int print_dpcon_attr(uint32_t dpcon_id,
-			struct dprc_obj_desc *target_obj_desc)
+static int print_dpcon_attr_v9(uint32_t dpcon_id,
+			       struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpcon_handle;
 	int error;
@@ -309,8 +309,8 @@ static int print_dpcon_info(uint32_t dpcon_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpcon_attr(dpcon_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpcon_attr_v9(dpcon_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpcon_attr_v10(dpcon_id, &target_obj_desc);
 	if (error < 0)
@@ -366,9 +366,9 @@ out:
 	return error;
 }
 
-static int cmd_dpcon_info(void)
+static int cmd_dpcon_info_v9(void)
 {
-	return info_dpcon(MC_FW_VERSION_8);
+	return info_dpcon(MC_FW_VERSION_9);
 }
 
 static int cmd_dpcon_info_v10(void)
@@ -376,7 +376,7 @@ static int cmd_dpcon_info_v10(void)
 	return info_dpcon(MC_FW_VERSION_10);
 }
 
-static int create_dpcon_v8(struct dpcon_cfg *dpcon_cfg)
+static int create_dpcon_v9(struct dpcon_cfg *dpcon_cfg)
 {
 	struct dpcon_attr dpcon_attr;
 	uint16_t dpcon_handle;
@@ -490,8 +490,8 @@ static int create_dpcon(int mc_fw_version, const char *usage_msg)
 		dpcon_cfg.num_priorities = 1;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = create_dpcon_v8(&dpcon_cfg);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = create_dpcon_v9(&dpcon_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = create_dpcon_v10(&dpcon_cfg);
 	else
@@ -500,7 +500,7 @@ static int create_dpcon(int mc_fw_version, const char *usage_msg)
 	return error;
 }
 
-static int cmd_dpcon_create(void)
+static int cmd_dpcon_create_v9(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -518,7 +518,7 @@ static int cmd_dpcon_create(void)
 		"   $ restool dpcon create --num-priorities=2\n"
 		"\n";
 
-	return create_dpcon(MC_FW_VERSION_8, usage_msg);
+	return create_dpcon(MC_FW_VERSION_9, usage_msg);
 }
 
 static int cmd_dpcon_create_v10(void)
@@ -545,7 +545,7 @@ static int cmd_dpcon_create_v10(void)
 	return create_dpcon(MC_FW_VERSION_10, usage_msg);
 }
 
-static int destroy_dpcon_v8(uint32_t dpcon_id)
+static int destroy_dpcon_v9(uint32_t dpcon_id)
 {
 	bool dpcon_opened = false;
 	uint16_t dpcon_handle;
@@ -665,8 +665,8 @@ static int destroy_dpcon(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = destroy_dpcon_v8(dpcon_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpcon_v9(dpcon_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpcon_v10(dpcon_id);
 	else
@@ -676,9 +676,9 @@ out:
 	return error;
 }
 
-static int cmd_dpcon_destroy(void)
+static int cmd_dpcon_destroy_v9(void)
 {
-	return destroy_dpcon(MC_FW_VERSION_8);
+	return destroy_dpcon(MC_FW_VERSION_9);
 }
 
 static int cmd_dpcon_destroy_v10(void)
@@ -686,22 +686,22 @@ static int cmd_dpcon_destroy_v10(void)
 	return destroy_dpcon(MC_FW_VERSION_10);
 }
 
-struct object_command dpcon_commands[] = {
+struct object_command dpcon_commands_v9[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpcon_help },
 
 	{ .cmd_name = "info",
 	  .options = dpcon_info_options,
-	  .cmd_func = cmd_dpcon_info },
+	  .cmd_func = cmd_dpcon_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dpcon_create_options,
-	  .cmd_func = cmd_dpcon_create },
+	  .cmd_func = cmd_dpcon_create_v9 },
 
 	{ .cmd_name = "destroy",
 	  .options = dpcon_destroy_options,
-	  .cmd_func = cmd_dpcon_destroy },
+	  .cmd_func = cmd_dpcon_destroy_v9 },
 
 	{ .cmd_name = NULL },
 };

@@ -32,7 +32,7 @@
 #ifndef __FSL_DPCI_V10_H
 #define __FSL_DPCI_V10_H
 
-#include "../mc_v8/fsl_dpci.h"
+#include "../mc_v9/fsl_dpci.h"
 
 /* Data Path Communication Interface API
  * Contains initialization APIs and runtime control APIs for DPCI

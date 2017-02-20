@@ -32,7 +32,7 @@
 #ifndef __FSL_DPSECI_V10_H
 #define __FSL_DPSECI_V10_H
 
-#include "../mc_v8/fsl_dpseci.h"
+#include "../mc_v9/fsl_dpseci.h"
 
 /* Data Path SEC Interface API
  * Contains initialization APIs and runtime control APIs for DPSECI

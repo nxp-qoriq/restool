@@ -37,7 +37,7 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v8/fsl_dpci.h"
+#include "mc_v9/fsl_dpci.h"
 #include "mc_v10/fsl_dpci.h"
 
 enum mc_cmd_status mc_status;
@@ -164,8 +164,8 @@ static int cmd_dpci_help(void)
 	return 0;
 }
 
-static int print_dpci_attr(uint32_t dpci_id,
-			struct dprc_obj_desc *target_obj_desc)
+static int print_dpci_attr_v9(uint32_t dpci_id,
+			      struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpci_handle;
 	int error;
@@ -377,8 +377,8 @@ static int print_dpci_info(uint32_t dpci_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpci_attr(dpci_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpci_attr_v9(dpci_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpci_attr_v10(dpci_id, &target_obj_desc);
 	if (error < 0)
@@ -434,9 +434,9 @@ out:
 	return error;
 }
 
-static int cmd_dpci_info(void)
+static int cmd_dpci_info_v9(void)
 {
-	return info_dpci(MC_FW_VERSION_8);
+	return info_dpci(MC_FW_VERSION_9);
 }
 
 static int cmd_dpci_info_v10(void)
@@ -444,7 +444,7 @@ static int cmd_dpci_info_v10(void)
 	return info_dpci(MC_FW_VERSION_10);
 }
 
-static int create_dpci_v8(const char *usage_msg)
+static int create_dpci_v9(const char *usage_msg)
 {
 	struct dpci_attr dpci_attr;
 	struct dpci_cfg dpci_cfg;
@@ -602,7 +602,7 @@ static int create_dpci_v10(const char *usage_msg)
 	return 0;
 }
 
-static int cmd_dpci_create(void)
+static int cmd_dpci_create_v9(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -622,7 +622,7 @@ static int cmd_dpci_create(void)
 		"   $ restool dpci create --num-priorities=2\n"
 		"\n";
 
-	return create_dpci_v8(usage_msg);
+	return create_dpci_v9(usage_msg);
 }
 
 static int cmd_dpci_create_v10(void)
@@ -681,7 +681,7 @@ static int cmd_dpci_create_v10(void)
 	return -EINVAL;
 }
 
-static int destroy_dpci_v8(uint32_t dpci_id)
+static int destroy_dpci_v9(uint32_t dpci_id)
 {
 	bool dpci_opened = false;
 	uint16_t dpci_handle;
@@ -801,8 +801,8 @@ static int destroy_dpci(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = destroy_dpci_v8(dpci_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpci_v9(dpci_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpci_v10(dpci_id);
 	else
@@ -812,9 +812,9 @@ out:
 	return error;
 }
 
-static int cmd_dpci_destroy(void)
+static int cmd_dpci_destroy_v9(void)
 {
-	return destroy_dpci(MC_FW_VERSION_8);
+	return destroy_dpci(MC_FW_VERSION_9);
 }
 
 static int cmd_dpci_destroy_v10(void)
@@ -822,22 +822,22 @@ static int cmd_dpci_destroy_v10(void)
 	return destroy_dpci(MC_FW_VERSION_10);
 }
 
-struct object_command dpci_commands[] = {
+struct object_command dpci_commands_v9[] = {
 	{ .cmd_name = "help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpci_help },
 
 	{ .cmd_name = "info",
 	  .options = dpci_info_options,
-	  .cmd_func = cmd_dpci_info },
+	  .cmd_func = cmd_dpci_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dpci_create_options,
-	  .cmd_func = cmd_dpci_create },
+	  .cmd_func = cmd_dpci_create_v9 },
 
 	{ .cmd_name = "destroy",
 	  .options = dpci_destroy_options,
-	  .cmd_func = cmd_dpci_destroy },
+	  .cmd_func = cmd_dpci_destroy_v9 },
 
 	{ .cmd_name = NULL },
 };

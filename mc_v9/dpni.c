@@ -29,6 +29,46 @@
 #include "fsl_dpni.h"
 #include "fsl_dpni_cmd.h"
 
+int dpni_open(struct fsl_mc_io *mc_io,
+	      uint32_t cmd_flags,
+	      int dpni_id,
+	      uint16_t *token)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_OPEN,
+					  cmd_flags,
+					  0);
+	DPNI_CMD_OPEN(cmd, dpni_id);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	*token = MC_CMD_HDR_READ_TOKEN(cmd.header);
+
+	return 0;
+}
+
+int dpni_close(struct fsl_mc_io *mc_io,
+	       uint32_t cmd_flags,
+	       uint16_t token)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_CLOSE,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
 int dpni_prepare_extended_cfg(const struct dpni_extended_cfg	*cfg,
 			      uint8_t			*ext_cfg_buf)
 {
@@ -91,6 +131,21 @@ int dpni_create_v9(struct fsl_mc_io *mc_io,
 	*token = MC_CMD_HDR_READ_TOKEN(cmd.header);
 
 	return 0;
+}
+
+int dpni_destroy(struct fsl_mc_io *mc_io,
+		 uint32_t cmd_flags,
+		 uint16_t token)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_DESTROY,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
 }
 
 int dpni_get_irq_status_v9(struct fsl_mc_io *mc_io,
@@ -165,6 +220,106 @@ int dpni_get_attributes_v9(struct fsl_mc_io *mc_io,
 	if (attr->options & DPNI_OPT_DIST_FS)
 		for (i = 0; i < 7; i++)
 			ext_cfg->tc_cfg[i].max_fs_entries = ext_cfg->tc_cfg[i].max_dist;
+
+	return 0;
+}
+
+int dpni_get_primary_mac_addr(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      uint8_t mac_addr[6])
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_PRIM_MAC,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPNI_RSP_GET_PRIMARY_MAC_ADDR(cmd, mac_addr);
+
+	return 0;
+}
+
+int dpni_get_link_state(struct fsl_mc_io *mc_io,
+			uint32_t cmd_flags,
+			uint16_t token,
+			struct dpni_link_state *state)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_LINK_STATE,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPNI_RSP_GET_LINK_STATE(cmd, state);
+
+	return 0;
+}
+
+int dpni_get_irq_mask(struct fsl_mc_io *mc_io,
+		      uint32_t cmd_flags,
+		      uint16_t token,
+		      uint8_t irq_index,
+		      uint32_t *mask)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_IRQ_MASK,
+					  cmd_flags,
+					  token);
+	DPNI_CMD_GET_IRQ_MASK(cmd, irq_index);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPNI_RSP_GET_IRQ_MASK(cmd, *mask);
+
+	return 0;
+}
+
+int dpni_get_irq_status(struct fsl_mc_io *mc_io,
+			uint32_t cmd_flags,
+			uint16_t token,
+			uint8_t irq_index,
+			uint32_t *status)
+{
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_IRQ_STATUS,
+					  cmd_flags,
+					  token);
+	DPNI_CMD_GET_IRQ_STATUS(cmd, irq_index, *status);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	DPNI_RSP_GET_IRQ_STATUS(cmd, *status);
 
 	return 0;
 }

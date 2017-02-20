@@ -26,12 +26,85 @@
 #ifndef __FSL_DPDMUX_V9_H
 #define __FSL_DPDMUX_V9_H
 
-#include "../mc_v8/fsl_net.h"
-#include "../mc_v8/fsl_dpdmux.h"
-
 /* Data Path Demux API
  * Contains API for handling DPDMUX topology and functionality
  */
+
+/**
+ * dpdmux_open() - Open a control session for the specified object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @dpdmux_id:		DPDMUX unique ID
+ * @token:		Returned token; use in subsequent API calls
+ *
+ * This function can be used to open a control session for an
+ * already created object; an object may have been declared in
+ * the DPL or by calling the dpdmux_create() function.
+ * This function returns a unique authentication token,
+ * associated with the specific object ID and the specific MC
+ * portal; this token must be used in all subsequent commands for
+ * this specific object.
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpdmux_open(struct fsl_mc_io	 *mc_io,
+		uint32_t		 cmd_flags,
+		int			 dpdmux_id,
+		uint16_t		 *token);
+
+/**
+ * dpdmux_close() - Close the control session of the object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPDMUX object
+ *
+ * After this function is called, no further operations are
+ * allowed on the object without opening a new control session.
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpdmux_close(struct fsl_mc_io	*mc_io,
+		 uint32_t		cmd_flags,
+		 uint16_t		token);
+
+/*!
+ * @name DPDMUX general options
+ */
+#define DPDMUX_OPT_BRIDGE_EN		0x0000000000000002ULL
+/*!< Enable bridging between internal interfaces */
+/* @} */
+
+#define DPDMUX_IRQ_INDEX_IF			0x0000
+#define DPDMUX_IRQ_INDEX		0x0001
+
+/*!< IRQ event - Indicates that the link state changed */
+#define DPDMUX_IRQ_EVENT_LINK_CHANGED	0x0001
+
+/**
+ * enum dpdmux_manip - DPDMUX manipulation operations
+ * @DPDMUX_MANIP_NONE:	No manipulation on frames
+ * @DPDMUX_MANIP_ADD_REMOVE_S_VLAN: Add S-VLAN on egress, remove it on ingress
+ */
+enum dpdmux_manip {
+	DPDMUX_MANIP_NONE = 0x0,
+	DPDMUX_MANIP_ADD_REMOVE_S_VLAN = 0x1
+};
+
+/**
+ * enum dpdmux_method - DPDMUX method options
+ * @DPDMUX_METHOD_NONE: no DPDMUX method
+ * @DPDMUX_METHOD_C_VLAN_MAC: DPDMUX based on C-VLAN and MAC address
+ * @DPDMUX_METHOD_MAC: DPDMUX based on MAC address
+ * @DPDMUX_METHOD_C_VLAN: DPDMUX based on C-VLAN
+ * @DPDMUX_METHOD_S_VLAN: DPDMUX based on S-VLAN
+ */
+enum dpdmux_method {
+	DPDMUX_METHOD_NONE = 0x0,
+	DPDMUX_METHOD_C_VLAN_MAC = 0x1,
+	DPDMUX_METHOD_MAC = 0x2,
+	DPDMUX_METHOD_C_VLAN = 0x3,
+	DPDMUX_METHOD_S_VLAN = 0x4
+};
 
 /**
  * struct dpdmux_cfg - DPDMUX configuration parameters
@@ -92,6 +165,18 @@ int dpdmux_create_v9(struct fsl_mc_io		*mc_io,
 		     uint16_t			*token);
 
 /**
+ * dpdmux_destroy() - Destroy the DPDMUX object and release all its resources.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDMUX object
+ *
+ * Return:	'0' on Success; error code otherwise.
+ */
+int dpdmux_destroy(struct fsl_mc_io	*mc_io,
+		   uint32_t		cmd_flags,
+		   uint16_t		token);
+
+/**
  * dpdmux_get_irq_status() - Get the current status of any pending interrupts.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -150,5 +235,42 @@ int dpdmux_get_attributes_v9(struct fsl_mc_io	    *mc_io,
 			     uint32_t		    cmd_flags,
 			     uint16_t		    token,
 			     struct dpdmux_attr_v9  *attr);
+
+/**
+ * dpdmux_get_irq_mask() - Get interrupt mask.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDMUX object
+ * @irq_index:	The interrupt index to configure
+ * @mask:	Returned event mask to trigger interrupt
+ *
+ * Every interrupt can have up to 32 causes and the interrupt model supports
+ * masking/unmasking each cause independently
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpdmux_get_irq_mask(struct fsl_mc_io	*mc_io,
+			uint32_t		cmd_flags,
+			uint16_t		token,
+			uint8_t			irq_index,
+			uint32_t		*mask);
+
+/**
+ * dpdmux_get_irq_status() - Get the current status of any pending interrupts.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPDMUX object
+ * @irq_index:	The interrupt index to configure
+ * @status:	Returned interrupts status - one bit per cause:
+ *			0 = no interrupt pending
+ *			1 = interrupt pending
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpdmux_get_irq_status(struct fsl_mc_io	*mc_io,
+			  uint32_t		cmd_flags,
+			  uint16_t		token,
+			  uint8_t		irq_index,
+			  uint32_t		*status);
 
 #endif /* __FSL_DPDMUX_V9_H */

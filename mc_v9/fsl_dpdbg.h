@@ -33,7 +33,7 @@
 #define __FSL_DPDBG_H
 
 #include "fsl_dpkg.h"
-#include "../mc_v8/fsl_dpmac.h"
+#include "fsl_dpmac.h"
 #include "fsl_dpni.h"
 
 /* Data Path Debug API

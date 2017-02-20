@@ -38,25 +38,23 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v8/fsl_dpaiop.h"
-#include "mc_v8/fsl_dpbp.h"
-#include "mc_v8/fsl_dpci.h"
-#include "mc_v8/fsl_dpcon.h"
+#include "mc_v9/fsl_dpaiop.h"
+#include "mc_v9/fsl_dpbp.h"
+#include "mc_v9/fsl_dpci.h"
+#include "mc_v9/fsl_dpcon.h"
 #include "mc_v9/fsl_dpdbg.h"
-#include "mc_v8/fsl_dpdcei.h"
-#include "mc_v8/fsl_dpdmai.h"
-#include "mc_v8/fsl_dpdmux.h"
+#include "mc_v9/fsl_dpdcei.h"
+#include "mc_v9/fsl_dpdmai.h"
 #include "mc_v9/fsl_dpdmux.h"
-#include "mc_v8/fsl_dpio.h"
-#include "mc_v8/fsl_dpmac.h"
-#include "mc_v8/fsl_dpmcp.h"
-#include "mc_v9/fsl_dpni.h"
-#include "mc_v10/fsl_dpni.h"
-#include "mc_v8/fsl_dprc.h"
+#include "mc_v9/fsl_dpio.h"
+#include "mc_v9/fsl_dpmac.h"
+#include "mc_v9/fsl_dpmcp.h"
+#include "mc_v9/fsl_dprc.h"
 #include "mc_v9/fsl_dprtc.h"
-#include "mc_v8/fsl_dpseci.h"
-#include "mc_v8/fsl_dpsw.h"
+#include "mc_v9/fsl_dpseci.h"
+#include "mc_v9/fsl_dpni.h"
 #include "mc_v9/fsl_dpsw.h"
+#include "mc_v10/fsl_dpni.h"
 
 /* dprc stuff */
 #define ALL_DPRC_OPTS_DPL (                     \
@@ -1423,134 +1421,6 @@ static int parse_endpoint_dpl(struct obj_list *curr_obj, uint16_t num_ifs)
 	return 0;
 }
 
-static int parse_dpni_v8(FILE *fp, struct obj_list *curr)
-{
-	uint16_t dpni_handle;
-	int error;
-	struct dpni_attr dpni_attr;
-	uint8_t mac_addr[6];
-	bool dpni_opened = false;
-
-	memset(&dpni_attr, 0, sizeof(dpni_attr));
-
-	error = dpni_open(&restool.mc_io, 0, curr->id, &dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpni_opened = true;
-	if (0 == dpni_handle) {
-		DEBUG_PRINTF(
-			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle,
-				       &dpni_attr);
-
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	assert(curr->id == dpni_attr.id);
-	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
-
-	error = dpni_get_primary_mac_addr(&restool.mc_io, 0,
-					dpni_handle, mac_addr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	parse_endpoint_dpl(curr, 1000);
-
-	fprintf(fp, "\t\t\tmac_addr = <");
-	for (int j = 0; j < 5; ++j)
-		fprintf(fp, "%#02x ", mac_addr[j]);
-	fprintf(fp, "%#02x>;\n", mac_addr[5]);
-
-	fprintf(fp, "\t\t\tmax_senders = <%#x>;\n",
-		(uint32_t)dpni_attr.max_senders);
-
-	parse_dpni_options(fp, dpni_attr.options);
-
-	fprintf(fp, "\t\t\tmax_tcs = <%#x>;\n", (uint32_t)dpni_attr.max_tcs);
-
-	fprintf(fp, "\t\t\tmax_dist_per_tc = <");
-	for (int k = 0; k < dpni_attr.max_tcs - 1; ++k)
-		fprintf(fp, "%#x ",
-			(uint32_t)dpni_attr.max_dist_per_tc[k]);
-	fprintf(fp, "%#x>;\n",
-		(uint32_t)dpni_attr.
-		max_dist_per_tc[dpni_attr.max_tcs]);
-
-	fprintf(fp, "\t\t\tmax_unicast_filters = <%#x>;\n",
-	       (uint32_t)dpni_attr.max_unicast_filters);
-
-	fprintf(fp, "\t\t\tmax_multicast_filters = <%#x>;\n",
-	       (uint32_t)dpni_attr.max_multicast_filters);
-
-	fprintf(fp, "\t\t\tmax_vlan_filters = <%#x>;\n",
-		(uint32_t)dpni_attr.max_vlan_filters);
-
-	fprintf(fp, "\t\t\tmax_qos_entries = <%#x>;\n",
-		(uint32_t)dpni_attr.max_qos_entries);
-
-	fprintf(fp, "\t\t\tmax_qos_key_size = <%#x>;\n",
-		(uint32_t)dpni_attr.max_qos_key_size);
-
-	fprintf(fp, "\t\t\tmax_dist_key_size = <%#x>;\n",
-	       (uint32_t)dpni_attr.max_dist_key_size);
-
-	fprintf(fp, "\t\t\tmax_policers = <%#x>;\n",
-		(uint32_t)dpni_attr.max_policers);
-
-	fprintf(fp, "\t\t\tmax_congestion_ctrl = <%#x>;\n",
-		(uint32_t)dpni_attr.max_congestion_ctrl);
-
-	fprintf(fp, "\t\t\tmax_reass_frm_size = <%#x>;\n",
-		(uint32_t)dpni_attr.ipr_cfg.max_reass_frm_size);
-
-	fprintf(fp, "\t\t\tmin_frag_size_ipv4 = <%#x>;\n",
-		(uint32_t)dpni_attr.ipr_cfg.min_frag_size_ipv4);
-
-	fprintf(fp, "\t\t\tmin_frag_size_ipv6 = <%#x>;\n",
-		(uint32_t)dpni_attr.ipr_cfg.min_frag_size_ipv6);
-
-	fprintf(fp, "\t\t\tmax_open_frames_ipv4 = <%#x>;\n",
-		(uint32_t)dpni_attr.ipr_cfg.max_open_frames_ipv4);
-
-	fprintf(fp, "\t\t\tmax_open_frames_ipv6 = <%#x>;\n",
-		(uint32_t)dpni_attr.ipr_cfg.max_open_frames_ipv6);
-
-	error = 0;
-
-out:
-	if (dpni_opened) {
-		int error2;
-
-		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
 static int parse_dpni_v9(FILE *fp, struct obj_list *curr)
 {
 	uint16_t dpni_handle;
@@ -1821,70 +1691,6 @@ static void parse_dpdmux_manip(FILE *fp, enum dpdmux_manip manip)
 	}
 }
 
-/* following objects have possible connections and interface*/
-static int parse_dpdmux_v8(FILE *fp, struct obj_list *curr)
-{
-	uint16_t dpdmux_handle;
-	int error;
-	struct dpdmux_attr dpdmux_attr;
-	bool dpdmux_opened = false;
-
-	error = dpdmux_open(&restool.mc_io, 0, curr->id, &dpdmux_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpdmux_opened = true;
-	if (0 == dpdmux_handle) {
-		DEBUG_PRINTF(
-			"dpdmux_open() returned invalid handle (auth 0) for dpdmux.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle,
-					&dpdmux_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpdmux_attr.id);
-
-	parse_endpoint_dpl(curr, dpdmux_attr.num_ifs + 1);
-	parse_dpdmux_options(fp, dpdmux_attr.options);
-	parse_dpdmux_method(fp, dpdmux_attr.method);
-	parse_dpdmux_manip(fp, dpdmux_attr.manip);
-	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n",
-		(uint32_t)dpdmux_attr.num_ifs + 1);
-	fprintf(fp, "\t\t\tcontrol_if = <%#x>;\n",
-		(uint32_t)dpdmux_attr.control_if);
-
-	error = 0;
-
-out:
-	if (dpdmux_opened) {
-		int error2;
-
-		error2 = dpdmux_close(&restool.mc_io, 0, dpdmux_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-
-}
-
 static int parse_dpdmux_v9(FILE *fp, struct obj_list *curr)
 {
 	uint16_t dpdmux_handle;
@@ -1989,76 +1795,6 @@ static void parse_dpsw_options(FILE *fp, uint64_t options)
 
 	fprintf(fp, "%s\n", buf);
 
-}
-
-static int parse_dpsw_v8(FILE *fp, struct obj_list *curr)
-{
-	uint16_t dpsw_handle;
-	int error;
-	struct dpsw_attr dpsw_attr;
-	bool dpsw_opened = false;
-
-	error = dpsw_open(&restool.mc_io, 0, curr->id, &dpsw_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpsw_opened = true;
-	if (0 == dpsw_handle) {
-		DEBUG_PRINTF(
-			"dpsw_open() returned invalid handle (auth 0) for dpsw.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
-	error = dpsw_get_attributes(&restool.mc_io, 0, dpsw_handle, &dpsw_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpsw_attr.id);
-
-	parse_endpoint_dpl(curr, dpsw_attr.num_ifs);
-	parse_dpsw_options(fp, dpsw_attr.options);
-	fprintf(fp, "\t\t\tmax_vlans = <%#x>;\n",
-		(uint32_t)dpsw_attr.max_vlans);
-	fprintf(fp, "\t\t\tmax_fdbs = <%#x>;\n", (uint32_t)dpsw_attr.max_fdbs);
-	/* it should be num_fdb_entries,
-	 * but dpsw_attr {} call it max_fdb_entries (typo)
-	 */
-	fprintf(fp, "\t\t\tnum_fdb_entries = <%#x>;\n",
-		(uint32_t)dpsw_attr.max_fdb_entries);
-	fprintf(fp, "\t\t\tfdb_aging_time = <%#x>;\n",
-		(uint32_t)dpsw_attr.fdb_aging_time);
-	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n", (uint32_t)dpsw_attr.num_ifs);
-	fprintf(fp, "\t\t\tmax_fdb_mc_groups = <%#x>;\n",
-		(uint32_t)dpsw_attr.max_fdb_mc_groups);
-	fprintf(fp, "\t\t\tmax_meters_per_if = <%#x>;\n",
-		(uint32_t)dpsw_attr.max_meters_per_if);
-
-	error = 0;
-
-out:
-	if (dpsw_opened) {
-		int error2;
-
-		error2 = dpsw_close(&restool.mc_io, 0, dpsw_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
 }
 
 static int parse_dpsw_v9(FILE *fp, struct obj_list *curr)
@@ -2197,9 +1933,7 @@ static int write_objects(void)
 			/* dpmac do not need to be parsed now */
 
 		if (strcmp(curr_obj->type, "dpni") == 0) {
-			if (restool.mc_fw_version.major == 8)
-				parse_dpni_v8(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 9)
+			if (restool.mc_fw_version.major == 9)
 				parse_dpni_v9(fp, curr_obj);
 			else if (restool.mc_fw_version.major == 10)
 				parse_dpni_v10(fp, curr_obj);
@@ -2208,18 +1942,14 @@ static int write_objects(void)
 
 		/* following objects have possible connections and interface*/
 		if (strcmp(curr_obj->type, "dpdmux") == 0) {
-			if (restool.mc_fw_version.major == 8)
-				parse_dpdmux_v8(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 9 ||
-				 restool.mc_fw_version.major == 10)
+			if (restool.mc_fw_version.major == 9 ||
+			    restool.mc_fw_version.major == 10)
 				parse_dpdmux_v9(fp, curr_obj);
 		}
 
 		if (strcmp(curr_obj->type, "dpsw") == 0) {
-			if (restool.mc_fw_version.major == 8)
-				parse_dpsw_v8(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 9 ||
-				 restool.mc_fw_version.major == 10)
+			if (restool.mc_fw_version.major == 9 ||
+			    restool.mc_fw_version.major == 10)
 				parse_dpsw_v9(fp, curr_obj);
 		}
 

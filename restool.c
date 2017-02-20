@@ -82,66 +82,62 @@ static const struct obj_command_versions dprc_command_versions[] = {
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpni_command_versions[] = {
-	{ .version = 5, .obj_commands = dpni_commands },
 	{ .version = 6, .obj_commands = dpni_commands_v9 },
 	{ .version = 7, .obj_commands = dpni_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpio_command_versions[] = {
-	{ .version = 3, .obj_commands = dpio_commands },
+	{ .version = 3, .obj_commands = dpio_commands_v9 },
 	{ .version = 4, .obj_commands = dpio_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpbp_command_versions[] = {
-	{ .version = 2, .obj_commands = dpbp_commands },
+	{ .version = 2, .obj_commands = dpbp_commands_v9 },
 	{ .version = 3, .obj_commands = dpbp_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpsw_command_versions[] = {
-	{ .version = 6, .obj_commands = dpsw_commands },
 	{ .version = 7, .obj_commands = dpsw_commands_v9 },
 	{ .version = 8, .obj_commands = dpsw_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpci_command_versions[] = {
-	{ .version = 2, .obj_commands = dpci_commands },
+	{ .version = 2, .obj_commands = dpci_commands_v9 },
 	{ .version = 3, .obj_commands = dpci_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpcon_command_versions[] = {
-	{ .version = 2, .obj_commands = dpcon_commands },
+	{ .version = 2, .obj_commands = dpcon_commands_v9 },
 	{ .version = 3, .obj_commands = dpcon_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpseci_command_versions[] = {
-	{ .version = 3, .obj_commands = dpseci_commands },
+	{ .version = 3, .obj_commands = dpseci_commands_v9 },
 	{ .version = 4, .obj_commands = dpseci_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpdmux_command_versions[] = {
-	{ .version = 4, .obj_commands = dpdmux_commands },
 	{ .version = 5, .obj_commands = dpdmux_commands_v9 },
 	{ .version = 6, .obj_commands = dpdmux_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpmcp_command_versions[] = {
-	{ .version = 2, .obj_commands = dpmcp_commands },
-	{ .version = 3, .obj_commands = dpmcp_commands },
+	{ .version = 3, .obj_commands = dpmcp_commands_v9 },
 	{ .version = 4, .obj_commands = dpmcp_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpmac_command_versions[] = {
-	{ .version = 3, .obj_commands = dpmac_commands },
+	{ .version = 3, .obj_commands = dpmac_commands_v9 },
 	{ .version = 4, .obj_commands = dpmac_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpdcei_command_versions[] = {
-	{ .version = 1, .obj_commands = dpdcei_commands },
+	{ .version = 1, .obj_commands = dpdcei_commands_v9 },
 	{ .version = 2, .obj_commands = dpdcei_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpaiop_command_versions[] = {
-	{ .version = 1, .obj_commands = dpaiop_commands },
+	{ .version = 1, .obj_commands = dpaiop_commands_v9 },
 	{ .version = 2, .obj_commands = dpaiop_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
@@ -150,13 +146,13 @@ static const struct obj_command_versions dpdbg_command_versions[] = {
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dprtc_command_versions[] = {
-	{ .version = 1, .obj_commands = dprtc_commands },
+	{ .version = 1, .obj_commands = dprtc_commands_v9 },
 	{ .version = 2, .obj_commands = dprtc_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
 
 static const struct obj_command_versions dpdmai_command_versions[] = {
-	{ .version = 2, .obj_commands = dpdmai_commands },
+	{ .version = 2, .obj_commands = dpdmai_commands_v9 },
 	{ .version = 3, .obj_commands = dpdmai_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
@@ -185,37 +181,31 @@ static const struct object_cmd_parser object_cmd_parsers[] = {
  * only) supported by the MC.  Used in the lookup table below
  */
 struct version_table dpaiop_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 1 },
 	{ .mc_major_version = 9, .object_version = 1 },
 	{ .mc_major_version = 10, .object_version = 2 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpbp_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
 	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpci_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
 	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpcon_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
 	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
 };
-struct version_table dpcei_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 1 },
+struct version_table dpdcei_version_table[] = {
 	{ .mc_major_version = 9, .object_version = 1 },
 	{ .mc_major_version = 10, .object_version = 2 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpdmai_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 2 },
 	{ .mc_major_version = 10, .object_version = 3 },
 	{ .mc_major_version = 0 }
@@ -227,25 +217,21 @@ struct version_table dpdmux_version_table[] = {
 	{ .mc_major_version = 0 }
 };
 struct version_table dpio_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 3 },
 	{ .mc_major_version = 9, .object_version = 3 },
 	{ .mc_major_version = 10, .object_version = 4 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpmac_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 3 },
 	{ .mc_major_version = 9, .object_version = 3 },
 	{ .mc_major_version = 10, .object_version = 4 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpmcp_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 2 },
 	{ .mc_major_version = 9, .object_version = 3 },
 	{ .mc_major_version = 10, .object_version = 4 },
 	{ .mc_major_version = 0 }
 };
 struct version_table dpni_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 5 },
 	{ .mc_major_version = 9, .object_version = 6 },
 	{ .mc_major_version = 10, .object_version = 7 },
 	{ .mc_major_version = 0 }
@@ -263,7 +249,6 @@ struct version_table dpseci_version_table[] = {
 	{ .mc_major_version = 0 }
 };
 struct version_table dpsw_version_table[] = {
-	{ .mc_major_version = 8, .object_version = 6 },
 	{ .mc_major_version = 9, .object_version = 7 },
 	{ .mc_major_version = 10, .object_version = 8 },
 	{ .mc_major_version = 0 }
@@ -288,7 +273,7 @@ struct lut_entry version_lut[] = {
 	{ .object = "dpbp",   .versions_table = dpbp_version_table   },
 	{ .object = "dpci",   .versions_table = dpci_version_table   },
 	{ .object = "dpcon",  .versions_table = dpcon_version_table  },
-	{ .object = "dpdcei", .versions_table = dpcei_version_table  },
+	{ .object = "dpdcei", .versions_table = dpdcei_version_table  },
 	{ .object = "dpdmai", .versions_table = dpdmai_version_table },
 	{ .object = "dpdmux", .versions_table = dpdmux_version_table },
 	{ .object = "dpio",   .versions_table = dpio_version_table   },
@@ -1341,6 +1326,12 @@ int main(int argc, char *argv[])
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			mc_status_to_string(mc_status), mc_status);
 		goto out;
+	}
+
+	if (restool.mc_fw_version.major < 9) {
+		ERROR_PRINTF("This version of restool does no longer support MC\
+			     firmware versions lower than v9. \
+			     Please use restool v1.5\n");
 	}
 
 	DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",

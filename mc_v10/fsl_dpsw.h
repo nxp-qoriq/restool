@@ -32,7 +32,6 @@
 #ifndef __FSL_DPSW_V10_H
 #define __FSL_DPSW_V10_H
 
-#include "../mc_v8/fsl_dpsw.h"
 #include "../mc_v9/fsl_dpsw.h"
 
 /* Data Path L2-Switch API

@@ -32,7 +32,7 @@
 #ifndef __FSL_DPDMAI_V10_H
 #define __FSL_DPDMAI_V10_H
 
-#include "../mc_v8/fsl_dpdmai.h"
+#include "../mc_v9/fsl_dpdmai.h"
 
 struct fsl_mc_io;
 

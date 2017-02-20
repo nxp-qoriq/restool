@@ -34,7 +34,6 @@
 
 #include "../mc_v9/fsl_dpkg.h"
 #include "../mc_v9/fsl_dpni.h"
-#include "../mc_v8/fsl_dpni.h"
 
 struct fsl_mc_io;
 

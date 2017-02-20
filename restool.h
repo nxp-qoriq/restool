@@ -35,11 +35,11 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <limits.h>
-#include "mc_v8/fsl_mc_sys.h"
-#include "mc_v8/fsl_dpmng.h"
-#include "mc_v8/fsl_dprc.h"
+#include "mc_v9/fsl_mc_cmd.h"
+#include "mc_v9/fsl_mc_sys.h"
+#include "mc_v9/fsl_dprc.h"
+#include "mc_v9/fsl_dpmng.h"
 #include "fsl_mc_ioctl.h"
-#include "mc_v8/fsl_mc_cmd.h"
 
 #define MC_FW_VERSION_8		8
 #define MC_FW_VERSION_9		9
@@ -374,38 +374,50 @@ int get_parent_dprc_id(uint32_t obj_id, char *obj_type,
 extern struct restool restool;
 
 /* command maps for all MC objects */
+extern struct object_command dpaiop_commands_v9[];
+extern struct object_command dpaiop_commands_v10[];
+
+extern struct object_command dpbp_commands_v9[];
+extern struct object_command dpbp_commands_v10[];
+
+extern struct object_command dpci_commands_v9[];
+extern struct object_command dpci_commands_v10[];
+
+extern struct object_command dpcon_commands_v9[];
+extern struct object_command dpcon_commands_v10[];
+
+extern struct object_command dpdcei_commands_v9[];
+extern struct object_command dpdcei_commands_v10[];
+
+extern struct object_command dpdmai_commands_v9[];
+extern struct object_command dpdmai_commands_v10[];
+
+extern struct object_command dpdmux_commands_v9[];
+extern struct object_command dpdmux_commands_v10[];
+
+extern struct object_command dpio_commands_v9[];
+extern struct object_command dpio_commands_v10[];
+
+extern struct object_command dpmac_commands_v9[];
+extern struct object_command dpmac_commands_v10[];
+
+extern struct object_command dpmcp_commands_v9[];
+extern struct object_command dpmcp_commands_v10[];
+
 extern struct object_command dprc_commands[];
+
+extern struct object_command dprtc_commands_v9[];
+extern struct object_command dprtc_commands_v10[];
+
+extern struct object_command dpseci_commands_v9[];
+extern struct object_command dpseci_commands_v10[];
+
 extern struct object_command dpni_commands[];
 extern struct object_command dpni_commands_v9[];
 extern struct object_command dpni_commands_v10[];
-extern struct object_command dpio_commands[];
-extern struct object_command dpio_commands_v10[];
-extern struct object_command dpbp_commands[];
-extern struct object_command dpbp_commands_v10[];
 extern struct object_command dpsw_commands[];
 extern struct object_command dpsw_commands_v9[];
 extern struct object_command dpsw_commands_v10[];
-extern struct object_command dpci_commands[];
-extern struct object_command dpci_commands_v10[];
-extern struct object_command dpcon_commands[];
-extern struct object_command dpcon_commands_v10[];
-extern struct object_command dpseci_commands[];
-extern struct object_command dpseci_commands_v10[];
-extern struct object_command dpdmux_commands[];
-extern struct object_command dpdmux_commands_v9[];
-extern struct object_command dpdmux_commands_v10[];
-extern struct object_command dpmcp_commands[];
-extern struct object_command dpmcp_commands_v10[];
-extern struct object_command dpmac_commands[];
-extern struct object_command dpmac_commands_v10[];
-extern struct object_command dpdcei_commands[];
-extern struct object_command dpdcei_commands_v10[];
-extern struct object_command dpaiop_commands[];
-extern struct object_command dpaiop_commands_v10[];
 extern struct object_command dpdbg_commands[];
-extern struct object_command dprtc_commands[];
-extern struct object_command dprtc_commands_v10[];
-extern struct object_command dpdmai_commands[];
-extern struct object_command dpdmai_commands_v10[];
 
 #endif /* _RESTOOL_H_ */

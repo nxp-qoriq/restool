@@ -32,7 +32,7 @@
 #ifndef __FSL_DPDCEI_V10_H
 #define __FSL_DPDCEI_V10_H
 
-#include "../mc_v8/fsl_dpdcei.h"
+#include "../mc_v9/fsl_dpdcei.h"
 
 /* Data Path DCE Interface API
  * Contains initialization APIs and runtime control APIs for DPDCEI

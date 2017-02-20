@@ -23,26 +23,24 @@ OBJS = restool.o \
        dpdbg_commands.o \
        dprtc_commands.o \
        dpdmai_commands.o \
-       mc_v8/dprc.o \
-       mc_v8/dpmng.o \
-       mc_v8/dpni.o \
-       mc_v8/dpbp.o \
-       mc_v8/dpio.o \
-       mc_v8/dpsw.o \
-       mc_v8/dpci.o \
-       mc_v8/dpcon.o \
-       mc_v8/dpseci.o \
-       mc_v8/dpdmux.o \
-       mc_v8/dpmcp.o \
-       mc_v8/dpmac.o \
-       mc_v8/dpdcei.o \
-       mc_v8/dpaiop.o \
-       mc_v8/dpdmai.o \
+       mc_v9/fsl_mc_sys.o \
+       mc_v9/dpaiop.o \
+       mc_v9/dpbp.o \
+       mc_v9/dpci.o \
+       mc_v9/dpcon.o \
+       mc_v9/dpdcei.o \
+       mc_v9/dpdmai.o \
+       mc_v9/dpdmux.o \
+       mc_v9/dpio.o \
+       mc_v9/dpmac.o \
+       mc_v9/dpmcp.o \
+       mc_v9/dprc.o \
+       mc_v9/dprtc.o \
+       mc_v9/dpseci.o \
+       mc_v9/dpmng.o \
        mc_v9/dpni.o \
        mc_v9/dpsw.o \
-       mc_v9/dpdmux.o \
        mc_v9/dpdbg.o \
-       mc_v9/dprtc.o \
        mc_v10/dpaiop.o \
        mc_v10/dpbp.o \
        mc_v10/dpci.o \
@@ -56,8 +54,7 @@ OBJS = restool.o \
        mc_v10/dpseci.o \
        mc_v10/dpsw.o \
        mc_v10/dpdmux.o \
-       mc_v10/dpni.o \
-       mc_v8/fsl_mc_sys.o
+       mc_v10/dpni.o
 
 CFLAGS = ${EXTRA_CFLAGS} \
 	  -Wall \

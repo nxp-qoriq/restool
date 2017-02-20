@@ -32,7 +32,7 @@
 #ifndef __FSL_DPMCP_V10_H
 #define __FSL_DPMCP_V10_H
 
-#include "../mc_v8/fsl_dpmcp.h"
+#include "../mc_v9/fsl_dpmcp.h"
 
 /* Data Path Management Command Portal API
  * Contains initialization APIs and runtime control APIs for DPMCP

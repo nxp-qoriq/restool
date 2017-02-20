@@ -32,7 +32,7 @@
 #ifndef __FSL_DPAIOP_V10_H
 #define __FSL_DPAIOP_V10_H
 
-#include "../mc_v8/fsl_dpaiop.h"
+#include "../mc_v9/fsl_dpaiop.h"
 
 struct fsl_mc_io;
 
