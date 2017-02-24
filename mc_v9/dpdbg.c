@@ -30,7 +30,7 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 #include <errno.h>
-#include "../mc_v9/fsl_mc_sys.h"
+#include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpdbg.h"
 #include "fsl_dpdbg_cmd.h"

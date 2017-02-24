@@ -28,51 +28,64 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _UTILS_H
-#define _UTILS_H
+#include <errno.h>
+#include <assert.h>
+#include <string.h>
+#include <fcntl.h>		/* open() */
+#include <unistd.h>		/* close() */
+#include <sys/ioctl.h>
+#include "fsl_mc_sys.h"
+#include "fsl_mc_ioctl.h"
+#include "utils.h"
 
-#include <stdio.h>
-#include <stdint.h>
-#include <time.h>
-#include "restool.h"
+int mc_io_init(struct fsl_mc_io *mc_io)
+{
+	int fd = -1;
+	int error;
 
-#define C_ASSERT(_cond) \
-	extern const char c_assert_dummy_decl[(_cond) ? 1 : -1]
+	fd = open(restool.device_file, O_RDWR | O_SYNC);
 
-#define ARRAY_SIZE(_array) \
-	(sizeof(_array) / sizeof((_array)[0]))
+	if (fd < 0) {
+		error = -errno;
+		perror("open() failed ");
+		goto error;
+	}
 
-#define ONE_BIT_MASK(_bit_index)     (UINT32_C(0x1) << (_bit_index))
+	mc_io->fd = fd;
+	return 0;
+error:
+	if (fd != -1)
+		(void)close(fd);
 
-#define ERROR_PRINTF(_fmt, ...) \
-do { \
-	if (restool.debug) \
-		fprintf(stderr, "%s:%d " _fmt, \
-			__func__, __LINE__, ##__VA_ARGS__); \
-	else \
-		fprintf(stderr, _fmt, ##__VA_ARGS__); \
-} while (0)
+	return error;
+}
 
-#define DEBUG_PRINTF(_fmt, ...)	\
-do { \
-	if (restool.debug) \
-		fprintf(stderr, "DBG: %s:%d: " _fmt, \
-			__func__, __LINE__, ##__VA_ARGS__); \
-} while (0)
+void mc_io_cleanup(struct fsl_mc_io *mc_io)
+{
+	int error;
 
-#define STRINGIFY(_x)	__STRINGIFY_EXPANDED(_x)
+	assert(mc_io->fd != -1);
 
-#define __STRINGIFY_EXPANDED(_expanded_x)   #_expanded_x
+	error = close(mc_io->fd);
+	if (error == -1)
+		perror("close failed");
+}
 
-#define CLOCK_DELTA(_start_clock, _end_clock) \
-	((clock_t)((int64_t)(_end_clock) - (int64_t)(_start_clock)))
+int mc_send_command(struct fsl_mc_io *mc_io, struct mc_command *cmd)
+{
+	int error;
 
-#define STRTOL_ERROR(_str, _endptr, _val, _errno) \
-	(((_errno) == ERANGE && ((_val) == LONG_MAX || (_val) == LONG_MIN)) \
-	|| ((_errno) != 0 && (_val) == 0) \
-	|| ((_endptr) == (_str)) \
-	|| (*(_endptr) != '\0'))
+	if (strcmp(restool.device_file, "/dev/mc_restool") == 0)
+		error = ioctl(mc_io->fd, RESTOOL_SEND_MC_COMMAND_LEGACY, cmd);
+	else
+		error = ioctl(mc_io->fd, RESTOOL_SEND_MC_COMMAND, cmd);
 
-void diff_time(struct timespec *, struct timespec *, struct timespec *);
+	if (error == -1) {
+		error = -errno;
+		DEBUG_PRINTF(
+			"ioctl(RESTOOL_SEND_MC_COMMAND) failed with error %d\n",
+			error);
+	}
 
-#endif /* _UTILS_H */
+	return error;
+}

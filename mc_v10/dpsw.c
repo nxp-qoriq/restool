@@ -29,9 +29,10 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "../mc_v8/fsl_mc_sys.h"
+#include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpsw.h"
+#include "../mc_v9/fsl_dpsw.h"
 #include "fsl_dpsw_cmd.h"
 
 int dpsw_create_v10(struct fsl_mc_io	*mc_io,

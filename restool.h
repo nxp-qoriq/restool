@@ -36,9 +36,9 @@
 #include <unistd.h>
 #include <limits.h>
 #include "mc_v9/fsl_mc_cmd.h"
-#include "mc_v9/fsl_mc_sys.h"
 #include "mc_v9/fsl_dprc.h"
 #include "mc_v9/fsl_dpmng.h"
+#include "fsl_mc_sys.h"
 #include "fsl_mc_ioctl.h"
 
 #define MC_FW_VERSION_8		8

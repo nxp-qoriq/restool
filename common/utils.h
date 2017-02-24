@@ -28,21 +28,51 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FSL_MC_IOCTL_H_
-#define _FSL_MC_IOCTL_H_
+#ifndef _UTILS_H
+#define _UTILS_H
 
-#include <linux/ioctl.h>
-#include "mc_v8/fsl_mc_cmd.h"
+#include <stdio.h>
+#include <stdint.h>
+#include <time.h>
+#include "../restool.h"
 
-#define RESTOOL_IOCTL_TYPE   'R'
+#define C_ASSERT(_cond) \
+	extern const char c_assert_dummy_decl[(_cond) ? 1 : -1]
 
-#define RESTOOL_GET_ROOT_DPRC_INFO \
-	_IOR(RESTOOL_IOCTL_TYPE, 0x1, uint32_t)
+#define ARRAY_SIZE(_array) \
+	(sizeof(_array) / sizeof((_array)[0]))
 
-#define RESTOOL_SEND_MC_COMMAND_LEGACY \
-	_IOWR(RESTOOL_IOCTL_TYPE, 0x4, struct mc_command)
+#define ONE_BIT_MASK(_bit_index)     (UINT32_C(0x1) << (_bit_index))
 
-#define RESTOOL_SEND_MC_COMMAND \
-	_IOWR(RESTOOL_IOCTL_TYPE, 0xE0, struct mc_command)
+#define ERROR_PRINTF(_fmt, ...) \
+do { \
+	if (restool.debug) \
+		fprintf(stderr, "%s:%d " _fmt, \
+			__func__, __LINE__, ##__VA_ARGS__); \
+	else \
+		fprintf(stderr, _fmt, ##__VA_ARGS__); \
+} while (0)
 
-#endif /* _FSL_MC_IOCTL_H_ */
+#define DEBUG_PRINTF(_fmt, ...)	\
+do { \
+	if (restool.debug) \
+		fprintf(stderr, "DBG: %s:%d: " _fmt, \
+			__func__, __LINE__, ##__VA_ARGS__); \
+} while (0)
+
+#define STRINGIFY(_x)	__STRINGIFY_EXPANDED(_x)
+
+#define __STRINGIFY_EXPANDED(_expanded_x)   #_expanded_x
+
+#define CLOCK_DELTA(_start_clock, _end_clock) \
+	((clock_t)((int64_t)(_end_clock) - (int64_t)(_start_clock)))
+
+#define STRTOL_ERROR(_str, _endptr, _val, _errno) \
+	(((_errno) == ERANGE && ((_val) == LONG_MAX || (_val) == LONG_MIN)) \
+	|| ((_errno) != 0 && (_val) == 0) \
+	|| ((_endptr) == (_str)) \
+	|| (*(_endptr) != '\0'))
+
+void diff_time(struct timespec *, struct timespec *, struct timespec *);
+
+#endif /* _UTILS_H */

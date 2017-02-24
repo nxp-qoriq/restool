@@ -26,7 +26,7 @@
 #ifndef __FSL_DPSW_V9_H
 #define __FSL_DPSW_V9_H
 
-#include "../mc_v8/fsl_net.h"
+#include "fsl_net.h"
 
 /**
  * dpsw_open() - Open a control session for the specified object

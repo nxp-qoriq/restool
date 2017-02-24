@@ -28,24 +28,20 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-#ifndef _FSL_MC_SYS_H
-#define _FSL_MC_SYS_H
+#ifndef _FSL_MC_IOCTL_H_
+#define _FSL_MC_IOCTL_H_
 
-#include <stdint.h>
+#include <linux/ioctl.h>
 
-struct mc_command;
+#define RESTOOL_IOCTL_TYPE   'R'
 
-/**
- * struct fsl_mc_io - MC I/O object
- */
-struct fsl_mc_io {
-	int fd;
-};
+#define RESTOOL_GET_ROOT_DPRC_INFO \
+	_IOR(RESTOOL_IOCTL_TYPE, 0x1, uint32_t)
 
-int mc_io_init(struct fsl_mc_io *mc_io);
+#define RESTOOL_SEND_MC_COMMAND_LEGACY \
+	_IOWR(RESTOOL_IOCTL_TYPE, 0x4, struct mc_command)
 
-void mc_io_cleanup(struct fsl_mc_io *mc_io);
+#define RESTOOL_SEND_MC_COMMAND \
+	_IOWR(RESTOOL_IOCTL_TYPE, 0xE0, struct mc_command)
 
-int mc_send_command(struct fsl_mc_io *mc_io, struct mc_command *cmd);
-
-#endif /* _FSL_MC_SYS_H */
+#endif /* _FSL_MC_IOCTL_H_ */

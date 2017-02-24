@@ -29,9 +29,8 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include <errno.h>
-#include "../mc_v8/fsl_mc_sys.h"
+#include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpni.h"
 #include "fsl_dpni_cmd.h"

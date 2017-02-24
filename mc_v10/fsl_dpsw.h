@@ -33,6 +33,7 @@
 #define __FSL_DPSW_V10_H
 
 #include "../mc_v9/fsl_dpsw.h"
+#include "fsl_dpsw.h"
 
 /* Data Path L2-Switch API
  * Contains API for handling DPSW topology and functionality

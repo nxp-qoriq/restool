@@ -23,7 +23,7 @@ OBJS = restool.o \
        dpdbg_commands.o \
        dprtc_commands.o \
        dpdmai_commands.o \
-       mc_v9/fsl_mc_sys.o \
+       common/fsl_mc_sys.o \
        mc_v9/dpaiop.o \
        mc_v9/dpbp.o \
        mc_v9/dpci.o \
@@ -65,7 +65,8 @@ CFLAGS = ${EXTRA_CFLAGS} \
           -Wpointer-arith \
           -Winline \
           -Werror \
-          -Wundef
+          -Wundef \
+          -Icommon/
 
 VERSION=$(shell test -d .git && git describe)
 ifeq ($(VERSION),)

@@ -26,7 +26,7 @@
 #ifndef __FSL_DPKG_H_
 #define __FSL_DPKG_H_
 
-#include "../mc_v8/fsl_net.h"
+#include "fsl_net.h"
 
 /* Data Path Key Generator API
  * Contains initialization APIs and runtime APIs for the Key Generator
