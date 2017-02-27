@@ -442,7 +442,7 @@ static int cmd_dpni_help_v10(void)
 		"   info - displays detailed information about a DPNI object.\n"
 		"   create - creates a new child DPNI under the root DPRC.\n"
 		"   destroy - destroys a child DPNI under the root DPRC.\n"
-		"   update - update attributes of already created DPNI. \n"
+		"   update - update attributes of already created DPNI.\n"
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
 		"\n";

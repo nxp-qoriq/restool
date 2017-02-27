@@ -46,7 +46,7 @@ struct fsl_mc_io;
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPDMUX object, allocate required resources and
  * perform required initialization.
@@ -62,11 +62,11 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpdmux_cfg_v9 *cfg,
-		uint32_t	*obj_id);
+int dpdmux_create_v10(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      const struct dpdmux_cfg_v9 *cfg,
+		      uint32_t *obj_id);
 
 /**
  * dpdmux_destroy() - Destroy the DPDMUX object and release all its resources.
@@ -78,33 +78,33 @@ int dpdmux_create_v10(struct fsl_mc_io	*mc_io,
  *
  * The function accepts the authentication token of the parent container that
  * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'. 
- * All tokens to the object must be closed before calling destroy. 
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpdmux_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id);
+int dpdmux_destroy_v10(struct fsl_mc_io *mc_io,
+		       uint16_t dprc_token,
+		       uint32_t cmd_flags,
+		       uint32_t object_id);
 
 /**
  * struct dpdmux_attr - Structure representing DPDMUX attributes
- * @id: DPDMUX object ID
- * @version: DPDMUX version
- * @options: Configuration options (bitmap)
- * @method: DPDMUX address table method
- * @manip: DPDMUX manipulation type
- * @num_ifs: Number of interfaces (excluding the uplink interface)
- * @mem_size: DPDMUX frame storage memory size
+ * @id:		DPDMUX object ID
+ * @version:	DPDMUX version
+ * @options:	Configuration options (bitmap)
+ * @method:	DPDMUX address table method
+ * @manip:	DPDMUX manipulation type
+ * @num_ifs:	Number of interfaces (excluding the uplink interface)
+ * @mem_size:	DPDMUX frame storage memory size
  */
 struct dpdmux_attr_v10 {
-	int			id;
-	uint64_t		options;
-	enum dpdmux_method	method;
-	enum dpdmux_manip	manip;
-	uint16_t		num_ifs;
-	uint16_t		mem_size;
+	int id;
+	uint64_t options;
+	enum dpdmux_method method;
+	enum dpdmux_manip manip;
+	uint16_t num_ifs;
+	uint16_t mem_size;
 };
 
 /**
@@ -116,17 +116,17 @@ struct dpdmux_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_get_attributes_v10(struct fsl_mc_io		*mc_io,
-			  uint32_t			cmd_flags,
-			  uint16_t			token,
-			  struct dpdmux_attr_v10	*attr);
+int dpdmux_get_attributes_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      struct dpdmux_attr_v10 *attr);
 
 /**
  * dpaiop_get_version() - Get Data Path Demux version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path demux object
- * @minorVer: 	Minor version of data path demux object
+ * @majorVer:	Major version of data path demux object
+ * @minorVer:	Minor version of data path demux object
  *
  * Return:  '0' on Success; Error code otherwise.
  */

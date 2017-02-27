@@ -46,7 +46,7 @@ struct fsl_mc_io;
  * @dprc_token: Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPMAC object, allocate required resources and
  * perform required initialization.
@@ -59,11 +59,11 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpmac_cfg	*cfg,
-		uint32_t	*obj_id);
+int dpmac_create_v10(struct fsl_mc_io *mc_io,
+		     uint16_t dprc_token,
+		     uint32_t cmd_flags,
+		     const struct dpmac_cfg *cfg,
+		     uint32_t *obj_id);
 
 /**
  * dpmac_destroy() - Destroy the DPMAC object and release all its resources.
@@ -75,30 +75,30 @@ int dpmac_create_v10(struct fsl_mc_io	*mc_io,
  *
  * The function accepts the authentication token of the parent container that
  * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'. 
- * All tokens to the object must be closed before calling destroy. 
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpmac_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id);
+int dpmac_destroy_v10(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      uint32_t object_id);
 
 /**
  * struct dpmac_attr - Structure representing DPMAC attributes
  * @phy_id:	PHY ID
- * @id: DPMAC object ID
- * @max_rate: Maximum supported rate - in Mbps
- * @eth_if: Ethernet interface
- * @link_type: link type
+ * @id:		DPMAC object ID
+ * @max_rate:	Maximum supported rate - in Mbps
+ * @eth_if:	Ethernet interface
+ * @link_type:	Link type
  */
 struct dpmac_attr_v10 {
-	uint16_t				phy_id;
-	uint16_t				id;
-	uint32_t				max_rate;
-	enum dpmac_eth_if		eth_if;
-	enum dpmac_link_type	link_type;
+	uint16_t phy_id;
+	uint16_t id;
+	uint32_t max_rate;
+	enum dpmac_eth_if eth_if;
+	enum dpmac_link_type link_type;
 };
 
 /**
@@ -111,23 +111,23 @@ struct dpmac_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_get_attributes_v10(struct fsl_mc_io	*mc_io,
-			 uint32_t		cmd_flags,
-			 uint16_t		token,
-			 struct dpmac_attr_v10	*attr);
+int dpmac_get_attributes_v10(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t token,
+			     struct dpmac_attr_v10 *attr);
 
 /**
  * dpmac_get_version() - Get Data Path MAC version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path mac object
- * @minorVer: 	Minor version of data path mac object
+ * @majorVer:	Major version of data path mac object
+ * @minorVer:	Minor version of data path mac object
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpmac_get_version_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t *majorVer,
-			   uint16_t *minorVer);
+			  uint32_t cmd_flags,
+			  uint16_t *majorVer,
+			  uint16_t *minorVer);
 
 #endif /* __FSL_DPMAC_H */

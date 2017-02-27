@@ -71,7 +71,7 @@ struct dpci_cfg_v10 {
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPCI object, allocate required resources and perform required
  * initialization.
@@ -87,17 +87,17 @@ struct dpci_cfg_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_create_v10_0(struct fsl_mc_io	*mc_io,
-		uint16_t dprc_token,
-		uint32_t		cmd_flags,
-		const struct dpci_cfg_v10 *cfg,
-		uint32_t *obj_id);
+int dpci_create_v10_0(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      const struct dpci_cfg_v10 *cfg,
+		      uint32_t *obj_id);
 
-int dpci_create_v10_1(struct fsl_mc_io	*mc_io,
-		uint16_t dprc_token,
-		uint32_t		cmd_flags,
-		const struct dpci_cfg_v10 *cfg,
-		uint32_t *obj_id);
+int dpci_create_v10_1(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      const struct dpci_cfg_v10 *cfg,
+		      uint32_t *obj_id);
 
 /**
  * dpci_destroy() - Destroy the DPCI object and release all its resources.
@@ -109,20 +109,20 @@ int dpci_create_v10_1(struct fsl_mc_io	*mc_io,
  *
  * The function accepts the authentication token of the parent container that
  * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'. 
- * All tokens to the object must be closed before calling destroy. 
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpci_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t dprc_token,
-		uint32_t cmd_flags,
-		uint32_t object_id);
+int dpci_destroy_v10(struct fsl_mc_io *mc_io,
+		     uint16_t dprc_token,
+		     uint32_t cmd_flags,
+		     uint32_t object_id);
 
 /**
  * struct dpci_attr - Structure representing DPCI attributes
- * @id:		DPCI object ID
- * @version:	DPCI version
+ * @id:			DPCI object ID
+ * @version:		DPCI version
  * @num_of_priorities:	Number of receive priorities
  */
 struct dpci_attr_v10 {
@@ -139,17 +139,17 @@ struct dpci_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpci_get_attributes_v10(struct fsl_mc_io	*mc_io,
-			uint32_t		cmd_flags,
-			uint16_t		token,
-			struct dpci_attr_v10	*attr);
+int dpci_get_attributes_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    struct dpci_attr_v10 *attr);
 
 /**
  * dpci_get_version() - Get communication interface version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path communication interface
- * @minorVer: 	Minor version of data path communication interface
+ * @majorVer:	Major version of data path communication interface
+ * @minorVer:	Minor version of data path communication interface
  *
  * Return:  '0' on Success; Error code otherwise.
  */

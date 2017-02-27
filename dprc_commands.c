@@ -1408,11 +1408,11 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 			goto out;
 		}
 		if (strcmp(res_req.type, "dprc") == 0) {
-				ERROR_PRINTF(
-					"Cannot change plugged state of dprc\n"
-					"Cannot move dprc from one container to another\n");
-				error = -EINVAL;
-				goto out;
+			ERROR_PRINTF(
+				"Cannot change plugged state of dprc\n"
+				"Cannot move dprc from one container to another\n");
+			error = -EINVAL;
+			goto out;
 		}
 
 		res_req.options = DPRC_RES_REQ_OPT_EXPLICIT;

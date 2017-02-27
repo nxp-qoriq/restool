@@ -46,7 +46,7 @@ struct fsl_mc_io;
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPCON object, allocate required resources and
  * perform required initialization.
@@ -62,11 +62,11 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpcon_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpcon_cfg	*cfg,
-		uint32_t	*obj_id);
+int dpcon_create_v10(struct fsl_mc_io *mc_io,
+		     uint16_t dprc_token,
+		     uint32_t cmd_flags,
+		     const struct dpcon_cfg *cfg,
+		     uint32_t *obj_id);
 
 /**
  * dpcon_destroy() - Destroy the DPCON object and release all its resources.
@@ -78,22 +78,22 @@ int dpcon_create_v10(struct fsl_mc_io	*mc_io,
  *
  * The function accepts the authentication token of the parent container that
  * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'. 
- * All tokens to the object must be closed before calling destroy. 
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpcon_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id);
+int dpcon_destroy_v10(struct fsl_mc_io *mc_io,
+		uint16_t dprc_token,
+		uint32_t cmd_flags,
+		uint32_t object_id);
 
 /**
  * struct dpcon_attr - Structure representing DPCON attributes
- * @id: DPCON object ID
- * @version: DPCON version
- * @qbman_ch_id: Channel ID to be used by dequeue operation
- * @num_priorities: Number of priorities for the DPCON channel (1-8)
+ * @id:			DPCON object ID
+ * @version:		DPCON version
+ * @qbman_ch_id:	Channel ID to be used by dequeue operation
+ * @num_priorities:	Number of priorities for the DPCON channel (1-8)
  */
 struct dpcon_attr_v10 {
 	int id;
@@ -110,17 +110,17 @@ struct dpcon_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpcon_get_attributes_v10(struct fsl_mc_io	*mc_io,
-			 uint32_t		cmd_flags,
-			 uint16_t		token,
-			 struct dpcon_attr_v10	*attr);
+int dpcon_get_attributes_v10(struct fsl_mc_io *mc_io,
+			 uint32_t cmd_flags,
+			 uint16_t token,
+			 struct dpcon_attr_v10 *attr);
 
 /**
  * dpcon_get_version() - Get Data Path Concentrator version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path concentrator object
- * @minorVer: 	Minor version of data path concentrator object
+ * @majorVer:	Major version of data path concentrator object
+ * @minorVer:	Minor version of data path concentrator object
  *
  * Return:  '0' on Success; Error code otherwise.
  */

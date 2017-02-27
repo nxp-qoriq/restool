@@ -479,7 +479,7 @@ static int create_dpdmai_v10(struct dpdmai_cfg *dpdmai_cfg)
 	if (dprc_opened) {
 		(void)dprc_close(&restool.mc_io, 0, dprc_handle);
 		print_new_obj("dpdmai", dpdmai_id,
-		      	      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
+			      restool.cmd_option_args[CREATE_OPT_PARENT_DPRC]);
 	} else {
 		print_new_obj("dpdmai", dpdmai_id, NULL);
 	}

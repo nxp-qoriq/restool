@@ -42,11 +42,11 @@ struct fsl_mc_io;
 
 /**
  * dpdcei_create() - Create the DPDCEI object
- * @mc_io: Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
- * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
- * @cfg: configuration parameters
- * @obj_id: returned object id
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @cfg:	Configuration parameters
+ * @obj_id:	Returned object id
  *
  * Create the DPDCEI object, allocate required resources and
  * perform required initialization.
@@ -62,32 +62,32 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpdcei_cfg	*cfg,
-		uint32_t	*obj_id);
+int dpdcei_create_v10(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      const struct dpdcei_cfg *cfg,
+		      uint32_t *obj_id);
 
 /**
  * dpdcei_destroy() - Destroy the DPDCEI object and release all its resources.
- * @mc_io: Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token: Parent container token; '0' for default container
- * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @object_id:	The object id; it must be a valid id within the container that
  * created this object;
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpdcei_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id);
+int dpdcei_destroy_v10(struct fsl_mc_io *mc_io,
+		       uint16_t dprc_token,
+		       uint32_t cmd_flags,
+		       uint32_t object_id);
 
 /**
  * struct dpdcei_attr - Structure representing DPDCEI attributes
- * @id: DPDCEI object ID
- * @engine: DCE engine block
- * @version: DPDCEI version
+ * @id:		DPDCEI object ID
+ * @engine:	DCE engine block
+ * @version:	DPDCEI version
  */
 struct dpdcei_attr_v10 {
 	int id;
@@ -96,24 +96,24 @@ struct dpdcei_attr_v10 {
 
 /**
  * dpdcei_get_attributes() - Retrieve DPDCEI attributes.
- * @mc_io: Pointer to MC portal's I/O object
- * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDCEI object
- * @attr: Returned  object's attributes
+ * @attr:	Returned  object's attributes
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdcei_get_attributes_v10(struct fsl_mc_io		*mc_io,
-			  uint32_t			cmd_flags,
-			  uint16_t			token,
-			  struct dpdcei_attr_v10	*attr);
+int dpdcei_get_attributes_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      struct dpdcei_attr_v10 *attr);
 
 /**
  * dpaiop_get_version() - Get Data Path DCE (decript/encrypt engine) version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path dce object
- * @minorVer: 	Minor version of data path dce object
+ * @majorVer:	Major version of data path dce object
+ * @minorVer:	Minor version of data path dce object
  *
  * Return:  '0' on Success; Error code otherwise.
  */

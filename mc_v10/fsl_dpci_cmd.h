@@ -66,8 +66,8 @@ do { \
 /*                cmd, param, offset, width, type,      arg_name */
 #define DPCI_RSP_GET_VERSION(cmd, major, minor) \
 do { \
-        MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-        MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
+	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
+	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
 } while (0)
 
 #endif /* _FSL_DPCI_CMD_H */

@@ -292,7 +292,7 @@ static int find_all_obj_desc(uint32_t dprc_id,
 	prev_cont = curr_cont;
 
 	memset(&dprc_attr, 0, sizeof(dprc_attr));
-	error = dprc_get_attributes(&restool.mc_io, 0 ,
+	error = dprc_get_attributes(&restool.mc_io, 0,
 				dprc_handle, &dprc_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);

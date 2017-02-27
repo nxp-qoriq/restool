@@ -46,7 +46,7 @@ struct fsl_mc_io;
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPBP object, allocate required resources and
  * perform required initialization.
@@ -62,11 +62,11 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t dprc_token,
-		uint32_t		cmd_flags,
-		const struct dpbp_cfg	*cfg,
-		uint32_t *obj_id);
+int dpbp_create_v10(struct fsl_mc_io *mc_io,
+		    uint16_t dprc_token,
+		    uint32_t cmd_flags,
+		    const struct dpbp_cfg *cfg,
+		    uint32_t *obj_id);
 
 /**
  * dpbp_destroy() - Destroy the DPBP object and release all its resources.
@@ -78,10 +78,10 @@ int dpbp_create_v10(struct fsl_mc_io	*mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpbp_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t dprc_token,
-		uint32_t cmd_flags,
-		uint32_t object_id);
+int dpbp_destroy_v10(struct fsl_mc_io *mc_io,
+		     uint16_t dprc_token,
+		     uint32_t cmd_flags,
+		     uint32_t object_id);
 
 /**
  * struct dpbp_attr - Structure representing DPBP attributes
@@ -105,23 +105,23 @@ struct dpbp_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_get_attributes_v10(struct fsl_mc_io	*mc_io,
-			uint32_t	cmd_flags,
-			uint16_t		token,
-			struct dpbp_attr_v10	 *attr);
+int dpbp_get_attributes_v10(struct fsl_mc_io *mc_io,
+			uint32_t cmd_flags,
+			uint16_t token,
+			struct dpbp_attr_v10 *attr);
 
 /**
  * dpbp_get_version() - Get buffer pool version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path object buffer pool
- * @minorVer: 	Minor version of data path object buffer pool
+ * @majorVer:	Major version of data path object buffer pool
+ * @minorVer:	Minor version of data path object buffer pool
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpbp_get_version_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t *majorVer,
-			   uint16_t *minorVer);
+			 uint32_t cmd_flags,
+			 uint16_t *majorVer,
+			 uint16_t *minorVer);
 
 #endif /* __FSL_DPBP_V10_H */

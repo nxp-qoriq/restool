@@ -52,11 +52,11 @@ struct fsl_mc_io;
 
 /**
  * struct dpseci_cfg_v10 - Structure representing DPSECI configuration
- * @options: Any combination of the following options:
+ * @options:	Any combination of the following options:
  *		DPSECI_OPT_HAS_OPR
  *		DPSECI_OPT_OPR_SHARED
- * @num_tx_queues: num of queues towards the SEC
- * @num_rx_queues: num of queues back from the SEC
+ * @num_tx_queues: Num of queues towards the SEC
+ * @num_rx_queues: Num of queues back from the SEC
  * @priorities: Priorities for the SEC hardware processing;
  *		each place in the array is the priority of the tx queue
  *		towards the SEC,
@@ -75,7 +75,7 @@ struct dpseci_cfg_v10 {
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPSECI object, allocate required resources and
  * perform required initialization.
@@ -92,16 +92,16 @@ struct dpseci_cfg_v10 {
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpseci_create_v10_0(struct fsl_mc_io *mc_io,
-		        uint16_t dprc_token,
-		        uint32_t cmd_flags,
-		        const struct dpseci_cfg_v10 *cfg,
-		        uint32_t *obj_id);
+			uint16_t dprc_token,
+			uint32_t cmd_flags,
+			const struct dpseci_cfg_v10 *cfg,
+			uint32_t *obj_id);
 
 int dpseci_create_v10_1(struct fsl_mc_io *mc_io,
-		        uint16_t dprc_token,
-		        uint32_t cmd_flags,
-		        const struct dpseci_cfg_v10 *cfg,
-		        uint32_t *obj_id);
+			uint16_t dprc_token,
+			uint32_t cmd_flags,
+			const struct dpseci_cfg_v10 *cfg,
+			uint32_t *obj_id);
 
 /**
  * dpseci_destroy() - Destroy the DPSECI object and release all its resources.
@@ -113,25 +113,25 @@ int dpseci_create_v10_1(struct fsl_mc_io *mc_io,
  *
  * The function accepts the authentication token of the parent container that
  * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'. 
- * All tokens to the object must be closed before calling destroy. 
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpseci_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id);
+int dpseci_destroy_v10(struct fsl_mc_io *mc_io,
+		       uint16_t dprc_token,
+		       uint32_t cmd_flags,
+		       uint32_t object_id);
 
 /**
  * struct dpseci_attr - Structure representing DPSECI attributes
- * @id: DPSECI object ID
- * @version: DPSECI version
- * @num_tx_queues: number of queues towards the SEC
- * @num_rx_queues: number of queues back from the SEC
+ * @id:			DPSECI object ID
+ * @version:		DPSECI version
+ * @num_tx_queues:	Number of queues towards the SEC
+ * @num_rx_queues:	Number of queues back from the SEC
  */
 struct dpseci_attr_v10 {
-	int		id;
+	int id;
 	uint8_t num_tx_queues;
 	uint8_t num_rx_queues;
 };
@@ -145,17 +145,17 @@ struct dpseci_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_get_attributes_v10(struct fsl_mc_io	*mc_io,
-			  uint32_t		cmd_flags,
-			  uint16_t		token,
+int dpseci_get_attributes_v10(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
 			  struct dpseci_attr_v10 *attr);
 
 /**
  * dpseci_get_version() - Get Data Path SEC Interface version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path sec object
- * @minorVer: 	Minor version of data path sec object
+ * @majorVer:	Major version of data path sec object
+ * @minorVer:	Minor version of data path sec object
  *
  * Return:  '0' on Success; Error code otherwise.
  */

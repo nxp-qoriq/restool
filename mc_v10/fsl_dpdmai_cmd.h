@@ -52,15 +52,15 @@ do { \
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDMAI_RSP_GET_ATTR(cmd, attr) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,	    attr->id); \
-	MC_RSP_OP(cmd, 0, 32,  8,  uint8_t,  attr->num_of_priorities); \
+	MC_RSP_OP(cmd, 0, 0,  32, int,      attr->id); \
+	MC_RSP_OP(cmd, 0, 32,  8, uint8_t,  attr->num_of_priorities); \
 } while (0)
 
 /*                cmd, param, offset, width, type,      arg_name */
 #define DPDMAI_RSP_GET_VERSION(cmd, major, minor) \
 do { \
-        MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-        MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
+	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
+	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
 } while (0)
 
 #endif /* _FSL_DPDMAI_CMD_H */

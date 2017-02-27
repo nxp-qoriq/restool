@@ -70,17 +70,17 @@ do { \
 	MC_RSP_OP(cmd, 1, 32,  32, int,	 attr->id);\
 	MC_RSP_OP(cmd, 2, 0, 16, uint16_t, attr->mem_size);\
 	MC_RSP_OP(cmd, 2, 16, 16, uint16_t, attr->max_fdb_mc_groups);\
-        MC_RSP_OP(cmd, 2, 32,  8,  uint8_t, attr->max_meters_per_if);\
-        MC_RSP_OP(cmd, 2, 40,  4,  enum dpsw_component_type, \
-                        attr->component_type);\
+	MC_RSP_OP(cmd, 2, 32,  8,  uint8_t, attr->max_meters_per_if);\
+	MC_RSP_OP(cmd, 2, 40,  4,  enum dpsw_component_type, \
+			attr->component_type);\
 	MC_RSP_OP(cmd, 3, 0,  64, uint64_t, attr->options);\
 } while (0)
 
 /*                cmd, param, offset, width, type,      arg_name */
 #define DPSW_RSP_GET_VERSION(cmd, major, minor) \
 do { \
-        MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-        MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
+	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
+	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
 } while (0)
 
 #endif /* __FSL_DPSW_CMD_H */

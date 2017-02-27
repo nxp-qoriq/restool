@@ -128,12 +128,12 @@ struct dpkg_extract {
 		 */
 
 		struct {
-			enum net_prot			prot;
+			enum net_prot prot;
 			enum dpkg_extract_from_hdr_type type;
-			uint32_t			field;
-			uint8_t			size;
-			uint8_t			offset;
-			uint8_t			hdr_index;
+			uint32_t field;
+			uint8_t size;
+			uint8_t offset;
+			uint8_t hdr_index;
 		} from_hdr;
 		/**
 		 * struct from_data - Used when 'type = DPKG_EXTRACT_FROM_DATA'
@@ -156,8 +156,8 @@ struct dpkg_extract {
 		} from_parse;
 	} extract;
 
-	uint8_t		num_of_byte_masks;
-	struct dpkg_mask	masks[DPKG_NUM_OF_MASKS];
+	uint8_t num_of_byte_masks;
+	struct dpkg_mask masks[DPKG_NUM_OF_MASKS];
 };
 
 /**

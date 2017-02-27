@@ -110,12 +110,12 @@ struct fsl_mc_io;
 
 /**
  *  * Enable the Order Restoration support
- *   */
+ */
 #define DPNI_OPT_HAS_OPR				0x000040
 
 /**
  *  * Order Point Records are shared for the entire TC
- *   */
+ */
 #define DPNI_OPT_OPR_PER_TC				0x000080
 
 /* DPNI configuration options */
@@ -160,63 +160,63 @@ struct fsl_mc_io;
  */
 struct dpni_cfg_v10 {
 	/**
-	 * @options: Any combination of the following options:
-	 * 		DPNI_OPT_TX_FRM_RELEASE
-	 * 		DPNI_OPT_NO_MAC_FILTER
-	 * 		DPNI_OPT_HAS_POLICING
-	 * 		DPNI_OPT_SHARED_CONGESTION
-	 * 		DPNI_OPT_HAS_KEY_MASKING
-	 * 		DPNI_OPT_NO_FS
-	 * 		DPNI_OPT_HAS_OPR
-	 * 		DPNI_OPT_OPR_PER_TC
-	 * @fs_entries: Number of entries in the flow steering table.
-	 * 		This table is used to select the ingress queue for ingress traffic,
-	 * 		targeting a GPP core or another. In addition it can	be used to
-	 * 		discard traffic that matches the set rule. It is either an exact
-	 * 		match table or a TCAM table, depending on DPNI_OPT_ HAS_KEY_MASKING
-	 * 		bit in OPTIONS field. This field is ignored if DPNI_OPT_NO_FS bit is
-	 * 		set in OPTIONS field. Otherwise, value 0 defaults to 64.
-	 * 		Maximum supported value is 1024.
-	 * 		Note that the total number of entries is limited on the SoC to as
-	 * 		low as 512 entries if TCAM is used.
-	 * @vlan_filter_entries: Number of entries in the VLAN address filtering
-	 * 		table. This is an exact match table used to filter ingress traffic
-	 * 		based on VLAN IDs. Value 0 disables VLAN filtering.
-	 * 		Maximum supported value is 16.
-	 * @mac_filter_entries: Number of entries in the MAC address filtering
-	 * 		table. This is an exact match table and allows both unicast and
-	 * 		multicast entries. The primary MAC address of the network interface
-	 * 		is not part of this table, this contains only entries in addition to
-	 * 		it. This field is ignored if DPNI_OPT_ NO_MAC_FILTER is set in
-	 * 		OPTIONS field. Otherwise, value 0 defaults to 80. Maximum supported
-	 * 		value is 80.
-	 * @num_queues: Number of Tx and Rx queues used for traffic distribution.
-	 * 		This is orthogonal to QoS and is only used to distribute traffic to
-	 * 		multiple GPP cores. This configuration affects the number of Tx
-	 * 		queues (logical FQs, all associated
-	 * 		with a single CEETM queue), Rx queues and Tx confirmation queues,
-	 * 		if applicable. Value 0 defaults to one queue. Maximum supported
-	 * 		value is 8.
-	 * @num_tcs: Number of traffic classes (TCs), reserved for the DPNI. TCs can
-	 * 		have different priority levels for the purpose of Tx scheduling (see
-	 * 		DPNI_SET_TX_SELECTION), different BPs (DPNI_ SET_POOLS), policers.
-	 * 		There are dedicated QM queues for traffic classes (including class
-	 * 		queues on Tx). Value 0 defaults to one TC. Maximum supported value
-	 * 		is 8.
-	 * @qos_entries: Number of entries in the QoS classification table. This
-	 * 		table is used to select the TC for ingress traffic. It is either an
-	 * 		exact match or a TCAM table, depending on DPNI_OPT_ HAS_KEY_MASKING
-	 * 		bit in OPTIONS field. This field is ignored if the DPNI has a single
-	 * 		TC. Otherwise, a value of 0 defaults to 64. Maximum supported value
-	 * 		is 64.
+	 *@options: Any combination of the following options:
+	 *		DPNI_OPT_TX_FRM_RELEASE
+	 *		DPNI_OPT_NO_MAC_FILTER
+	 *		DPNI_OPT_HAS_POLICING
+	 *		DPNI_OPT_SHARED_CONGESTION
+	 *		DPNI_OPT_HAS_KEY_MASKING
+	 *		DPNI_OPT_NO_FS
+	 *		DPNI_OPT_HAS_OPR
+	 *		DPNI_OPT_OPR_PER_TC
+	 *@fs_entries: Number of entries in the flow steering table.
+	 *		This table is used to select the ingress queue for ingress traffic,
+	 *		targeting a GPP core or another. In addition it can	be used to
+	 *		discard traffic that matches the set rule. It is either an exact
+	 *		match table or a TCAM table, depending on DPNI_OPT_ HAS_KEY_MASKING
+	 *		bit in OPTIONS field. This field is ignored if DPNI_OPT_NO_FS bit is
+	 *		set in OPTIONS field. Otherwise, value 0 defaults to 64.
+	 *		Maximum supported value is 1024.
+	 *		Note that the total number of entries is limited on the SoC to as
+	 *		low as 512 entries if TCAM is used.
+	 *@vlan_filter_entries: Number of entries in the VLAN address filtering
+	 *		table. This is an exact match table used to filter ingress traffic
+	 *		based on VLAN IDs. Value 0 disables VLAN filtering.
+	 *		Maximum supported value is 16.
+	 *@mac_filter_entries: Number of entries in the MAC address filtering
+	 *		table. This is an exact match table and allows both unicast and
+	 *		multicast entries. The primary MAC address of the network interface
+	 *		is not part of this table, this contains only entries in addition to
+	 *		it. This field is ignored if DPNI_OPT_ NO_MAC_FILTER is set in
+	 *		OPTIONS field. Otherwise, value 0 defaults to 80. Maximum supported
+	 *		value is 80.
+	 *@num_queues: Number of Tx and Rx queues used for traffic distribution.
+	 *		This is orthogonal to QoS and is only used to distribute traffic to
+	 *		multiple GPP cores. This configuration affects the number of Tx
+	 *		queues (logical FQs, all associated
+	 *		with a single CEETM queue), Rx queues and Tx confirmation queues,
+	 *		if applicable. Value 0 defaults to one queue. Maximum supported
+	 *		value is 8.
+	 *@num_tcs: Number of traffic classes (TCs), reserved for the DPNI. TCs can
+	 *		have different priority levels for the purpose of Tx scheduling (see
+	 *		DPNI_SET_TX_SELECTION), different BPs (DPNI_ SET_POOLS), policers.
+	 *		There are dedicated QM queues for traffic classes (including class
+	 *		queues on Tx). Value 0 defaults to one TC. Maximum supported value
+	 *		is 8.
+	 *@qos_entries: Number of entries in the QoS classification table. This
+	 *		table is used to select the TC for ingress traffic. It is either an
+	 *		exact match or a TCAM table, depending on DPNI_OPT_ HAS_KEY_MASKING
+	 *		bit in OPTIONS field. This field is ignored if the DPNI has a single
+	 *		TC. Otherwise, a value of 0 defaults to 64. Maximum supported value
+	 *		is 64.
 	 */
 	uint32_t options;
 	uint16_t fs_entries;
-	uint8_t  vlan_filter_entries;
-	uint8_t  mac_filter_entries;
-	uint8_t  num_queues;
-	uint8_t  num_tcs;
-	uint8_t  qos_entries;
+	uint8_t vlan_filter_entries;
+	uint8_t mac_filter_entries;
+	uint8_t num_queues;
+	uint8_t num_tcs;
+	uint8_t qos_entries;
 };
 
 /**
@@ -225,7 +225,7 @@ struct dpni_cfg_v10 {
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPNI object, allocate required resources and
  * perform required initialization.
@@ -241,11 +241,11 @@ struct dpni_cfg_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpni_cfg_v10 *cfg,
-		uint32_t	*obj_id);
+int dpni_create_v10(struct fsl_mc_io *mc_io,
+		    uint16_t dprc_token,
+		    uint32_t cmd_flags,
+		    const struct dpni_cfg_v10 *cfg,
+		    uint32_t *obj_id);
 
 /**
  * dpni_destroy_v10() - Destroy the DPNI object and release all its resources.
@@ -262,44 +262,44 @@ int dpni_create_v10(struct fsl_mc_io	*mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpni_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id);
+int dpni_destroy_v10(struct fsl_mc_io *mc_io,
+		     uint16_t dprc_token,
+		     uint32_t cmd_flags,
+		     uint32_t object_id);
 
 /**
  * struct dpni_attr_v10 - Structure representing DPNI attributes
- * @options: Any combination of the following options:
- * 		DPNI_OPT_TX_FRM_RELEASE
- * 		DPNI_OPT_NO_MAC_FILTER
- * 		DPNI_OPT_HAS_POLICING
- * 		DPNI_OPT_SHARED_CONGESTION
- * 		DPNI_OPT_HAS_KEY_MASKING
- * 		DPNI_OPT_NO_FS
- * @num_queues: Number of Tx and Rx queues used for traffic distribution.
- * @num_tcs: Number of traffic classes (TCs), reserved for the DPNI.
- * @mac_filter_entries: Number of entries in the MAC address filtering
- * 		table.
- * @vlan_filter_entries: Number of entries in the VLAN address filtering
- * 		table.
- * @qos_entries: Number of entries in the QoS classification table.
- * @fs_entries: Number of entries in the flow steering table.
- * @qos_key_size: Size, in bytes, of the QoS look-up key. Defining a key larger
- * 				than this when adding QoS entries will result in an error.
- * @fs_key_size: Size, in bytes, of the flow steering look-up key. Defining a
- * 				key larger than this when composing the hash + FS key will
- * 				result in an error.
+ *@options: Any combination of the following options:
+ *		DPNI_OPT_TX_FRM_RELEASE
+ *		DPNI_OPT_NO_MAC_FILTER
+ *		DPNI_OPT_HAS_POLICING
+ *		DPNI_OPT_SHARED_CONGESTION
+ *		DPNI_OPT_HAS_KEY_MASKING
+ *		DPNI_OPT_NO_FS
+ *@num_queues: Number of Tx and Rx queues used for traffic distribution.
+ *@num_tcs: Number of traffic classes (TCs), reserved for the DPNI.
+ *@mac_filter_entries: Number of entries in the MAC address filtering
+ *		table.
+ *@vlan_filter_entries: Number of entries in the VLAN address filtering
+ *		table.
+ *@qos_entries: Number of entries in the QoS classification table.
+ *@fs_entries: Number of entries in the flow steering table.
+ *@qos_key_size: Size, in bytes, of the QoS look-up key. Defining a key larger
+ *				than this when adding QoS entries will result in an error.
+ *@fs_key_size: Size, in bytes, of the flow steering look-up key. Defining a
+ *				key larger than this when composing the hash + FS key will
+ *				result in an error.
  */
 struct dpni_attr_v10 {
 	uint32_t options;
-	uint8_t  num_queues;
-	uint8_t  num_tcs;
-	uint8_t  mac_filter_entries;
-	uint8_t  vlan_filter_entries;
-	uint8_t  qos_entries;
+	uint8_t num_queues;
+	uint8_t num_tcs;
+	uint8_t mac_filter_entries;
+	uint8_t vlan_filter_entries;
+	uint8_t qos_entries;
 	uint16_t fs_entries;
-	uint8_t  qos_key_size;
-	uint8_t  fs_key_size;
+	uint8_t qos_key_size;
+	uint8_t fs_key_size;
 };
 
 /**
@@ -311,20 +311,20 @@ struct dpni_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_get_attributes_v10(struct fsl_mc_io	*mc_io,
-			uint32_t		cmd_flags,
-			uint16_t		token,
-			struct dpni_attr_v10	*attr);
+int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    struct dpni_attr_v10 *attr);
 
 union dpni_statistics_v10 {
 	/**
 	 * struct page_0 - Page_0 statistics structure
-	 * @ingress_all_frames: Ingress frame count
-	 * @ingress_all_bytes: Ingress byte count
-	 * @ingress_multicast_frames: Ingress multicast frame count
-	 * @ingress_multicast_bytes: Ingress multicast byte count
-	 * @ingress_broadcast_frames: Ingress broadcast frame count
-	 * @ingress_broadcast_bytes: Ingress broadcast byte count
+	 * @ingress_all_frames:		Ingress frame count
+	 * @ingress_all_bytes:		Ingress byte count
+	 * @ingress_multicast_frames:	Ingress multicast frame count
+	 * @ingress_multicast_bytes:	Ingress multicast byte count
+	 * @ingress_broadcast_frames:	Ingress broadcast frame count
+	 * @ingress_broadcast_bytes:	Ingress broadcast byte count
 	 */
 	struct {
 		uint64_t ingress_all_frames;
@@ -336,12 +336,12 @@ union dpni_statistics_v10 {
 	} page_0;
 	/**
 	 * struct page_1 - Page_1 statistics structure
-	 * @egress_all_frames: Egress frame count
-	 * @egress_all_bytes: Egress byte count
-	 * @egress_multicast_frames: Egress multicast frame count
-	 * @egress_multicast_bytes: Egress multicast byte count
-	 * @egress_broadcast_frames: Egress broadcast frame count
-	 * @egress_broadcast_bytes: Egress broadcast byte count
+	 * @egress_all_frames:		Egress frame count
+	 * @egress_all_bytes:		Egress byte count
+	 * @egress_multicast_frames:	Egress multicast frame count
+	 * @egress_multicast_bytes:	Egress multicast byte count
+	 * @egress_broadcast_frames:	Egress broadcast frame count
+	 * @egress_broadcast_bytes:	Egress broadcast byte count
 	 */
 	struct {
 		uint64_t egress_all_frames;
@@ -353,12 +353,12 @@ union dpni_statistics_v10 {
 	} page_1;
 	/**
 	 * struct page_2 - Page_2 statistics structure
-	 * @ingress_filtered_frames: Ingress filtered frame count
-	 * @ingress_discarded_frames: Ingress discarded frame count
-	 * @ingress_nobuffer_discards: Ingress discarded frame count due to lack of
-	 * 								buffers
-	 * @egress_discarded_frames: Egress discarded frame count
-	 * @egress_confirmed_frames: Egress confirmed frame count
+	 * @ingress_filtered_frames:	Ingress filtered frame count
+	 * @ingress_discarded_frames:	Ingress discarded frame count
+	 * @ingress_nobuffer_discards:	Ingress discarded frame count due
+	 *				to lack of buffers
+	 * @egress_discarded_frames:	Egress discarded frame count
+	 * @egress_confirmed_frames:	Egress confirmed frame count
 	 */
 	struct {
 		uint64_t ingress_filtered_frames;
@@ -402,30 +402,30 @@ enum dpni_queue_type_v10 {
 
 /**
  * struct dpni_queue_v10 - Queue structure
- * @fqid: 	FQID used for enqueueing to and/or configuration of this specific FQ
- * @qdid: 	Queueing destination ID, used to enqueue using QDID, DQBIN, QPRI.
- * 			Only relevant for Tx queues.
- * @qdbin: 	Queueing bin, used to enqueue using QDID, DQBIN, QPRI. Only relevant
- * 			for Tx queues.
- * @user_context: 	User data, presented to the user along with any frames from
- * 					this queue. Not relevant for Tx queues.
+ * @fqid:	FQID used for enqueueing to and/or configuration of this specific FQ
+ * @qdid:	Queueing destination ID, used to enqueue using QDID, DQBIN, QPRI.
+ *		Only relevant for Tx queues.
+ * @qdbin:	Queueing bin, used to enqueue using QDID, DQBIN, QPRI. Only relevant
+ *		for Tx queues.
+ * @user_context:	User data, presented to the user along with any frames from
+ *			this queue. Not relevant for Tx queues.
  */
 struct dpni_queue_v10 {
 	/**
 	 * struct destination - Destination structure
-	 * @id: 	ID of the destination, only relevant if DEST_TYPE is > 0.
-	 * 			Identifies either a DPIO or a DPCON object. Not relevant for Tx
-	 * 			queues.
-	 * @type: 	May be one of the following:
-	 * 			0 - No destination, queue can be manually queried, but will not
-	 * 				push traffic or notifications to a DPIO;
-	 * 			1 - The destination is a DPIO. When traffic becomes available in
-	 * 				the queue a FQDAN (FQ data available notification) will be
-	 * 				generated to selected DPIO;
-	 * 			2 - The destination is a DPCON. The queue is associated with a
-	 * 				DPCON object for the purpose of scheduling between multiple
-	 * 				queues. The DPCON may be independently configured to
-	 * 				generate notifications. Not relevant for Tx queues.
+	 * @id:		ID of the destination, only relevant if DEST_TYPE is > 0.
+	 *		Identifies either a DPIO or a DPCON object. Not relevant for Tx
+	 *		queues.
+	 * @type:	May be one of the following:
+	 *		0 - No destination, queue can be manually queried, but will not
+	 *			push traffic or notifications to a DPIO;
+	 *		1 - The destination is a DPIO. When traffic becomes available in
+	 *			the queue a FQDAN (FQ data available notification) will be
+	 *			generated to selected DPIO;
+	 *		2 - The destination is a DPCON. The queue is associated with a
+	 *			DPCON object for the purpose of scheduling between multiple
+	 *			queues. The DPCON may be independently configured to
+	 *			generate notifications. Not relevant for Tx queues.
 	 * @hold_active: Hold active
 	 */
 	struct {
@@ -445,18 +445,18 @@ struct dpni_queue_v10 {
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
  * @cfg:	QoS rule to add
- * @has_index: If set, indicates that the command contains a valid index field
+ * @has_index:	If set, indicates that the command contains a valid index field
  * @tc_id:	Traffic class selection (0-7)
- * @index: Location in the QoS table where to insert the entry. Only relevant if
- * 			HAS_INDEX bit is set. This is relevant for TCAM look-up, where
- * 			ordering of entries is important.
+ * @index:	Location in the QoS table where to insert the entry.
+ *		Only relevant if HAS_INDEX bit is set. This is relevant for
+ *		TCAM look-up, where ordering of entries is important.
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_add_qos_entry_v10(struct fsl_mc_io		*mc_io,
-		       uint32_t			cmd_flags,
-		       uint16_t				token,
-		       const struct dpni_rule_cfg	*cfg,
+int dpni_add_qos_entry_v10(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
+			   uint16_t token,
+			   const struct dpni_rule_cfg *cfg,
 			   char has_index,
 			   uint8_t tc_id,
 			   uint16_t index);
@@ -470,25 +470,25 @@ int dpni_add_qos_entry_v10(struct fsl_mc_io		*mc_io,
  * @tc_id:	Traffic class selection (0-7)
  * @cfg:	Flow steering rule to add
  * @flow_id:	Flow id selection (must be smaller than the
- *			distribution size of the traffic class)
+ *		distribution size of the traffic class)
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_add_fs_entry_v10(struct fsl_mc_io			*mc_io,
-		      uint32_t				cmd_flags,
-		      uint16_t				token,
-			  char 					has_index,
-			  uint8_t				tc_id,
-			  uint16_t				index,
-		      const struct dpni_rule_cfg	*cfg,
-		      uint16_t				flow_id);
+int dpni_add_fs_entry_v10(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  char has_index,
+			  uint8_t tc_id,
+			  uint16_t index,
+			  const struct dpni_rule_cfg *cfg,
+			  uint16_t flow_id);
 
 /**
  * dpni_get_version_v10() - Get Data Path Network Interface version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path network interface object
- * @minorVer: 	Minor version of data path network interface object
+ * @majorVer:	Major version of data path network interface object
+ * @minorVer:	Minor version of data path network interface object
  *
  * Return:  '0' on Success; Error code otherwise.
  */
@@ -499,83 +499,83 @@ int dpni_get_version_v10(struct fsl_mc_io *mc_io,
 
 /**
  * dpni_set_queue_v10() - Set queue parameters
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPNI object
- * @type: 		Type of queue
- * @tc: 		Traffic class, in range 0 to NUM_TCS - 1
- * @index: 		Selects the specific queue out of the set allocated for the same
- * 				TC. Value must be in range 0 to NUM_QUEUES - 1
- * @queue: 		Queue structure
+ * @token:	Token of DPNI object
+ * @type:	Type of queue
+ * @tc:		Traffic class, in range 0 to NUM_TCS - 1
+ * @index:	Selects the specific queue out of the set allocated for the same
+ *		TC. Value must be in range 0 to NUM_QUEUES - 1
+ * @queue:	Queue structure
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpni_set_queue_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token,
-			 enum dpni_queue_type_v10 type,
-			 uint8_t tc,
-			 uint8_t index,
-		     const struct dpni_queue_v10 *queue);
+		       uint32_t cmd_flags,
+		       uint16_t token,
+		       enum dpni_queue_type_v10 type,
+		       uint8_t tc,
+		       uint8_t index,
+		       const struct dpni_queue_v10 *queue);
 
 /**
  * dpni_set_queue_v10() - Get queue parameters
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPNI object
- * @type: 		Type of queue
- * @tc: 		Traffic class, in range 0 to NUM_TCS - 1
- * @index: 		Selects the specific queue out of the set allocated for the same
- * 				TC. Value must be in range 0 to NUM_QUEUES - 1
- * @queue: 		Queue structure
+ * @token:	Token of DPNI object
+ * @type:	Type of queue
+ * @tc:		Traffic class, in range 0 to NUM_TCS - 1
+ * @index:	Selects the specific queue out of the set allocated for the same
+ *		TC. Value must be in range 0 to NUM_QUEUES - 1
+ * @queue:	Queue structure
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpni_get_queue_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token,
-			 enum dpni_queue_type_v10 type,
-			 uint8_t tc,
-			 uint8_t index,
-			 struct dpni_queue_v10 *queue);
+		       uint32_t cmd_flags,
+		       uint16_t token,
+		       enum dpni_queue_type_v10 type,
+		       uint8_t tc,
+		       uint8_t index,
+		       struct dpni_queue_v10 *queue);
 
 /**
  * dpni_get_statistics_v10() - Get DPNI statistics
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPNI object
- * @page: 		Selects the statistics page to retrieve, see DPNI_GET_STATISTICS
- * 				output. Pages are numbered 0 to 2.
- * @stat: 		Structure containing the statistics
+ * @token:	Token of DPNI object
+ * @page:	Selects the statistics page to retrieve, see DPNI_GET_STATISTICS
+ *		output. Pages are numbered 0 to 2.
+ * @stat:	Structure containing the statistics
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpni_get_statistics_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token,
-			 uint8_t page,
-			 union dpni_statistics_v10 *stat);
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    uint8_t page,
+			    union dpni_statistics_v10 *stat);
 
 /**
  * dpni_reset_statistics() - Clears DPNI statistics
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPNI object
+ * @token:	Token of DPNI object
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpni_reset_statistics_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token);
+			      uint32_t cmd_flags,
+			      uint16_t token);
 
 /**
  * enum dpni_congestion_point - Structure representing congestion point
- * @DPNI_CP_QUEUE:»     Set taildrop per queue, identified by QUEUE_TYPE, TC and
- * »    »       »       »       »       QUEUE_INDEX
- * @DPNI_CP_GROUP:»     Set taildrop per queue group. Depending on options used to
- * »    »       »       »       »       define the DPNI this can be either per TC (default) or per
- * »    »       »       »       »       interface (DPNI_OPT_SHARED_CONGESTION set at DPNI create).
- * »    »       »       »       »       QUEUE_INDEX is ignored if this type is used.
+ * @DPNI_CP_QUEUE:	Set taildrop per queue, identified by QUEUE_TYPE, TC and
+ *			QUEUE_INDEX
+ * @DPNI_CP_GROUP:	Set taildrop per queue group. Depending on options used to
+ *			define the DPNI this can be either per TC (default) or per
+ *			interface (DPNI_OPT_SHARED_CONGESTION set at DPNI create).
+ *			QUEUE_INDEX is ignored if this type is used.
  */
 enum dpni_congestion_point {
 	DPNI_CP_QUEUE,
@@ -584,8 +584,8 @@ enum dpni_congestion_point {
 
 /**
  * enum dpni_congestion_unit - DPNI congestion units
- * @DPNI_CONGESTION_UNIT_BYTES: bytes unit
- * @DPNI_CONGESTION_UNIT_FRAMES: frames units
+ * @DPNI_CONGESTION_UNIT_BYTES:		bytes unit
+ * @DPNI_CONGESTION_UNIT_FRAMES:	frames units
  */
 enum dpni_congestion_unit {
 	DPNI_CONGESTION_UNIT_BYTES = 0,
@@ -594,13 +594,13 @@ enum dpni_congestion_unit {
 
 /**
  * struct dpni_taildrop_v10 - Structure representing the taildrop
- * @enable: 	Indicates whether the taildrop is active or not.
- * @units: 		Indicates the unit of THRESHOLD. Queue taildrop only supports
- * 				byte units, this field is ignored and assumed = 0 if
- * 				CONGESTION_POINT is 0.
- * @threshold: 	Threshold value, in units identified by UNITS field. Value 0
- * 				cannot be used as a valid taildrop threshold, THRESHOLD must
- * 				be > 0 if the taildrop is enabled.
+ * @enable:	Indicates whether the taildrop is active or not.
+ * @units:	Indicates the unit of THRESHOLD. Queue taildrop only supports
+ *		byte units, this field is ignored and assumed = 0 if
+ *		CONGESTION_POINT is 0.
+ * @threshold:	Threshold value, in units identified by UNITS field. Value 0
+ *		cannot be used as a valid taildrop threshold, THRESHOLD must
+ *		be > 0 if the taildrop is enabled.
  */
 struct dpni_taildrop_v10 {
 	char enable;
@@ -610,49 +610,49 @@ struct dpni_taildrop_v10 {
 
 /**
  * dpni_set_taildrop_v10() - Set taildrop per queue
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPNI object
- * @cg_point: 	Congestion point
- * @q_type:
- * @tc: 		Traffic class to apply this taildrop to
- * @q_index: 	Index of the queue if the DPNI supports multiple queues for
- * 				traffic distribution. Ignored if CONGESTION_POINT is not 0.
- * @taildrop: 	Taildrop structure
+ * @token:	Token of DPNI object
+ * @cg_point:	Congestion point
+ * @q_type:	Queue type
+ * @tc:		Traffic class to apply this taildrop to
+ * @q_index:	Index of the queue if the DPNI supports multiple queues for
+ *		traffic distribution. Ignored if CONGESTION_POINT is not 0.
+ * @taildrop:	Taildrop structure
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpni_set_taildrop_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token,
-			 enum dpni_congestion_point cg_point,
-			 enum dpni_queue_type_v10 q_type,
-			 uint8_t tc,
-			 uint8_t q_index,
-			 struct dpni_taildrop_v10 *taildrop);
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  enum dpni_congestion_point cg_point,
+			  enum dpni_queue_type_v10 q_type,
+			  uint8_t tc,
+			  uint8_t q_index,
+			  struct dpni_taildrop_v10 *taildrop);
 
 /**
  * dpni_get_taildrop_v10() - Get taildrop information
- * @mc_io:		Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPNI object
- * @cg_point: 	Congestion point
- * @q_type:
- * @tc: 		Traffic class to apply this taildrop to
- * @q_index: 	Index of the queue if the DPNI supports multiple queues for
- * 				traffic distribution. Ignored if CONGESTION_POINT is not 0.
- * @taildrop: 	Taildrop structure
+ * @token:	Token of DPNI object
+ * @cg_point:	Congestion point
+ * @q_type:	Queue type
+ * @tc:		Traffic class to apply this taildrop to
+ * @q_index:	Index of the queue if the DPNI supports multiple queues for
+ *		traffic distribution. Ignored if CONGESTION_POINT is not 0.
+ * @taildrop:	Taildrop structure
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpni_get_taildrop_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token,
-			 enum dpni_congestion_point cg_point,
-			 enum dpni_queue_type_v10 q_type,
-			 uint8_t tc,
-			 uint8_t q_index,
-			 struct dpni_taildrop_v10 *taildrop);
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  enum dpni_congestion_point cg_point,
+			  enum dpni_queue_type_v10 q_type,
+			  uint8_t tc,
+			  uint8_t q_index,
+			  struct dpni_taildrop_v10 *taildrop);
 
 /**
  * dpni_set_primary_mac_addr_v10() - Set the primary MAC address

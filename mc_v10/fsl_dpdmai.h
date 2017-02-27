@@ -62,11 +62,11 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmai_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpdmai_cfg	*cfg,
-		uint32_t	*obj_id);
+int dpdmai_create_v10(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      const struct dpdmai_cfg *cfg,
+		      uint32_t *obj_id);
 
 /**
  * dpdmai_destroy() - Destroy the DPDMAI object and release all its resources.
@@ -78,23 +78,23 @@ int dpdmai_create_v10(struct fsl_mc_io	*mc_io,
  *
  * The function accepts the authentication token of the parent container that
  * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'. 
- * All tokens to the object must be closed before calling destroy. 
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpdmai_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id);
+int dpdmai_destroy_v10(struct fsl_mc_io *mc_io,
+		       uint16_t dprc_token,
+		       uint32_t cmd_flags,
+		       uint32_t object_id);
 /**
  * struct dpdmai_attr - Structure representing DPDMAI attributes
- * @id: DPDMAI object ID
- * @version: DPDMAI version
- * @num_of_priorities: number of priorities
+ * @id:			DPDMAI object ID
+ * @version:		DPDMAI version
+ * @num_of_priorities:	Number of priorities
  */
 struct dpdmai_attr_v10 {
-	int	id;
+	int id;
 	uint8_t num_of_priorities;
 };
 
@@ -107,17 +107,17 @@ struct dpdmai_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmai_get_attributes_v10(struct fsl_mc_io		*mc_io,
-			  uint32_t			cmd_flags,
-			  uint16_t			token,
-			  struct dpdmai_attr_v10	*attr);
+int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      struct dpdmai_attr_v10 *attr);
 
 /**
  * dpdmai_get_version() - Get Data Path DMA version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path dma object
- * @minorVer: 	Minor version of data path dma object
+ * @majorVer:	Major version of data path dma object
+ * @minorVer:	Minor version of data path dma object
  *
  * Return:  '0' on Success; Error code otherwise.
  */

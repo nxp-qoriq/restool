@@ -240,7 +240,7 @@ int dpdbg_prepare_ctlu_global_rule(struct dpkg_profile_cfg	*dpkg_rule,
 	uint64_t *params = (uint64_t *)rule_buf;
 
 	if (!rule_buf || !dpkg_rule)
-			return -EINVAL;
+		return -EINVAL;
 
 	params[0] |= mc_enc(0, 8, dpkg_rule->num_extracts);
 	params[0] = __cpu_to_le64(params[0]);

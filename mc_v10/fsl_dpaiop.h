@@ -42,7 +42,7 @@ struct fsl_mc_io;
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPAIOP object, allocate required resources and
  * perform required initialization.
@@ -58,11 +58,11 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpaiop_create_v10(struct fsl_mc_io	*mc_io,
-		  uint16_t dprc_token,
-		  uint32_t		cmd_flags,
-		  const struct dpaiop_cfg	*cfg,
-		  uint32_t *obj_id);
+int dpaiop_create_v10(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      const struct dpaiop_cfg *cfg,
+		      uint32_t *obj_id);
 
 /**
  * dpaiop_destroy_v10() - Destroy the DPAIOP object and release all its resources.
@@ -72,15 +72,15 @@ int dpaiop_create_v10(struct fsl_mc_io	*mc_io,
  *
  * The function accepts the authentication token of the parent container that
  * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'. 
- * All tokens to the object must be closed before calling destroy. 
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
  *
  * Return:	'0' on Success; error code otherwise.
  */
 int dpaiop_destroy_v10(struct fsl_mc_io *mc_io,
-		uint16_t dprc_token,
-		uint32_t cmd_flags,
-		uint32_t object_id);
+		       uint16_t dprc_token,
+		       uint32_t cmd_flags,
+		       uint32_t object_id);
 
 /**
  * struct dpaiop_attr_v10 - Structure representing DPAIOP attributes
@@ -100,16 +100,16 @@ struct dpaiop_attr_v10 {
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpaiop_get_attributes_v10(struct fsl_mc_io		*mc_io,
-			  uint32_t			cmd_flags,
-			  uint16_t			token,
-			  struct dpaiop_attr_v10	*attr);
+int dpaiop_get_attributes_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      struct dpaiop_attr_v10 *attr);
 /**
  * dpaiop_get_version_v10() - Get Data Path AIOP version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path aiop object
- * @minorVer: 	Minor version of data path aiop object
+ * @majorVer:	Major version of data path aiop object
+ * @minorVer:	Minor version of data path aiop object
  *
  * Return:  '0' on Success; Error code otherwise.
  */

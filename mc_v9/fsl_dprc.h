@@ -670,17 +670,17 @@ int dprc_disconnect(struct fsl_mc_io		*mc_io,
 		    const struct dprc_endpoint	*endpoint);
 
 /**
-* dprc_get_connection() - Get connected endpoint and link status if connection
-*			exists.
-* @mc_io:	Pointer to MC portal's I/O object
-* @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
-* @token:	Token of DPRC object
-* @endpoint1:	Endpoint 1 configuration parameters
-* @endpoint2:	Returned endpoint 2 configuration parameters
-* @state:	Returned link state: 1 - link is up, 0 - link is down
-*
-* Return:     '0' on Success; -ENAVAIL if connection does not exist.
-*/
+ * dprc_get_connection() - Get connected endpoint and link status if connection
+ *			exists.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPRC object
+ * @endpoint1:	Endpoint 1 configuration parameters
+ * @endpoint2:	Returned endpoint 2 configuration parameters
+ * @state:	Returned link state: 1 - link is up, 0 - link is down
+ *
+ * Return:     '0' on Success; -ENAVAIL if connection does not exist.
+ */
 int dprc_get_connection(struct fsl_mc_io		*mc_io,
 			uint32_t			cmd_flags,
 			uint16_t			token,

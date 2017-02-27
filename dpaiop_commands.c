@@ -717,9 +717,9 @@ static int destroy_dpaiop(int mc_fw_version)
 		"Usage: restool dpaiop destroy <dpaiop-object>\n"
 		"   e.g. restool dpaiop destroy dpaiop.9\n"
 		"\n";
-
 	int error;
 	uint32_t dpaiop_id;
+
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(DESTROY_OPT_HELP);

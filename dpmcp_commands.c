@@ -463,9 +463,9 @@ static int create_dpmcp(int mc_fw_version, const char *usage_msg)
 	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
 
 	if (mc_fw_version == MC_FW_VERSION_9)
-		error= create_dpmcp_v9(&dpmcp_cfg);
+		error = create_dpmcp_v9(&dpmcp_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
-		error= create_dpmcp_v10(&dpmcp_cfg);
+		error = create_dpmcp_v10(&dpmcp_cfg);
 	else
 		return -EINVAL;
 

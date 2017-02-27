@@ -45,15 +45,14 @@
 /*                cmd, param, offset, width, type, arg_name */
 #define DPIO_CMD_CREATE(cmd, cfg) \
 do { \
-	MC_CMD_OP(cmd, 0, 16, 2,  enum dpio_channel_mode,	\
-					   cfg->channel_mode);\
+	MC_CMD_OP(cmd, 0, 16, 2,  enum dpio_channel_mode, cfg->channel_mode);\
 	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t, cfg->num_priorities);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPIO_RSP_GET_ATTR(cmd, attr) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,	    attr->id);\
+	MC_RSP_OP(cmd, 0, 0,  32, int,      attr->id);\
 	MC_RSP_OP(cmd, 0, 32, 16, uint16_t, attr->qbman_portal_id);\
 	MC_RSP_OP(cmd, 0, 48, 8,  uint8_t,  attr->num_priorities);\
 	MC_RSP_OP(cmd, 0, 56, 4,  enum dpio_channel_mode, attr->channel_mode);\
@@ -66,8 +65,8 @@ do { \
 /*                cmd, param, offset, width, type,      arg_name */
 #define DPIO_RSP_GET_VERSION(cmd, major, minor) \
 do { \
-        MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-        MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
+	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
+	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
 } while (0)
 
 #endif /* _FSL_DPIO_CMD_H */

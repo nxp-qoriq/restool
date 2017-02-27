@@ -45,22 +45,22 @@
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDCEI_CMD_CREATE(cmd, cfg) \
 do { \
-	MC_CMD_OP(cmd, 0, 8,  8,  enum dpdcei_engine,  cfg->engine);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  cfg->priority);\
+	MC_CMD_OP(cmd, 0, 8,  8, enum dpdcei_engine, cfg->engine);\
+	MC_CMD_OP(cmd, 0, 16, 8, uint8_t, cfg->priority);\
 } while (0)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDCEI_RSP_GET_ATTR(cmd, attr) \
 do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,	    attr->id); \
-	MC_RSP_OP(cmd, 0, 32,  8,  enum dpdcei_engine,  attr->engine); \
+	MC_RSP_OP(cmd, 0, 0,  32, int, attr->id); \
+	MC_RSP_OP(cmd, 0, 32,  8, enum dpdcei_engine, attr->engine); \
 } while (0)
 
 /*                cmd, param, offset, width, type,      arg_name */
 #define DPDCEI_RSP_GET_VERSION(cmd, major, minor) \
 do { \
-        MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-        MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
+	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
+	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
 } while (0)
 
 #endif /* _FSL_DPDCEI_CMD_H */

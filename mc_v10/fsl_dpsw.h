@@ -47,7 +47,7 @@ struct fsl_mc_io;
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
- * @obj_id: returned object id
+ * @obj_id:	Returned object id
  *
  * Create the DPSW object, allocate required resources and
  * perform required initialization.
@@ -63,11 +63,11 @@ struct fsl_mc_io;
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpsw_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpsw_cfg_v9 *cfg,
-		uint32_t	*obj_id);
+int dpsw_create_v10(struct fsl_mc_io *mc_io,
+		    uint16_t dprc_token,
+		    uint32_t cmd_flags,
+		    const struct dpsw_cfg_v9 *cfg,
+		    uint32_t *obj_id);
 
 /**
  * dpsw_destroy() - Destroy the DPSW object and release all its resources.
@@ -79,49 +79,49 @@ int dpsw_create_v10(struct fsl_mc_io	*mc_io,
  *
  * The function accepts the authentication token of the parent container that
  * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'. 
- * All tokens to the object must be closed before calling destroy. 
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpsw_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id);
+int dpsw_destroy_v10(struct fsl_mc_io *mc_io,
+		     uint16_t dprc_token,
+		     uint32_t cmd_flags,
+		     uint32_t object_id);
 
 /**
  * struct dpsw_attr - Structure representing DPSW attributes
- * @id: DPSW object ID
- * @version: DPSW version
- * @options: Enable/Disable DPSW features
- * @max_vlans: Maximum Number of VLANs
- * @max_meters_per_if:  Number of meters per interface
- * @max_fdbs: Maximum Number of FDBs
- * @max_fdb_entries: Number of FDB entries for default FDB table;
+ * @id:			DPSW object ID
+ * @version:		DPSW version
+ * @options:		Enable/Disable DPSW features
+ * @max_vlans:		Maximum Number of VLANs
+ * @max_meters_per_if:	Number of meters per interface
+ * @max_fdbs:		Maximum Number of FDBs
+ * @max_fdb_entries:	Number of FDB entries for default FDB table;
  *			0 - indicates default 1024 entries.
- * @fdb_aging_time: Default FDB aging time for default FDB table;
+ * @fdb_aging_time:	Default FDB aging time for default FDB table;
  *			0 - indicates default 300 seconds
- * @max_fdb_mc_groups: Number of multicast groups in each FDB table;
+ * @max_fdb_mc_groups:	Number of multicast groups in each FDB table;
  *			0 - indicates default 32
- * @mem_size: DPSW frame storage memory size
- * @num_ifs: Number of interfaces
- * @num_vlans: Current number of VLANs
- * @num_fdbs: Current number of FDBs
- * @component_type: Component type of this bridge
+ * @mem_size:		DPSW frame storage memory size
+ * @num_ifs:		Number of interfaces
+ * @num_vlans:		Current number of VLANs
+ * @num_fdbs:		Current number of FDBs
+ * @component_type:	Component type of this bridge
  */
 struct dpsw_attr_v10 {
-	int		id;
-	uint64_t	options;
-	uint16_t	max_vlans;
-	uint8_t	max_meters_per_if;
-	uint8_t	max_fdbs;
-	uint16_t	max_fdb_entries;
-	uint16_t	fdb_aging_time;
-	uint16_t	max_fdb_mc_groups;
-	uint16_t	num_ifs;
-	uint16_t	mem_size;
-	uint16_t	num_vlans;
-	uint8_t		num_fdbs;
+	int id;
+	uint64_t options;
+	uint16_t max_vlans;
+	uint8_t max_meters_per_if;
+	uint8_t max_fdbs;
+	uint16_t max_fdb_entries;
+	uint16_t fdb_aging_time;
+	uint16_t max_fdb_mc_groups;
+	uint16_t num_ifs;
+	uint16_t mem_size;
+	uint16_t num_vlans;
+	uint8_t num_fdbs;
 	enum dpsw_component_type component_type;
 };
 
@@ -129,28 +129,28 @@ struct dpsw_attr_v10 {
  * dpsw_get_attributes() - Retrieve DPSW attributes
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPSW object
- * @attr:		Returned DPSW attributes
+ * @token:	Token of DPSW object
+ * @attr:	Returned DPSW attributes
  *
  * Return:	Completion status. '0' on Success; Error code otherwise.
  */
-int dpsw_get_attributes_v10(struct fsl_mc_io	*mc_io,
-			uint32_t		cmd_flags,
-			uint16_t		token,
-			struct dpsw_attr_v10	*attr);
+int dpsw_get_attributes_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    struct dpsw_attr_v10 *attr);
 
 /**
  * dpsw_get_version() - Get Data Path Switch version
- * @mc_io:  Pointer to MC portal's I/O object
+ * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer: 	Major version of data path switch object
- * @minorVer: 	Minor version of data path switch object
+ * @majorVer:	Major version of data path switch object
+ * @minorVer:	Minor version of data path switch object
  *
  * Return:  '0' on Success; Error code otherwise.
  */
 int dpsw_get_version_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t *majorVer,
-			   uint16_t *minorVer);
+			 uint32_t cmd_flags,
+			 uint16_t *majorVer,
+			 uint16_t *minorVer);
 
 #endif /* __FSL_DPSW_H */
