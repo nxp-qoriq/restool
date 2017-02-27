@@ -494,8 +494,8 @@ int dpni_add_fs_entry_v10(struct fsl_mc_io			*mc_io,
  */
 int dpni_get_version_v10(struct fsl_mc_io *mc_io,
 			   uint32_t cmd_flags,
-			   uint16_t* majorVer,
-			   uint16_t* minorVer);
+			   uint16_t *majorVer,
+			   uint16_t *minorVer);
 
 /**
  * dpni_set_queue_v10() - Set queue parameters

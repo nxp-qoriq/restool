@@ -103,8 +103,8 @@ int dpdcei_get_attributes_v10(struct fsl_mc_io *mc_io,
 
 int dpdcei_get_version_v10(struct fsl_mc_io *mc_io,
 			   uint32_t cmd_flags,
-			   uint16_t* majorVer,
-			   uint16_t* minorVer)
+			   uint16_t *majorVer,
+			   uint16_t *minorVer)
 {
 	struct mc_command cmd = { 0 };
 	int err;

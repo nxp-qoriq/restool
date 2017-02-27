@@ -845,7 +845,7 @@ static int cmd_dpdmux_create_v9(void)
 	return create_dpdmux_v9(usage_msg);
 }
 
-static int create_dpdmux_v10(const char* usage_msg)
+static int create_dpdmux_v10(const char *usage_msg)
 {
 	struct dpdmux_cfg_v9 dpdmux_cfg = {0};
 	uint32_t dpdmux_id, dprc_id;

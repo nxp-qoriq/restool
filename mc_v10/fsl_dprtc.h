@@ -118,7 +118,7 @@ int dprtc_get_attributes_v10(struct fsl_mc_io	*mc_io,
  */
 int dprtc_get_version_v10(struct fsl_mc_io *mc_io,
 			   uint32_t cmd_flags,
-			   uint16_t* majorVer,
-			   uint16_t* minorVer);
+			   uint16_t *majorVer,
+			   uint16_t *minorVer);
 
 #endif /* __FSL_DPRTC_H */
