@@ -33,14 +33,14 @@
 #define _FSL_DPDMAI_CMD_H
 
 /* DPDMAI Version */
-#define DPDMAI_VER_MAJOR				3
-#define DPDMAI_VER_MINOR				2
+#define DPDMAI_VER_MAJOR		3
+#define DPDMAI_VER_MINOR		2
 
 /* Command IDs */
-#define DPDMAI_CMDID_CREATE                          (0x90E << 4) | (0x1)
-#define DPDMAI_CMDID_DESTROY                         (0x98E << 4) | (0x1)
-#define DPDMAI_CMDID_GET_VERSION                     (0xa0E << 4) | (0x1)
-#define DPDMAI_CMDID_GET_ATTR                        (0x004 << 4) | (0x1)
+#define DPDMAI_CMDID_CREATE		((0x90E << 4) | (0x1))
+#define DPDMAI_CMDID_DESTROY		((0x98E << 4) | (0x1))
+#define DPDMAI_CMDID_GET_VERSION	((0xa0E << 4) | (0x1))
+#define DPDMAI_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDMAI_CMD_CREATE(cmd, cfg) \

@@ -33,16 +33,16 @@
 #define _FSL_DPNI_CMD_v10_H
 
 /* DPNI Version */
-#define DPNI_VER_MAJOR				7
-#define DPNI_VER_MINOR				0
+#define DPNI_VER_MAJOR			7
+#define DPNI_VER_MINOR			0
 
 /* Command IDs */
-#define DPNI_CMDID_CREATE                                            (0x901 << 4) | (0x1)
-#define DPNI_CMDID_DESTROY                                           (0x981 << 4) | (0x1)
-#define DPNI_CMDID_GET_VERSION                                       (0xa01 << 4) | (0x1)
-#define DPNI_CMDID_GET_ATTR                                          (0x004 << 4) | (0x1)
-#define DPNI_CMDID_SET_PRIM_MAC                                      (0x224 << 4) | (0x1)
-#define DPNI_CMDID_GET_STATISTICS                                    (0x25D << 4) | (0x1)
+#define DPNI_CMDID_CREATE		((0x901 << 4) | (0x1))
+#define DPNI_CMDID_DESTROY		((0x981 << 4) | (0x1))
+#define DPNI_CMDID_GET_VERSION		((0xa01 << 4) | (0x1))
+#define DPNI_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
+#define DPNI_CMDID_SET_PRIM_MAC		((0x224 << 4) | (0x1))
+#define DPNI_CMDID_GET_STATISTICS	((0x25D << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPNI_CMD_CREATE(cmd, cfg) \

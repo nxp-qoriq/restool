@@ -33,14 +33,14 @@
 #define _FSL_DPBP_CMD_V10_H
 
 /* DPBP Version */
-#define DPBP_VER_MAJOR				3
-#define DPBP_VER_MINOR				2
+#define DPBP_VER_MAJOR			3
+#define DPBP_VER_MINOR			2
 
 /* Command IDs */
-#define DPBP_CMDID_CREATE                       (0x904 << 4) | (0x1)
-#define DPBP_CMDID_DESTROY                      (0x984 << 4) | (0x1)
-#define DPBP_CMDID_GET_VERSION                  (0xa04 << 4) | (0x1)
-#define DPBP_CMDID_GET_ATTR                     (0x004 << 4) | (0x1)
+#define DPBP_CMDID_CREATE		((0x904 << 4) | (0x1))
+#define DPBP_CMDID_DESTROY		((0x984 << 4) | (0x1))
+#define DPBP_CMDID_GET_VERSION		((0xa04 << 4) | (0x1))
+#define DPBP_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type,	arg_name */
 #define DPBP_RSP_GET_ATTRIBUTES(cmd, attr) \

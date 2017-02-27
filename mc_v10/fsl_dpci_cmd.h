@@ -33,15 +33,15 @@
 #define _FSL_DPCI_CMD_H
 
 /* DPCI Version */
-#define DPCI_VER_MAJOR				3
-#define DPCI_VER_MINOR				3
+#define DPCI_VER_MAJOR			3
+#define DPCI_VER_MINOR			3
 
 /* Command IDs */
-#define DPCI_CMDID_CREATE_V1                         (0x907 << 4) | (0x1)
-#define DPCI_CMDID_CREATE_V2                         (0x907 << 4) | (0x2)
-#define DPCI_CMDID_DESTROY                           (0x987 << 4) | (0x1)
-#define DPCI_CMDID_GET_VERSION                       (0xa07 << 4) | (0x1)
-#define DPCI_CMDID_GET_ATTR                          (0x004 << 4) | (0x1)
+#define DPCI_CMDID_CREATE_V1		((0x907 << 4) | (0x1))
+#define DPCI_CMDID_CREATE_V2		((0x907 << 4) | (0x2))
+#define DPCI_CMDID_DESTROY		((0x987 << 4) | (0x1))
+#define DPCI_CMDID_GET_VERSION		((0xa07 << 4) | (0x1))
+#define DPCI_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPCI_CMD_CREATE_V1(cmd, cfg) \

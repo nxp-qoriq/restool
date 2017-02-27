@@ -33,14 +33,14 @@
 #define __FSL_DPSW_CMD_H
 
 /* DPSW Version */
-#define DPSW_VER_MAJOR				8
-#define DPSW_VER_MINOR				0
+#define DPSW_VER_MAJOR			8
+#define DPSW_VER_MINOR			0
 
 /* Command IDs */
-#define DPSW_CMDID_CREATE                       (0x902 << 4) | (0x1)
-#define DPSW_CMDID_DESTROY                      (0x982 << 4) | (0x1)
-#define DPSW_CMDID_GET_VERSION                  (0xa02 << 4) | (0x1)
-#define DPSW_CMDID_GET_ATTR                     (0x004 << 4) | (0x1)
+#define DPSW_CMDID_CREATE		((0x902 << 4) | (0x1))
+#define DPSW_CMDID_DESTROY		((0x982 << 4) | (0x1))
+#define DPSW_CMDID_GET_VERSION		((0xa02 << 4) | (0x1))
+#define DPSW_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_CREATE(cmd, cfg) \

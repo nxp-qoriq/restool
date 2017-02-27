@@ -33,14 +33,14 @@
 #define _FSL_DPDCEI_CMD_H
 
 /* DPDCEI Version */
-#define DPDCEI_VER_MAJOR				2
-#define DPDCEI_VER_MINOR				2
+#define DPDCEI_VER_MAJOR		2
+#define DPDCEI_VER_MINOR		2
 
 /* Command IDs */
-#define DPDCEI_CMDID_CREATE                          (0x90D << 4) | (0x1)
-#define DPDCEI_CMDID_DESTROY                         (0x98D << 4) | (0x1)
-#define DPDCEI_CMDID_GET_VERSION                     (0xa0D << 4) | (0x1)
-#define DPDCEI_CMDID_GET_ATTR                        (0x004 << 4) | (0x1)
+#define DPDCEI_CMDID_CREATE		((0x90D << 4) | (0x1))
+#define DPDCEI_CMDID_DESTROY		((0x98D << 4) | (0x1))
+#define DPDCEI_CMDID_GET_VERSION	((0xa0D << 4) | (0x1))
+#define DPDCEI_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDCEI_CMD_CREATE(cmd, cfg) \

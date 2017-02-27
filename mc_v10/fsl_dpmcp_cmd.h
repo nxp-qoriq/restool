@@ -33,14 +33,14 @@
 #define _FSL_DPMCP_CMD_H
 
 /* DPMCP Version */
-#define DPMCP_VER_MAJOR				4
-#define DPMCP_VER_MINOR				0
+#define DPMCP_VER_MAJOR			4
+#define DPMCP_VER_MINOR			0
 
 /* Command IDs */
-#define DPMCP_CMDID_CREATE                              (0x90b << 4) | (0x1)
-#define DPMCP_CMDID_DESTROY                             (0x98b << 4) | (0x1)
-#define DPMCP_CMDID_GET_VERSION                         (0xa0b << 4) | (0x1)
-#define DPMCP_CMDID_GET_ATTR                            (0x004 << 4) | (0x1)
+#define DPMCP_CMDID_CREATE		((0x90b << 4) | (0x1))
+#define DPMCP_CMDID_DESTROY		((0x98b << 4) | (0x1))
+#define DPMCP_CMDID_GET_VERSION		((0xa0b << 4) | (0x1))
+#define DPMCP_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPMCP_CMD_CREATE(cmd, cfg) \

@@ -33,14 +33,14 @@
 #define _FSL_DPAIOP_CMD_V10_H
 
 /* DPAIOP Version */
-#define DPAIOP_VER_MAJOR				2
-#define DPAIOP_VER_MINOR				2
+#define DPAIOP_VER_MAJOR		2
+#define DPAIOP_VER_MINOR		2
 
 /* Command IDs */
-#define DPAIOP_CMDID_CREATE                     (0x90a << 4) | (0x1)
-#define DPAIOP_CMDID_DESTROY                    (0x98a << 4) | (0x1)
-#define DPAIOP_CMDID_GET_VERSION                (0xa0a << 4) | (0x1)
-#define DPAIOP_CMDID_GET_ATTR                   (0x004 << 4) | (0x1)
+#define DPAIOP_CMDID_CREATE		((0x90a << 4) | (0x1))
+#define DPAIOP_CMDID_DESTROY		((0x98a << 4) | (0x1))
+#define DPAIOP_CMDID_GET_VERSION	((0xa0a << 4) | (0x1))
+#define DPAIOP_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPAIOP_CMD_CREATE(cmd, cfg) \

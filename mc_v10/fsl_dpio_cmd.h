@@ -33,14 +33,14 @@
 #define _FSL_DPIO_CMD_H
 
 /* DPIO Version */
-#define DPIO_VER_MAJOR				4
-#define DPIO_VER_MINOR				2
+#define DPIO_VER_MAJOR			4
+#define DPIO_VER_MINOR			2
 
 /* Command IDs */
-#define DPIO_CMDID_CREATE                               (0x903 << 4) | (0x1)
-#define DPIO_CMDID_DESTROY                              (0x983 << 4) | (0x1)
-#define DPIO_CMDID_GET_VERSION                          (0xa03 << 4) | (0x1)
-#define DPIO_CMDID_GET_ATTR                             (0x004 << 4) | (0x1)
+#define DPIO_CMDID_CREATE		((0x903 << 4) | (0x1))
+#define DPIO_CMDID_DESTROY		((0x983 << 4) | (0x1))
+#define DPIO_CMDID_GET_VERSION		((0xa03 << 4) | (0x1))
+#define DPIO_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPIO_CMD_CREATE(cmd, cfg) \

@@ -33,14 +33,14 @@
 #define _FSL_DPCON_CMD_H
 
 /* DPCON Version */
-#define DPCON_VER_MAJOR				3
-#define DPCON_VER_MINOR				2
+#define DPCON_VER_MAJOR			3
+#define DPCON_VER_MINOR			2
 
 /* Command IDs */
-#define DPCON_CMDID_CREATE                           (0x908 << 4) | (0x1)
-#define DPCON_CMDID_DESTROY                          (0x988 << 4) | (0x1)
-#define DPCON_CMDID_GET_VERSION                      (0xa08 << 4) | (0x1)
-#define DPCON_CMDID_GET_ATTR                         (0x004 << 4) | (0x1)
+#define DPCON_CMDID_CREATE		((0x908 << 4) | (0x1))
+#define DPCON_CMDID_DESTROY		((0x988 << 4) | (0x1))
+#define DPCON_CMDID_GET_VERSION		((0xa08 << 4) | (0x1))
+#define DPCON_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPCON_CMD_CREATE(cmd, cfg) \

@@ -33,14 +33,14 @@
 #define _FSL_DPDMUX_CMD_H
 
 /* DPDMUX Version */
-#define DPDMUX_VER_MAJOR				6
-#define DPDMUX_VER_MINOR				0
+#define DPDMUX_VER_MAJOR		6
+#define DPDMUX_VER_MINOR		0
 
 /* Command IDs */
-#define DPDMUX_CMDID_CREATE                             (0x906 << 4) | (0x1)
-#define DPDMUX_CMDID_DESTROY                            (0x986 << 4) | (0x1)
-#define DPDMUX_CMDID_GET_VERSION                        (0xa06 << 4) | (0x1)
-#define DPDMUX_CMDID_GET_ATTR                           (0x004 << 4) | (0x1)
+#define DPDMUX_CMDID_CREATE		((0x906 << 4) | (0x1))
+#define DPDMUX_CMDID_DESTROY		((0x986 << 4) | (0x1))
+#define DPDMUX_CMDID_GET_VERSION	((0xa06 << 4) | (0x1))
+#define DPDMUX_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPDMUX_CMD_CREATE(cmd, cfg) \

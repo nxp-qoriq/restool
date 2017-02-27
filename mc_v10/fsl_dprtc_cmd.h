@@ -33,14 +33,14 @@
 #define _FSL_DPRTC_CMD_H
 
 /* DPRTC Version */
-#define DPRTC_VER_MAJOR				2
-#define DPRTC_VER_MINOR				0
+#define DPRTC_VER_MAJOR			2
+#define DPRTC_VER_MINOR			0
 
 /* Command IDs */
-#define DPRTC_CMDID_CREATE                              (0x910 << 4) | (0x1)
-#define DPRTC_CMDID_DESTROY                             (0x990 << 4) | (0x1)
-#define DPRTC_CMDID_GET_VERSION                         (0xa10 << 4) | (0x1)
-#define DPRTC_CMDID_GET_ATTR                            (0x004 << 4) | (0x1)
+#define DPRTC_CMDID_CREATE		((0x910 << 4) | (0x1))
+#define DPRTC_CMDID_DESTROY		((0x990 << 4) | (0x1))
+#define DPRTC_CMDID_GET_VERSION		((0xa10 << 4) | (0x1))
+#define DPRTC_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type,	arg_name */
 #define DPRTC_RSP_GET_ATTRIBUTES(cmd, attr) \

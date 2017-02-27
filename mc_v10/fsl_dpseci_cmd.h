@@ -33,15 +33,15 @@
 #define _FSL_DPSECI_CMD_H
 
 /* DPSECI Version */
-#define DPSECI_VER_MAJOR				5
-#define DPSECI_VER_MINOR				0
+#define DPSECI_VER_MAJOR		5
+#define DPSECI_VER_MINOR		0
 
 /* Command IDs */
-#define DPSECI_CMDID_CREATE_V1                          (0x909 << 4) | (0x1)
-#define DPSECI_CMDID_CREATE_V2                          (0x909 << 4) | (0x2)
-#define DPSECI_CMDID_DESTROY                            (0x989 << 4) | (0x1)
-#define DPSECI_CMDID_GET_VERSION                        (0xa09 << 4) | (0x1)
-#define DPSECI_CMDID_GET_ATTR                           (0x004 << 4) | (0x1)
+#define DPSECI_CMDID_CREATE_V1		((0x909 << 4) | (0x1))
+#define DPSECI_CMDID_CREATE_V2		((0x909 << 4) | (0x2))
+#define DPSECI_CMDID_DESTROY		((0x989 << 4) | (0x1))
+#define DPSECI_CMDID_GET_VERSION	((0xa09 << 4) | (0x1))
+#define DPSECI_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSECI_CMD_CREATE_V1(cmd, cfg) \

@@ -33,14 +33,14 @@
 #define _FSL_DPMAC_CMD_H
 
 /* DPMAC Version */
-#define DPMAC_VER_MAJOR				4
-#define DPMAC_VER_MINOR				2
+#define DPMAC_VER_MAJOR			4
+#define DPMAC_VER_MINOR			2
 
 /* Command IDs */
-#define DPMAC_CMDID_CREATE                      (0x90c << 4) | (0x1)
-#define DPMAC_CMDID_DESTROY                     (0x98c << 4) | (0x1)
-#define DPMAC_CMDID_GET_VERSION                 (0xa0c << 4) | (0x1)
-#define DPMAC_CMDID_GET_ATTR                    (0x004 << 4) | (0x1)
+#define DPMAC_CMDID_CREATE		((0x90c << 4) | (0x1))
+#define DPMAC_CMDID_DESTROY		((0x98c << 4) | (0x1))
+#define DPMAC_CMDID_GET_VERSION		((0xa0c << 4) | (0x1))
+#define DPMAC_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPMAC_CMD_CREATE(cmd, cfg) \
