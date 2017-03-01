@@ -43,7 +43,6 @@
 #include "fsl_mc_sys.h"
 #include "fsl_mc_ioctl.h"
 
-#define MC_FW_VERSION_8		8
 #define MC_FW_VERSION_9		9
 #define MC_FW_VERSION_10	10
 

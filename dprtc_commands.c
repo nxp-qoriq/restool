@@ -505,7 +505,7 @@ static int destroy_dprtc_v9(uint32_t dprtc_id)
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out_v8;
+		goto out_v9;
 	}
 	dprtc_opened = true;
 	if (0 == dprtc_handle) {
@@ -513,7 +513,7 @@ static int destroy_dprtc_v9(uint32_t dprtc_id)
 			"dprtc_open() returned invalid handle (auth 0) for dprtc.%u\n",
 			dprtc_id);
 		error = -ENOENT;
-		goto out_v8;
+		goto out_v9;
 	}
 
 	error = dprtc_destroy(&restool.mc_io, 0, dprtc_handle);
@@ -521,12 +521,12 @@ static int destroy_dprtc_v9(uint32_t dprtc_id)
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out_v8;
+		goto out_v9;
 	}
 	dprtc_opened = false;
 	printf("dprtc.%u is destroyed\n", dprtc_id);
 
-out_v8:
+out_v9:
 	if (dprtc_opened) {
 		error2 = dprtc_close(&restool.mc_io, 0, dprtc_handle);
 		if (error2 < 0) {

@@ -174,7 +174,7 @@ static int cmd_dpseci_help(void)
 	return 0;
 }
 
-static int print_dpseci_attr(uint32_t dpseci_id,
+static int print_dpseci_attr_v9(uint32_t dpseci_id,
 			struct dprc_obj_desc *target_obj_desc)
 {
 	uint16_t dpseci_handle;
@@ -393,8 +393,8 @@ static int print_dpseci_info(uint32_t dpseci_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8 || mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpseci_attr(dpseci_id, &target_obj_desc);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = print_dpseci_attr_v9(dpseci_id, &target_obj_desc);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = print_dpseci_attr_v10(dpseci_id, &target_obj_desc);
 	if (error < 0)
@@ -450,9 +450,9 @@ out:
 	return error;
 }
 
-static int cmd_dpseci_info(void)
+static int cmd_dpseci_info_v9(void)
 {
-	return info_dpseci(MC_FW_VERSION_8);
+	return info_dpseci(MC_FW_VERSION_9);
 }
 
 static int cmd_dpseci_info_v10(void)
@@ -497,7 +497,7 @@ static int parse_dpseci_priorities(char *priorities_str, uint8_t *priorities,
 	return 0;
 }
 
-static int create_dpseci_v8(const char *usage_msg)
+static int create_dpseci_v9(const char *usage_msg)
 {
 	struct dpseci_cfg dpseci_cfg = { 0 };
 	struct dpseci_attr dpseci_attr;
@@ -685,7 +685,7 @@ static int create_dpseci_v10(const char *usage_msg)
 	return 0;
 }
 
-static int cmd_dpseci_create(void)
+static int cmd_dpseci_create_v9(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -702,7 +702,7 @@ static int cmd_dpseci_create(void)
 		"   $ restool dpseci create --num-queues=2 --priorities=2,4\n"
 		"\n";
 
-	return create_dpseci_v8(usage_msg);
+	return create_dpseci_v9(usage_msg);
 }
 
 static int cmd_dpseci_create_v10(void)
@@ -761,7 +761,7 @@ static int cmd_dpseci_create_v10(void)
 	return -EINVAL;
 }
 
-static int destroy_dpseci_v8(uint32_t dpseci_id)
+static int destroy_dpseci_v9(uint32_t dpseci_id)
 {
 	bool dpseci_opened = false;
 	uint16_t dpseci_handle;
@@ -880,8 +880,8 @@ static int destroy_dpseci(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_8)
-		error = destroy_dpseci_v8(dpseci_id);
+	if (mc_fw_version == MC_FW_VERSION_9)
+		error = destroy_dpseci_v9(dpseci_id);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = destroy_dpseci_v10(dpseci_id);
 	else
@@ -891,9 +891,9 @@ out:
 	return error;
 }
 
-static int cmd_dpseci_destroy(void)
+static int cmd_dpseci_destroy_v9(void)
 {
-	return destroy_dpseci(MC_FW_VERSION_8);
+	return destroy_dpseci(MC_FW_VERSION_9);
 }
 
 static int cmd_dpseci_destroy_v10(void)
@@ -908,15 +908,15 @@ struct object_command dpseci_commands_v9[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpseci_info_options,
-	  .cmd_func = cmd_dpseci_info },
+	  .cmd_func = cmd_dpseci_info_v9 },
 
 	{ .cmd_name = "create",
 	  .options = dpseci_create_options,
-	  .cmd_func = cmd_dpseci_create },
+	  .cmd_func = cmd_dpseci_create_v9 },
 
 	{ .cmd_name = "destroy",
 	  .options = dpseci_destroy_options,
-	  .cmd_func = cmd_dpseci_destroy },
+	  .cmd_func = cmd_dpseci_destroy_v9 },
 
 	{ .cmd_name = NULL },
 };

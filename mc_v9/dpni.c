@@ -95,9 +95,6 @@ int dpni_extract_extended_cfg(struct dpni_extended_cfg	*cfg,
 	return 0;
 }
 
-/**
- * function modified for 0.8.x flibs
- */
 int dpni_create_v9(struct fsl_mc_io *mc_io,
 		   uint32_t cmd_flags,
 		   const struct dpni_cfg_v9 *cfg,
@@ -113,7 +110,6 @@ int dpni_create_v9(struct fsl_mc_io *mc_io,
 					  0);
 	DPNI_CMD_CREATE_V9(cmd, cfg);
 
-	/* Flib compatibility HACK, between 0.7.x and 0.8.x. */
 	MC_CMD_OP(cmd, 3, 0, 8, uint8_t, ext_cfg->tc_cfg[0].max_dist);
 	MC_CMD_OP(cmd, 3, 8, 8, uint8_t, ext_cfg->tc_cfg[1].max_dist);
 	MC_CMD_OP(cmd, 3, 16, 8, uint8_t, ext_cfg->tc_cfg[2].max_dist);
@@ -204,9 +200,6 @@ int dpni_get_attributes_v9(struct fsl_mc_io *mc_io,
 	/* retrieve response parameters */
 	DPNI_RSP_GET_ATTR_V9(cmd, attr);
 
-	/* Flib compatibility HACK (0.7.x <--> 0.8.x)
-	 * DO NOT RELY ON THIS.
-	 */
 	MC_RSP_OP(cmd, 3, 0,  8,  uint8_t, ext_cfg->tc_cfg[0].max_dist);
 	MC_RSP_OP(cmd, 3, 8,  8,  uint8_t, ext_cfg->tc_cfg[1].max_dist);
 	MC_RSP_OP(cmd, 3, 16, 8,  uint8_t, ext_cfg->tc_cfg[2].max_dist);
@@ -220,9 +213,7 @@ int dpni_get_attributes_v9(struct fsl_mc_io *mc_io,
 	MC_RSP_OP(cmd, 4, 32, 16, uint16_t, ext_cfg->ipr_cfg.min_frag_size_ipv6);
 	MC_RSP_OP(cmd, 5, 0,  16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv4);
 	MC_RSP_OP(cmd, 5, 16, 16, uint16_t, ext_cfg->ipr_cfg.max_open_frames_ipv6);
-	/* In Flib 0.7.x we know we were not capable of passing max_fs_entries,
-	 * so we have no choice but inferring them
-	 */
+
 	if (attr->options & DPNI_OPT_DIST_FS)
 		for (i = 0; i < 7; i++)
 			ext_cfg->tc_cfg[i].max_fs_entries = ext_cfg->tc_cfg[i].max_dist;

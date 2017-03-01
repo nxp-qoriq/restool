@@ -511,7 +511,7 @@ static int destroy_dpmcp_v9(uint32_t dpmcp_id)
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out_v8;
+		goto out_v9;
 	}
 	dpmcp_opened = true;
 	if (0 == dpmcp_handle) {
@@ -519,7 +519,7 @@ static int destroy_dpmcp_v9(uint32_t dpmcp_id)
 			"dpmcp_open() returned invalid handle (auth 0) for dpmcp.%u\n",
 			dpmcp_id);
 		error = -ENOENT;
-		goto out_v8;
+		goto out_v9;
 	}
 
 	error = dpmcp_destroy(&restool.mc_io, 0, dpmcp_handle);
@@ -527,12 +527,12 @@ static int destroy_dpmcp_v9(uint32_t dpmcp_id)
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out_v8;
+		goto out_v9;
 	}
 	dpmcp_opened = false;
 	printf("dpmcp.%u is destroyed\n", dpmcp_id);
 
-out_v8:
+out_v9:
 	if (dpmcp_opened) {
 		error2 = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
 		if (error2 < 0) {
