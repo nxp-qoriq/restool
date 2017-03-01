@@ -34,12 +34,12 @@
 ##	Restool wrapper script
 #
 # Prerequisites:
-#	- Management Complex version 8.0.5 or newer
-#	- restool version 1.1 or newer
+#	- Management Complex version 10.x
+#	- restool version 1.4 or newer
 #	- bash shell
 #
 #
-# The purpose of ths script is to offer a user friendly way to create
+# The purpose of this script is to offer a user friendly way to create
 # DPAA2 objects, their associated dependencies and the corresponding
 # Linux-like entities (e.g. network interfaces). The script relies on
 # restool utility which provides advanced commands and options for
