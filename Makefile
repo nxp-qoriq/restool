@@ -98,6 +98,7 @@ clean:
 	rm -f $(OBJS) \
 	      $(HEADER_DEPENDENCIES) \
 	      restool
+	rm -rf build
 
 %.d: %.c
 	@($(CC) $(CFLAGS) -M $< | \
