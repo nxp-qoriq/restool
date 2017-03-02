@@ -633,7 +633,7 @@ process_addsw() {
 	# check the status
 	object_exists $container $dpsw
 	if (( $object_exists_status == 1 )); then
-		echo "Created ETHSW object $dpsw with ${#endpoint[@]} ports"
+		echo "Created ETHSW object $dpsw with ${num_ifs} ports"
 
 		if [ $num_ifs -gt ${#endpoint[@]} ]; then
 		    echo "Do not forget to connect devices to interface(s)."
