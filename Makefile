@@ -70,7 +70,7 @@ CFLAGS = ${EXTRA_CFLAGS} \
 
 VERSION=$(shell test -d .git && git describe)
 ifeq ($(VERSION),)
-VERSION=v1.5
+VERSION=v1.6
 endif
 
 override CFLAGS += -DVERSION=\"${VERSION}\"
