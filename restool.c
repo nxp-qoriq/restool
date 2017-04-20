@@ -634,7 +634,7 @@ void print_unexpected_options_error(uint32_t option_mask,
 	}
 }
 
-int get_option_value(int option, long *value, const char *error_msg, int min, int max)
+int get_option_value(int option, long *value, const char *error_msg, long min, long max)
 {
 	char *str, *endptr;
 	long val;

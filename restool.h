@@ -337,7 +337,7 @@ int parse_generic_create_options(char *options_str,
 
 int get_option_value(int option, long *value,
 		     const char *error_msg,
-		     int min, int max);
+		     long min, long max);
 
 /* functions used for printing the result of restool commands */
 const char *mc_status_to_string(enum mc_cmd_status status);
