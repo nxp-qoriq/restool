@@ -260,6 +260,8 @@ enum dprc_connect_options {
 	CONNECT_OPT_HELP = 0,
 	CONNECT_OPT_ENDPOINT1,
 	CONNECT_OPT_ENDPOINT2,
+	CONNECT_OPT_COMMITTED_RATE,
+	CONNECT_OPT_MAX_RATE,
 };
 
 static struct option dprc_connect_options[] = {
@@ -277,6 +279,19 @@ static struct option dprc_connect_options[] = {
 		.has_arg = 1,
 	},
 
+	[CONNECT_OPT_COMMITTED_RATE] = {
+		.name = "committed-rate",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CONNECT_OPT_MAX_RATE] = {
+		.name = "max-rate",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
 	{ 0 },
 };
 
@@ -1757,7 +1772,7 @@ static int cmd_dprc_connect(void)
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dprc connect <parent-container> --endpoint1=<object>\n"
-		"		--endpoint2=<object>\n"
+		"		--endpoint2=<object> [OPTIONS]\n"
 		"\n"
 		"  <parent-container>\n"
 		"    Specifies the parent-container.\n"
@@ -1765,6 +1780,12 @@ static int cmd_dprc_connect(void)
 		"    Specifies an endpoint object.\n"
 		"  --endpoint2=<object>\n"
 		"    Specifies an endpoint object.\n"
+		"\n"
+		"OPTIONS:\n"
+		"  --committed-rate=<number>\n"
+		"    Committed rate (Mbits/s). Must be provided alongside max-rate.\n"
+		"  --max-rate=<number>\n"
+		"    Maximum rate (Mbits/s). Must be provided alongside committed-rate.\n"
 		"\n"
 		"NOTES:\n"
 		"  -<parent-container> must be a common ancestor of both <object> arguments\n"
@@ -1780,18 +1801,16 @@ static int cmd_dprc_connect(void)
 		"   $ restool dprc connect dprc.1 --endpoint1=dpsw.1.0 --endpoint2=dpni.8\n"
 		"\n";
 
-	uint16_t dprc_handle;
-	int error;
-	bool dprc_opened = false;
-	uint32_t parent_dprc_id;
+	struct dprc_connection_cfg dprc_connection_cfg;
+	bool committed_rate_given = false;
+	bool max_rate_given = false;
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
-	struct dprc_connection_cfg dprc_connection_cfg = {
-		/* If both rates are zero the connection */
-		/* will be configured in "best effort" mode. */
-		.committed_rate = 0,
-		.max_rate = 0
-	};
+	bool dprc_opened = false;
+	uint32_t parent_dprc_id;
+	uint16_t dprc_handle;
+	long value;
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CONNECT_OPT_HELP)) {
 		puts(usage_msg);
@@ -1854,6 +1873,42 @@ static int cmd_dprc_connect(void)
 		ERROR_PRINTF("Invalid --endpoint2 arg: '%s'\n",
 			     restool.cmd_option_args[CONNECT_OPT_ENDPOINT2]);
 		goto out;
+	}
+
+	if (restool.cmd_option_args[CONNECT_OPT_COMMITTED_RATE]) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_COMMITTED_RATE);
+		error = get_option_value(CONNECT_OPT_COMMITTED_RATE, &value,
+					 "Invalid committed-rate value\n",
+					 1, UINT32_MAX);
+		if (error)
+			return error;
+		dprc_connection_cfg.committed_rate = value;
+		committed_rate_given = true;
+	} else {
+		dprc_connection_cfg.committed_rate = 0;
+	}
+
+	if (restool.cmd_option_args[CONNECT_OPT_MAX_RATE]) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_MAX_RATE);
+		error = get_option_value(CONNECT_OPT_MAX_RATE, &value,
+					 "Invalid max-rate value\n",
+					 1, UINT32_MAX);
+		if (error)
+			return error;
+		dprc_connection_cfg.max_rate = value;
+		max_rate_given = true;
+	} else {
+		dprc_connection_cfg.max_rate = 0;
+	}
+
+	if (dprc_connection_cfg.max_rate < dprc_connection_cfg.committed_rate) {
+		ERROR_PRINTF("Value of max-rate must be bigger than committed-rate!\n");
+		return -EINVAL;
+	}
+
+	if (committed_rate_given != max_rate_given) {
+		ERROR_PRINTF("Both committed-rate and max-rate must be provided!\n");
+		return -EINVAL;
 	}
 
 	error = dprc_connect(&restool.mc_io, 0,
