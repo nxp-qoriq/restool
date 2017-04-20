@@ -1021,6 +1021,13 @@ if [ ! "$(which $restool)" ]; then
 	exit 1
 fi
 
+# Check compatibility with MC version
+mc_major=$($restool --mc-version | cut -f2 -d':' | cut -f1 -d'.' | tr -d ' ')
+if (( $mc_major != 10 )); then
+	echo "Restool wrapper scripts only support the latest major MC version\n"
+	echo "that currently is MC10.x. Use with caution."
+fi
+
 # The operation name will be one of ls-addmux/ls-addsw/ls-addni/ls-listni/ls-listmac,
 # as they are symbolic links to ls-main
 operation=$(basename "${0}")
