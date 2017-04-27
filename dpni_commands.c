@@ -1402,7 +1402,7 @@ static int create_dpni_v10(const char *usage_msg)
 					(uint64_t *)&dpni_cfg.options,
 					options_map_v10_0,
 					options_num_v10_0);
-		else if (restool.mc_fw_version.minor == 1)
+		else
 			error = parse_generic_create_options(
 					restool.cmd_option_args[CREATE_OPT_OPTIONS],
 					(uint64_t *)&dpni_cfg.options,
@@ -1587,7 +1587,7 @@ static int cmd_dpni_create_v10(void)
 
 	if (restool.mc_fw_version.minor == 0)
 		return create_dpni_v10(usage_msg_v10_0);
-	else if (restool.mc_fw_version.minor == 1)
+	else
 		return create_dpni_v10(usage_msg_v10_1);
 	return -EINVAL;
 }
