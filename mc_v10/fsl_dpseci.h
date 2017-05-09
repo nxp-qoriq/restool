@@ -41,6 +41,11 @@
 struct fsl_mc_io;
 
 /**
+ * Congestion Group for DPSECI support
+ */
+#define DPSECI_OPT_HAS_CG				0x000020
+
+/**
  * Enable the Order Restoration support
  */
 #define DPSECI_OPT_HAS_OPR				0x000040

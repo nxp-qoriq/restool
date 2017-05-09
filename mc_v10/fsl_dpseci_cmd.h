@@ -34,7 +34,7 @@
 
 /* DPSECI Version */
 #define DPSECI_VER_MAJOR		5
-#define DPSECI_VER_MINOR		0
+#define DPSECI_VER_MINOR		1
 
 /* Command IDs */
 #define DPSECI_CMDID_CREATE_V1		((0x909 << 4) | (0x1))

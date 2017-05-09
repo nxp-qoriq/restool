@@ -154,6 +154,7 @@ static const struct flib_ops dpseci_ops = {
 static struct option_entry options_map_v10_1[] = {
 	OPTION_MAP_ENTRY(DPSECI_OPT_HAS_OPR),
 	OPTION_MAP_ENTRY(DPSECI_OPT_OPR_SHARED),
+	OPTION_MAP_ENTRY(DPSECI_OPT_HAS_CG)
 };
 static unsigned int options_num_v10_1 = ARRAY_SIZE(options_map_v10_1);
 
@@ -744,6 +745,7 @@ static int cmd_dpseci_create_v10(void)
 		"   Where <options-mask> is a comma or space separated list of DPSECI options:\n"
 		"	DPSECI_OPT_OPR_SHARED\n"
 		"	DPSECI_OPT_HAS_OPR\n"
+		"	DPSECI_OPT_HAS_CG\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
