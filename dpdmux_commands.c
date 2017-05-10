@@ -364,6 +364,9 @@ static void print_dpdmux_method(enum dpdmux_method method)
 	case DPDMUX_METHOD_C_VLAN:
 		printf("DPDMUX_METHOD_C_VLAN\n");
 		break;
+	case DPDMUX_METHOD_CUSTOM:
+		printf("DPDMUX_METHOD_CUSTOM\n");
+		break;
 	default:
 		assert(false);
 		break;
@@ -659,7 +662,10 @@ static int parse_dpdmux_method(char *method_str, enum dpdmux_method *method)
 		return 0;
 	}
 
-/* TODO: Enable DPDMUX_METHOD_S_VLAN when MC support added */
+	if (strcmp(method_str, "DPDMUX_METHOD_CUSTOM") == 0) {
+		*method = DPDMUX_METHOD_CUSTOM;
+		return 0;
+	}
 
 	printf("Invalid dpdmux method input.\n");
 	return -EINVAL;
@@ -1014,6 +1020,7 @@ static int cmd_dpdmux_create_v10(void)
 		"	DPDMUX_METHOD_C_VLAN_MAC\n"
 		"	DPDMUX_METHOD_MAC\n"
 		"	DPDMUX_METHOD_C_VLAN\n"
+		"	DPDMUX_METHOD_CUSTOM\n"
 		"   Default is DPDMUX_METHOD_C_VLAN_MAC\n"
 		"--manip=<manip>\n"
 		"   Where <manip> defines the DPDMUX required manipulation operation.\n"

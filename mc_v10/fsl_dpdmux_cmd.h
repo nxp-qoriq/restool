@@ -34,7 +34,7 @@
 
 /* DPDMUX Version */
 #define DPDMUX_VER_MAJOR		6
-#define DPDMUX_VER_MINOR		0
+#define DPDMUX_VER_MINOR		1
 
 /* Command IDs */
 #define DPDMUX_CMDID_CREATE		((0x906 << 4) | (0x1))
