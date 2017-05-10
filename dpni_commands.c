@@ -344,13 +344,6 @@ static const struct flib_ops dpni_ops = {
 	.obj_get_irq_status = dpni_get_irq_status,
 };
 
-static const struct flib_ops dpni_ops_v9 = {
-	.obj_open = dpni_open,
-	.obj_close = dpni_close,
-	.obj_get_irq_mask = dpni_get_irq_mask,
-	.obj_get_irq_status = dpni_get_irq_status_v9,
-};
-
 static struct option_entry options_map_v9[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
 	OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
