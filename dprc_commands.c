@@ -1797,8 +1797,8 @@ static int cmd_dprc_connect(void)
 		"   convention to specify endpoints: <object>.<id>.<port>\n"
 		"\n"
 		"EXAMPLE:\n"
-		"To connect dpni.8 to dpsw.1.0:\n"
-		"   $ restool dprc connect dprc.1 --endpoint1=dpsw.1.0 --endpoint2=dpni.8\n"
+		"To connect dpni.8 to dpsw.0.0:\n"
+		"   $ restool dprc connect dprc.1 --endpoint1=dpsw.0.0 --endpoint2=dpni.8\n"
 		"\n";
 
 	struct dprc_connection_cfg dprc_connection_cfg;

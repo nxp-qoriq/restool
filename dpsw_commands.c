@@ -498,8 +498,8 @@ static int info_dpsw(int mc_fw_version)
 		"   Shows extended/verbose information about the object\n"
 		"\n"
 		"EXAMPLE:\n"
-		"Display information about dpsw.5:\n"
-		"   $ restool dpsw info dpsw.5\n"
+		"Display information about dpsw.0:\n"
+		"   $ restool dpsw info dpsw.0\n"
 		"\n";
 
 	uint32_t obj_id;
