@@ -191,13 +191,6 @@ static const struct flib_ops dpsw_ops = {
 	.obj_get_irq_status = dpsw_get_irq_status,
 };
 
-static const struct flib_ops dpsw_ops_v9 = {
-	.obj_open = dpsw_open,
-	.obj_close = dpsw_close,
-	.obj_get_irq_mask = dpsw_get_irq_mask,
-	.obj_get_irq_status = dpsw_get_irq_status_v9,
-};
-
 static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_DIS),
 	OPTION_MAP_ENTRY(DPSW_OPT_MULTICAST_DIS),
