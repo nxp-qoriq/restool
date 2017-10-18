@@ -27,18 +27,19 @@ endif
 
 override CFLAGS += -DVERSION=\"${VERSION}\"
 
-LDFLAGS = -static -Wl,--hash-style=gnu
+LDFLAGS = -Wl,--hash-style=gnu
 
 PREFIX = $(DESTDIR)/usr/bin
 EXEC_PREFIX = $(DESTDIR)/usr/bin
 
-HEADER_DEPENDENCIES = $(subst .o,.d,$(OBJ))
-
 all: restool
 
 restool: $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $(OBJ) -lm
+	$(CC) $(LDFLAGS) $^ -o $@ -lm
 	file $@
+
+%.o: %.c
+	$(CC) $(CFLAGS) -c $^ -o $@
 
 install:
 	install -d $(PREFIX) $(EXEC_PREFIX)
@@ -48,16 +49,5 @@ install:
 
 clean:
 	rm -f $(OBJ) \
-	      $(HEADER_DEPENDENCIES) \
 	      restool
-	rm -rf build
-
-%.d: %.c
-	@($(CC) $(CFLAGS) -M $< | \
-	  sed 's,\($(notdir $*)\.o\) *:,$(dir $@)\1 $@: ,' > $@.tmp); \
-	 mv $@.tmp $@
-
--include $(HEADER_DEPENDENCIES)
-
-
 
