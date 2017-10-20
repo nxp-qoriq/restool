@@ -5,6 +5,8 @@ endif
 SRC = $(shell find . -name "*.c")
 OBJ = $(patsubst %.c, %.o, $(SRC))
 
+RESTOOL_SCRIPT_SYMLINKS = ls-addmux ls-addsw ls-addni ls-listni ls-listmac
+
 CFLAGS = ${EXTRA_CFLAGS} \
 	  -Wall \
           -Wstrict-prototypes \
@@ -24,8 +26,9 @@ endif
 
 override CFLAGS += -DVERSION=\"${VERSION}\"
 
-PREFIX = $(DESTDIR)/usr/bin
-EXEC_PREFIX = $(DESTDIR)/usr/bin
+prefix ?= /usr/local
+exec_prefix ?= ${prefix}
+bindir ?= ${exec_prefix}/bin
 
 all: restool
 
@@ -36,11 +39,10 @@ restool: $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-install:
-	install -d $(PREFIX) $(EXEC_PREFIX)
-	install -m 755 restool $(PREFIX)
-	cp -d scripts/* $(EXEC_PREFIX)
-	chmod 755 $(EXEC_PREFIX)/ls-main
+install: restool scripts/ls-main
+	install -D -m 755 restool $(DESTDIR)$(bindir)/restool
+	install -D -m 755 scripts/ls-main $(DESTDIR)$(bindir)/ls-main
+	$(foreach symlink, $(RESTOOL_SCRIPT_SYMLINKS), sh -c "cd $(DESTDIR)$(bindir) && ln -sf ls-main $(symlink)" ;)
 
 clean:
 	rm -f $(OBJ) \

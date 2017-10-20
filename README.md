@@ -31,8 +31,8 @@ make EXTRA_CFLAGS=-mbig-endian
 ```
 make install
 ```
-...will install restool into $DESTDIR/sbin and the scripts into
-$DESTDIR/usr/bin.
+...will install by default both restool binary and restool wrapper scripts into
+$DESTDIR/usr/local/bin.
 
 ## Getting Help
 
