@@ -1,6 +1,3 @@
-CROSS_COMPILE ?=
-DESTDIR ?=
-
 ifeq ($(origin CC),default)
 	CC := $(CROSS_COMPILE)gcc
 endif
