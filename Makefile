@@ -27,8 +27,6 @@ endif
 
 override CFLAGS += -DVERSION=\"${VERSION}\"
 
-LDFLAGS = -Wl,--hash-style=gnu
-
 PREFIX = $(DESTDIR)/usr/bin
 EXEC_PREFIX = $(DESTDIR)/usr/bin
 
