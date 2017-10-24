@@ -76,13 +76,16 @@ C_ASSERT(ARRAY_SIZE(dprc_sync_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  */
 enum dprc_list_options {
 	LIST_OPT_HELP = 0,
+	LIST_OPT_FULL_PATH,
 };
 
 static struct option dprc_list_options[] = {
 	[LIST_OPT_HELP] = {
 		.name = "help",
 	},
-
+	[LIST_OPT_FULL_PATH] = {
+		.name = "full-path",
+	},
 	{ 0 },
 };
 
@@ -421,17 +424,33 @@ static int cmd_dprc_sync(void)
  * Lists nested DPRCs inside a given DPRC, recursively
  */
 static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
-		     int nesting_level, bool show_non_dprc_objects)
+		     int nesting_level, bool show_non_dprc_objects,
+		     char *full_path)
 {
+	char *updated_full_path = NULL;
 	int num_child_devices;
 	int error = 0;
+	int full_path_len;
 
 	assert(nesting_level <= MAX_DPRC_NESTING);
 
-	for (int i = 0; i < nesting_level; i++)
-		printf("  ");
-
-	printf("dprc.%u\n", dprc_id);
+	if (full_path) {
+		full_path_len = strlen(full_path);
+		updated_full_path = malloc(full_path_len + 10);
+		if (!updated_full_path) {
+			ERROR_PRINTF("Could not alloc memory for full-path!\n");
+			return -ENOMEM;
+		}
+		if (full_path_len != 0)
+			sprintf(updated_full_path, "%s/dprc.%d", full_path, dprc_id);
+		else
+			sprintf(updated_full_path, "dprc.%d", dprc_id);
+		printf("%s\n", updated_full_path);
+	} else {
+		for (int i = 0; i < nesting_level; i++)
+			printf("  ");
+		printf("dprc.%u\n", dprc_id);
+	}
 
 	error = dprc_get_obj_count(&restool.mc_io, 0,
 				   dprc_handle,
@@ -475,8 +494,11 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 		if (error < 0)
 			goto out;
 
-		error = list_dprc(obj_desc.id, child_dprc_handle,
-				  nesting_level + 1, show_non_dprc_objects);
+		error = list_dprc(obj_desc.id,
+				  child_dprc_handle,
+				  nesting_level + 1,
+				  show_non_dprc_objects,
+				  updated_full_path);
 
 		error2 = dprc_close(&restool.mc_io, 0, child_dprc_handle);
 		if (error2 < 0) {
@@ -491,6 +513,9 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 	}
 
 out:
+	if (full_path)
+		free(updated_full_path);
+
 	return error;
 }
 
@@ -498,13 +523,25 @@ static int cmd_dprc_list(void)
 {
 	static const char usage_msg[] =
 		"\n"
-		"Usage: restool dprc list\n"
+		"Usage: restool dprc list [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--full-path\n"
+		"   prints the dprc list in a full-path\n"
+		"   format like: dprc.1/dprc.2\n"
 		"\n";
+	bool full_path = false;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(LIST_OPT_HELP)) {
 		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(LIST_OPT_HELP);
 		return 0;
+	}
+
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(LIST_OPT_FULL_PATH)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(LIST_OPT_FULL_PATH);
+		full_path = true;
 	}
 
 	if (restool.obj_name != NULL) {
@@ -514,8 +551,10 @@ static int cmd_dprc_list(void)
 		return -EINVAL;
 	}
 
-	return list_dprc(
-		restool.root_dprc_id, restool.root_dprc_handle, 0, false);
+	return list_dprc(restool.root_dprc_id,
+			 restool.root_dprc_handle,
+			 0, false,
+			 full_path ? "" : NULL);
 }
 
 static int show_one_resource_type(uint16_t dprc_handle,
