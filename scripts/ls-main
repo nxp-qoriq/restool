@@ -73,7 +73,6 @@
 ##
 
 shopt -s extglob
-shopt -s lastpipe
 
 # Intercept the Ctrl+C command but do not interrupt execution
 trap ' ' INT
@@ -86,11 +85,6 @@ root_c=
 
 # Type of endpoint object
 toe=
-
-containers=()
-# Full path containers
-fpc=()
-idx=0
 
 SYS_DPRC="/sys/bus/fsl-mc/drivers/fsl_mc_dprc"
 
@@ -218,42 +212,6 @@ count_spaces() {
 # Retrieve container given the full path
 get_container() {
 	echo $(echo "$i" | sed "s/\(dprc.[0-9]*\/\)*//g")
-}
-
-build_fpc_list() {
-	$restool dprc list |
-	while IFS= read -r line
-	do
-		containers+=("$line")
-	done
-
-	for i in "${containers[@]}"
-	do
-		cnt=$(count_spaces "$i")
-
-		if [ "$cnt" -gt 0 ]; then
-			# Get index of the upper level container
-			idx2=$((idx-1))
-			crt_ct="$i"
-
-			while [ "$idx2" -ge 0 ]
-			do
-				cntp=$(count_spaces "${containers[idx2]}")
-
-				if [ "$cntp" -lt "$cnt" ]; then
-					upc=$(echo "${containers[idx2]}" | sed "s/ *$//")
-					crt_ct=$upc"/""$(echo $crt_ct | sed 's/ *$//')"
-				fi
-				idx2=$((idx2-1))
-			done
-
-			fpc+=($crt_ct)
-		else
-			fpc+=("$i")
-		fi
-
-		idx=$((idx+1))
-	done
 }
 
 get_label() {
@@ -897,9 +855,9 @@ process_addni() {
 }
 
 process_listni() {
-	build_fpc_list
-
-	for i in "${fpc[@]}"
+	dprc_list="$($restool dprc list --full-path)"
+	echo "${dprc_list}" |
+	while read -r i
 	do
 		crt_c=$(get_container "$i")
 		$restool dprc show "$crt_c" | grep dpni |
@@ -948,10 +906,12 @@ process_listni() {
 }
 
 process_listmac() {
-	build_fpc_list
+	dprc_list="$($restool dprc list --full-path)"
 
-	for i in "${fpc[@]}"
+	echo "${dprc_list}" |
+	while read -r i
 	do
+
 		crt_c=$(get_container "$i")
 		$restool dprc show "$crt_c" | grep dpmac |
 		while IFS= read -r line
