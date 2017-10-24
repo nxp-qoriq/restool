@@ -87,8 +87,6 @@ root_c=
 # Type of endpoint object
 toe=
 
-dpnis=()
-dpmacs=()
 containers=()
 # Full path containers
 fpc=()
@@ -944,16 +942,8 @@ process_listni() {
 				fi
 			fi
 
-			dpnis+=("$dpni $details")
+			echo "${i}/${dpni} ${details}"
 		done
-
-		if [ -n "$dpnis" ]; then
-			for j in "${dpnis[@]}"; do
-				echo "$i/$j"
-			done
-
-			dpnis=()
-		fi
 	done
 }
 
@@ -984,16 +974,8 @@ process_listmac() {
 				fi
 			fi
 
-			dpmacs+=("$dpmac $details")
+			echo "${i}/${dpmac} ${details}"
 		done
-
-		if [ -n "$dpmacs" ]; then
-			for j in "${dpmacs[@]}"; do
-				echo "$i/$j"
-			done
-
-			dpmacs=()
-		fi
 	done
 }
 
