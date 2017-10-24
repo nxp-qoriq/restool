@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Copyright 2013-2016 Freescale Semiconductor Inc.
 # Copyright 2017 NXP
@@ -37,7 +37,7 @@
 # Prerequisites:
 #	- Management Complex version 10.x
 #	- restool version 1.4 or newer
-#	- bash shell
+#	- Bourne Shell (sh)
 #
 #
 # The purpose of this script is to offer a user friendly way to create
