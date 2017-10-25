@@ -197,7 +197,7 @@ has_endpoint() {
 		ep=$($restool "$toe" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
 	fi
 
-	if [[ "$ep" != *"No object associated"* && "$ep" != *"none"* ]]; then
+	if [[ "$ep" != "endpoint: No object associated" && "$ep" != *"none"* ]]; then
 		echo "$1 is already linked to $ep"
 		exit 1
 	fi
@@ -230,7 +230,7 @@ get_endpoint() {
 		end_point=$($restool "$too" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
 	fi
 
-	if [[ "$end_point" != *"No object associated"* && "$end_point" != *"none"* ]]; then
+	if [[ "$end_point" != "endpoint: No object associated" && "$end_point" != *"none"* ]]; then
 		echo "$end_point"
 	fi
 }
