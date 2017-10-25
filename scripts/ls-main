@@ -807,7 +807,7 @@ process_addni() {
 	# if no --num-queues is specified then set it to number of cores
 	num_queues_present=$(echo "$dpni_args" | grep -o "\-\-num-queues" || true)
 	if [[ -z "$num_queues_present" ]]; then
-		dpni_args=$dpni_args" --num-queues="$(nproc)
+		dpni_args=$dpni_args" --num-queues="$(grep -c ^processor /proc/cpuinfo)
 	fi
 
 	# Check if --no-link the endpoint have been provided otherwise display the usage
