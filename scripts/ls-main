@@ -409,7 +409,7 @@ process_addmux() {
 
 	# check the status
 	object_exists $container $dpdmux
-	if (( $object_exists_status == 1 )); then
+	if [ $object_exists_status == 1 ]; then
 
 		if [ "$root_c" == "$container" ]; then
 			evb=$(ls $SYS_DPRC/"$root_c"/"$dpdmux"/net/ | grep -v "p")
@@ -598,7 +598,7 @@ process_addsw() {
 
 	# check the status
 	object_exists $container $dpsw
-	if (( $object_exists_status == 1 )); then
+	if [ $object_exists_status == 1 ]; then
 		echo "Created ETHSW object $dpsw with ${num_ifs} ports"
 
 		if [ $num_ifs -gt $ifcnt ]; then
@@ -850,7 +850,7 @@ process_addni() {
 
 	# check the status
 	object_exists $container $dpni
-	if (( $object_exists_status == 1 )); then
+	if [ $object_exists_status == 1 ]; then
 		if [ "$root_c" == "$container" ]; then
 			ni=$(ls $SYS_DPRC/"$root_c"/"$dpni"/net/)
 		fi
