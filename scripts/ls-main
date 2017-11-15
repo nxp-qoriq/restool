@@ -180,9 +180,9 @@ type_of_endpoint() {
 
 # Check if endpoint object exists
 check_endpoint() {
-	cep=$($restool "$toe" info "$1")
+	cep=$(trap "$restool "$toe" info "$1"" EXIT)
 
-	if [[ "$cep" == *"does not exist"* ]]; then
+	if [ "$cep" != "${cep%"does not exist"*}" ]; then
 		echo "End point $1 does not exist"
 		exit 1
 	fi
@@ -190,14 +190,14 @@ check_endpoint() {
 
 # Check whether the end point provided already has an end point associated
 has_endpoint() {
-	if [ "$toe" == "dpdmux" ]; then
+	if [ "$toe" = "dpdmux" ]; then
 		itf_id=$(echo "$1" | sed "s/\(dpdmux\.[0-9]*\.\)//g")
 		ep=$($restool "$toe" info "$1" | awk "/interface $itf_id/{getline; print}" | sed "s/.*connection: //")
 	else
 		ep=$($restool "$toe" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
 	fi
 
-	if [[ "$ep" != "endpoint: No object associated" && "$ep" != *"none"* ]]; then
+	if [ "$ep" != "endpoint: No object associated" ] && [ "$ep" != *"none"* ]; then
 		echo "$1 is already linked to $ep"
 		exit 1
 	fi
@@ -223,14 +223,14 @@ get_endpoint() {
 	# Retrieve the type of the object
 	too=$(echo "$1" | sed "s/\(\.[0-9]*\)\(\.[0-9]*\)*$//g")
 
-	if [ "$too" == "dpdmux" ]; then
+	if [ "$too" = "dpdmux" ]; then
 		itf_id=$(echo "$1" | sed "s/\(dpdmux\.[0-9]*\.\)//g")
 		end_point=$($restool "$too" info "$1" | awk "/interface $itf_id/{getline; print}" | sed "s/.*connection: //")
 	else
 		end_point=$($restool "$too" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
 	fi
 
-	if [[ "$end_point" != "endpoint: No object associated" && "$end_point" != *"none"* ]]; then
+	if [ "$end_point" != "endpoint: No object associated" ] && [ "$end_point" != *"none"* ]; then
 		echo "$end_point"
 	fi
 }
@@ -289,7 +289,7 @@ Usage examples:
 create_dpdmux() {
 	create_dpmcp $root_c
 
-	if [ "$options" == "" ]; then
+	if [ "$options" = "" ]; then
 		options_str=
 	else
 		options_str="--options=$options"
@@ -390,18 +390,7 @@ process_addmux() {
 	fi
 
 	type_of_endpoint "$endpoint"
-
-	if [ "$toe" == "dpmac" ]; then
-		res=$(trap '$restool dpmac info $endpoint' EXIT)
-
-		if [[ "$res" == *"does not exist"* ]]; then
-			echo "$res"
-			exit 1
-		fi
-	else
-		check_endpoint "$endpoint"
-	fi
-
+	check_endpoint "$endpoint"
 	has_endpoint "$endpoint"
 
 	# Create the MUX
@@ -409,9 +398,9 @@ process_addmux() {
 
 	# check the status
 	object_exists $container $dpdmux
-	if [ $object_exists_status == 1 ]; then
+	if [ $object_exists_status = 1 ]; then
 
-		if [ "$root_c" == "$container" ]; then
+		if [ "$root_c" = "$container" ]; then
 			evb=$(ls $SYS_DPRC/"$root_c"/"$dpdmux"/net/ | grep -v "p")
 		fi
 
@@ -463,7 +452,7 @@ create_dpsw() {
 	create_dpmcp $container
 
         # Add dependencies if switch options does not disable control traffic
-        if [[ ${options} != *"DPSW_OPT_CTRL_IF_DIS"* ]]; then
+        if [ -z ${options} ] || [ ${options} != "${options%"DPSW_OPT_CTRL_IF_DIS"*}" ]; then
                 create_dpbp $container
         fi
 
@@ -564,7 +553,7 @@ process_addsw() {
 				arg_dpni="$(echo $i | grep -x -E "dpni.[0-9]+" || true )"
 				if [ "$i" = "$arg_dpmac"  ] ||
 				   [ "$i" = "$arg_dpni" ]; then
-					endpoint="$i"
+				endpoint=$(echo -e "$endpoint\n$i")
 				else
 					echo "Error: $i argument is invalid"
 					usage_addsw
@@ -588,9 +577,11 @@ process_addsw() {
 	echo "${endpoint}" |
 	while read -r i
 	do
-		type_of_endpoint "$i"
-		check_endpoint "$i"
-		has_endpoint "$i"
+		if [ ! -z "$i" ]; then
+			type_of_endpoint "$i"
+			check_endpoint "$i"
+			has_endpoint "$i"
+		fi
 	done
 
 	# Create the SWITCH
@@ -598,7 +589,7 @@ process_addsw() {
 
 	# check the status
 	object_exists $container $dpsw
-	if [ $object_exists_status == 1 ]; then
+	if [ $object_exists_status = 1 ]; then
 		echo "Created ETHSW object $dpsw with ${num_ifs} ports"
 
 		if [ $num_ifs -gt $ifcnt ]; then
@@ -714,7 +705,7 @@ process_addni() {
 				;;
 			-nq=* | --num-queues=*)
 				num_queues="${i#*=}"
-				if [[ "$num_queues" -gt 8 || "$num_queues" -lt 1 ]]; then
+				if [ "$num_queues" -gt 8 ] || [ "$num_queues" -lt 1 ]; then
 					echo "Invalid num_queues=$num_queues. Valid range is [1-8]."
 					exit 1
 				fi
@@ -722,7 +713,7 @@ process_addni() {
 				;;
 			-t=* | --num-tcs=*)
 				num_tcs="${i#*=}"
-				if [[ "$num_tcs" -gt 8 || "$num_tcs" -lt 1 ]]; then
+				if [ "$num_tcs" -gt 8 ] || [ "$num_tcs" -lt 1 ]; then
 					echo "Invalid num_tcs=$num_queues. Valid range is [1-8]."
 					exit 1
 				fi
@@ -730,7 +721,7 @@ process_addni() {
 				;;
 			-m=* | --mac-entries=*)
 				mac_entries="${i#*=}"
-				if [[ "$mac_entries" -gt 80 || "$mac_entries" -lt 1 ]]; then
+				if [ "$mac_entries" -gt 80 ] || [ "$mac_entries" -lt 1 ]; then
 					echo "Invalid mac_entries=$mac_entries. Valid range is [1-80]."
 					exit 1
 				fi
@@ -738,7 +729,7 @@ process_addni() {
 				;;
 			-v=* | --vlan-entries=*)
 				vlan_entries="${i#*=}"
-				if [[ "$vlan_entries" -gt 16 || "$vlan_entries" -lt 1 ]]; then
+				if [ "$vlan_entries" -gt 16 ] || [ "$vlan_entries" -lt 1 ]; then
 					echo "Invalid vlan_entries=$vlan_entries. Valid range is [1-16]."
 					exit 1
 				fi
@@ -746,7 +737,7 @@ process_addni() {
 				;;
 			-q=* | --qos-entries=*)
 				qos_entries="${i#*=}"
-				if [[ "$qos_entries" -gt 64 || "$qos_entries" -lt 1 ]]; then
+				if [ "$qos_entries" -gt 64 ] || [ "$qos_entries" -lt 1 ]; then
 					echo "Invalid qos_entries=$qos_entries. Valid range is [1-64]."
 					exit 1
 				fi
@@ -754,7 +745,7 @@ process_addni() {
 				;;
 			-f=* | --fs-entries=*)
 				fs_entries="${i#*=}"
-				if [[ "$fs_entries" -gt 1024 || "$fs_entries" -lt 1 ]]; then
+				if [ "$fs_entries" -gt 1024 ] || [ "$fs_entries" -lt 1 ]; then
 					echo "Invalid fs_entries=$fs_entries. Valid range is [1-1024]."
 					exit 1
 				fi
@@ -806,7 +797,7 @@ process_addni() {
 
 	# if no --num-queues is specified then set it to number of cores
 	num_queues_present=$(echo "$dpni_args" | grep -o "\-\-num-queues" || true)
-	if [[ -z "$num_queues_present" ]]; then
+	if [ -z "$num_queues_present" ]; then
 		dpni_args=$dpni_args" --num-queues="$(grep -c ^processor /proc/cpuinfo)
 	fi
 
@@ -818,18 +809,7 @@ process_addni() {
 
 	if [ ! -z "$endpoint" ]; then
 		type_of_endpoint "$endpoint"
-
-		if [ "$toe" == "dpmac" ]; then
-			res=$(trap '$restool dpmac info $endpoint' EXIT)
-
-			if [[ "$res" == *"does not exist"* ]]; then
-				echo "$res"
-				exit 1
-			fi
-		else
-			check_endpoint "$endpoint"
-		fi
-
+		check_endpoint "$endpoint"
 		has_endpoint "$endpoint"
 	fi
 
@@ -851,8 +831,8 @@ process_addni() {
 
 	# check the status
 	object_exists $container $dpni
-	if [ $object_exists_status == 1 ]; then
-		if [ "$root_c" == "$container" ]; then
+	if [ $object_exists_status = 1 ]; then
+		if [ "$root_c" = "$container" ]; then
 			ni=$(ls $SYS_DPRC/"$root_c"/"$dpni"/net/)
 		fi
 		echo "Created interface: $ni (object:$dpni, endpoint: $endpoint)"
