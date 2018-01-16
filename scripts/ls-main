@@ -256,7 +256,7 @@ The options are:
 	-v, --vepa					MUX is configured as a VEPA. Default is VEB.
 	-m, --method					Traffic steering method. One of: DPDMUX_METHOD_NONE,
 							DPDMUX_METHOD_C_VLAN_MAC, DPDMUX_METHOD_MAC,
-							DPDMUX_METHOD_C_VLAN.
+							DPDMUX_METHOD_C_VLAN, DPDMUX_METHOD_CUSTOM.
 							Default is DPDMUX_METHOD_MAC
 	-e, --max-dmat-entries=NUM_ENTRIES		Entries in address table.
 							Default value is 64.
