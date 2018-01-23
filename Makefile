@@ -42,6 +42,7 @@ restool: $(OBJ)
 install: restool scripts/ls-main
 	install -D -m 755 restool $(DESTDIR)$(bindir)/restool
 	install -D -m 755 scripts/ls-main $(DESTDIR)$(bindir)/ls-main
+	install -D -m 755 scripts/ls-append-dpl $(DESTDIR)$(bindir)/ls-append-dpl
 	$(foreach symlink, $(RESTOOL_SCRIPT_SYMLINKS), sh -c "cd $(DESTDIR)$(bindir) && ln -sf ls-main $(symlink)" ;)
 
 clean:

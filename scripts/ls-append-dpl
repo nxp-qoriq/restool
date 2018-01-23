@@ -1,0 +1,284 @@
+#! /bin/bash
+
+set -e
+shopt -s lastpipe
+
+usage() {
+	echo "Usage: $0 [options] <dpl-file>"
+	echo -e ""
+	echo "Options:"
+	echo "  -h, --help"
+	echo "        Print this help and exit"
+}
+
+check_if_installed() {
+	local cmd=$1
+
+	command -v $cmd >/dev/null 2>&1 || \
+		{ echo "Error: $cmd not installed"; usage; exit 1; }
+}
+
+get_property_value() {
+	local dtb=$1
+	local node=$2
+	local property=$3
+
+	fdtget -d error $dtb $node $property
+}
+
+get_subnodes() {
+	local dtb=$1
+	local node=$2
+
+	fdtget -d error -l $dtb $node
+}
+
+get_properties() {
+	local dtb=$1
+	local node=$2
+
+	fdtget -d error -p $dtb $node
+}
+
+check_node_exists() {
+	local dtb=$1
+	local node=$2
+
+	fdtget -d error -l $dtb $node
+}
+
+create_dprc() {
+	local dtb=$1
+	local dprc=$2
+	IFS='
+	'
+
+	for property in $(get_properties $dtb $dprc); do
+		case "$property" in
+		compatible)
+			arg_comp=$(get_property_value $dtb $dprc $property)
+			if [ "$arg_comp" != "fsl,dprc" ]; then
+				echo "Error: Unknown compatible $arg_comp for node $dprc"
+				exit 1
+			fi;;
+		parent)
+			arg_parent=$(get_property_value $dtb $dprc $property);;
+		options)
+			options=$(get_property_value $dtb $dprc $property)
+			arg_options=$(echo $options | sed "s/ /,/g");;
+		*)
+			echo "Error: unknown property $property for node $dprc"
+			exit 1;;
+		esac
+	done
+
+	restool -s dprc create $arg_parent --options=$arg_options
+}
+
+dpl_to_restool() {
+	local dpl_property=$1
+
+	restool_property=$(echo "$dpl_property" | sed 's/_/-/g')
+	restool_property="--$restool_property"
+	echo $restool_property
+}
+
+create_object() {
+	local dtb=$1
+	local object_type=$2
+	local object_path=$3
+	local parent=$4
+
+
+	# parse the properties and create the options list
+	IFS='
+	'
+	options=""
+	properties=$(get_properties $dtb $object_path)
+	for prop in $properties; do
+		if [ "$prop" == "compatible" ]; then
+			continue
+		fi
+
+		if [ "$prop" == "type" ]; then
+			continue
+		fi
+
+		opt_arg=$(dpl_to_restool $prop)
+		opt_value=$(get_property_value $dtb $object_path $prop)
+
+		# if option value is 0 do not pass it along to restool
+		if [ "$opt_value" == "0" ]; then
+			continue
+		fi
+
+		options=$options" "$opt_arg"="$opt_value
+	done
+
+
+	# add the parent container option
+	options=$options" --container="$parent
+
+	bash -c "restool -s $object_type create $options"
+}
+
+parse_obj_set() {
+	local dtb=$1
+	local obj_set=$2
+	local dprc_id=$3
+	IFS='
+	'
+
+	properties="$(get_properties $dtb $obj_set)"
+	for property in $properties; do
+		case $property in
+		type)
+			type=$(get_property_value $dtb $obj_set $property);;
+		ids)
+			ids=$(get_property_value $dtb $obj_set $property);;
+		*)
+			echo "Error: unknown property $property in node $obj_set"
+			exit 1
+		esac
+	done
+
+	IFS=' '
+	for id in $ids; do
+		rc=$(check_node_exists $dtb "/objects/$type@$id")
+		if [ "$rc" == "error" ]; then
+			echo "Error: $type@$id was not defined in /objects/!"
+			exit 1
+		fi
+
+		obj_acc=$(create_object $dtb $type /objects/$type@$id $dprc_id)
+		obj_dpl="$type@$id"
+		hashmap["$obj_dpl"]="$obj_acc"
+	done
+
+}
+
+parse_dprc() {
+	local dtb=$1
+	local dprc=$2
+	IFS='
+	)'
+
+	dprc_acc=$(create_dprc $dtb $dprc)
+	dprc_dpl=${dprc##*/}
+
+	hashmap["$dprc_dpl"]="$dprc_acc"
+
+	objects="$(get_subnodes $dtb $dprc/objects)"
+	for object in $objects; do
+		case $object in
+		obj_set@*)
+			parse_obj_set $dtb $dprc/objects/$object $dprc_acc;;
+		*)
+			echo "Error: Unknown object $object in node $dprc"
+			exit 1;;
+		esac
+	done
+}
+
+parse_containers() {
+	local dtb=$1
+	IFS='
+	'
+
+	containers=$(get_subnodes $dtb /containers)
+	for dprc in $containers; do
+		parse_dprc $dtb "/containers/$dprc"
+	done
+}
+
+create_connection() {
+	local dtb=$1
+	local connection=$2
+	IFS='
+	'
+
+	dpl_endpoint_1=$(get_property_value $dtb $connection endpoint1)
+	dpl_endpoint_2=$(get_property_value $dtb $connection endpoint2)
+
+	acc_endpoint_1=${hashmap[$dpl_endpoint_1]}
+	acc_endpoint_2=${hashmap[$dpl_endpoint_2]}
+
+	if [ -z $acc_endpoint_2 ]; then
+		acc_endpoint_2=$(echo $dpl_endpoint_2 | sed 's/@/./g')
+	fi
+
+	restool dprc connect dprc.1 --endpoint1=$acc_endpoint_1 --endpoint2=$acc_endpoint_2
+}
+
+parse_connections() {
+	local dtb=$1
+	IFS='
+	'
+
+	connections=$(get_subnodes $dtb /connections)
+	for connection in $connections; do
+		create_connection $dtb /connections/$connection
+	done
+}
+
+O=`getopt -l help -- h "$@"` || exit 1
+eval set -- "$O"
+while true; do
+	case "$1" in
+	-h|--help)
+		usage; exit 0;;
+	--)
+		shift; break;;
+	*)
+		echo "error parsing $1"; exit 1;;
+	esac
+done
+
+if [ "$#" -ne 1 ]; then
+	echo "Error: did not provide a DPL file"
+	usage; exit 1
+fi
+
+# test if the filename provided as an argument acctually exists
+if [ ! -f "$1" ]; then
+	echo "Error: filename provided does not exist"
+	usage; exit 1
+fi
+DTS_FILE=$1
+
+# verify if dtc and fdtget are installed
+check_if_installed dtc
+check_if_installed fdtget
+
+# generate the dtb file
+DTB_FILE="temp.dtb"
+dtc -I dts -O dtb $DTS_FILE -o $DTB_FILE
+
+# declare a hash map to store correspondence between object indeces in
+# the DPL provided and actual indeces after being created by MC
+declare -A hashmap
+
+# parse containers and objects subnodes
+rc=$(check_node_exists $DTB_FILE /containers)
+if [ "$rc" == "error" ]; then
+	echo "Error: the DPL provided does not have a *containers* node"
+	usage; exit 1
+fi
+
+rc=$(check_node_exists $DTB_FILE /objects)
+if [ "$rc" == "error" ]; then
+	echo "Error: the DPL provided does not have a *object* node"
+	usage; exit 1
+fi
+
+parse_containers $DTB_FILE
+parse_connections $DTB_FILE
+
+echo "Created the following objects:"
+for dpl in "${!hashmap[@]}"; do
+	acc=${hashmap[$dpl]}
+	echo -e "\t$acc"
+done
+
+# cleanup
+rm $DTB_FILE
