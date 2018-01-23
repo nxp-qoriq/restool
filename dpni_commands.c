@@ -145,6 +145,8 @@ enum dpni_create_options {
 	CREATE_OPT_QOS_ENTRIES,
 	CREATE_OPT_FS_ENTRIES,
 	CREATE_OPT_PARENT_DPRC,
+	CREATE_OPT_MAC_FILTER_ENTRIES,
+	CREATE_OPT_VLAN_FILTER_ENTRIES,
 };
 
 static struct option dpni_create_options[] = {
@@ -283,6 +285,20 @@ static struct option dpni_create_options[] = {
 
 	[CREATE_OPT_PARENT_DPRC] = {
 		.name = "container",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_MAC_FILTER_ENTRIES] = {
+		.name = "mac-filter-entries",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_VLAN_FILTER_ENTRIES] = {
+		.name = "vlan-filter-entries",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -1387,6 +1403,22 @@ static int create_dpni_v10(const char *usage_msg)
 		return -EINVAL;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ENTRIES) &&
+	    restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_FILTER_ENTRIES)) {
+		ERROR_PRINTF("Please only use on of the following options " \
+			     "since they are interchangeable:" \
+			     " --mac-entries, --mac-filter-entries.\n");
+		return -EINVAL;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_VLAN_ENTRIES) &&
+	    restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_VLAN_FILTER_ENTRIES)) {
+		ERROR_PRINTF("Please only use on of the following options " \
+			     "since they are interchangeable:" \
+			     " --vlan-entries, --vlan-filter-entries.\n");
+		return -EINVAL;
+	}
+
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 
@@ -1437,10 +1469,28 @@ static int create_dpni_v10(const char *usage_msg)
 		dpni_cfg.mac_filter_entries = (uint8_t)value;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_FILTER_ENTRIES)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_FILTER_ENTRIES);
+		error = get_option_value(CREATE_OPT_MAC_FILTER_ENTRIES, &value,
+				     "Invalid mac-filter-entries value\n", 1, 80);
+		if (error)
+			return error;
+		dpni_cfg.mac_filter_entries = (uint8_t)value;
+	}
+
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_VLAN_ENTRIES)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_VLAN_ENTRIES);
 		error = get_option_value(CREATE_OPT_VLAN_ENTRIES, &value,
 				     "Invalid vlan-entries value\n", 1, 16);
+		if (error)
+			return error;
+		dpni_cfg.vlan_filter_entries = (uint8_t)value;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_VLAN_FILTER_ENTRIES)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_VLAN_FILTER_ENTRIES);
+		error = get_option_value(CREATE_OPT_VLAN_FILTER_ENTRIES, &value,
+				     "Invalid vlan-filter-entries value\n", 1, 16);
 		if (error)
 			return error;
 		dpni_cfg.vlan_filter_entries = (uint8_t)value;
@@ -1523,13 +1573,17 @@ static int cmd_dpni_create_v10(void)
 		"--num-tcs=<number>\n"
 		"   Number of traffic classes (TCs), reserved for the DPNI.\n"
 		"   Defaults to one TC. Maximum supported value is 8\n"
-		"--mac-entries=<number>\n"
+		"--mac-filter-entries=<number>\n"
 		"   Number of entries in the MAC address filtering table.\n"
 		"   Allows both unicast and multicast entries.\n"
 		"   By default, there are 80 entries.Maximum supported value is 80.\n"
-		"--vlan-entries=<number>\n"
+		"   This option is the former --mac-entries which can still be used.\n"
+		"   The change was made to align with the options passed through DPL.\n"
+		"--vlan-filter-entries=<number>\n"
 		"   Number of entries in the VLAN address filtering table\n"
 		"   By default, VLAN filtering is disabled. Maximum values is 16\n"
+		"   This option is the former --vlan-entries which can still be used.\n"
+		"   The change was made to align with the options passed through DPL.\n"
 		"--qos-entries=<number>\n"
 		"   Number of entries in the QoS classification table.\n"
 		"   Ignored of DPNI has a single TC. By default, set to 64.\n"
@@ -1562,13 +1616,17 @@ static int cmd_dpni_create_v10(void)
 		"--num-tcs=<number>\n"
 		"   Number of traffic classes (TCs), reserved for the DPNI.\n"
 		"   Defaults to one TC. Maximum supported value is 8\n"
-		"--mac-entries=<number>\n"
+		"--mac-filter-entries=<number>\n"
 		"   Number of entries in the MAC address filtering table.\n"
 		"   Allows both unicast and multicast entries.\n"
 		"   By default, there are 80 entries.Maximum supported value is 80.\n"
-		"--vlan-entries=<number>\n"
+		"   This option is the former --mac-entries which can still be used.\n"
+		"   The change was made to align with the options passed through DPL.\n"
+		"--vlan-filter-entries=<number>\n"
 		"   Number of entries in the VLAN address filtering table\n"
 		"   By default, VLAN filtering is disabled. Maximum values is 16\n"
+		"   This option is the former --vlan-entries which can still be used.\n"
+		"   The change was made to align with the options passed through DPL.\n"
 		"--qos-entries=<number>\n"
 		"   Number of entries in the QoS classification table.\n"
 		"   Ignored of DPNI has a single TC. By default, set to 64.\n"
