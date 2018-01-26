@@ -119,7 +119,9 @@ create_object() {
 	# add the parent container option
 	options=$options" --container="$parent
 
-	bash -c "restool -s $object_type create $options"
+	object=$(bash -c "restool -s $object_type create $options")
+	bash -c "restool -s dprc assign $parent --object=$object --plugged=1"
+	echo $object
 }
 
 parse_obj_set() {
