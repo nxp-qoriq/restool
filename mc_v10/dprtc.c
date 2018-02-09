@@ -35,11 +35,99 @@
 #include "fsl_dprtc.h"
 #include "fsl_dprtc_cmd.h"
 
-int dprtc_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dprtc_cfg	*cfg,
-		uint32_t	*obj_id)
+/**
+ * dprtc_open_v10() - Open a control session for the specified object.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @dprtc_id:	DPRTC unique ID
+ * @token:	Returned token; use in subsequent API calls
+ *
+ * This function can be used to open a control session for an
+ * already created object; an object may have been declared in
+ * the DPL or by calling the dprtc_create function.
+ * This function returns a unique authentication token,
+ * associated with the specific object ID and the specific MC
+ * portal; this token must be used in all subsequent commands for
+ * this specific object
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dprtc_open_v10(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   int dprtc_id,
+		   uint16_t *token)
+{
+	struct dprtc_cmd_open *cmd_params;
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPRTC_CMDID_OPEN,
+					  cmd_flags,
+					  0);
+	cmd_params = (struct dprtc_cmd_open *)cmd.params;
+	cmd_params->dprtc_id = cpu_to_le32(dprtc_id);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	*token = mc_cmd_hdr_read_token(&cmd);
+
+	return err;
+}
+
+/**
+ * dprtc_close_v10() - Close the control session of the object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPRTC object
+ *
+ * After this function is called, no further operations are
+ * allowed on the object without opening a new control session.
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dprtc_close_v10(struct fsl_mc_io *mc_io,
+		    uint32_t cmd_flags,
+		    uint16_t token)
+{
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPRTC_CMDID_CLOSE, cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+/**
+ * dprtc_create_v10() - Create the DPRTC object.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @dprc_token:	Parent container token; '0' for default container
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @cfg:	Configuration structure
+ * @obj_id:	Returned object id
+ *
+ * Create the DPRTC object, allocate required resources and
+ * perform required initialization.
+ *
+ * The function accepts an authentication token of a parent
+ * container that this object should be assigned to. The token
+ * can be '0' so the object will be assigned to the default container.
+ * The newly created object can be opened with the returned
+ * object id and using the container's associated tokens and MC portals.
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dprtc_create_v10(struct fsl_mc_io *mc_io,
+		     uint16_t dprc_token,
+		     uint32_t cmd_flags,
+		     const struct dprtc_cfg *cfg,
+		     uint32_t *obj_id)
 {
 	struct mc_command cmd = { 0 };
 	int err;
@@ -57,33 +145,148 @@ int dprtc_create_v10(struct fsl_mc_io	*mc_io,
 		return err;
 
 	/* retrieve response parameters */
-	CMD_CREATE_RSP_GET_OBJ_ID_PARAM0(cmd, *obj_id);
+	*obj_id = mc_cmd_read_object_id(&cmd);
 
 	return 0;
 }
 
-int dprtc_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id)
+/**
+ * dprtc_destroy_v10() - Destroy the DPRTC object and release all its resources.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @dprc_token: Parent container token; '0' for default container
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @object_id:	The object id; it must be a valid id within the container that
+ * created this object;
+ *
+ * The function accepts the authentication token of the parent container that
+ * created the object (not the one that currently owns the object). The object
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
+ *
+ * Return:	'0' on Success; error code otherwise.
+ */
+int dprtc_destroy_v10(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      uint32_t object_id)
 {
+	struct dprtc_cmd_destroy *cmd_params;
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPRTC_CMDID_DESTROY,
 					  cmd_flags,
 					  dprc_token);
-	/* set object id to destroy */
-	CMD_DESTROY_SET_OBJ_ID_PARAM0(cmd, object_id);
+	cmd_params = (struct dprtc_cmd_destroy *)cmd.params;
+	cmd_params->object_id = cpu_to_le32(object_id);
+
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dprtc_get_attributes_v10(struct fsl_mc_io *mc_io,
-			uint32_t cmd_flags,
-			uint16_t token,
-			struct dprtc_attr_v10 *attr)
+/**
+ * dprtc_get_irq_mask_v10() - Get interrupt mask.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPRTC object
+ * @irq_index:	The interrupt index to configure
+ * @mask:	Returned event mask to trigger interrupt
+ *
+ * Every interrupt can have up to 32 causes and the interrupt model supports
+ * masking/unmasking each cause independently
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dprtc_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
+			   uint16_t token,
+			   uint8_t irq_index,
+			   uint32_t *mask)
 {
+	struct dprtc_rsp_get_irq_mask *rsp_params;
+	struct dprtc_cmd_get_irq *cmd_params;
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPRTC_CMDID_GET_IRQ_MASK,
+					  cmd_flags,
+					  token);
+	cmd_params = (struct dprtc_cmd_get_irq *)cmd.params;
+	cmd_params->irq_index = irq_index;
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dprtc_rsp_get_irq_mask *)cmd.params;
+	*mask = le32_to_cpu(rsp_params->mask);
+
+	return 0;
+}
+
+/**
+ * dprtc_get_irq_status_v10() - Get the current status of any pending interrupts.
+ *
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPRTC object
+ * @irq_index:	The interrupt index to configure
+ * @status:	Returned interrupts status - one bit per cause:
+ *			0 = no interrupt pending
+ *			1 = interrupt pending
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dprtc_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t token,
+			     uint8_t irq_index,
+			     uint32_t *status)
+{
+	struct dprtc_cmd_get_irq_status *cmd_params;
+	struct dprtc_rsp_get_irq_status *rsp_params;
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPRTC_CMDID_GET_IRQ_STATUS,
+					  cmd_flags,
+					  token);
+	cmd_params = (struct dprtc_cmd_get_irq_status *)cmd.params;
+	cmd_params->status = cpu_to_le32(*status);
+	cmd_params->irq_index = irq_index;
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dprtc_rsp_get_irq_status *)cmd.params;
+	*status = rsp_params->status;
+
+	return 0;
+}
+
+/**
+ * dprtc_get_attributes_v10() - Retrieve DPRTC attributes.
+ *
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPRTC object
+ * @attr:	Returned object's attributes
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dprtc_get_attributes_v10(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t token,
+			     struct dprtc_attr_v10 *attr)
+{
+	struct dprtc_rsp_get_attributes *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
@@ -92,27 +295,37 @@ int dprtc_get_attributes_v10(struct fsl_mc_io *mc_io,
 					  cmd_flags,
 					  token);
 
-
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
 	/* retrieve response parameters */
-	DPRTC_RSP_GET_ATTRIBUTES(cmd, attr);
+	rsp_params = (struct dprtc_rsp_get_attributes *)cmd.params;
+	attr->id = le32_to_cpu(rsp_params->id);
 
 	return 0;
 }
 
-int dprtc_get_version_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t *majorVer,
-			   uint16_t *minorVer)
+/**
+ * dprtc_get_api_version_v10() - Get Data Path Real Time Counter API version
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @major_ver:	Major version of data path real time counter API
+ * @minor_ver:	Minor version of data path real time counter API
+ *
+ * Return:  '0' on Success; Error code otherwise.
+ */
+int dprtc_get_api_version_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t *major_ver,
+			      uint16_t *minor_ver)
 {
+	struct dprtc_rsp_get_api_version *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	cmd.header = mc_encode_cmd_header(DPRTC_CMDID_GET_VERSION,
+	cmd.header = mc_encode_cmd_header(DPRTC_CMDID_GET_API_VERSION,
 					cmd_flags,
 					0);
 
@@ -120,7 +333,9 @@ int dprtc_get_version_v10(struct fsl_mc_io *mc_io,
 	if (err)
 		return err;
 
-	DPRTC_RSP_GET_VERSION(cmd, *majorVer, *minorVer);
+	rsp_params = (struct dprtc_rsp_get_api_version *)cmd.params;
+	*major_ver = le16_to_cpu(rsp_params->major);
+	*minor_ver = le16_to_cpu(rsp_params->minor);
 
 	return 0;
 }

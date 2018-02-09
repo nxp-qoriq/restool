@@ -34,54 +34,115 @@
 #define __FSL_DPSW_CMD_H
 
 /* DPSW Version */
-#define DPSW_VER_MAJOR			8
-#define DPSW_VER_MINOR			0
+#define DPSW_VER_MAJOR		8
+#define DPSW_VER_MINOR		2
+
+/* Command versioning */
+#define DPSW_CMD_BASE_VERSION	1
+#define DPSW_CMD_ID_OFFSET	4
+
+#define DPSW_CMD(id)	((id << DPSW_CMD_ID_OFFSET) | DPSW_CMD_BASE_VERSION)
 
 /* Command IDs */
-#define DPSW_CMDID_CREATE		((0x902 << 4) | (0x1))
-#define DPSW_CMDID_DESTROY		((0x982 << 4) | (0x1))
-#define DPSW_CMDID_GET_VERSION		((0xa02 << 4) | (0x1))
-#define DPSW_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
+#define DPSW_CMDID_CLOSE                        DPSW_CMD(0x800)
+#define DPSW_CMDID_OPEN                         DPSW_CMD(0x802)
+#define DPSW_CMDID_CREATE                       DPSW_CMD(0x902)
+#define DPSW_CMDID_DESTROY                      DPSW_CMD(0x982)
+#define DPSW_CMDID_GET_API_VERSION              DPSW_CMD(0xa02)
+#define DPSW_CMDID_GET_ATTR                     DPSW_CMD(0x004)
+#define DPSW_CMDID_GET_IRQ_MASK                 DPSW_CMD(0x015)
+#define DPSW_CMDID_GET_IRQ_STATUS               DPSW_CMD(0x016)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_CREATE(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  16, uint16_t, cfg->num_ifs);\
-	MC_CMD_OP(cmd, 0, 16,  8, uint8_t,  cfg->adv.max_fdbs);\
-	MC_CMD_OP(cmd, 0, 24,  8, uint8_t,  cfg->adv.max_meters_per_if);\
-	MC_CMD_OP(cmd, 0, 32,  4, enum dpsw_component_type,  \
-			cfg->adv.component_type);\
-	MC_CMD_OP(cmd, 1, 0,  16, uint16_t, cfg->adv.max_vlans);\
-	MC_CMD_OP(cmd, 1, 16, 16, uint16_t, cfg->adv.max_fdb_entries);\
-	MC_CMD_OP(cmd, 1, 32, 16, uint16_t, cfg->adv.fdb_aging_time);\
-	MC_CMD_OP(cmd, 1, 48, 16, uint16_t, cfg->adv.max_fdb_mc_groups);\
-	MC_CMD_OP(cmd, 2, 0,  64, uint64_t, cfg->adv.options);\
-} while (0)
+/* Macros for accessing command fields smaller than 1byte */
+#define DPSW_MASK(field)        \
+	GENMASK(DPSW_##field##_SHIFT + DPSW_##field##_SIZE - 1, \
+		DPSW_##field##_SHIFT)
+#define dpsw_set_field(var, field, val) \
+	((var) |= (((val) << DPSW_##field##_SHIFT) & DPSW_MASK(field)))
+#define dpsw_get_field(var, field)      \
+	(((var) & DPSW_MASK(field)) >> DPSW_##field##_SHIFT)
+#define dpsw_set_bit(var, bit, val) \
+	((var) |= (((uint64_t)(val) << (bit)) & GENMASK((bit), (bit))))
+#define dpsw_get_bit(var, bit) \
+	(((var)  >> bit) & GENMASK(0, 0))
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_RSP_GET_ATTR(cmd, attr) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, attr->num_ifs);\
-	MC_RSP_OP(cmd, 0, 16, 8,  uint8_t,  attr->max_fdbs);\
-	MC_RSP_OP(cmd, 0, 24, 8,  uint8_t,  attr->num_fdbs);\
-	MC_RSP_OP(cmd, 0, 32, 16, uint16_t, attr->max_vlans);\
-	MC_RSP_OP(cmd, 0, 48, 16, uint16_t, attr->num_vlans);\
-	MC_RSP_OP(cmd, 1, 0, 16, uint16_t, attr->max_fdb_entries);\
-	MC_RSP_OP(cmd, 1, 16, 16, uint16_t, attr->fdb_aging_time);\
-	MC_RSP_OP(cmd, 1, 32,  32, int,	 attr->id);\
-	MC_RSP_OP(cmd, 2, 0, 16, uint16_t, attr->mem_size);\
-	MC_RSP_OP(cmd, 2, 16, 16, uint16_t, attr->max_fdb_mc_groups);\
-	MC_RSP_OP(cmd, 2, 32,  8,  uint8_t, attr->max_meters_per_if);\
-	MC_RSP_OP(cmd, 2, 40,  4,  enum dpsw_component_type, \
-			attr->component_type);\
-	MC_RSP_OP(cmd, 3, 0,  64, uint64_t, attr->options);\
-} while (0)
+#pragma pack(push, 1)
+struct dpsw_cmd_open {
+	uint32_t dpsw_id;
+};
 
-/*                cmd, param, offset, width, type,      arg_name */
-#define DPSW_RSP_GET_VERSION(cmd, major, minor) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
-} while (0)
+#define DPSW_COMPONENT_TYPE_SHIFT	0
+#define DPSW_COMPONENT_TYPE_SIZE	4
 
+struct dpsw_cmd_create {
+	/* cmd word 0 */
+	uint16_t num_ifs;
+	uint8_t max_fdbs;
+	uint8_t max_meters_per_if;
+	/* from LSB: only the first 4 bits */
+	uint8_t component_type;
+	uint8_t pad[3];
+	/* cmd word 1 */
+	uint16_t max_vlans;
+	uint16_t max_fdb_entries;
+	uint16_t fdb_aging_time;
+	uint16_t max_fdb_mc_groups;
+	/* cmd word 2 */
+	uint64_t options;
+};
+
+struct dpsw_cmd_destroy {
+	uint32_t dpsw_id;
+};
+
+struct dpsw_cmd_get_irq_mask {
+	uint32_t pad;
+	uint8_t irq_index;
+};
+
+struct dpsw_rsp_get_irq_mask {
+	uint32_t mask;
+};
+
+struct dpsw_cmd_get_irq_status {
+	uint32_t status;
+	uint8_t irq_index;
+};
+
+struct dpsw_rsp_get_irq_status {
+	uint32_t status;
+};
+
+#define DPSW_COMPONENT_TYPE_SHIFT	0
+#define DPSW_COMPONENT_TYPE_SIZE	4
+
+struct dpsw_rsp_get_attr {
+	/* cmd word 0 */
+	uint16_t num_ifs;
+	uint8_t max_fdbs;
+	uint8_t num_fdbs;
+	uint16_t max_vlans;
+	uint16_t num_vlans;
+	/* cmd word 1 */
+	uint16_t max_fdb_entries;
+	uint16_t fdb_aging_time;
+	uint32_t dpsw_id;
+	/* cmd word 2 */
+	uint16_t mem_size;
+	uint16_t max_fdb_mc_groups;
+	uint8_t max_meters_per_if;
+	/* from LSB only the ffirst 4 bits */
+	uint8_t component_type;
+	uint16_t pad;
+	/* cmd word 3 */
+	uint64_t options;
+};
+
+
+struct dpsw_rsp_get_api_version {
+	uint16_t version_major;
+	uint16_t version_minor;
+};
+
+#pragma pack(pop)
 #endif /* __FSL_DPSW_CMD_H */

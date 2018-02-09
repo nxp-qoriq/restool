@@ -759,14 +759,14 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	struct dpni_attr_v10 dpni_attr;
 	union dpni_statistics_v10 dpni_stats;
 	uint16_t dpni_handle, dpni_major, dpni_minor;
-	struct dpni_link_state link_state;
+	struct dpni_link_state_v10 link_state;
 	bool dpni_opened = false;
 	uint8_t mac_addr[6];
 	int error = 0;
 	int error2;
 	unsigned int page;
 
-	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
+	error = dpni_open_v10(&restool.mc_io, 0, dpni_id, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -792,8 +792,8 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 		goto out;
 	}
 
-	error = dpni_get_version_v10(&restool.mc_io, 0,
-				     &dpni_major, &dpni_minor);
+	error = dpni_get_api_version_v10(&restool.mc_io, 0,
+					 &dpni_major, &dpni_minor);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -801,8 +801,8 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 		goto out;
 	}
 
-	error = dpni_get_primary_mac_addr(&restool.mc_io, 0,
-					dpni_handle, mac_addr);
+	error = dpni_get_primary_mac_addr_v10(&restool.mc_io, 0,
+					      dpni_handle, mac_addr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -811,8 +811,8 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	}
 
 	memset(&link_state, 0, sizeof(link_state));
-	error = dpni_get_link_state(&restool.mc_io, 0, dpni_handle,
-				    &link_state);
+	error = dpni_get_link_state_v10(&restool.mc_io, 0, dpni_handle,
+					&link_state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -837,7 +837,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	print_dpni_options_v10(dpni_attr.options);
 
 	printf("num_queues: %u\n", (uint32_t)dpni_attr.num_queues);
-	printf("num_tcs: %u\n", (uint32_t)dpni_attr.num_tcs);
+	printf("num_tcs: %u\n", (uint32_t)dpni_attr.num_rx_tcs);
 	printf("mac_entries: %u\n",
 	       (uint32_t)dpni_attr.mac_filter_entries);
 	printf("vlan_entries: %u\n",
@@ -849,7 +849,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 
 	for (page = 0; page < 3; page++) {
 		error = dpni_get_statistics_v10(&restool.mc_io, 0,
-						dpni_handle, page, &dpni_stats);
+						dpni_handle, page, 0, &dpni_stats);
 		dpni_print_stats(dpni_stats_v10[page], dpni_stats);
 	}
 
@@ -858,7 +858,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 out:
 	if (dpni_opened) {
 
-		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
+		error2 = dpni_close_v10(&restool.mc_io, 0, dpni_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1820,7 +1820,7 @@ static int update_dpni_v10(const char *usage_msg)
 		goto out;
 	}
 
-	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
+	error = dpni_open_v10(&restool.mc_io, 0, dpni_id, &dpni_handle);
 	if (error) {
 		ERROR_PRINTF("Could not open specified object!\n");
 		puts(usage_msg);
@@ -1841,7 +1841,7 @@ static int update_dpni_v10(const char *usage_msg)
 		minimal_options = true;
 	}
 
-	dpni_close(&restool.mc_io, 0, dpni_handle);
+	dpni_close_v10(&restool.mc_io, 0, dpni_handle);
 out:
 
 	if (!minimal_options && !error) {

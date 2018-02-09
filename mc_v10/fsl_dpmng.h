@@ -1,5 +1,5 @@
-/* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017 NXP
+/*
+ * Copyright 2013-2016 Freescale Semiconductor Inc.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -30,33 +30,50 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-#include "fsl_mc_sys.h"
-#include "fsl_mc_cmd.h"
-#include "fsl_dpmng.h"
-#include "fsl_dpmng_cmd.h"
+#ifndef __FSL_DPMNG_V10_H
+#define __FSL_DPMNG_V10_H
+/*
+ * Management Complex General API
+ * Contains general API for the Management Complex firmware
+ */
 
-#if 0
+struct fsl_mc_io;
+
+/**
+ * Management Complex firmware version information
+ */
+#define MC_VER_MAJOR 10
+#define MC_VER_MINOR 6
+
+/**
+ * struct mc_version
+ * @major: Major version number: incremented on API compatibility changes
+ * @minor: Minor version number: incremented on API additions (that are
+ *		backward compatible); reset when major version is incremented
+ * @revision: Internal revision number: incremented on implementation changes
+ *		and/or bug fixes that have no impact on API
+ */
+struct mc_version {
+	uint32_t major;
+	uint32_t minor;
+	uint32_t revision;
+};
+
 int mc_get_version(struct fsl_mc_io *mc_io,
 		   uint32_t cmd_flags,
-		   struct mc_version *mc_ver_info)
-{
-	struct mc_command cmd = { 0 };
-	int err;
+		   struct mc_version *mc_ver_info);
 
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPMNG_CMDID_GET_VERSION,
-					  cmd_flags,
-					  0);
+/**
+ * struct mc_platform
+ * @svr:	System version (content of platform SVR register)
+ * @pvr:	Processor version (content of platform PVR register)
+ */
+struct mc_soc_version {
+	uint32_t svr;
+	uint32_t pvr;
+};
 
-	/* send command to mc*/
-	err = mc_send_command(mc_io, &cmd);
-	if (err)
-		return err;
-
-	/* retrieve response parameters */
-	DPMNG_RSP_GET_VERSION(cmd, mc_ver_info);
-
-	return 0;
-}
-
-#endif
+int mc_get_soc_version(struct fsl_mc_io *mc_io,
+		       uint32_t cmd_flags,
+		       struct mc_soc_version *mc_platform_info);
+#endif /* __FSL_DPMNG_H */

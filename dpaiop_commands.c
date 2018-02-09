@@ -277,16 +277,15 @@ out:
 static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
 			struct dprc_obj_desc *target_obj_desc)
 {
+	struct dpaiop_sl_version_v10 dpaiop_sl_version;
 	struct dpaiop_attr_v10 dpaiop_attr;
-	uint16_t dpaiop_token;
 	uint16_t obj_major, obj_minor;
-
-	int error;
-	struct dpaiop_sl_version dpaiop_sl_version;
-	uint32_t state;
 	bool dpaiop_opened = false;
+	uint16_t dpaiop_token;
+	uint32_t state;
+	int error;
 
-	error = dpaiop_open(&restool.mc_io, 0, dpaiop_id, &dpaiop_token);
+	error = dpaiop_open_v10(&restool.mc_io, 0, dpaiop_id, &dpaiop_token);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -316,7 +315,7 @@ static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
 	printf("dpaiop id: %d\n", dpaiop_attr.id);
 
 	/* get object version */
-	error = dpaiop_get_version_v10(&restool.mc_io, 0,
+	error = dpaiop_get_api_version_v10(&restool.mc_io, 0,
 				       &obj_major, &obj_minor);
 	printf("dpaiop version: %u.%u\n", obj_major, obj_minor);
 	if (error < 0) {
@@ -332,7 +331,7 @@ static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
 
 	/* get object server layer */
 	memset(&dpaiop_sl_version, 0, sizeof(dpaiop_sl_version));
-	error = dpaiop_get_sl_version(&restool.mc_io, 0, dpaiop_token,
+	error = dpaiop_get_sl_version_v10(&restool.mc_io, 0, dpaiop_token,
 					&dpaiop_sl_version);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -345,7 +344,7 @@ static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
 		dpaiop_sl_version.minor,
 		dpaiop_sl_version.revision);
 
-	error = dpaiop_get_state(&restool.mc_io, 0, dpaiop_token, &state);
+	error = dpaiop_get_state_v10(&restool.mc_io, 0, dpaiop_token, &state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -361,7 +360,7 @@ out:
 	if (dpaiop_opened) {
 		int error2;
 
-		error2 = dpaiop_close(&restool.mc_io, 0, dpaiop_token);
+		error2 = dpaiop_close_v10(&restool.mc_io, 0, dpaiop_token);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -497,7 +496,7 @@ static int create_dpaiop_v9(struct dpaiop_cfg *dpaiop_cfg)
 	return 0;
 }
 
-static int create_dpaiop_v10(struct dpaiop_cfg *dpaiop_cfg)
+static int create_dpaiop_v10(struct dpaiop_cfg_v10 *dpaiop_cfg)
 {
 	uint32_t dpaiop_id, dprc_id;
 	uint16_t dprc_handle;
@@ -547,6 +546,7 @@ static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 {
 	int error;
 	struct dpaiop_cfg dpaiop_cfg;
+	struct dpaiop_cfg_v10 dpaiop_cfg_v10;
 	uint32_t obj_id;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -575,6 +575,7 @@ static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 		}
 
 		dpaiop_cfg.aiop_container_id = obj_id;
+		dpaiop_cfg_v10.aiop_container_id = obj_id;
 	} else {
 		ERROR_PRINTF("--aiop-container option missing\n");
 		puts(usage_msg);
@@ -583,11 +584,12 @@ static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 
 	/* make sure that aiop_id is set to 0 */
 	dpaiop_cfg.aiop_id = 0;
+	dpaiop_cfg_v10.aiop_id = 0;
 
 	if (mc_fw_version == MC_FW_VERSION_9)
 		error = create_dpaiop_v9(&dpaiop_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpaiop_v10(&dpaiop_cfg);
+		error = create_dpaiop_v10(&dpaiop_cfg_v10);
 	else
 		return -EINVAL;
 

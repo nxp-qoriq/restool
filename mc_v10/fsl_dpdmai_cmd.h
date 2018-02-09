@@ -37,31 +37,73 @@
 #define DPDMAI_VER_MAJOR		3
 #define DPDMAI_VER_MINOR		2
 
+/* Command versioning */
+#define DPDMAI_CMD_BASE_VERSION		1
+#define DPDMAI_CMD_ID_OFFSET		4
+
+#define DPDMAI_CMD(id)	((id << DPDMAI_CMD_ID_OFFSET) | DPDMAI_CMD_BASE_VERSION)
+
 /* Command IDs */
-#define DPDMAI_CMDID_CREATE		((0x90E << 4) | (0x1))
-#define DPDMAI_CMDID_DESTROY		((0x98E << 4) | (0x1))
-#define DPDMAI_CMDID_GET_VERSION	((0xa0E << 4) | (0x1))
-#define DPDMAI_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
+#define DPDMAI_CMDID_CLOSE		DPDMAI_CMD(0x800)
+#define DPDMAI_CMDID_OPEN		DPDMAI_CMD(0x80E)
+#define DPDMAI_CMDID_CREATE		DPDMAI_CMD(0x90E)
+#define DPDMAI_CMDID_DESTROY		DPDMAI_CMD(0x98E)
+#define DPDMAI_CMDID_GET_API_VERSION	DPDMAI_CMD(0xa0E)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPDMAI_CMD_CREATE(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  cfg->priorities[0]);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  cfg->priorities[1]);\
-} while (0)
+#define DPDMAI_CMDID_GET_ATTR		DPDMAI_CMD(0x004)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPDMAI_RSP_GET_ATTR(cmd, attr) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,      attr->id); \
-	MC_RSP_OP(cmd, 0, 32,  8, uint8_t,  attr->num_of_priorities); \
-} while (0)
+#define DPDMAI_CMDID_GET_IRQ_MASK	DPDMAI_CMD(0x015)
+#define DPDMAI_CMDID_GET_IRQ_STATUS	DPDMAI_CMD(0x016)
 
-/*                cmd, param, offset, width, type,      arg_name */
-#define DPDMAI_RSP_GET_VERSION(cmd, major, minor) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
-} while (0)
+/* Macros for accessing command fields smaller than 1byte */
+#define DPDMAI_MASK(field)        \
+	GENMASK(DPDMAI_##field##_SHIFT + DPDMAI_##field##_SIZE - 1, \
+		DPDMAI_##field##_SHIFT)
+#define dpdmai_set_field(var, field, val) \
+	((var) |= (((val) << DPDMAI_##field##_SHIFT) & DPDMAI_MASK(field)))
+#define dpdmai_get_field(var, field)      \
+	(((var) & DPDMAI_MASK(field)) >> DPDMAI_##field##_SHIFT)
 
+#pragma pack(push, 1)
+struct dpdmai_cmd_open {
+	uint32_t dpdmai_id;
+};
+
+struct dpdmai_cmd_create {
+	uint8_t pad;
+	uint8_t priorities[2];
+};
+
+struct dpdmai_cmd_destroy {
+	uint32_t dpdmai_id;
+};
+
+struct dpdmai_cmd_get_irq_mask {
+	uint32_t pad;
+	uint8_t irq_index;
+};
+
+struct dpdmai_rsp_get_irq_mask {
+	uint32_t mask;
+};
+
+struct dpdmai_cmd_get_irq_status {
+	uint32_t status;
+	uint8_t irq_index;
+};
+
+struct dpdmai_rsp_get_irq_status {
+	uint32_t status;
+};
+
+struct dpdmai_rsp_get_attr {
+	uint32_t id;
+	uint8_t num_of_priorities;
+};
+
+struct dpdmai_rsp_get_api_version {
+	uint16_t major;
+	uint16_t minor;
+};
+#pragma pack(pop)
 #endif /* _FSL_DPDMAI_CMD_H */

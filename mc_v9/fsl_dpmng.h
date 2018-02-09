@@ -58,7 +58,7 @@ struct mc_version {
 	uint32_t minor;
 	uint32_t revision;
 };
-
+#if 0
 /**
  * mc_get_version() - Retrieves the Management Complex firmware
  *			version information
@@ -72,4 +72,5 @@ int mc_get_version(struct fsl_mc_io	*mc_io,
 		   uint32_t		cmd_flags,
 		   struct mc_version	*mc_ver_info);
 
+#endif
 #endif /* __FSL_DPMNG_H */

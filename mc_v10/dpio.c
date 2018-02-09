@@ -30,26 +30,43 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
-
 #include "fsl_mc_sys.h"
 #include "fsl_mc_cmd.h"
 #include "fsl_dpio.h"
 #include "fsl_dpio_cmd.h"
 
-int dpio_create_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		const struct dpio_cfg	*cfg,
-		uint32_t	*obj_id)
+/**
+ * dpio_open_v10() - Open a control session for the specified object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @dpio_id:	DPIO unique ID
+ * @token:	Returned token; use in subsequent API calls
+ *
+ * This function can be used to open a control session for an
+ * already created object; an object may have been declared in
+ * the DPL or by calling the dpio_create() function.
+ * This function returns a unique authentication token,
+ * associated with the specific object ID and any MC portals
+ * assigned to the parent container; this token must be used in
+ * all subsequent commands for this specific object.
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpio_open_v10(struct fsl_mc_io *mc_io,
+		  uint32_t cmd_flags,
+		  int dpio_id,
+		  uint16_t *token)
 {
+	struct dpio_cmd_open *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
 	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPIO_CMDID_CREATE,
+	cmd.header = mc_encode_cmd_header(DPIO_CMDID_OPEN,
 					  cmd_flags,
-					  dprc_token);
-	DPIO_CMD_CREATE(cmd, cfg);
+					  0);
+	cmd_params = (struct dpio_cmd_open *)cmd.params;
+	cmd_params->dpio_id = cpu_to_le32(dpio_id);
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -57,33 +74,138 @@ int dpio_create_v10(struct fsl_mc_io	*mc_io,
 		return err;
 
 	/* retrieve response parameters */
-	CMD_CREATE_RSP_GET_OBJ_ID_PARAM0(cmd, *obj_id);
+	*token = mc_cmd_hdr_read_token(&cmd);
 
 	return 0;
 }
 
-int dpio_destroy_v10(struct fsl_mc_io	*mc_io,
-		uint16_t	dprc_token,
-		uint32_t	cmd_flags,
-		uint32_t	object_id)
+/**
+ * dpio_close_v10() - Close the control session of the object
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPIO object
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpio_close_v10(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   uint16_t token)
 {
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPIO_CMDID_CLOSE,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+/**
+ * dpio_create_v10() - Create the DPIO object.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @dprc_token:	Parent container token; '0' for default container
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @cfg:	Configuration structure
+ * @obj_id:	Returned object id
+ *
+ * Create the DPIO object, allocate required resources and
+ * perform required initialization.
+ *
+ * The object can be created either by declaring it in the
+ * DPL file, or by calling this function.
+ *
+ * The function accepts an authentication token of a parent
+ * container that this object should be assigned to. The token
+ * can be '0' so the object will be assigned to the default container.
+ * The newly created object can be opened with the returned
+ * object id and using the container's associated tokens and MC portals.
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpio_create_v10(struct fsl_mc_io *mc_io,
+		    uint16_t dprc_token,
+		    uint32_t cmd_flags,
+		    const struct dpio_cfg_v10 *cfg,
+		    uint32_t *obj_id)
+{
+	struct dpio_cmd_create *cmd_params;
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPIO_CMDID_CREATE,
+					  cmd_flags,
+					  dprc_token);
+	cmd_params = (struct dpio_cmd_create *)cmd.params;
+	cmd_params->num_priorities = cfg->num_priorities;
+	dpio_set_field(cmd_params->channel_mode,
+		       CHANNEL_MODE,
+		       cfg->channel_mode);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	*obj_id = mc_cmd_read_object_id(&cmd);
+
+	return 0;
+}
+
+/**
+ * dpio_destroy_v10() - Destroy the DPIO object and release all its resources.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @dprc_token: Parent container token; '0' for default container
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @object_id:	The object id; it must be a valid id within the container that
+ *		created this object;
+ *
+ * The function accepts the authentication token of the parent container that
+ * created the object (not the one that currently owns the object). The object
+ * is searched within parent using the provided 'object_id'.
+ * All tokens to the object must be closed before calling destroy.
+ *
+ * Return:	'0' on Success; Error code otherwise
+ */
+int dpio_destroy_v10(struct fsl_mc_io *mc_io,
+		     uint16_t dprc_token,
+		     uint32_t cmd_flags,
+		     uint32_t object_id)
+{
+	struct dpio_cmd_destroy *cmd_params;
 	struct mc_command cmd = { 0 };
 
 	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPIO_CMDID_DESTROY,
 			cmd_flags,
 			dprc_token);
+
 	/* set object id to destroy */
-	CMD_DESTROY_SET_OBJ_ID_PARAM0(cmd, object_id);
+	cmd_params = (struct dpio_cmd_destroy *)cmd.params;
+	cmd_params->dpio_id = cpu_to_le32(object_id);
+
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
+/**
+ * dpio_get_attributes_v10() - Retrieve DPIO attributes
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPIO object
+ * @attr:	Returned object's attributes
+ *
+ * Return:	'0' on Success; Error code otherwise
+ */
 int dpio_get_attributes_v10(struct fsl_mc_io *mc_io,
-			uint32_t cmd_flags,
-			uint16_t token,
-			struct dpio_attr_v10	*attr)
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    struct dpio_attr_v10 *attr)
 {
+	struct dpio_rsp_get_attr *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
@@ -98,20 +220,124 @@ int dpio_get_attributes_v10(struct fsl_mc_io *mc_io,
 		return err;
 
 	/* retrieve response parameters */
-	DPIO_RSP_GET_ATTR(cmd, attr);
+	rsp_params = (struct dpio_rsp_get_attr *)cmd.params;
+	attr->id = le32_to_cpu(rsp_params->id);
+	attr->qbman_portal_id = le16_to_cpu(rsp_params->qbman_portal_id);
+	attr->num_priorities = rsp_params->num_priorities;
+	attr->qbman_portal_ce_offset = le64_to_cpu(rsp_params->qbman_portal_ce_offset);
+	attr->qbman_portal_ci_offset = le64_to_cpu(rsp_params->qbman_portal_ci_offset);
+	attr->qbman_version = le32_to_cpu(rsp_params->qbman_version);
+	attr->clk = le32_to_cpu(rsp_params->clk);
+	attr->channel_mode = dpio_get_field(rsp_params->channel_mode, ATTR_CHANNEL_MODE);
 
 	return 0;
 }
 
-int dpio_get_version_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t *majorVer,
-			   uint16_t *minorVer)
+/**
+ * dpio_get_irq_mask_v10() - Get interrupt mask.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPIO object
+ * @irq_index:	The interrupt index to configure
+ * @mask:	Returned event mask to trigger interrupt
+ *
+ * Every interrupt can have up to 32 causes and the interrupt model supports
+ * masking/unmasking each cause independently
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpio_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  uint8_t irq_index,
+			  uint32_t *mask)
 {
+	struct dpio_rsp_get_irq_mask *rsp_params;
+	struct dpio_cmd_get_irq *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	cmd.header = mc_encode_cmd_header(DPIO_CMDID_GET_VERSION,
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPIO_CMDID_GET_IRQ_MASK,
+					  cmd_flags,
+					  token);
+	cmd_params = (struct dpio_cmd_get_irq *)cmd.params;
+	cmd_params->irq_index = irq_index;
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dpio_rsp_get_irq_mask *)cmd.params;
+	*mask = le32_to_cpu(rsp_params->mask);
+
+	return 0;
+}
+
+/**
+ * dpio_get_irq_status_v10() - Get the current status of any pending interrupts.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPIO object
+ * @irq_index:	The interrupt index to configure
+ * @status:	Returned interrupts status - one bit per cause:
+ *			0 = no interrupt pending
+ *			1 = interrupt pending
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpio_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    uint8_t irq_index,
+			    uint32_t *status)
+{
+	struct dpio_rsp_get_irq_status *rsp_params;
+	struct dpio_cmd_irq_status *cmd_params;
+	struct mc_command cmd = { 0 };
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPIO_CMDID_GET_IRQ_STATUS,
+					  cmd_flags,
+					  token);
+	cmd_params = (struct dpio_cmd_irq_status *)cmd.params;
+	cmd_params->irq_index = irq_index;
+	cmd_params->status = cpu_to_le32(*status);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dpio_rsp_get_irq_status *)cmd.params;
+	*status = le32_to_cpu(rsp_params->status);
+
+	return 0;
+}
+
+/**
+ * dpio_get_api_version() - Get Data Path I/O API version
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @major_ver:	Major version of data path i/o API
+ * @minor_ver:	Minor version of data path i/o API
+ *
+ * Return:  '0' on Success; Error code otherwise.
+ */
+int dpio_get_api_version_v10(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t *major_ver,
+			     uint16_t *minor_ver)
+{
+	struct dpio_rsp_get_api_version *rsp_params;
+	struct mc_command cmd = { 0 };
+	int err;
+
+	cmd.header = mc_encode_cmd_header(DPIO_CMDID_GET_API_VERSION,
 					cmd_flags,
 					0);
 
@@ -119,7 +345,9 @@ int dpio_get_version_v10(struct fsl_mc_io *mc_io,
 	if (err)
 		return err;
 
-	DPIO_RSP_GET_VERSION(cmd, *majorVer, *minorVer);
+	rsp_params = (struct dpio_rsp_get_api_version *)cmd.params;
+	*major_ver = le16_to_cpu(rsp_params->major);
+	*minor_ver = le16_to_cpu(rsp_params->minor);
 
 	return 0;
 }

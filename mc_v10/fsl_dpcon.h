@@ -33,66 +33,62 @@
 #ifndef __FSL_DPCON_V10_H
 #define __FSL_DPCON_V10_H
 
-#include "../mc_v9/fsl_dpcon.h"
-
 /* Data Path Concentrator API
  * Contains initialization APIs and runtime control APIs for DPCON
  */
 
 struct fsl_mc_io;
 
+/** General DPCON macros */
+
 /**
- * dpcon_create() - Create the DPCON object.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token:	Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @cfg:	Configuration structure
- * @obj_id:	Returned object id
- *
- * Create the DPCON object, allocate required resources and
- * perform required initialization.
- *
- * The object can be created either by declaring it in the
- * DPL file, or by calling this function.
- *
- * The function accepts an authentication token of a parent
- * container that this object should be assigned to. The token
- * can be '0' so the object will be assigned to the default container.
- * The newly created object can be opened with the returned
- * object id and using the container's associated tokens and MC portals.
- *
- * Return:	'0' on Success; Error code otherwise.
+ * Use it to disable notifications; see dpcon_set_notification()
  */
+#define DPCON_INVALID_DPIO_ID		(int)(-1)
+
+int dpcon_open_v10(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   int dpcon_id,
+		   uint16_t *token);
+
+int dpcon_close_v10(struct fsl_mc_io *mc_io,
+		    uint32_t cmd_flags,
+		    uint16_t token);
+
+/**
+ * struct dpcon_cfg_v10 - Structure representing DPCON configuration
+ * @num_priorities: Number of priorities for the DPCON channel (1-8)
+ */
+struct dpcon_cfg_v10 {
+	uint8_t num_priorities;
+};
+
 int dpcon_create_v10(struct fsl_mc_io *mc_io,
 		     uint16_t dprc_token,
 		     uint32_t cmd_flags,
-		     const struct dpcon_cfg *cfg,
+		     const struct dpcon_cfg_v10 *cfg,
 		     uint32_t *obj_id);
 
-/**
- * dpcon_destroy() - Destroy the DPCON object and release all its resources.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token: Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @object_id:	The object id; it must be a valid id within the container that
- * created this object;
- *
- * The function accepts the authentication token of the parent container that
- * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'.
- * All tokens to the object must be closed before calling destroy.
- *
- * Return:	'0' on Success; error code otherwise.
- */
 int dpcon_destroy_v10(struct fsl_mc_io *mc_io,
-		uint16_t dprc_token,
-		uint32_t cmd_flags,
-		uint32_t object_id);
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      uint32_t obj_id);
+
+int dpcon_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
+			   uint16_t token,
+			   uint8_t irq_index,
+			   uint32_t *mask);
+
+int dpcon_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t token,
+			     uint8_t irq_index,
+			     uint32_t *status);
 
 /**
- * struct dpcon_attr - Structure representing DPCON attributes
+ * struct dpcon_attr_v10 - Structure representing DPCON attributes
  * @id:			DPCON object ID
- * @version:		DPCON version
  * @qbman_ch_id:	Channel ID to be used by dequeue operation
  * @num_priorities:	Number of priorities for the DPCON channel (1-8)
  */
@@ -102,32 +98,14 @@ struct dpcon_attr_v10 {
 	uint8_t num_priorities;
 };
 
-/**
- * dpcon_get_attributes() - Retrieve DPCON attributes.
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:	Token of DPCON object
- * @attr:	Object's attributes
- *
- * Return:	'0' on Success; Error code otherwise.
- */
 int dpcon_get_attributes_v10(struct fsl_mc_io *mc_io,
-			 uint32_t cmd_flags,
-			 uint16_t token,
-			 struct dpcon_attr_v10 *attr);
+			     uint32_t cmd_flags,
+			     uint16_t token,
+			     struct dpcon_attr_v10 *attr);
 
-/**
- * dpcon_get_version() - Get Data Path Concentrator version
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer:	Major version of data path concentrator object
- * @minorVer:	Minor version of data path concentrator object
- *
- * Return:  '0' on Success; Error code otherwise.
- */
-int dpcon_get_version_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t *majorVer,
-			   uint16_t *minorVer);
+int dpcon_get_api_version_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t *major_ver,
+			      uint16_t *minor_ver);
 
 #endif /* __FSL_DPCON_V10_H */

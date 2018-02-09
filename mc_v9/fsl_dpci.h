@@ -42,11 +42,6 @@ struct fsl_mc_io;
 /** General DPCI macros */
 
 /**
- * Maximum number of Tx/Rx priorities per DPCI object
- */
-#define DPCI_PRIO_NUM		2
-
-/**
  * Indicates an invalid frame queue
  */
 #define DPCI_FQID_NOT_VALID	(uint32_t)(-1)

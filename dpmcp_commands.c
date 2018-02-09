@@ -215,7 +215,7 @@ static int print_dpmcp_attr_v10(uint32_t dpmcp_id,
 	uint16_t dpmcp_handle;
 	int error;
 
-	error = dpmcp_open(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
+	error = dpmcp_open_v10(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -242,7 +242,7 @@ static int print_dpmcp_attr_v10(uint32_t dpmcp_id,
 	}
 	assert(dpmcp_id == (uint32_t)dpmcp_attr.id);
 
-	error = dpmcp_get_version_v10(&restool.mc_io, 0,
+	error = dpmcp_get_api_version_v10(&restool.mc_io, 0,
 				      &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -263,7 +263,7 @@ out:
 	if (dpmcp_opened) {
 		int error2;
 
-		error2 = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
+		error2 = dpmcp_close_v10(&restool.mc_io, 0, dpmcp_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

@@ -248,7 +248,7 @@ static int print_dpdcei_attr_v10(uint32_t dpdcei_id,
 	uint16_t dpdcei_handle;
 	int error;
 
-	error = dpdcei_open(&restool.mc_io, 0, dpdcei_id, &dpdcei_handle);
+	error = dpdcei_open_v10(&restool.mc_io, 0, dpdcei_id, &dpdcei_handle);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -275,7 +275,7 @@ static int print_dpdcei_attr_v10(uint32_t dpdcei_id,
 	}
 	assert(dpdcei_id == (uint32_t)dpdcei_attr.id);
 
-	error = dpdcei_get_version_v10(&restool.mc_io, 0,
+	error = dpdcei_get_api_version_v10(&restool.mc_io, 0,
 				       &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -297,7 +297,7 @@ out:
 	if (dpdcei_opened) {
 		int error2;
 
-		error2 = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
+		error2 = dpdcei_close_v10(&restool.mc_io, 0, dpdcei_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -449,7 +449,7 @@ static int create_dpdcei_v9(struct dpdcei_cfg *dpdcei_cfg)
 	return 0;
 }
 
-static int create_dpdcei_v10(struct dpdcei_cfg *dpdcei_cfg)
+static int create_dpdcei_v10(struct dpdcei_cfg_v10 *dpdcei_cfg)
 {
 	uint32_t dpdcei_id, dprc_id;
 	uint16_t dprc_handle;
@@ -496,8 +496,9 @@ static int create_dpdcei_v10(struct dpdcei_cfg *dpdcei_cfg)
 
 static int create_dpdcei(int mc_fw_version, const char *usage_msg)
 {
-	int error;
+	struct dpdcei_cfg_v10 dpdcei_cfg_v10;
 	struct dpdcei_cfg dpdcei_cfg;
+	int error;
 	long val;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -519,6 +520,7 @@ static int create_dpdcei(int mc_fw_version, const char *usage_msg)
 		error = parse_dpdcei_engine(
 			restool.cmd_option_args[CREATE_OPT_ENGINE],
 			&dpdcei_cfg.engine);
+		dpdcei_cfg_v10.engine = dpdcei_cfg.engine;
 		if (error < 0) {
 			DEBUG_PRINTF(
 				"parse_dpdcei_engine() failed with error %d, cannot get dpdcei engine\n",
@@ -539,6 +541,7 @@ static int create_dpdcei(int mc_fw_version, const char *usage_msg)
 		if (error)
 			return -EINVAL;
 		dpdcei_cfg.priority = (uint8_t)val;
+		dpdcei_cfg_v10.priority = (uint8_t)val;
 	} else {
 		ERROR_PRINTF("--priority option missing\n");
 		puts(usage_msg);
@@ -548,7 +551,7 @@ static int create_dpdcei(int mc_fw_version, const char *usage_msg)
 	if (mc_fw_version == MC_FW_VERSION_9)
 		error = create_dpdcei_v9(&dpdcei_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpdcei_v10(&dpdcei_cfg);
+		error = create_dpdcei_v10(&dpdcei_cfg_v10);
 	else
 		return -EINVAL;
 

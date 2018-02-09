@@ -35,32 +35,77 @@
 
 /* DPAIOP Version */
 #define DPAIOP_VER_MAJOR		2
-#define DPAIOP_VER_MINOR		2
+#define DPAIOP_VER_MINOR		3
+
+#define DPAIOP_CMD_BASE_VERSION		1
+#define DPAIOP_CMD_ID_OFFSET		4
+
+#define DPAIOP_CMD(id)	((id << DPAIOP_CMD_ID_OFFSET) | DPAIOP_CMD_BASE_VERSION)
 
 /* Command IDs */
-#define DPAIOP_CMDID_CREATE		((0x90a << 4) | (0x1))
-#define DPAIOP_CMDID_DESTROY		((0x98a << 4) | (0x1))
-#define DPAIOP_CMDID_GET_VERSION	((0xa0a << 4) | (0x1))
-#define DPAIOP_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
+#define DPAIOP_CMDID_CLOSE		DPAIOP_CMD(0x800)
+#define DPAIOP_CMDID_OPEN		DPAIOP_CMD(0x80a)
+#define DPAIOP_CMDID_CREATE		DPAIOP_CMD(0x90a)
+#define DPAIOP_CMDID_DESTROY		DPAIOP_CMD(0x98a)
+#define DPAIOP_CMDID_GET_API_VERSION	DPAIOP_CMD(0xa0a)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPAIOP_CMD_CREATE(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, int,	    cfg->aiop_id);\
-	MC_CMD_OP(cmd, 0, 32, 32, int,	    cfg->aiop_container_id);\
-} while (0)
+#define DPAIOP_CMDID_GET_ATTR		DPAIOP_CMD(0x004)
 
-/*                cmd, param, offset, width, type,	arg_name */
-#define DPAIOP_RSP_GET_ATTRIBUTES(cmd, attr) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,	    attr->id);\
-} while (0)
+#define DPAIOP_CMDID_GET_IRQ_MASK	DPAIOP_CMD(0x015)
+#define DPAIOP_CMDID_GET_IRQ_STATUS	DPAIOP_CMD(0x016)
 
-/*                cmd, param, offset, width, type,      arg_name */
-#define DPAIOP_RSP_GET_VERSION(cmd, major, minor) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
-} while (0)
+#define DPAIOP_CMDID_GET_SL_VERSION	DPAIOP_CMD(0x282)
+#define DPAIOP_CMDID_GET_STATE		DPAIOP_CMD(0x283)
 
+#pragma pack(push, 1)
+struct dpaiop_cmd_open {
+	uint32_t dpaiop_id;
+};
+
+struct dpaiop_cmd_create {
+	uint32_t aiop_id;
+	uint32_t aiop_container_id;
+};
+
+struct dpaiop_cmd_destroy {
+	uint32_t dpaiop_id;
+};
+
+struct dpaiop_cmd_get_irq_mask {
+	uint32_t pad;
+	uint8_t irq_index;
+};
+
+struct dpaiop_rsp_get_irq_mask {
+	uint32_t mask;
+};
+
+struct dpaiop_cmd_irq_status {
+	uint32_t status;
+	uint8_t irq_index;
+};
+
+struct dpaiop_rsp_get_irq_status {
+	uint32_t status;
+};
+
+struct dpaiop_rsp_get_attributes {
+	uint32_t id;
+};
+
+struct dpaiop_rsp_get_sl_version {
+	uint32_t version_major;
+	uint32_t version_minor;
+	uint32_t revision;
+};
+
+struct dpaiop_rsp_get_state {
+	uint32_t state;
+};
+
+struct dpaiop_rsp_get_api_version {
+	uint16_t major;
+	uint16_t minor;
+};
+#pragma pack(pop)
 #endif /* _FSL_DPAIOP_CMD_V10_H */

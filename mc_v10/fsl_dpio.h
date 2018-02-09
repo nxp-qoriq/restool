@@ -41,65 +41,62 @@
 
 struct fsl_mc_io;
 
+int dpio_open_v10(struct fsl_mc_io *mc_io,
+		  uint32_t cmd_flags,
+		  int dpio_id,
+		  uint16_t *token);
+
+int dpio_close_v10(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   uint16_t token);
+
 /**
- * dpio_create() - Create the DPIO object.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token:	Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @cfg:	Configuration structure
- * @obj_id:	Returned object id
- *
- * Create the DPIO object, allocate required resources and
- * perform required initialization.
- *
- * The object can be created either by declaring it in the
- * DPL file, or by calling this function.
- *
- * The function accepts an authentication token of a parent
- * container that this object should be assigned to. The token
- * can be '0' so the object will be assigned to the default container.
- * The newly created object can be opened with the returned
- * object id and using the container's associated tokens and MC portals.
- *
- * Return:	'0' on Success; Error code otherwise.
+ * struct dpio_cfg_v10 - Structure representing DPIO configuration
+ * @channel_mode:	Notification channel mode
+ * @num_priorities:	Number of priorities for the notification channel (1-8);
+ *			relevant only if 'channel_mode = DPIO_LOCAL_CHANNEL'
  */
+struct dpio_cfg_v10 {
+	enum dpio_channel_mode channel_mode;
+	uint8_t num_priorities;
+};
+
+
 int dpio_create_v10(struct fsl_mc_io *mc_io,
 		    uint16_t dprc_token,
 		    uint32_t cmd_flags,
-		    const struct dpio_cfg *cfg,
+		    const struct dpio_cfg_v10 *cfg,
 		    uint32_t *obj_id);
 
-/**
- * dpio_destroy() - Destroy the DPIO object and release all its resources.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token: Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @object_id:	The object id; it must be a valid id within the container that
- * created this object;
- *
- * The function accepts the authentication token of the parent container that
- * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'.
- * All tokens to the object must be closed before calling destroy.
- *
- * Return:	'0' on Success; Error code otherwise
- */
 int dpio_destroy_v10(struct fsl_mc_io *mc_io,
 		     uint16_t dprc_token,
 		     uint32_t cmd_flags,
 		     uint32_t object_id);
 
+int dpio_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  uint8_t irq_index,
+			  uint32_t *mask);
+
+int dpio_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    uint8_t irq_index,
+			    uint32_t *status);
+
 /**
- * struct dpio_attr - Structure representing DPIO attributes
- * @id:			DPIO object ID
- * @version:		DPIO version
- * @qbman_portal_ce_offset: offset of the software portal cache-enabled area
- * @qbman_portal_ci_offset: offset of the software portal cache-inhibited area
- * @qbman_portal_id:	Software portal ID
- * @channel_mode:	Notification channel mode
- * @num_priorities:	Number of priorities for the notification channel (1-8);
- *			relevant only if 'channel_mode = DPIO_LOCAL_CHANNEL'
- * @qbman_version: QBMAN version
+ * struct dpio_attr_v10 - Structure representing DPIO attributes
+ * @id:				DPIO object ID
+ * @qbman_portal_ce_offset:	Offset of the software portal cache-enabled area
+ * @qbman_portal_ci_offset:	Offset of the software portal
+ *				cache-inhibited area
+ * @qbman_portal_id:		Software portal ID
+ * @channel_mode:		Notification channel mode
+ * @num_priorities:		Number of priorities for the notification
+ *				channel (1-8); relevant only if
+ *				'channel_mode = DPIO_LOCAL_CHANNEL'
+ * @qbman_version:		QBMAN version
  */
 struct dpio_attr_v10 {
 	int id;
@@ -112,32 +109,14 @@ struct dpio_attr_v10 {
 	uint32_t clk;
 };
 
-/**
- * dpio_get_attributes() - Retrieve DPIO attributes
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:	Token of DPIO object
- * @attr:	Returned object's attributes
- *
- * Return:	'0' on Success; Error code otherwise
- */
 int dpio_get_attributes_v10(struct fsl_mc_io *mc_io,
 			    uint32_t cmd_flags,
 			    uint16_t token,
 			    struct dpio_attr_v10 *attr);
 
-/**
- * dpio_get_version() - Get Data Path I/O version
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer:	Major version of data path i/o object
- * @minorVer:	Minor version of data path i/o object
- *
- * Return:  '0' on Success; Error code otherwise.
- */
-int dpio_get_version_v10(struct fsl_mc_io *mc_io,
-			 uint32_t cmd_flags,
-			 uint16_t *majorVer,
-			 uint16_t *minorVer);
+int dpio_get_api_version_v10(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t *major_ver,
+			     uint16_t *minor_ver);
 
 #endif /* __FSL_DPIO_V10_H */

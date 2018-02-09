@@ -228,7 +228,7 @@ static int print_dpcon_attr_v10(uint32_t dpcon_id,
 	uint16_t dpcon_handle;
 	int error;
 
-	error = dpcon_open(&restool.mc_io, 0, dpcon_id, &dpcon_handle);
+	error = dpcon_open_v10(&restool.mc_io, 0, dpcon_id, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -255,7 +255,7 @@ static int print_dpcon_attr_v10(uint32_t dpcon_id,
 	}
 	assert(dpcon_id == (uint32_t)dpcon_attr.id);
 
-	error = dpcon_get_version_v10(&restool.mc_io, 0,
+	error = dpcon_get_api_version_v10(&restool.mc_io, 0,
 				      &obj_major, &obj_minor);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -280,7 +280,7 @@ out:
 	if (dpcon_opened) {
 		int error2;
 
-		error2 = dpcon_close(&restool.mc_io, 0, dpcon_handle);
+		error2 = dpcon_close_v10(&restool.mc_io, 0, dpcon_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -416,7 +416,7 @@ static int create_dpcon_v9(struct dpcon_cfg *dpcon_cfg)
 	return 0;
 }
 
-static int create_dpcon_v10(struct dpcon_cfg *dpcon_cfg)
+static int create_dpcon_v10(struct dpcon_cfg_v10 *dpcon_cfg)
 {
 	uint32_t dpcon_id, dprc_id;
 	uint16_t dprc_handle;
@@ -466,6 +466,7 @@ static int create_dpcon(int mc_fw_version, const char *usage_msg)
 	int error;
 	long val;
 	struct dpcon_cfg dpcon_cfg;
+	struct dpcon_cfg_v10 dpcon_cfg_v10;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -490,14 +491,16 @@ static int create_dpcon(int mc_fw_version, const char *usage_msg)
 			return -EINVAL;
 
 		dpcon_cfg.num_priorities = (uint8_t)val;
+		dpcon_cfg_v10.num_priorities = (uint8_t)val;
 	} else {
 		dpcon_cfg.num_priorities = 1;
+		dpcon_cfg_v10.num_priorities = 1;
 	}
 
 	if (mc_fw_version == MC_FW_VERSION_9)
 		error = create_dpcon_v9(&dpcon_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpcon_v10(&dpcon_cfg);
+		error = create_dpcon_v10(&dpcon_cfg_v10);
 	else
 		return -EINVAL;
 

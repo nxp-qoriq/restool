@@ -332,12 +332,12 @@ static int print_dpmac_attr_v10(uint32_t dpmac_id,
 			struct dprc_obj_desc *target_obj_desc)
 {
 	struct dpmac_attr_v10 dpmac_attr;
-	uint16_t dpmac_handle;
-	bool dpmac_opened = false;
 	uint16_t obj_major, obj_minor;
+	bool dpmac_opened = false;
+	uint16_t dpmac_handle;
 	int error;
 
-	error = dpmac_open(&restool.mc_io, 0, dpmac_id, &dpmac_handle);
+	error = dpmac_open_v10(&restool.mc_io, 0, dpmac_id, &dpmac_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -364,7 +364,7 @@ static int print_dpmac_attr_v10(uint32_t dpmac_id,
 	}
 	assert(dpmac_id == (uint32_t)dpmac_attr.id);
 
-	error = dpmac_get_version_v10(&restool.mc_io, 0,
+	error = dpmac_get_api_version_v10(&restool.mc_io, 0,
 				      &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -390,7 +390,7 @@ out:
 	if (dpmac_opened) {
 		int error2;
 
-		error2 = dpmac_close(&restool.mc_io, 0, dpmac_handle);
+		error2 = dpmac_close_v10(&restool.mc_io, 0, dpmac_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

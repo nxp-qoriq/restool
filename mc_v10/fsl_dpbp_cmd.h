@@ -34,27 +34,64 @@
 #define _FSL_DPBP_CMD_V10_H
 
 /* DPBP Version */
-#define DPBP_VER_MAJOR			3
-#define DPBP_VER_MINOR			2
+#define DPBP_VER_MAJOR				3
+#define DPBP_VER_MINOR				3
+
+/* Command versioning */
+#define DPBP_CMD_BASE_VERSION			1
+#define DPBP_CMD_ID_OFFSET			4
+
+#define DPBP_CMD(id)	((id << DPBP_CMD_ID_OFFSET) | DPBP_CMD_BASE_VERSION)
 
 /* Command IDs */
-#define DPBP_CMDID_CREATE		((0x904 << 4) | (0x1))
-#define DPBP_CMDID_DESTROY		((0x984 << 4) | (0x1))
-#define DPBP_CMDID_GET_VERSION		((0xa04 << 4) | (0x1))
-#define DPBP_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
+#define DPBP_CMDID_CLOSE		DPBP_CMD(0x800)
+#define DPBP_CMDID_OPEN			DPBP_CMD(0x804)
+#define DPBP_CMDID_CREATE		DPBP_CMD(0x904)
+#define DPBP_CMDID_DESTROY		DPBP_CMD(0x984)
+#define DPBP_CMDID_GET_API_VERSION	DPBP_CMD(0xa04)
 
-/*                cmd, param, offset, width, type,	arg_name */
-#define DPBP_RSP_GET_ATTRIBUTES(cmd, attr) \
-do { \
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, attr->bpid); \
-	MC_RSP_OP(cmd, 0, 32, 32, int,	    attr->id);\
-} while (0)
+#define DPBP_CMDID_GET_ATTR		DPBP_CMD(0x004)
 
-/*                cmd, param, offset, width, type,      arg_name */
-#define DPBP_RSP_GET_VERSION(cmd, major, minor) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
-} while (0)
+#define DPBP_CMDID_GET_IRQ_MASK		DPBP_CMD(0x015)
+#define DPBP_CMDID_GET_IRQ_STATUS	DPBP_CMD(0x016)
 
+#pragma pack(push, 1)
+struct dpbp_cmd_open {
+	uint32_t dpbp_id;
+};
+
+struct dpbp_cmd_destroy {
+	uint32_t object_id;
+};
+
+struct dpbp_cmd_get_irq_mask {
+	uint32_t pad;
+	uint8_t irq_index;
+};
+
+struct dpbp_rsp_get_irq_mask {
+	uint32_t mask;
+};
+
+struct dpbp_cmd_get_irq_status {
+	uint32_t status;
+	uint8_t irq_index;
+};
+
+struct dpbp_rsp_get_irq_status {
+	uint32_t status;
+};
+
+struct dpbp_rsp_get_attributes {
+	uint16_t pad;
+	uint16_t bpid;
+	uint32_t id;
+};
+
+struct dpbp_rsp_get_api_version {
+	uint16_t major;
+	uint16_t minor;
+};
+
+#pragma pack(pop)
 #endif /* _FSL_DPBP_CMD_V10_H */
