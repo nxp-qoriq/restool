@@ -37,57 +37,93 @@
 #define DPSECI_VER_MAJOR		5
 #define DPSECI_VER_MINOR		1
 
+/* Command versioning */
+#define DPSECI_CMD_BASE_VERSION		1
+#define DPSECI_CMD_BASE_VERSION_V2	2
+#define DPSECI_CMD_ID_OFFSET		4
+
+#define DPSECI_CMD_V1(id)	((id << DPSECI_CMD_ID_OFFSET) | DPSECI_CMD_BASE_VERSION)
+#define DPSECI_CMD_V2(id)	((id << DPSECI_CMD_ID_OFFSET) | DPSECI_CMD_BASE_VERSION_V2)
+
 /* Command IDs */
-#define DPSECI_CMDID_CREATE_V1		((0x909 << 4) | (0x1))
-#define DPSECI_CMDID_CREATE_V2		((0x909 << 4) | (0x2))
-#define DPSECI_CMDID_DESTROY		((0x989 << 4) | (0x1))
-#define DPSECI_CMDID_GET_VERSION	((0xa09 << 4) | (0x1))
-#define DPSECI_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
+#define DPSECI_CMDID_CLOSE		DPSECI_CMD_V1(0x800)
+#define DPSECI_CMDID_OPEN		DPSECI_CMD_V1(0x809)
+#define DPSECI_CMDID_CREATE		DPSECI_CMD_V2(0x909)
+#define DPSECI_CMDID_DESTROY		DPSECI_CMD_V1(0x989)
+#define DPSECI_CMDID_GET_API_VERSION	DPSECI_CMD_V1(0xa09)
+#define DPSECI_CMDID_GET_ATTR		DPSECI_CMD_V1(0x004)
+#define DPSECI_CMDID_GET_IRQ_MASK	DPSECI_CMD_V1(0x015)
+#define DPSECI_CMDID_GET_IRQ_STATUS	DPSECI_CMD_V1(0x016)
+#define DPSECI_CMDID_GET_TX_QUEUE	DPSECI_CMD_V1(0x197)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_CMD_CREATE_V1(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->priorities[0]);\
-	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  cfg->priorities[1]);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  cfg->priorities[2]);\
-	MC_CMD_OP(cmd, 0, 24, 8,  uint8_t,  cfg->priorities[3]);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  cfg->priorities[4]);\
-	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  cfg->priorities[5]);\
-	MC_CMD_OP(cmd, 0, 48, 8,  uint8_t,  cfg->priorities[6]);\
-	MC_CMD_OP(cmd, 0, 56, 8,  uint8_t,  cfg->priorities[7]);\
-	MC_CMD_OP(cmd, 1, 0,  8,  uint8_t,  cfg->num_tx_queues);\
-	MC_CMD_OP(cmd, 1, 8,  8,  uint8_t,  cfg->num_rx_queues);\
-} while (0)
+/* Macros for accessing command fields smaller than 1byte */
+#define DPSECI_MASK(field)        \
+	GENMASK(DPSECI_##field##_SHIFT + DPSECI_##field##_SIZE - 1, \
+		DPSECI_##field##_SHIFT)
+#define dpseci_set_field(var, field, val) \
+	((var) |= (((val) << DPSECI_##field##_SHIFT) & DPSECI_MASK(field)))
+#define dpseci_get_field(var, field)      \
+	(((var) & DPSECI_MASK(field)) >> DPSECI_##field##_SHIFT)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_CMD_CREATE_V2(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->priorities[0]);\
-	MC_CMD_OP(cmd, 0, 8,  8,  uint8_t,  cfg->priorities[1]);\
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  cfg->priorities[2]);\
-	MC_CMD_OP(cmd, 0, 24, 8,  uint8_t,  cfg->priorities[3]);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  cfg->priorities[4]);\
-	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  cfg->priorities[5]);\
-	MC_CMD_OP(cmd, 0, 48, 8,  uint8_t,  cfg->priorities[6]);\
-	MC_CMD_OP(cmd, 0, 56, 8,  uint8_t,  cfg->priorities[7]);\
-	MC_CMD_OP(cmd, 1, 0,  8,  uint8_t,  cfg->num_tx_queues);\
-	MC_CMD_OP(cmd, 1, 8,  8,  uint8_t,  cfg->num_rx_queues);\
-	MC_CMD_OP(cmd, 2, 0,  32, uint32_t, cfg->options);\
-} while (0)
+#pragma pack(push, 1)
+struct dpseci_cmd_open {
+	uint32_t dpseci_id;
+};
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_RSP_GET_ATTR(cmd, attr) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,	    attr->id); \
-	MC_RSP_OP(cmd, 1, 0,  8,  uint8_t,  attr->num_tx_queues); \
-	MC_RSP_OP(cmd, 1, 8,  8,  uint8_t,  attr->num_rx_queues); \
-} while (0)
+struct dpseci_cmd_create {
+	uint8_t priorities[8];
+	uint8_t num_tx_queues;
+	uint8_t num_rx_queues;
+	uint8_t pad[6];
+	uint32_t options;
+};
 
-/*                cmd, param, offset, width, type,      arg_name */
-#define DPSECI_RSP_GET_VERSION(cmd, major, minor) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
-} while (0)
+struct dpseci_cmd_destroy {
+	uint32_t dpseci_id;
+};
 
+struct dpseci_cmd_get_irq {
+	uint32_t pad;
+	uint8_t irq_index;
+};
+
+struct dpseci_rsp_get_irq_mask {
+	uint32_t mask;
+};
+
+struct dpseci_cmd_irq_status {
+	uint32_t status;
+	uint8_t irq_index;
+};
+
+struct dpseci_rsp_get_irq_status {
+	uint32_t status;
+};
+
+struct dpseci_rsp_get_attr {
+	uint32_t id;
+	uint32_t pad;
+	uint8_t num_tx_queues;
+	uint8_t num_rx_queues;
+	uint8_t pad1[6];
+	uint32_t options;
+};
+
+struct dpseci_cmd_get_queue {
+	uint8_t pad[5];
+	uint8_t queue;
+};
+
+struct dpseci_rsp_get_tx_queue {
+	uint32_t pad;
+	uint32_t fqid;
+	uint8_t priority;
+};
+
+struct dpseci_rsp_get_api_version {
+	uint16_t major;
+	uint16_t minor;
+};
+
+#pragma pack(pop)
 #endif /* _FSL_DPSECI_CMD_H */

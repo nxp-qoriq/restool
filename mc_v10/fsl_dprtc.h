@@ -39,87 +39,75 @@
  * Contains initialization APIs and runtime control APIs for RTC
  */
 
+struct fsl_mc_io;
+
 /**
- * dprtc_create() - Create the DPRTC object.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token:	Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @cfg:	Configuration structure
- * @obj_id:	Returned object id
- *
- * Create the DPRTC object, allocate required resources and
- * perform required initialization.
- *
- * The function accepts an authentication token of a parent
- * container that this object should be assigned to. The token
- * can be '0' so the object will be assigned to the default container.
- * The newly created object can be opened with the returned
- * object id and using the container's associated tokens and MC portals.
- *
- * Return:	'0' on Success; Error code otherwise.
+ * Number of irq's
  */
+#define DPRTC_MAX_IRQ_NUM			1
+#define DPRTC_IRQ_INDEX				0
+
+/**
+ * Interrupt event masks:
+ */
+
+/**
+ * Interrupt event mask indicating alarm event had occurred
+ */
+#define DPRTC_EVENT_ALARM			0x40000000
+/**
+ * Interrupt event mask indicating periodic pulse event had occurred
+ */
+#define DPRTC_EVENT_PPS				0x08000000
+
+int dprtc_open_v10(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   int dprtc_id,
+		   uint16_t *token);
+
+int dprtc_close_v10(struct fsl_mc_io *mc_io,
+		    uint32_t cmd_flags,
+		    uint16_t token);
+
 int dprtc_create_v10(struct fsl_mc_io *mc_io,
 		     uint16_t dprc_token,
 		     uint32_t cmd_flags,
 		     const struct dprtc_cfg *cfg,
 		     uint32_t *obj_id);
 
-/**
- * dprtc_destroy() - Destroy the DPRTC object and release all its resources.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token: Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @object_id:	The object id; it must be a valid id within the container that
- * created this object;
- *
- * The function accepts the authentication token of the parent container that
- * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'.
- * All tokens to the object must be closed before calling destroy.
- *
- * Return:	'0' on Success; error code otherwise.
- */
 int dprtc_destroy_v10(struct fsl_mc_io *mc_io,
 		      uint16_t dprc_token,
 		      uint32_t cmd_flags,
 		      uint32_t object_id);
 
+int dprtc_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
+			   uint16_t token,
+			   uint8_t irq_index,
+			   uint32_t *mask);
+
+int dprtc_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t token,
+			     uint8_t irq_index,
+			     uint32_t *status);
+
 /**
- * struct dprtc_attr - Structure representing DPRTC attributes
+ * struct dprtc_attr_v10 - Structure representing DPRTC attributes
  * @id:		DPRTC object ID
- * @version:	DPRTC version
  */
 struct dprtc_attr_v10 {
 	int id;
 };
 
-/**
- * dprtc_get_attributes - Retrieve DPRTC attributes.
- *
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:	Token of DPRTC object
- * @attr:	Returned object's attributes
- *
- * Return:	'0' on Success; Error code otherwise.
- */
 int dprtc_get_attributes_v10(struct fsl_mc_io *mc_io,
 			     uint32_t cmd_flags,
 			     uint16_t token,
 			     struct dprtc_attr_v10 *attr);
 
-/**
- * dprtc_get_version() - Get Data Path Real Time Counter version
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer:	Major version of data path real time counter object
- * @minorVer:	Minor version of data path real time counter object
- *
- * Return:  '0' on Success; Error code otherwise.
- */
-int dprtc_get_version_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t *majorVer,
-			  uint16_t *minorVer);
+int dprtc_get_api_version_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t *major_ver,
+			      uint16_t *minor_ver);
 
 #endif /* __FSL_DPRTC_H */

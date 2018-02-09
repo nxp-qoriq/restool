@@ -33,31 +33,65 @@
 #ifndef _FSL_DPMCP_CMD_H
 #define _FSL_DPMCP_CMD_H
 
-/* DPMCP Version */
-#define DPMCP_VER_MAJOR			4
-#define DPMCP_VER_MINOR			0
+/* Minimal supported DPMCP Version */
+#define DPMCP_VER_MAJOR		4
+#define DPMCP_VER_MINOR		0
+
+/* Command versioning */
+#define DPMCP_CMD_BASE_VERSION		1
+#define DPMCP_CMD_ID_OFFSET		4
+
+#define DPMCP_CMD(id)	((id << DPMCP_CMD_ID_OFFSET) | DPMCP_CMD_BASE_VERSION)
 
 /* Command IDs */
-#define DPMCP_CMDID_CREATE		((0x90b << 4) | (0x1))
-#define DPMCP_CMDID_DESTROY		((0x98b << 4) | (0x1))
-#define DPMCP_CMDID_GET_VERSION		((0xa0b << 4) | (0x1))
-#define DPMCP_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
+#define DPMCP_CMDID_CLOSE		DPMCP_CMD(0x800)
+#define DPMCP_CMDID_OPEN		DPMCP_CMD(0x80b)
+#define DPMCP_CMDID_CREATE		DPMCP_CMD(0x90b)
+#define DPMCP_CMDID_DESTROY		DPMCP_CMD(0x98b)
+#define DPMCP_CMDID_GET_API_VERSION	DPMCP_CMD(0xa0b)
+#define DPMCP_CMDID_GET_ATTR		DPMCP_CMD(0x004)
+#define DPMCP_CMDID_GET_IRQ_MASK	DPMCP_CMD(0x015)
+#define DPMCP_CMDID_GET_IRQ_STATUS	DPMCP_CMD(0x016)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPMCP_CMD_CREATE(cmd, cfg) \
-	MC_CMD_OP(cmd, 0, 0,  32, int,      cfg->portal_id)
+#pragma pack(push, 1)
+struct dpmcp_cmd_open {
+	uint32_t dpmcp_id;
+};
 
-/*                cmd, param, offset, width, type,	arg_name */
-#define DPMCP_RSP_GET_ATTRIBUTES(cmd, attr) \
-do { \
-	MC_RSP_OP(cmd, 0, 32, 32, int,	    attr->id);\
-} while (0)
+struct dpmcp_cmd_create {
+	uint32_t portal_id;
+};
 
-/*                cmd, param, offset, width, type,      arg_name */
-#define DPMCP_RSP_GET_VERSION(cmd, major, minor) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
-} while (0)
+struct dpmcp_cmd_destroy {
+	uint32_t object_id;
+};
 
+struct dpmcp_cmd_get_irq_mask {
+	uint32_t pad;
+	uint8_t irq_index;
+};
+
+struct dpmcp_rsp_get_irq_mask {
+	uint32_t mask;
+};
+
+struct dpmcp_cmd_get_irq_status {
+	uint32_t status;
+	uint8_t irq_index;
+};
+
+struct dpmcp_rsp_get_irq_status {
+	uint32_t status;
+};
+
+struct dpmcp_rsp_get_attributes {
+	uint32_t pad;
+	uint32_t id;
+};
+
+struct dpmcp_rsp_get_api_version {
+	uint16_t major;
+	uint16_t minor;
+};
+#pragma pack(pop)
 #endif /* _FSL_DPMCP_CMD_H */

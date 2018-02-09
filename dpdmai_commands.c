@@ -218,12 +218,12 @@ static int print_dpdmai_attr_v10(uint32_t dpdmai_id,
 				 struct dprc_obj_desc *target_obj_desc)
 {
 	struct dpdmai_attr_v10 dpdmai_attr;
+	uint16_t obj_major, obj_minor;
 	bool dpdmai_opened = false;
 	uint16_t dpdmai_handle;
-	uint16_t obj_major, obj_minor;
 	int error;
 
-	error = dpdmai_open(&restool.mc_io, 0, dpdmai_id, &dpdmai_handle);
+	error = dpdmai_open_v10(&restool.mc_io, 0, dpdmai_id, &dpdmai_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -250,7 +250,7 @@ static int print_dpdmai_attr_v10(uint32_t dpdmai_id,
 	}
 	assert(dpdmai_id == (uint32_t)dpdmai_attr.id);
 
-	error = dpdmai_get_version_v10(&restool.mc_io, 0,
+	error = dpdmai_get_api_version_v10(&restool.mc_io, 0,
 				       &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -272,7 +272,7 @@ out:
 	if (dpdmai_opened) {
 		int error2;
 
-		error2 = dpdmai_close(&restool.mc_io, 0, dpdmai_handle);
+		error2 = dpdmai_close_v10(&restool.mc_io, 0, dpdmai_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -445,7 +445,7 @@ static int create_dpdmai_v9(struct dpdmai_cfg *dpdmai_cfg)
 	return 0;
 }
 
-static int create_dpdmai_v10(struct dpdmai_cfg *dpdmai_cfg)
+static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
 {
 	uint32_t dpdmai_id, dprc_id;
 	uint16_t dprc_handle;
@@ -492,8 +492,9 @@ static int create_dpdmai_v10(struct dpdmai_cfg *dpdmai_cfg)
 
 static int create_dpdmai(int mc_fw_version, const char *usage_msg)
 {
-	int error;
 	struct dpdmai_cfg dpdmai_cfg = { { 0 } };
+	struct dpdmai_cfg_v10 *dpdmai_cfg_v10 = (struct dpdmai_cfg_v10 *) &dpdmai_cfg;
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -529,7 +530,7 @@ static int create_dpdmai(int mc_fw_version, const char *usage_msg)
 	if (mc_fw_version == MC_FW_VERSION_9)
 		error = create_dpdmai_v9(&dpdmai_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpdmai_v10(&dpdmai_cfg);
+		error = create_dpdmai_v10(dpdmai_cfg_v10);
 	else
 		return -EINVAL;
 

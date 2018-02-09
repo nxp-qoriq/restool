@@ -34,73 +34,116 @@
 #define _FSL_DPNI_CMD_v10_H
 
 /* DPNI Version */
-#define DPNI_VER_MAJOR			7
-#define DPNI_VER_MINOR			0
+#define DPNI_VER_MAJOR				7
+#define DPNI_VER_MINOR				4
+
+#define DPNI_CMD_BASE_VERSION			1
+#define DPNI_CMD_VERSION_2			2
+#define DPNI_CMD_ID_OFFSET			4
+
+#define DPNI_CMD(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_BASE_VERSION)
+#define DPNI_CMD_V2(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_VERSION_2)
 
 /* Command IDs */
-#define DPNI_CMDID_CREATE		((0x901 << 4) | (0x1))
-#define DPNI_CMDID_DESTROY		((0x981 << 4) | (0x1))
-#define DPNI_CMDID_GET_VERSION		((0xa01 << 4) | (0x1))
-#define DPNI_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
-#define DPNI_CMDID_SET_PRIM_MAC		((0x224 << 4) | (0x1))
-#define DPNI_CMDID_GET_STATISTICS	((0x25D << 4) | (0x1))
+#define DPNI_CMDID_OPEN				DPNI_CMD(0x801)
+#define DPNI_CMDID_CLOSE			DPNI_CMD(0x800)
+#define DPNI_CMDID_CREATE			DPNI_CMD(0x901)
+#define DPNI_CMDID_DESTROY			DPNI_CMD(0x981)
+#define DPNI_CMDID_GET_API_VERSION		DPNI_CMD(0xa01)
+#define DPNI_CMDID_GET_ATTR			DPNI_CMD_V2(0x004)
+#define DPNI_CMDID_SET_PRIM_MAC			DPNI_CMD(0x224)
+#define DPNI_CMDID_GET_PRIM_MAC			DPNI_CMD(0x225)
+#define DPNI_CMDID_GET_STATISTICS		DPNI_CMD_V2(0x25D)
+#define DPNI_CMDID_GET_LINK_STATE		DPNI_CMD(0x215)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPNI_CMD_CREATE(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0,  0, 32, uint32_t,  (cfg)->options); \
-	MC_CMD_OP(cmd, 0, 32,  8,  uint8_t,  (cfg)->num_queues); \
-	MC_CMD_OP(cmd, 0, 40,  8,  uint8_t,  (cfg)->num_tcs); \
-	MC_CMD_OP(cmd, 0, 48,  8,  uint8_t,  (cfg)->mac_filter_entries); \
-	MC_CMD_OP(cmd, 1,  0,  8,  uint8_t,  (cfg)->vlan_filter_entries); \
-	MC_CMD_OP(cmd, 1, 16,  8,  uint8_t,  (cfg)->qos_entries); \
-	MC_CMD_OP(cmd, 1, 32, 16, uint16_t,  (cfg)->fs_entries); \
-} while (0)
+/* Macros for accessing command fields smaller than 1byte */
+#define DPNI_MASK(field)	\
+	GENMASK(DPNI_##field##_SHIFT + DPNI_##field##_SIZE - 1, \
+		DPNI_##field##_SHIFT)
+#define dpni_set_field(var, field, val)	\
+	((var) |= (((val) << DPNI_##field##_SHIFT) & DPNI_MASK(field)))
+#define dpni_get_field(var, field)	\
+	(((var) & DPNI_MASK(field)) >> DPNI_##field##_SHIFT)
 
-#define DPNI_RSP_GET_ATTR(cmd, attr) \
-do { \
-	MC_RSP_OP(cmd, 0,  0, 32, uint32_t, (attr)->options); \
-	MC_RSP_OP(cmd, 0, 32,  8, uint8_t,  (attr)->num_queues); \
-	MC_RSP_OP(cmd, 0, 40,  8, uint8_t,  (attr)->num_tcs); \
-	MC_RSP_OP(cmd, 0, 48,  8, uint8_t,  (attr)->mac_filter_entries); \
-	MC_RSP_OP(cmd, 1,  0,  8, uint8_t, (attr)->vlan_filter_entries); \
-	MC_RSP_OP(cmd, 1, 16,  8, uint8_t,  (attr)->qos_entries); \
-	MC_RSP_OP(cmd, 1, 32, 16, uint16_t, (attr)->fs_entries); \
-	MC_RSP_OP(cmd, 2,  0,  8, uint8_t,  (attr)->qos_key_size); \
-	MC_RSP_OP(cmd, 2,  8,  8, uint8_t,  (attr)->fs_key_size); \
-} while (0)
+#pragma pack(push, 1)
 
-#define DPNI_CMD_GET_STATISTICS(cmd, page) \
-do { \
-	MC_CMD_OP(cmd, 0, 0, 8, uint8_t, page); \
-} while (0)
+struct dpni_cmd_open {
+	uint32_t dpni_id;
+};
 
-#define DPNI_RSP_GET_STATISTICS(cmd, stat) \
-do { \
-	MC_RSP_OP(cmd, 0, 0, 64, uint64_t, (stat)->raw.counter0); \
-	MC_RSP_OP(cmd, 1, 0, 64, uint64_t, (stat)->raw.counter1); \
-	MC_RSP_OP(cmd, 2, 0, 64, uint64_t, (stat)->raw.counter2); \
-	MC_RSP_OP(cmd, 3, 0, 64, uint64_t, (stat)->raw.counter3); \
-	MC_RSP_OP(cmd, 4, 0, 64, uint64_t, (stat)->raw.counter4); \
-	MC_RSP_OP(cmd, 5, 0, 64, uint64_t, (stat)->raw.counter5); \
-	MC_RSP_OP(cmd, 6, 0, 64, uint64_t, (stat)->raw.counter6); \
-} while (0)
+struct dpni_cmd_create {
+	uint32_t options;
+	uint8_t num_queues;
+	uint8_t num_tcs;
+	uint8_t mac_filter_entries;
+	uint8_t pad1;
+	uint8_t vlan_filter_entries;
+	uint8_t pad2;
+	uint8_t qos_entries;
+	uint8_t pad3;
+	uint16_t fs_entries;
+};
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPNI_CMD_SET_PRIMARY_MAC_ADDR(cmd, mac_addr) \
-do { \
-	MC_CMD_OP(cmd, 0, 16, 8,  uint8_t,  mac_addr[5]); \
-	MC_CMD_OP(cmd, 0, 24, 8,  uint8_t,  mac_addr[4]); \
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  mac_addr[3]); \
-	MC_CMD_OP(cmd, 0, 40, 8,  uint8_t,  mac_addr[2]); \
-	MC_CMD_OP(cmd, 0, 48, 8,  uint8_t,  mac_addr[1]); \
-	MC_CMD_OP(cmd, 0, 56, 8,  uint8_t,  mac_addr[0]); \
-} while (0)
+struct dpni_cmd_destroy {
+	uint32_t dpsw_id;
+};
 
-#define DPNI_RSP_GET_VERSION(cmd, major, minor) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
-} while (0)
+struct dpni_rsp_get_api_version {
+	uint16_t major;
+	uint16_t minor;
+};
 
+struct dpni_rsp_get_attr {
+	/* response word 0 */
+	uint32_t options;
+	uint8_t num_queues;
+	uint8_t num_rx_tcs;
+	uint8_t mac_filter_entries;
+	uint8_t num_tx_tcs;
+	/* response word 1 */
+	uint8_t vlan_filter_entries;
+	uint8_t pad1;
+	uint8_t qos_entries;
+	uint8_t pad2;
+	uint16_t fs_entries;
+	uint16_t pad3;
+	/* response word 2 */
+	uint8_t qos_key_size;
+	uint8_t fs_key_size;
+	uint16_t wriop_version;
+};
+
+struct dpni_cmd_set_primary_mac_addr {
+	uint16_t pad;
+	uint8_t mac_addr[6];
+};
+
+struct dpni_rsp_get_primary_mac_addr {
+	uint16_t pad;
+	uint8_t mac_addr[6];
+};
+
+struct dpni_cmd_get_statistics {
+	uint8_t page_number;
+	uint8_t param;
+};
+
+struct dpni_rsp_get_statistics {
+	uint64_t counter[7];
+};
+
+#define DPNI_LINK_STATE_SHIFT		0
+#define DPNI_LINK_STATE_SIZE		1
+
+struct dpni_rsp_get_link_state {
+	uint32_t pad0;
+	/* from LSB: up:1 */
+	uint8_t flags;
+	uint8_t pad1[3];
+	uint32_t rate;
+	uint32_t pad2;
+	uint64_t options;
+};
+
+#pragma pack(pop)
 #endif /* _FSL_DPNI_CMD_v10_H */

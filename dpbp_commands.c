@@ -209,12 +209,12 @@ static int print_dpbp_attr_v10(uint32_t dpbp_id,
 			struct dprc_obj_desc *target_obj_desc)
 {
 	struct dpbp_attr_v10 dpbp_attr;
-	bool dpbp_opened = false;
 	uint16_t obj_major, obj_minor;
+	bool dpbp_opened = false;
 	uint16_t dpbp_handle;
 	int error;
 
-	error = dpbp_open(&restool.mc_io, 0, dpbp_id, &dpbp_handle);
+	error = dpbp_open_v10(&restool.mc_io, 0, dpbp_id, &dpbp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -243,7 +243,7 @@ static int print_dpbp_attr_v10(uint32_t dpbp_id,
 	assert(dpbp_id == (uint32_t)dpbp_attr.id);
 	printf("dpbp id: %d\n", dpbp_attr.id);
 
-	error = dpbp_get_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
+	error = dpbp_get_api_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
 	printf("dpbp version: %u.%u\n", obj_major, obj_minor);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -262,7 +262,7 @@ out:
 	if (dpbp_opened) {
 		int error2;
 
-		error2 = dpbp_close(&restool.mc_io, 0, dpbp_handle);
+		error2 = dpbp_close_v10(&restool.mc_io, 0, dpbp_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -397,7 +397,7 @@ static int create_dpbp_v9(struct dpbp_cfg *dpbp_cfg)
 	return 0;
 }
 
-static int create_dpbp_v10(struct dpbp_cfg *dpbp_cfg)
+static int create_dpbp_v10(struct dpbp_cfg_v10 *dpbp_cfg)
 {
 	uint32_t dpbp_id, dprc_id;
 	uint16_t dprc_handle;
@@ -446,6 +446,7 @@ static int create_dpbp(int mc_fw_version, const char *usage_msg)
 {
 	int error;
 	struct dpbp_cfg dpbp_cfg;
+	struct dpbp_cfg_v10 dpbp_cfg_v10;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -463,7 +464,7 @@ static int create_dpbp(int mc_fw_version, const char *usage_msg)
 	if (mc_fw_version == MC_FW_VERSION_9)
 		error = create_dpbp_v9(&dpbp_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpbp_v10(&dpbp_cfg);
+		error = create_dpbp_v10(&dpbp_cfg_v10);
 	else
 		return -EINVAL;
 

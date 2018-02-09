@@ -274,7 +274,7 @@ out:
 static int print_dpseci_attr_v10(uint32_t dpseci_id,
 				 struct dprc_obj_desc *target_obj_desc)
 {
-	struct dpseci_tx_queue_attr tx_attr;
+	struct dpseci_tx_queue_attr_v10 tx_attr;
 	struct dpseci_attr_v10 dpseci_attr;
 	uint16_t obj_major, obj_minor;
 	bool dpseci_opened = false;
@@ -282,7 +282,7 @@ static int print_dpseci_attr_v10(uint32_t dpseci_id,
 	uint8_t *priorities;
 	int error;
 
-	error = dpseci_open(&restool.mc_io, 0, dpseci_id, &dpseci_handle);
+	error = dpseci_open_v10(&restool.mc_io, 0, dpseci_id, &dpseci_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -309,7 +309,7 @@ static int print_dpseci_attr_v10(uint32_t dpseci_id,
 	}
 	assert(dpseci_id == (uint32_t)dpseci_attr.id);
 
-	error = dpseci_get_version_v10(&restool.mc_io, 0,
+	error = dpseci_get_api_version_v10(&restool.mc_io, 0,
 				       &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -333,8 +333,8 @@ static int print_dpseci_attr_v10(uint32_t dpseci_id,
 	}
 
 	for (int i = 0; i < dpseci_attr.num_tx_queues; i++) {
-		error = dpseci_get_tx_queue(&restool.mc_io, 0, dpseci_handle,
-					    i, &tx_attr);
+		error = dpseci_get_tx_queue_v10(&restool.mc_io, 0, dpseci_handle,
+						i, &tx_attr);
 
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
@@ -362,7 +362,7 @@ out:
 	if (dpseci_opened) {
 		int error2;
 
-		error2 = dpseci_close(&restool.mc_io, 0, dpseci_handle);
+		error2 = dpseci_close_v10(&restool.mc_io, 0, dpseci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -664,11 +664,7 @@ static int create_dpseci_v10(const char *usage_msg)
 		}
 	}
 
-	if (restool.mc_fw_version.minor == 0)
-		error = dpseci_create_v10_0(&restool.mc_io, dprc_handle, 0, &dpseci_cfg, &dpseci_id);
-	else
-		error = dpseci_create_v10_1(&restool.mc_io, dprc_handle, 0, &dpseci_cfg, &dpseci_id);
-
+	error = dpseci_create_v10(&restool.mc_io, dprc_handle, 0, &dpseci_cfg, &dpseci_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",

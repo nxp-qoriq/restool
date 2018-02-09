@@ -244,7 +244,7 @@ static int print_dpio_attr_v10(uint32_t dpio_id,
 	uint16_t obj_major, obj_minor;
 	int error;
 
-	error = dpio_open(&restool.mc_io, 0, dpio_id, &dpio_handle);
+	error = dpio_open_v10(&restool.mc_io, 0, dpio_id, &dpio_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -271,7 +271,7 @@ static int print_dpio_attr_v10(uint32_t dpio_id,
 	}
 	assert(dpio_id == (uint32_t)dpio_attr.id);
 
-	error = dpio_get_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
+	error = dpio_get_api_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -305,7 +305,7 @@ out:
 	if (dpio_opened) {
 		int error2;
 
-		error2 = dpio_close(&restool.mc_io, 0, dpio_handle);
+		error2 = dpio_close_v10(&restool.mc_io, 0, dpio_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -440,7 +440,7 @@ static int create_dpio_v9(struct dpio_cfg *dpio_cfg)
 	return 0;
 }
 
-static int create_dpio_v10(struct dpio_cfg *dpio_cfg)
+static int create_dpio_v10(struct dpio_cfg_v10 *dpio_cfg)
 {
 	uint32_t dpio_id, dprc_id;
 	uint16_t dprc_handle;
@@ -489,6 +489,7 @@ static int create_dpio(int mc_fw_version, const char *usage_msg)
 {
 	int error;
 	long val;
+	struct dpio_cfg_v10 dpio_cfg_v10;
 	struct dpio_cfg dpio_cfg;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -510,10 +511,12 @@ static int create_dpio(int mc_fw_version, const char *usage_msg)
 		if (strcmp(restool.cmd_option_args[CREATE_OPT_CHANNEL_MODE],
 		    "DPIO_LOCAL_CHANNEL") == 0) {
 			dpio_cfg.channel_mode = DPIO_LOCAL_CHANNEL;
+			dpio_cfg_v10.channel_mode = DPIO_LOCAL_CHANNEL;
 		} else if (
 			strcmp(restool.cmd_option_args[CREATE_OPT_CHANNEL_MODE],
 			"DPIO_NO_CHANNEL") == 0) {
 			dpio_cfg.channel_mode = DPIO_NO_CHANNEL;
+			dpio_cfg_v10.channel_mode = DPIO_NO_CHANNEL;
 		} else {
 			ERROR_PRINTF("wrong channel mode\n");
 			puts(usage_msg);
@@ -521,6 +524,7 @@ static int create_dpio(int mc_fw_version, const char *usage_msg)
 		}
 	} else {
 		dpio_cfg.channel_mode = DPIO_LOCAL_CHANNEL;
+		dpio_cfg_v10.channel_mode = DPIO_LOCAL_CHANNEL;
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
@@ -532,14 +536,16 @@ static int create_dpio(int mc_fw_version, const char *usage_msg)
 		if (error)
 			return -EINVAL;
 		dpio_cfg.num_priorities = (uint8_t)val;
+		dpio_cfg_v10.num_priorities = (uint8_t)val;
 	} else {
 		dpio_cfg.num_priorities = 8;
+		dpio_cfg_v10.num_priorities = 8;
 	}
 
 	if (mc_fw_version == MC_FW_VERSION_9)
 		error = create_dpio_v9(&dpio_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpio_v10(&dpio_cfg);
+		error = create_dpio_v10(&dpio_cfg_v10);
 	else
 		return -EINVAL;
 

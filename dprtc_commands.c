@@ -213,7 +213,7 @@ static int print_dprtc_attr_v10(uint32_t dprtc_id,
 	uint16_t dprtc_handle;
 	int error;
 
-	error = dprtc_open(&restool.mc_io, 0, dprtc_id, &dprtc_handle);
+	error = dprtc_open_v10(&restool.mc_io, 0, dprtc_id, &dprtc_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -240,7 +240,7 @@ static int print_dprtc_attr_v10(uint32_t dprtc_id,
 	}
 	assert(dprtc_id == (uint32_t)dprtc_attr.id);
 
-	error = dprtc_get_version_v10(&restool.mc_io, 0,
+	error = dprtc_get_api_version_v10(&restool.mc_io, 0,
 				      &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -260,7 +260,7 @@ out:
 	if (dprtc_opened) {
 		int error2;
 
-		error2 = dprtc_close(&restool.mc_io, 0, dprtc_handle);
+		error2 = dprtc_close_v10(&restool.mc_io, 0, dprtc_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",

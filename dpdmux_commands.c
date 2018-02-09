@@ -460,7 +460,7 @@ static int print_dpdmux_attr_v10(uint32_t dpdmux_id,
 	uint16_t dpdmux_handle;
 	int error;
 
-	error = dpdmux_open(&restool.mc_io, 0, dpdmux_id, &dpdmux_handle);
+	error = dpdmux_open_v10(&restool.mc_io, 0, dpdmux_id, &dpdmux_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -487,7 +487,7 @@ static int print_dpdmux_attr_v10(uint32_t dpdmux_id,
 	}
 	assert(dpdmux_id == (uint32_t)dpdmux_attr.id);
 
-	error = dpdmux_get_version_v10(&restool.mc_io, 0,
+	error = dpdmux_get_api_version_v10(&restool.mc_io, 0,
 				       &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -518,7 +518,7 @@ out:
 	if (dpdmux_opened) {
 		int error2;
 
-		error2 = dpdmux_close(&restool.mc_io, 0, dpdmux_handle);
+		error2 = dpdmux_close_v10(&restool.mc_io, 0, dpdmux_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -848,7 +848,7 @@ static int cmd_dpdmux_create_v9(void)
 
 static int create_dpdmux_v10(const char *usage_msg)
 {
-	struct dpdmux_cfg_v9 dpdmux_cfg = {0};
+	struct dpdmux_cfg_v10 dpdmux_cfg = {0};
 	uint32_t dpdmux_id, dprc_id;
 	uint16_t dprc_handle;
 	bool dprc_opened;

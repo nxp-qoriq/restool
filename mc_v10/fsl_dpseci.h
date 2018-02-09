@@ -41,8 +41,17 @@
 
 struct fsl_mc_io;
 
+int dpseci_open_v10(struct fsl_mc_io *mc_io,
+		    uint32_t cmd_flags,
+		    int dpseci_id,
+		    uint16_t *token);
+
+int dpseci_close_v10(struct fsl_mc_io *mc_io,
+		     uint32_t cmd_flags,
+		     uint16_t token);
+
 /**
- * Congestion Group for DPSECI support
+ * Enable the Congestion Group support
  */
 #define DPSECI_OPT_HAS_CG				0x000020
 
@@ -58,11 +67,12 @@ struct fsl_mc_io;
 
 /**
  * struct dpseci_cfg_v10 - Structure representing DPSECI configuration
- * @options:	Any combination of the following options:
+ * @options: Any combination of the following options:
+ *		DPSECI_OPT_HAS_CG
  *		DPSECI_OPT_HAS_OPR
  *		DPSECI_OPT_OPR_SHARED
- * @num_tx_queues: Num of queues towards the SEC
- * @num_rx_queues: Num of queues back from the SEC
+ * @num_tx_queues: num of queues towards the SEC
+ * @num_rx_queues: num of queues back from the SEC
  * @priorities: Priorities for the SEC hardware processing;
  *		each place in the array is the priority of the tx queue
  *		towards the SEC,
@@ -75,99 +85,69 @@ struct dpseci_cfg_v10 {
 	uint8_t priorities[DPSECI_PRIO_NUM];
 };
 
-/**
- * dpseci_create_v10() - Create the DPSECI object
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token:	Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @cfg:	Configuration structure
- * @obj_id:	Returned object id
- *
- * Create the DPSECI object, allocate required resources and
- * perform required initialization.
- *
- * The object can be created either by declaring it in the
- * DPL file, or by calling this function.
- *
- * The function accepts an authentication token of a parent
- * container that this object should be assigned to. The token
- * can be '0' so the object will be assigned to the default container.
- * The newly created object can be opened with the returned
- * object id and using the container's associated tokens and MC portals.
- *
- * Return:	'0' on Success; Error code otherwise.
- */
-int dpseci_create_v10_0(struct fsl_mc_io *mc_io,
-			uint16_t dprc_token,
-			uint32_t cmd_flags,
-			const struct dpseci_cfg_v10 *cfg,
-			uint32_t *obj_id);
+int dpseci_create_v10(struct fsl_mc_io *mc_io,
+		      uint16_t dprc_token,
+		      uint32_t cmd_flags,
+		      const struct dpseci_cfg_v10 *cfg,
+		      uint32_t *obj_id);
 
-int dpseci_create_v10_1(struct fsl_mc_io *mc_io,
-			uint16_t dprc_token,
-			uint32_t cmd_flags,
-			const struct dpseci_cfg_v10 *cfg,
-			uint32_t *obj_id);
-
-/**
- * dpseci_destroy() - Destroy the DPSECI object and release all its resources.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token: Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @object_id:	The object id; it must be a valid id within the container that
- * created this object;
- *
- * The function accepts the authentication token of the parent container that
- * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'.
- * All tokens to the object must be closed before calling destroy.
- *
- * Return:	'0' on Success; error code otherwise.
- */
 int dpseci_destroy_v10(struct fsl_mc_io *mc_io,
 		       uint16_t dprc_token,
 		       uint32_t cmd_flags,
 		       uint32_t object_id);
 
+int dpseci_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    uint8_t irq_index,
+			    uint32_t *mask);
+
+int dpseci_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      uint8_t irq_index,
+			      uint32_t *status);
+
 /**
- * struct dpseci_attr - Structure representing DPSECI attributes
- * @id:			DPSECI object ID
- * @version:		DPSECI version
- * @num_tx_queues:	Number of queues towards the SEC
- * @num_rx_queues:	Number of queues back from the SEC
+ * struct dpseci_attr_v10 - Structure representing DPSECI attributes
+ * @id: DPSECI object ID
+ * @num_tx_queues: number of queues towards the SEC
+ * @num_rx_queues: number of queues back from the SEC
+ * @options: Any combination of the following options:
+ *		DPSECI_OPT_HAS_CG
+ *		DPSECI_OPT_HAS_OPR
+ *		DPSECI_OPT_OPR_SHARED
  */
 struct dpseci_attr_v10 {
 	int id;
 	uint8_t num_tx_queues;
 	uint8_t num_rx_queues;
+	uint32_t options;
 };
 
-/**
- * dpseci_get_attributes() - Retrieve DPSECI attributes.
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:	Token of DPSECI object
- * @attr:	Returned object's attributes
- *
- * Return:	'0' on Success; Error code otherwise.
- */
 int dpseci_get_attributes_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  struct dpseci_attr_v10 *attr);
-
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      struct dpseci_attr_v10 *attr);
 /**
- * dpseci_get_version() - Get Data Path SEC Interface version
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer:	Major version of data path sec object
- * @minorVer:	Minor version of data path sec object
- *
- * Return:  '0' on Success; Error code otherwise.
+ * struct dpseci_tx_queue_attr_v10 - Structure representing attributes of Tx queues
+ * @fqid: Virtual FQID to be used for sending frames to SEC hardware
+ * @priority: SEC hardware processing priority for the queue
  */
-int dpseci_get_version_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t *majorVer,
-			   uint16_t *minorVer);
+struct dpseci_tx_queue_attr_v10 {
+	uint32_t fqid;
+	uint8_t priority;
+};
+
+int dpseci_get_tx_queue_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    uint8_t queue,
+			    struct dpseci_tx_queue_attr_v10 *attr);
+
+int dpseci_get_api_version_v10(struct fsl_mc_io *mc_io,
+			       uint32_t cmd_flags,
+			       uint16_t *major_ver,
+			       uint16_t *minor_ver);
 
 #endif /* __FSL_DPSECI_H */

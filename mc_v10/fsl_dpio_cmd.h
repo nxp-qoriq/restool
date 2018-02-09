@@ -37,37 +37,88 @@
 #define DPIO_VER_MAJOR			4
 #define DPIO_VER_MINOR			2
 
+#define DPIO_CMD_BASE_VERSION		1
+#define DPIO_CMD_ID_OFFSET		4
+
+#define DPIO_CMD(id)	(((id) << DPIO_CMD_ID_OFFSET) | DPIO_CMD_BASE_VERSION)
+
 /* Command IDs */
-#define DPIO_CMDID_CREATE		((0x903 << 4) | (0x1))
-#define DPIO_CMDID_DESTROY		((0x983 << 4) | (0x1))
-#define DPIO_CMDID_GET_VERSION		((0xa03 << 4) | (0x1))
-#define DPIO_CMDID_GET_ATTR		((0x004 << 4) | (0x1))
+#define DPIO_CMDID_CLOSE				DPIO_CMD(0x800)
+#define DPIO_CMDID_OPEN					DPIO_CMD(0x803)
+#define DPIO_CMDID_CREATE				DPIO_CMD(0x903)
+#define DPIO_CMDID_DESTROY				DPIO_CMD(0x983)
+#define DPIO_CMDID_GET_API_VERSION			DPIO_CMD(0xa03)
+#define DPIO_CMDID_GET_ATTR				DPIO_CMD(0x004)
+#define DPIO_CMDID_GET_IRQ_MASK				DPIO_CMD(0x015)
+#define DPIO_CMDID_GET_IRQ_STATUS			DPIO_CMD(0x016)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPIO_CMD_CREATE(cmd, cfg) \
-do { \
-	MC_CMD_OP(cmd, 0, 16, 2,  enum dpio_channel_mode, cfg->channel_mode);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t, cfg->num_priorities);\
-} while (0)
+/* Macros for accessing command fields smaller than 1byte */
+#define DPIO_MASK(field)        \
+	GENMASK(DPIO_##field##_SHIFT + DPIO_##field##_SIZE - 1, \
+		DPIO_##field##_SHIFT)
+#define dpio_set_field(var, field, val) \
+	((var) |= (((val) << DPIO_##field##_SHIFT) & DPIO_MASK(field)))
+#define dpio_get_field(var, field)      \
+	(((var) & DPIO_MASK(field)) >> DPIO_##field##_SHIFT)
 
-/*                cmd, param, offset, width, type, arg_name */
-#define DPIO_RSP_GET_ATTR(cmd, attr) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  32, int,      attr->id);\
-	MC_RSP_OP(cmd, 0, 32, 16, uint16_t, attr->qbman_portal_id);\
-	MC_RSP_OP(cmd, 0, 48, 8,  uint8_t,  attr->num_priorities);\
-	MC_RSP_OP(cmd, 0, 56, 4,  enum dpio_channel_mode, attr->channel_mode);\
-	MC_RSP_OP(cmd, 1, 0,  64, uint64_t, attr->qbman_portal_ce_offset);\
-	MC_RSP_OP(cmd, 2, 0,  64, uint64_t, attr->qbman_portal_ci_offset);\
-	MC_RSP_OP(cmd, 3, 0, 32, uint32_t, attr->qbman_version);\
-	MC_RSP_OP(cmd, 4, 0,  32, uint32_t, attr->clk);\
-} while (0)
+#pragma pack(push, 1)
+struct dpio_cmd_open {
+	uint32_t dpio_id;
+};
 
-/*                cmd, param, offset, width, type,      arg_name */
-#define DPIO_RSP_GET_VERSION(cmd, major, minor) \
-do { \
-	MC_RSP_OP(cmd, 0, 0,  16, uint16_t, major);\
-	MC_RSP_OP(cmd, 0, 16, 16, uint16_t, minor);\
-} while (0)
+#define DPIO_CHANNEL_MODE_SHIFT		0
+#define DPIO_CHANNEL_MODE_SIZE		2
 
+struct dpio_cmd_create {
+	uint16_t pad1;
+	/* from LSB: channel_mode:2 */
+	uint8_t channel_mode;
+	uint8_t pad2;
+	uint8_t num_priorities;
+};
+
+struct dpio_cmd_destroy {
+	uint32_t dpio_id;
+};
+
+struct dpio_cmd_get_irq {
+	uint32_t pad;
+	uint8_t irq_index;
+};
+
+struct dpio_rsp_get_irq_mask {
+	uint32_t mask;
+};
+
+struct dpio_cmd_irq_status {
+	uint32_t status;
+	uint8_t irq_index;
+};
+
+struct dpio_rsp_get_irq_status {
+	uint32_t status;
+};
+
+#define DPIO_ATTR_CHANNEL_MODE_SHIFT	0
+#define DPIO_ATTR_CHANNEL_MODE_SIZE	4
+
+struct dpio_rsp_get_attr {
+	uint32_t id;
+	uint16_t qbman_portal_id;
+	uint8_t num_priorities;
+	/* from LSB: channel_mode:4 */
+	uint8_t channel_mode;
+	uint64_t qbman_portal_ce_offset;
+	uint64_t qbman_portal_ci_offset;
+	uint32_t qbman_version;
+	uint32_t pad;
+	uint32_t clk;
+};
+
+struct dpio_rsp_get_api_version {
+	uint16_t major;
+	uint16_t minor;
+};
+
+#pragma pack(pop)
 #endif /* _FSL_DPIO_CMD_H */

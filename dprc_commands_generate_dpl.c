@@ -52,7 +52,7 @@
 #include "mc_v9/fsl_dpio.h"
 #include "mc_v9/fsl_dpmac.h"
 #include "mc_v9/fsl_dpmcp.h"
-#include "mc_v9/fsl_dprc.h"
+#include "mc_v10/fsl_dprc.h"
 #include "mc_v9/fsl_dprtc.h"
 #include "mc_v9/fsl_dpseci.h"
 #include "mc_v9/fsl_dpni.h"
@@ -1603,7 +1603,7 @@ static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
 	parse_dpni_options_v10(fp, dpni_attr.options);
 
 	fprintf(fp, "\t\t\tnum_queues = <%u>;\n", dpni_attr.num_queues);
-	fprintf(fp, "\t\t\tnum_tcs = <%u>;\n", dpni_attr.num_tcs);
+	fprintf(fp, "\t\t\tnum_tcs = <%u>;\n", dpni_attr.num_rx_tcs);
 	fprintf(fp, "\t\t\tmac_filter_entries = <%u>;\n", dpni_attr.mac_filter_entries);
 	fprintf(fp, "\t\t\tvlan_filter_entries = <%u>;\n", dpni_attr.vlan_filter_entries);
 	fprintf(fp, "\t\t\tfs_entries = <%u>;\n", dpni_attr.fs_entries);

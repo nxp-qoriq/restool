@@ -904,13 +904,10 @@ static int print_dprc_attr(uint32_t dprc_id,
 		"container id: %d\n"
 		"icid: %u\n"
 		"portal id: %d\n"
-		"version: %u.%u\n"
 		"dprc options: %#llx\n",
 		dprc_attr.container_id,
 		dprc_attr.icid,
 		dprc_attr.portal_id,
-		dprc_attr.version.major,
-		dprc_attr.version.minor,
 		(unsigned long long)dprc_attr.options);
 	print_dprc_options(dprc_attr.options);
 	print_obj_label(target_obj_desc);

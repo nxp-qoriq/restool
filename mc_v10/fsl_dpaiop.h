@@ -33,56 +33,53 @@
 #ifndef __FSL_DPAIOP_V10_H
 #define __FSL_DPAIOP_V10_H
 
-#include "../mc_v9/fsl_dpaiop.h"
-
 struct fsl_mc_io;
 
-/**
- * dpaiop_create_v10() - Create the DPAIOP object.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token:	Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @cfg:	Configuration structure
- * @obj_id:	Returned object id
- *
- * Create the DPAIOP object, allocate required resources and
- * perform required initialization.
- *
- * The object can be created either by declaring it in the
- * DPL file, or by calling this function.
- *
- * The function accepts an authentication token of a parent
- * container that this object should be assigned to. The token
- * can be '0' so the object will be assigned to the default container.
- * The newly created object can be opened with the returned
- * object id and using the container's associated tokens and MC portals.
- *
- * Return:	'0' on Success; Error code otherwise.
+/* Data Path AIOP API
+ * Contains initialization APIs and runtime control APIs for DPAIOP
  */
+
+int dpaiop_open_v10(struct fsl_mc_io *mc_io,
+		    uint32_t cmd_flags,
+		    int dpaiop_id,
+		    uint16_t *token);
+
+int dpaiop_close_v10(struct fsl_mc_io *mc_io,
+		     uint32_t cmd_flags,
+		     uint16_t token);
+
+/**
+ * struct dpaiop_cfg_v10 - Structure representing DPAIOP configuration
+ * @aiop_id:		AIOP ID
+ * @aiop_container_id:	AIOP container ID
+ */
+struct dpaiop_cfg_v10 {
+	int aiop_id;
+	int aiop_container_id;
+};
+
 int dpaiop_create_v10(struct fsl_mc_io *mc_io,
 		      uint16_t dprc_token,
 		      uint32_t cmd_flags,
-		      const struct dpaiop_cfg *cfg,
+		      const struct dpaiop_cfg_v10 *cfg,
 		      uint32_t *obj_id);
 
-/**
- * dpaiop_destroy_v10() - Destroy the DPAIOP object and release all its resources.
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:	Token of DPAIOP object
- *
- * The function accepts the authentication token of the parent container that
- * created the object (not the one that currently owns the object). The object
- * is searched within parent using the provided 'object_id'.
- * All tokens to the object must be closed before calling destroy.
- *
- * Return:	'0' on Success; error code otherwise.
- */
 int dpaiop_destroy_v10(struct fsl_mc_io *mc_io,
 		       uint16_t dprc_token,
 		       uint32_t cmd_flags,
 		       uint32_t object_id);
 
+int dpaiop_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    uint8_t irq_index,
+			    uint32_t *mask);
+
+int dpaiop_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      uint8_t irq_index,
+			      uint32_t *status);
 /**
  * struct dpaiop_attr_v10 - Structure representing DPAIOP attributes
  * @id:	AIOP ID
@@ -91,32 +88,78 @@ struct dpaiop_attr_v10 {
 	int id;
 };
 
-/**
- * dpaiop_get_attributes - Retrieve DPAIOP attributes.
- *
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:	Token of DPAIOP object
- * @attr:	Returned object's attributes
- *
- * Return:	'0' on Success; Error code otherwise.
- */
 int dpaiop_get_attributes_v10(struct fsl_mc_io *mc_io,
 			      uint32_t cmd_flags,
 			      uint16_t token,
 			      struct dpaiop_attr_v10 *attr);
+
 /**
- * dpaiop_get_version_v10() - Get Data Path AIOP version
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer:	Major version of data path aiop object
- * @minorVer:	Minor version of data path aiop object
- *
- * Return:  '0' on Success; Error code otherwise.
+ * struct dpaiop_sl_version - AIOP SL (Service Layer) version
+ * @major:	AIOP SL major version number
+ * @minor:	AIOP SL minor version number
+ * @revision:	AIOP SL revision number
  */
-int dpaiop_get_version_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t *majorVer,
-			   uint16_t *minorVer);
+struct dpaiop_sl_version_v10 {
+	uint32_t major;
+	uint32_t minor;
+	uint32_t revision;
+};
+
+int dpaiop_get_sl_version_v10(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      struct dpaiop_sl_version_v10 *version);
+
+/**
+ * AIOP states
+ *
+ * AIOP internal states, can be retrieved by calling dpaiop_get_state() routine
+ */
+
+/**
+ * AIOP reset successfully completed.
+ */
+#define DPAIOP_STATE_RESET_DONE		0x00000000
+/**
+ * AIOP reset is ongoing.
+ */
+#define DPAIOP_STATE_RESET_ONGOING	0x00000001
+
+/**
+ * AIOP image loading successfully completed.
+ */
+#define DPAIOP_STATE_LOAD_DONE		0x00000002
+/**
+ * AIOP image loading is ongoing.
+ */
+#define DPAIOP_STATE_LOAD_ONGIONG	0x00000004
+/**
+ * AIOP image loading completed with error.
+ */
+#define DPAIOP_STATE_LOAD_ERROR		0x00000008
+
+/**
+ * Boot process of AIOP cores is ongoing.
+ */
+#define DPAIOP_STATE_BOOT_ONGOING	0x00000010
+/**
+ * Boot process of AIOP cores completed with an error.
+ */
+#define DPAIOP_STATE_BOOT_ERROR		0x00000020
+/**
+ * AIOP cores are functional and running
+ */
+#define DPAIOP_STATE_RUNNING		0x00000040
+/** @} */
+
+int dpaiop_get_state_v10(struct fsl_mc_io *mc_io,
+			 uint32_t cmd_flags,
+			 uint16_t token,
+			 uint32_t *state);
+
+int dpaiop_get_api_version_v10(struct fsl_mc_io *mc_io,
+			       uint32_t cmd_flags,
+			       uint16_t *major_ver,
+			       uint16_t *minor_ver);
 
 #endif /* __FSL_DPAIOP_V10_H */

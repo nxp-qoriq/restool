@@ -33,61 +33,55 @@
 #ifndef __FSL_DPBP_V10_H
 #define __FSL_DPBP_V10_H
 
-#include "../mc_v9/fsl_dpbp.h"
-
-/* Data Path Buffer Pool API
+/*
+ * Data Path Buffer Pool API
  * Contains initialization APIs and runtime control APIs for DPBP
  */
 
 struct fsl_mc_io;
 
+int dpbp_open_v10(struct fsl_mc_io *mc_io,
+		  uint32_t cmd_flags,
+		  int dpbp_id,
+		  uint16_t *token);
+
+int dpbp_close_v10(struct fsl_mc_io *mc_io,
+		   uint32_t cmd_flags,
+		   uint16_t token);
+
 /**
- * dpbp_create() - Create the DPBP object.
- * @mc_io:	Pointer to MC portal's I/O object
- * @dprc_token:	Parent container token; '0' for default container
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @cfg:	Configuration structure
- * @obj_id:	Returned object id
- *
- * Create the DPBP object, allocate required resources and
- * perform required initialization.
- *
- * The object can be created either by declaring it in the
- * DPL file, or by calling this function.
- *
- * The function accepts an authentication token of a parent
- * container that this object should be assigned to. The token
- * can be '0' so the object will be assigned to the default container.
- * The newly created object can be opened with the returned
- * object id and using the container's associated tokens and MC portals.
- *
- * Return:	'0' on Success; Error code otherwise.
+ * struct dpbp_cfg - Structure representing DPBP configuration
+ * @options:	place holder
  */
+struct dpbp_cfg_v10 {
+	uint32_t options;
+};
+
 int dpbp_create_v10(struct fsl_mc_io *mc_io,
 		    uint16_t dprc_token,
 		    uint32_t cmd_flags,
-		    const struct dpbp_cfg *cfg,
+		    const struct dpbp_cfg_v10 *cfg,
 		    uint32_t *obj_id);
 
-/**
- * dpbp_destroy() - Destroy the DPBP object and release all its resources.
- * @dprc_token: Parent container token; '0' for default container
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @object_id:	The object id; it must be a valid id within the container that
- * created this object;
- *
- * Return:	'0' on Success; error code otherwise.
- */
 int dpbp_destroy_v10(struct fsl_mc_io *mc_io,
 		     uint16_t dprc_token,
 		     uint32_t cmd_flags,
-		     uint32_t object_id);
+		     uint32_t obj_id);
 
+int dpbp_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  uint8_t irq_index,
+			  uint32_t *mask);
+
+int dpbp_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    uint8_t irq_index,
+			    uint32_t *status);
 /**
  * struct dpbp_attr - Structure representing DPBP attributes
  * @id:		DPBP object ID
- * @version:	DPBP version
  * @bpid:	Hardware buffer pool ID; should be used as an argument in
  *		acquire/release operations on buffers
  */
@@ -96,33 +90,14 @@ struct dpbp_attr_v10 {
 	uint16_t bpid;
 };
 
-/**
- * dpbp_get_attributes - Retrieve DPBP attributes.
- *
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:	Token of DPBP object
- * @attr:	Returned object's attributes
- *
- * Return:	'0' on Success; Error code otherwise.
- */
 int dpbp_get_attributes_v10(struct fsl_mc_io *mc_io,
-			uint32_t cmd_flags,
-			uint16_t token,
-			struct dpbp_attr_v10 *attr);
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    struct dpbp_attr_v10 *attr);
 
-/**
- * dpbp_get_version() - Get buffer pool version
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @majorVer:	Major version of data path object buffer pool
- * @minorVer:	Minor version of data path object buffer pool
- *
- * Return:  '0' on Success; Error code otherwise.
- */
-int dpbp_get_version_v10(struct fsl_mc_io *mc_io,
-			 uint32_t cmd_flags,
-			 uint16_t *majorVer,
-			 uint16_t *minorVer);
+int dpbp_get_api_version_v10(struct fsl_mc_io *mc_io,
+			     uint32_t cmd_flags,
+			     uint16_t *major_ver,
+			     uint16_t *minor_ver);
 
 #endif /* __FSL_DPBP_V10_H */
