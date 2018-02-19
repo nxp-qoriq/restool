@@ -1288,6 +1288,14 @@ static int open_root_container(void)
 	return error;
 }
 
+static int get_endianness(void) {
+	int test_var = 1;
+
+	if (*(char *)&test_var == 1)
+		return LITTLE_ENDIAN;
+	return BIG_ENDIAN;
+}
+
 int main(int argc, char *argv[])
 {
 	int error;
@@ -1334,6 +1342,14 @@ int main(int argc, char *argv[])
 		ERROR_PRINTF("This version of restool does no longer support MC\
 			     firmware versions lower than v9. \
 			     Please use restool v1.5\n");
+		goto out;
+	}
+
+	// MC versions lower or equal to V9 are not big-endian compatible
+	if (restool.mc_fw_version.major <= 9 && get_endianness() == BIG_ENDIAN){
+		ERROR_PRINTF("Restool does not support MC versions lower than \
+				V10 on big-endian systems. Please upgrade your \
+				MC binary\n");
 	}
 
 	DEBUG_PRINTF("MC firmware version: %u.%u.%u\n",
