@@ -270,9 +270,8 @@ The arguments are:
 	-d, --num-ifs=NUM_IFS				Number of virtual interfaces (excluding the uplink
 							interface)
 
-<endpoint> represents the uplink device. Is one of the following:
+<endpoint> represents the uplink device:
 	dpmac.X 					X is the index of the dpmac object
-	dpni.X						X is the index of the dpni object
 <endpoint> is mandatory
 
 Usage examples:
