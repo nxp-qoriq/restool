@@ -48,7 +48,7 @@
 #include "mc_v9/fsl_dpdbg.h"
 #include "mc_v9/fsl_dpdcei.h"
 #include "mc_v9/fsl_dpdmai.h"
-#include "mc_v9/fsl_dpdmux.h"
+#include "mc_v10/fsl_dpdmux.h"
 #include "mc_v9/fsl_dpio.h"
 #include "mc_v9/fsl_dpmac.h"
 #include "mc_v9/fsl_dpmcp.h"
@@ -110,7 +110,9 @@ struct dpni_config {
 	_IOWR(RESTOOL_IOCTL_TYPE, 0x6, struct dpni_config)
 
 /* dpdmux stuff */
-#define ALL_DPDMUX_OPTS		DPDMUX_OPT_BRIDGE_EN
+#define ALL_DPDMUX_OPTS (		\
+	DPDMUX_OPT_BRIDGE_EN |		\
+	DPDMUX_OPT_CLS_MASK_SUPPORT)
 
 /* dpsw stuff */
 #define ALL_DPSW_OPTS (			\
@@ -1638,6 +1640,11 @@ static void parse_dpdmux_options(FILE *fp, uint64_t options)
 	if (options & DPDMUX_OPT_BRIDGE_EN) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPDMUX_OPT_BRIDGE_EN\", ");
+	}
+
+	if (options & DPDMUX_OPT_CLS_MASK_SUPPORT) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPDMUX_OPT_CLS_MASK_SUPPORT\", ");
 	}
 
 	len = strlen(buf);

@@ -43,7 +43,9 @@
 #include "mc_v9/fsl_dpdmux.h"
 #include "mc_v10/fsl_dpdmux.h"
 
-#define ALL_DPDMUX_OPTS		DPDMUX_OPT_BRIDGE_EN
+#define ALL_DPDMUX_OPTS (		\
+	DPDMUX_OPT_BRIDGE_EN |		\
+	DPDMUX_OPT_CLS_MASK_SUPPORT)
 
 enum mc_cmd_status mc_status;
 
@@ -250,6 +252,7 @@ C_ASSERT(ARRAY_SIZE(dpdmux_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPDMUX_OPT_BRIDGE_EN),
+	OPTION_MAP_ENTRY(DPDMUX_OPT_CLS_MASK_SUPPORT),
 };
 static unsigned options_num = ARRAY_SIZE(options_map);
 
@@ -340,6 +343,9 @@ static void print_dpdmux_options(uint64_t options)
 
 	if (options & DPDMUX_OPT_BRIDGE_EN)
 		printf("\tDPDMUX_OPT_BRIDGE_EN\n");
+	if (options & DPDMUX_OPT_CLS_MASK_SUPPORT)
+		printf("\tDPDMUX_OPT_CLS_MASK_SUPPORT\n");
+
 }
 
 static void print_dpdmux_method(enum dpdmux_method method)
@@ -1024,6 +1030,7 @@ static int cmd_dpdmux_create_v10(void)
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma separated list of DPDMUX options:\n"
 		"	DPDMUX_OPT_BRIDGE_EN\n"
+		"	DPDMUX_OPT_CLS_MASK_SUPPORT\n"
 		"   Default is 0\n"
 		"--max-dmat-entries=<number>\n"
 		"   Maximum entries in DPDMUX address table. Default is 64.\n"

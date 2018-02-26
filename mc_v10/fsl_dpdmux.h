@@ -50,6 +50,8 @@ int dpdmux_close_v10(struct fsl_mc_io *mc_io,
 		     uint32_t cmd_flags,
 		     uint16_t token);
 
+#define DPDMUX_OPT_CLS_MASK_SUPPORT		0x0000000000000020ULL
+
 /**
  * struct dpdmux_cfg_v10 - DPDMUX configuration parameters
  * @method: Defines the operation method for the DPDMUX address table

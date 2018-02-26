@@ -254,6 +254,8 @@ Usage: $0 [OPTIONS] -d=<NUM_IFS> <endpoint>
 The options are:
 	-h, --help					This message.
 	-v, --vepa					MUX is configured as a VEPA. Default is VEB.
+	-o, --options=<options-mask>			Where <options-mask> is a comma separated list of DPSW options:
+								DPDMUX_OPT_CLS_MASK_SUPPORT
 	-m, --method					Traffic steering method. One of: DPDMUX_METHOD_NONE,
 							DPDMUX_METHOD_C_VLAN_MAC, DPDMUX_METHOD_MAC,
 							DPDMUX_METHOD_C_VLAN, DPDMUX_METHOD_CUSTOM.
@@ -324,8 +326,10 @@ create_dpdmux() {
 process_addmux() {
 	get_root_container
 
-	# Comma separated list of DPDMUX options; default configured as VEB
-	options="DPDMUX_OPT_BRIDGE_EN"
+	# Comma separated list of DPDMUX options
+	options=""
+	# DPDMUX configured by default as VEB
+	options_type="DPDMUX_OPT_BRIDGE_EN"
 	# Number of virtual interfaces (excluding the uplink interface)
 	num_ifs=
 	#  Where <dmat-method> defines the method of the DMux address table.
@@ -347,7 +351,10 @@ process_addmux() {
 				exit 0
 				;;
 			-v | --vepa)
-				options=""
+				options_type=""
+				;;
+			-o=* | --options=*)
+				options="${i#*=}"
 				;;
 			-m=* | --method=*)
 				method="${i#*=}"
@@ -380,6 +387,11 @@ process_addmux() {
 				;;
 		esac
 	done
+
+	# concatenate VEB/VEPA option and the other options
+	if [ ! -z "$options_type" ]; then
+		options=$options","$options_type
+	fi
 
 	# Check if the uplink endpoint has been provided otherwise
 	# display the usage
