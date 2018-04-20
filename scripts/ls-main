@@ -536,6 +536,7 @@ process_addsw() {
 				;;
 			-i=* | --num-ifs=*)
 				num_ifs="${i#*=}"
+				has_num_ifs=1
 				;;
 			-o=* | --options=*)
 				options="${i#*=}"
@@ -566,7 +567,8 @@ process_addsw() {
 				arg_dpni="$(echo $i | grep -x -E "dpni.[0-9]+" || true )"
 				if [ "$i" = "$arg_dpmac"  ] ||
 				   [ "$i" = "$arg_dpni" ]; then
-				endpoint=$(echo -e "$endpoint\n$i")
+					endpoint=$(echo -e "$endpoint\n$i")
+					ifcnt=$((ifcnt + 1))
 				else
 					echo "Error: $i argument is invalid"
 					usage_addsw
@@ -575,6 +577,11 @@ process_addsw() {
 				;;
 		esac
 	done
+
+	# Use the number of endpoints if number of ports is not specified
+	if [ -z "$has_num_ifs" ] && [ $ifcnt -gt 0 ]; then
+                num_ifs=$ifcnt
+	fi
 
 	# Check if there are more endpoints provided than the number of the interfaces
 	if [ $num_ifs -lt $ifcnt ]; then
