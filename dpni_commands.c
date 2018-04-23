@@ -67,7 +67,8 @@
 	DPNI_OPT_HAS_KEY_MASKING |			\
 	DPNI_OPT_NO_FS |				\
 	DPNI_OPT_HAS_OPR |				\
-	DPNI_OPT_OPR_PER_TC)
+	DPNI_OPT_OPR_PER_TC |				\
+	DPNI_OPT_SINGLE_SENDER)
 
 enum mc_cmd_status mc_status;
 
@@ -397,6 +398,7 @@ static struct option_entry options_map_v10_1[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_NO_FS),
 	OPTION_MAP_ENTRY(DPNI_OPT_HAS_OPR),
 	OPTION_MAP_ENTRY(DPNI_OPT_OPR_PER_TC),
+	OPTION_MAP_ENTRY(DPNI_OPT_SINGLE_SENDER),
 };
 static unsigned int options_num_v10_1 = ARRAY_SIZE(options_map_v10_1);
 
@@ -541,6 +543,8 @@ static void print_dpni_options_v10(uint32_t options)
 	if (options & DPNI_OPT_OPR_PER_TC)
 		printf("\tDPNI_OPT_OPR_PER_TC\n");
 
+	if (options & DPNI_OPT_SINGLE_SENDER)
+		printf("\tDPNI_OPT_SINGLE_SENDER\n");
 }
 
 static int print_dpni_endpoint(uint32_t target_id)
@@ -1609,6 +1613,7 @@ static int cmd_dpni_create_v10(void)
 		"	DPNI_OPT_NO_FS\n"
 		"	DPNI_OPT_HAS_OPR\n"
 		"	DPNI_OPT_OPR_PER_TC\n"
+		"	DPNI_OPT_SINGLE_SENDER\n"
 		"--num-queues=<number>\n"
 		"   Number of TX/RX queues use for traffic distribution.\n"
 		"   Used to distribute traffic to multiple GPP cores,\n"
