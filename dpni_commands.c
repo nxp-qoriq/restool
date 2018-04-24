@@ -841,7 +841,8 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	print_dpni_options_v10(dpni_attr.options);
 
 	printf("num_queues: %u\n", (uint32_t)dpni_attr.num_queues);
-	printf("num_tcs: %u\n", (uint32_t)dpni_attr.num_rx_tcs);
+	printf("num_rx_tcs: %u\n", (uint32_t)dpni_attr.num_rx_tcs);
+	printf("num_tx_tcs: %u\n", (uint32_t)dpni_attr.num_tx_tcs);
 	printf("mac_entries: %u\n",
 	       (uint32_t)dpni_attr.mac_filter_entries);
 	printf("vlan_entries: %u\n",
