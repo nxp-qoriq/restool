@@ -171,7 +171,9 @@ struct dpni_cfg_v10 {
 	 *		BPs (DPNI_ SET_POOLS), policers. There are dedicated QM
 	 *		queues for traffic classes (including class queues on
 	 *		Tx). Value 0 defaults to one TC. Maximum supported value
-	 *		is 8.
+	 *		is 16. There are maximum 16 TCs for Tx and 8 TCs for Rx.
+	 *		When num_tcs>8 Tx will use this value but Rx will have
+	 *		only 8 traffic classes.
 	 * @qos_entries: Number of entries in the QoS classification table. This
 	 *		table is used to select the TC for ingress traffic. It
 	 *		is either an exact match or a TCAM table, depending on

@@ -1458,7 +1458,7 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_TCS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_TCS);
 		error = get_option_value(CREATE_OPT_NUM_TCS, &value,
-				     "Invalid num-tcs value\n", 1, 8);
+				     "Invalid num-tcs value\n", 1, 16);
 		if (error)
 			return error;
 		dpni_cfg.num_tcs = (uint8_t)value;
@@ -1620,7 +1620,10 @@ static int cmd_dpni_create_v10(void)
 		"   Defaults to one queue. Maximim supported value is 8\n"
 		"--num-tcs=<number>\n"
 		"   Number of traffic classes (TCs), reserved for the DPNI.\n"
-		"   Defaults to one TC. Maximum supported value is 8\n"
+		"   Defaults to one TC. Maximum supported value is 16.\n"
+		"   There are maximum 16 TCs for Tx and 8 TCs for Rx.\n"
+		"   When num_tcs > 8, Tx will use this value but Rx will have\n"
+		"   only 8 traffic classes.\n"
 		"--mac-filter-entries=<number>\n"
 		"   Number of entries in the MAC address filtering table.\n"
 		"   Allows both unicast and multicast entries.\n"
