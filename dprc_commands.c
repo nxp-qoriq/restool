@@ -1791,8 +1791,8 @@ static int parse_endpoint(char *endpoint_str, struct dprc_endpoint *endpoint)
 	memset(endpoint, 0, sizeof(*endpoint));
 
 	n = sscanf(endpoint_str,
-		   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "[a-z].%d.%d",
-		   endpoint->type, &endpoint->id, (int *)&endpoint->if_id);
+		   "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH) "[a-z].%d.%hu",
+		   endpoint->type, &endpoint->id, &endpoint->if_id);
 
 	if (n < 2)
 		return -EINVAL;
