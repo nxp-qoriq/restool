@@ -640,7 +640,7 @@ The options are:
 							DPNI_OPT_HAS_POLICING, DPNI_OPT_SHARED_CONGESTION,
 							DPNI_OPT_HAS_KEY_MASKING, DPNI_OPT_NO_FS.
 	-nq, --num-queues=NUM_QUEUES			Number of TX/RX queues use for traffic distribution.
-							Valid range [1-8]. Default value is number of cores.
+							Valid range [1-16]. Default value is number of cores.
 	-t, --num-tcs=NUM_TCS				Number of traffic classes (TCs) reserved for the DPNI.
 							Valid range [1-8]. Default value is 1.
 	-m, --mac-entries=MAC_ENTRIES			Number of entries in the MAC address filtering table.
@@ -730,8 +730,8 @@ process_addni() {
 				;;
 			-nq=* | --num-queues=*)
 				num_queues="${i#*=}"
-				if [ "$(($num_queues))" -gt 8 ] || [ "$(($num_queues))" -lt 1 ]; then
-					echo "Invalid num_queues=$num_queues. Valid range is [1-8]."
+				if [ "$(($num_queues))" -gt 16 ] || [ "$(($num_queues))" -lt 1 ]; then
+					echo "Invalid num_queues=$num_queues. Valid range is [1-16]."
 					exit 1
 				fi
 				dpni_args=$dpni_args" --num-queues="$num_queues
