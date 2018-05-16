@@ -51,6 +51,11 @@ int dpseci_close_v10(struct fsl_mc_io *mc_io,
 		     uint16_t token);
 
 /**
+ * Maximum number of Tx/Rx priorities per DPSECI object
+ */
+#define DPSECI_MAX_QUEUE_NUM				16
+
+/**
  * Enable the Congestion Group support
  */
 #define DPSECI_OPT_HAS_CG				0x000020
@@ -82,7 +87,7 @@ struct dpseci_cfg_v10 {
 	uint32_t options;
 	uint8_t num_tx_queues;
 	uint8_t num_rx_queues;
-	uint8_t priorities[DPSECI_PRIO_NUM];
+	uint8_t priorities[DPSECI_MAX_QUEUE_NUM];
 };
 
 int dpseci_create_v10(struct fsl_mc_io *mc_io,

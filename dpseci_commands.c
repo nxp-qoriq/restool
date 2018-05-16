@@ -625,7 +625,7 @@ static int create_dpseci_v10(const char *usage_msg)
 			~ONE_BIT_MASK(CREATE_OPT_PRIORITIES);
 		error = get_option_value(CREATE_OPT_NUM_QUEUES, &val,
 					 "Invalid number of queues range",
-					 1, DPSECI_PRIO_NUM);
+					 1, DPSECI_MAX_QUEUE_NUM);
 		if (error)
 			return -EINVAL;
 		dpseci_cfg.num_tx_queues = val;
@@ -729,7 +729,7 @@ static int cmd_dpseci_create_v10(void)
 	static const char usage_msg_1[] =
 		"\n"
 		"Usage: restool dpseci create --num-queues=<count> --priorities=<pri1,pri2,...> [OPTIONS]\n"
-		"   --num-queues=<number of rx/tx queues>, ranges from 1 to 8\n"
+		"   --num-queues=<number of rx/tx queues>, ranges from 1 to 16\n"
 		"   --priorities=<priority1,priority2, ...,priority8>\n"
 		"      DPSECI supports num-queues priorities that can be individually set.\n"
 		"      if --num-queues=3, then --priorities=X,Y,Z\n"
