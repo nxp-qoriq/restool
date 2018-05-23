@@ -106,15 +106,17 @@ create_dpmcp() {
 # Create a DPIO object
 create_dpio() {
 	local parent_container=$1
+	local num_cores=$(grep -c ^processor /proc/cpuinfo)
 
-	# Count the existing DPIO objects and create the rest up to 8
+	# Count the existing DPIO objects and create the rest up to the number of cores
 	local cnt=$($restool dprc show "$parent_container" | grep -c dpio)
+	local num_dpio=$((num_cores - cnt))
 
-	if [ "$cnt" -ge 8 ]; then
+	if [ "$cnt" -ge "$num_cores" ]; then
 		return
 	fi
 
-	for i in $(seq 1 $((8-cnt))); do
+	for i in $(seq 1 $num_dpio); do
 		local obj=$($restool --script dpio create \
 			--channel-mode="DPIO_LOCAL_CHANNEL" \
 			--container=$parent_container \
