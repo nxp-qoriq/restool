@@ -669,12 +669,12 @@ Usage examples:
 
 # Create a DPNI and its private dependencies
 create_dpni() {
-	no_of_dpcons=8
+	local num_dpcons=$num_queues
 
 	# Create private dependencies
 	create_dpbp $container
 	create_dpmcp $container
-	for i in $(seq 1 ${no_of_dpcons}); do
+	for i in $(seq 1 ${num_dpcons}); do
 		create_dpcon $container
 		if [ $? -ne 0 ]; then
 			break;
@@ -825,7 +825,8 @@ process_addni() {
 	# if no --num-queues is specified then set it to number of cores
 	num_queues_present=$(echo "$dpni_args" | grep -o "\-\-num-queues" || true)
 	if [ -z "$num_queues_present" ]; then
-		dpni_args=$dpni_args" --num-queues="$(grep -c ^processor /proc/cpuinfo)
+		num_queues=$(grep -c ^processor /proc/cpuinfo)
+		dpni_args=$dpni_args" --num-queues="$num_queues
 	fi
 
 	# Check if --no-link the endpoint have been provided otherwise display the usage
