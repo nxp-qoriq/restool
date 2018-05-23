@@ -285,7 +285,7 @@ check_if_installed fdtget
 
 # generate the dtb file
 DTB_FILE="temp.dtb"
-dtc -I dts -O dtb $DTS_FILE -o $DTB_FILE
+dtc -W no-unit_address_vs_reg -I dts -O dtb $DTS_FILE -o $DTB_FILE
 
 # declare a hash map to store correspondence between object indeces in
 # the DPL provided and actual indeces after being created by MC
