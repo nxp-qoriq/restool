@@ -57,6 +57,7 @@ int dpdmai_close_v10(struct fsl_mc_io *mc_io,
  *	should be configured with 0
  */
 struct dpdmai_cfg_v10 {
+	uint8_t num_queues;
 	uint8_t priorities[DPDMAI_PRIO_NUM];
 };
 
@@ -91,6 +92,7 @@ int dpdmai_get_irq_status_v10(struct fsl_mc_io *mc_io,
 struct dpdmai_attr_v10 {
 	int id;
 	uint8_t num_of_priorities;
+	uint8_t num_of_queues;
 };
 
 int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,

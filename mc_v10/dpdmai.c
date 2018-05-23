@@ -141,6 +141,7 @@ int dpdmai_create_v10(struct fsl_mc_io *mc_io,
 					  cmd_flags,
 					  dprc_token);
 	cmd_params = (struct dpdmai_cmd_create *)cmd.params;
+	cmd_params->num_queues = cfg->num_queues;
 	cmd_params->priorities[0] = cfg->priorities[0];
 	cmd_params->priorities[1] = cfg->priorities[1];
 
@@ -307,6 +308,7 @@ int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,
 	rsp_params = (struct dpdmai_rsp_get_attr *)cmd.params;
 	attr->id = le32_to_cpu(rsp_params->id);
 	attr->num_of_priorities = rsp_params->num_of_priorities;
+	attr->num_of_queues = rsp_params->num_of_queues;
 
 	return 0;
 }
