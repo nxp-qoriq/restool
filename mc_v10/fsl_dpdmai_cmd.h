@@ -39,18 +39,20 @@
 
 /* Command versioning */
 #define DPDMAI_CMD_BASE_VERSION		1
+#define DPDMAI_CMD_VERSION_2		2
 #define DPDMAI_CMD_ID_OFFSET		4
 
 #define DPDMAI_CMD(id)	((id << DPDMAI_CMD_ID_OFFSET) | DPDMAI_CMD_BASE_VERSION)
+#define DPDMAI_CMD_V2(id)	((id << DPDMAI_CMD_ID_OFFSET) | DPDMAI_CMD_VERSION_2)
 
 /* Command IDs */
 #define DPDMAI_CMDID_CLOSE		DPDMAI_CMD(0x800)
 #define DPDMAI_CMDID_OPEN		DPDMAI_CMD(0x80E)
-#define DPDMAI_CMDID_CREATE		DPDMAI_CMD(0x90E)
+#define DPDMAI_CMDID_CREATE		DPDMAI_CMD_V2(0x90E)
 #define DPDMAI_CMDID_DESTROY		DPDMAI_CMD(0x98E)
 #define DPDMAI_CMDID_GET_API_VERSION	DPDMAI_CMD(0xa0E)
 
-#define DPDMAI_CMDID_GET_ATTR		DPDMAI_CMD(0x004)
+#define DPDMAI_CMDID_GET_ATTR		DPDMAI_CMD_V2(0x004)
 
 #define DPDMAI_CMDID_GET_IRQ_MASK	DPDMAI_CMD(0x015)
 #define DPDMAI_CMDID_GET_IRQ_STATUS	DPDMAI_CMD(0x016)
@@ -70,7 +72,7 @@ struct dpdmai_cmd_open {
 };
 
 struct dpdmai_cmd_create {
-	uint8_t pad;
+	uint8_t num_queues;
 	uint8_t priorities[2];
 };
 
@@ -99,6 +101,7 @@ struct dpdmai_rsp_get_irq_status {
 struct dpdmai_rsp_get_attr {
 	uint32_t id;
 	uint8_t num_of_priorities;
+	uint8_t num_of_queues;
 };
 
 struct dpdmai_rsp_get_api_version {

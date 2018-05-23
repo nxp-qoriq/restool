@@ -79,6 +79,7 @@ enum dpdmai_create_options {
 	CREATE_OPT_HELP = 0,
 	CREATE_OPT_PRIORITIES,
 	CREATE_OPT_PARENT_DPRC,
+	CREATE_OPT_NUM_QUEUES,
 };
 
 static struct option dpdmai_create_options[] = {
@@ -98,6 +99,13 @@ static struct option dpdmai_create_options[] = {
 
 	[CREATE_OPT_PARENT_DPRC] = {
 		.name = "container",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_NUM_QUEUES] = {
+		.name = "num-queues",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -264,6 +272,7 @@ static int print_dpdmai_attr_v10(uint32_t dpdmai_id,
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf("number of priorities: %u\n", dpdmai_attr.num_of_priorities);
+	printf("number of queues: %u\n", dpdmai_attr.num_of_queues);
 	print_obj_label(target_obj_desc);
 
 	error = 0;
@@ -450,6 +459,7 @@ static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
 	uint32_t dpdmai_id, dprc_id;
 	uint16_t dprc_handle;
 	bool dprc_opened;
+	long value;
 	int error;
 
 	dprc_handle = restool.root_dprc_handle;
@@ -468,6 +478,17 @@ static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
 				return error;
 			dprc_opened = true;
 		}
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
+
+		error = get_option_value(CREATE_OPT_NUM_QUEUES, &value,
+					 "Invalid num-queues value\n", 1, 16);
+		if (error)
+			return error;
+		dpdmai_cfg->num_queues = (uint8_t)value;
 	}
 
 	error = dpdmai_create_v10(&restool.mc_io, dprc_handle, 0,
@@ -492,8 +513,8 @@ static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
 
 static int create_dpdmai(int mc_fw_version, const char *usage_msg)
 {
-	struct dpdmai_cfg dpdmai_cfg = { { 0 } };
-	struct dpdmai_cfg_v10 *dpdmai_cfg_v10 = (struct dpdmai_cfg_v10 *) &dpdmai_cfg;
+	struct dpdmai_cfg dpdmai_cfg = { 0 };
+	struct dpdmai_cfg_v10 dpdmai_cfg_10 = { 0 };
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -522,15 +543,19 @@ static int create_dpdmai(int mc_fw_version, const char *usage_msg)
 				error);
 			return error;
 		}
+		dpdmai_cfg_10.priorities[0] = dpdmai_cfg.priorities[0];
+		dpdmai_cfg_10.priorities[1] = dpdmai_cfg.priorities[1];
 	} else {
 		dpdmai_cfg.priorities[0] = 1;
 		dpdmai_cfg.priorities[1] = 2;
+		dpdmai_cfg_10.priorities[0] = 1;
+		dpdmai_cfg_10.priorities[1] = 2;
 	}
 
 	if (mc_fw_version == MC_FW_VERSION_9)
 		error = create_dpdmai_v9(&dpdmai_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpdmai_v10(dpdmai_cfg_v10);
+		error = create_dpdmai_v10(&dpdmai_cfg_10);
 	else
 		return -EINVAL;
 
@@ -571,6 +596,8 @@ static int cmd_dpdmai_create_v10(void)
 		"default is: restool dpdmai create --priorities=1,2\n"
 		"--priorities=<priority1,priority2>\n"
 		"   Valid values for <priorityN> are 1-8.\n"
+		"--num-queues=<number>\n"
+		"   Valid values are [1, #num-cores]\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
