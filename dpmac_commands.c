@@ -265,6 +265,68 @@ static void print_dpmac_eth_if(enum dpmac_eth_if eth_if)
 	}
 }
 
+#define ETH_GSTRING_LEN		32
+
+static struct {
+	enum dpmac_counter id;
+	char name[ETH_GSTRING_LEN];
+} dpaa2_mac_counters[] =  {
+	{DPMAC_CNT_ING_ALL_FRAME,		"rx all frames"},
+	{DPMAC_CNT_ING_GOOD_FRAME,		"rx frames ok"},
+	{DPMAC_CNT_ING_ERR_FRAME,		"rx frame errors"},
+	{DPMAC_CNT_ING_FRAME_DISCARD,		"rx frame discards"},
+	{DPMAC_CNT_ING_UCAST_FRAME,		"rx u-cast"},
+	{DPMAC_CNT_ING_BCAST_FRAME,		"rx b-cast"},
+	{DPMAC_CNT_ING_MCAST_FRAME,		"rx m-cast"},
+	{DPMAC_CNT_ING_FRAME_64,		"rx 64 bytes"},
+	{DPMAC_CNT_ING_FRAME_127,		"rx 65-127 bytes"},
+	{DPMAC_CNT_ING_FRAME_255,		"rx 128-255 bytes"},
+	{DPMAC_CNT_ING_FRAME_511,		"rx 256-511 bytes"},
+	{DPMAC_CNT_ING_FRAME_1023,		"rx 512-1023 bytes"},
+	{DPMAC_CNT_ING_FRAME_1518,		"rx 1024-1518 bytes"},
+	{DPMAC_CNT_ING_FRAME_1519_MAX,		"rx 1519-max bytes"},
+	{DPMAC_CNT_ING_FRAG,			"rx frags"},
+	{DPMAC_CNT_ING_JABBER,			"rx jabber"},
+	{DPMAC_CNT_ING_ALIGN_ERR,		"rx align errors"},
+	{DPMAC_CNT_ING_OVERSIZED,		"rx oversized"},
+	{DPMAC_CNT_ING_VALID_PAUSE_FRAME,	"rx pause"},
+	{DPMAC_CNT_ING_BYTE,			"rx bytes"},
+	{DPMAC_CNT_ENG_GOOD_FRAME,		"tx frames ok"},
+	{DPMAC_CNT_EGR_UCAST_FRAME,		"tx u-cast"},
+	{DPMAC_CNT_EGR_MCAST_FRAME,		"tx m-cast"},
+	{DPMAC_CNT_EGR_BCAST_FRAME,		"tx b-cast"},
+	{DPMAC_CNT_EGR_ERR_FRAME,		"tx frame errors"},
+	{DPMAC_CNT_EGR_UNDERSIZED,		"tx undersized"},
+	{DPMAC_CNT_EGR_VALID_PAUSE_FRAME,	"tx b-pause"},
+	{DPMAC_CNT_EGR_BYTE,			"tx bytes"},
+
+};
+
+static int print_dpmac_counters(struct fsl_mc_io *mc_io, uint16_t token)
+{
+	uint64_t counter_value;
+	unsigned i;
+	int error;
+
+	printf("Counters: \n");
+	for (i = 0; i < ARRAY_SIZE(dpaa2_mac_counters); i++) {
+		error = dpmac_get_counter_v10(mc_io,
+					    0,
+					    token,
+					    dpaa2_mac_counters[i].id, &counter_value);
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			return error;
+		}
+
+		printf("%s: %lu\n", dpaa2_mac_counters[i].name, counter_value);
+	}
+
+	return 0;
+}
+
 static int print_dpmac_attr_v9(uint32_t dpmac_id,
 			       struct dprc_obj_desc *target_obj_desc)
 {
@@ -386,6 +448,7 @@ static int print_dpmac_attr_v10(uint32_t dpmac_id,
 	printf("maximum supported rate %lu Mbps\n",
 			(unsigned long)dpmac_attr.max_rate);
 	print_obj_label(target_obj_desc);
+	print_dpmac_counters(&restool.mc_io, dpmac_handle);
 
 	error = 0;
 
