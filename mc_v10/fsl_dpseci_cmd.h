@@ -35,20 +35,22 @@
 
 /* DPSECI Version */
 #define DPSECI_VER_MAJOR		5
-#define DPSECI_VER_MINOR		1
+#define DPSECI_VER_MINOR		3
 
 /* Command versioning */
 #define DPSECI_CMD_BASE_VERSION		1
 #define DPSECI_CMD_BASE_VERSION_V2	2
+#define DPSECI_CMD_BASE_VERSION_V3	3
 #define DPSECI_CMD_ID_OFFSET		4
 
 #define DPSECI_CMD_V1(id)	((id << DPSECI_CMD_ID_OFFSET) | DPSECI_CMD_BASE_VERSION)
 #define DPSECI_CMD_V2(id)	((id << DPSECI_CMD_ID_OFFSET) | DPSECI_CMD_BASE_VERSION_V2)
+#define DPSECI_CMD_V3(id)	((id << DPSECI_CMD_ID_OFFSET) | DPSECI_CMD_BASE_VERSION_V3)
 
 /* Command IDs */
 #define DPSECI_CMDID_CLOSE		DPSECI_CMD_V1(0x800)
 #define DPSECI_CMDID_OPEN		DPSECI_CMD_V1(0x809)
-#define DPSECI_CMDID_CREATE		DPSECI_CMD_V2(0x909)
+#define DPSECI_CMDID_CREATE		DPSECI_CMD_V3(0x909)
 #define DPSECI_CMDID_DESTROY		DPSECI_CMD_V1(0x989)
 #define DPSECI_CMDID_GET_API_VERSION	DPSECI_CMD_V1(0xa09)
 #define DPSECI_CMDID_GET_ATTR		DPSECI_CMD_V1(0x004)
@@ -76,6 +78,8 @@ struct dpseci_cmd_create {
 	uint8_t num_rx_queues;
 	uint8_t pad[6];
 	uint32_t options;
+	uint32_t pad1;
+	uint8_t priorities2[8];
 };
 
 struct dpseci_cmd_destroy {

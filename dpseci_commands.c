@@ -528,7 +528,7 @@ static int create_dpseci_v9(const char *usage_msg)
 			~ONE_BIT_MASK(CREATE_OPT_PRIORITIES);
 		error = get_option_value(CREATE_OPT_NUM_QUEUES, &val,
 					 "Invalid number of queues range",
-					 1, DPSECI_PRIO_NUM);
+					 1, DPSECI_MAX_QUEUE_NUM);
 		if (error)
 			return -EINVAL;
 		dpseci_cfg.num_tx_queues = val;
