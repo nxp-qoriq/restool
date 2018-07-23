@@ -142,8 +142,10 @@ int dpseci_create_v10(struct fsl_mc_io *mc_io,
 					  cmd_flags,
 					  dprc_token);
 	cmd_params = (struct dpseci_cmd_create *)cmd.params;
-	for (i = 0; i < DPSECI_PRIO_NUM; i++)
+	for (i = 0; i < 8; i++)
 		cmd_params->priorities[i] = cfg->priorities[i];
+	for (i = 0; i < 8; i++)
+		cmd_params->priorities2[i] = cfg->priorities[8 + i];
 	cmd_params->num_tx_queues = cfg->num_tx_queues;
 	cmd_params->num_rx_queues = cfg->num_rx_queues;
 	cmd_params->options = cfg->options;
