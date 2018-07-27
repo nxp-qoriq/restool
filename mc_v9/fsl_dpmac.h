@@ -101,6 +101,9 @@ enum dpmac_link_type {
  * @DPMAC_ETH_IF_QSGMII: QSGMII interface
  * @DPMAC_ETH_IF_XAUI: XAUI interface
  * @DPMAC_ETH_IF_XFI: XFI interface
+ * @DPMAC_ETH_IF_CAUI: CAUI interface
+ * @DPMAC_ETH_IF_1000BASEX: 1000Base_X interface
+ * @DPMAC_ETH_IF_USXGMII: USXGMII interface
  */
 enum dpmac_eth_if {
 	DPMAC_ETH_IF_MII,
@@ -112,7 +115,9 @@ enum dpmac_eth_if {
 	DPMAC_ETH_IF_QSGMII,
 	DPMAC_ETH_IF_XAUI,
 	DPMAC_ETH_IF_XFI,
-	DPMAC_ETH_IF_CAUI
+	DPMAC_ETH_IF_CAUI,
+	DPMAC_ETH_IF_1000BASEX,
+	DPMAC_ETH_IF_USXGMII
 };
 
 /**

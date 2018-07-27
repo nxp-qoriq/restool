@@ -259,6 +259,12 @@ static void print_dpmac_eth_if(enum dpmac_eth_if eth_if)
 	case DPMAC_ETH_IF_CAUI:
 		printf("DPMAC_ETH_IF_CAUI\n");
 		break;
+	case DPMAC_ETH_IF_1000BASEX:
+		printf("DPMAC_ETH_IF_1000BASEX\n");
+		break;
+	case DPMAC_ETH_IF_USXGMII:
+		printf("DPMAC_ETH_IF_USXGMII\n");
+		break;
 	default:
 		assert(false);
 		break;
