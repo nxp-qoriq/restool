@@ -1193,8 +1193,13 @@ out:
 
 static int get_device_file(void)
 {
+	int num_dev_files = 0;
+	struct dirent *dir;
 	int error = 0;
+	char *device;
 	int num_char;
+	long val;
+	DIR *d;
 
 	memset(restool.device_file, '\0', DEV_FILE_SIZE);
 
@@ -1222,10 +1227,6 @@ static int get_device_file(void)
 			goto out;
 		}
 	} else {
-		DIR           *d;
-		struct dirent *dir;
-		int num_dev_files = 0;
-		char *dprc_index;
 
 		d = opendir("/dev");
 		if (!d) {
@@ -1235,26 +1236,34 @@ static int get_device_file(void)
 		}
 		while ((dir = readdir(d)) != NULL) {
 			if (strncmp(dir->d_name, "dprc.", 5) == 0) {
-				dprc_index = &dir->d_name[5];
-				num_dev_files += 1;
+				if (num_dev_files == 0)
+					device = strdup(dir->d_name);
+				num_dev_files++;
 			}
 		}
 		closedir(d);
 
 		if (num_dev_files == 1) {
-			int temp_len = strlen(dprc_index);
-
-			temp_len += 10;
-			num_char = sprintf(restool.device_file, "/dev/dprc.%s",
-					   dprc_index);
-			if (num_char != temp_len) {
-				ERROR_PRINTF("sprintf error\n");
+			errno = 0;
+			val = strtoul(&device[5], NULL, 0);
+			if ((errno == ERANGE && val == LONG_MAX) ||
+			    ( errno != 0 && val == 0 )) {
+				ERROR_PRINTF("error: device file malformed\n");
 				error = -1;
-				goto out;
+				goto out_free_device;;
 			}
-			restool.root_dprc_id = atoi(dprc_index);
-			if (access(restool.device_file, F_OK) != 0)
-				printf("no such dev file\n");
+			restool.root_dprc_id = val;
+
+			num_char = snprintf(restool.device_file, DEV_FILE_SIZE,
+					    "/dev/dprc.%d", restool.root_dprc_id);
+			if (num_char < 0 || num_char >= DEV_FILE_SIZE) {
+				ERROR_PRINTF("error: device file malformed\n");
+				error = -1;
+				goto out_free_device;
+			}
+			error = access(restool.device_file, F_OK);
+			if (error != 0)
+				ERROR_PRINTF("error: access(%s) = %d\n", restool.device_file, error);
 		} else {
 			error = -1;
 			if (num_dev_files == 0)
@@ -1263,6 +1272,9 @@ static int get_device_file(void)
 				ERROR_PRINTF("error: multiple root containers\n");
 		}
 	}
+
+out_free_device:
+	free(device);
 out:
 	return error;
 }
