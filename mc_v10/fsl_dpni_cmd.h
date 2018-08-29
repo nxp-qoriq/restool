@@ -55,6 +55,8 @@
 #define DPNI_CMDID_GET_PRIM_MAC			DPNI_CMD(0x225)
 #define DPNI_CMDID_GET_STATISTICS		DPNI_CMD_V2(0x25D)
 #define DPNI_CMDID_GET_LINK_STATE		DPNI_CMD(0x215)
+#define DPNI_CMDID_GET_IRQ_MASK			DPNI_CMD(0x015)
+#define DPNI_CMDID_GET_IRQ_STATUS		DPNI_CMD(0x016)
 
 /* Macros for accessing command fields smaller than 1byte */
 #define DPNI_MASK(field)	\
@@ -143,6 +145,24 @@ struct dpni_rsp_get_link_state {
 	uint32_t rate;
 	uint32_t pad2;
 	uint64_t options;
+};
+
+struct dpni_cmd_get_irq_mask {
+	uint32_t pad;
+	uint8_t irq_index;
+};
+
+struct dpni_rsp_get_irq_mask {
+	uint32_t mask;
+};
+
+struct dpni_cmd_get_irq_status {
+	uint32_t status;
+	uint8_t irq_index;
+};
+
+struct dpni_rsp_get_irq_status {
+	uint32_t status;
 };
 
 #pragma pack(pop)

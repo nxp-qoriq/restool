@@ -138,10 +138,10 @@ static struct option dpdcei_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpdcei_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 static const struct flib_ops dpdcei_ops = {
-	.obj_open = dpdcei_open,
-	.obj_close = dpdcei_close,
-	.obj_get_irq_mask = dpdcei_get_irq_mask,
-	.obj_get_irq_status = dpdcei_get_irq_status,
+	.obj_open = dpdcei_open_v10,
+	.obj_close = dpdcei_close_v10,
+	.obj_get_irq_mask = dpdcei_get_irq_mask_v10,
+	.obj_get_irq_status = dpdcei_get_irq_status_v10,
 };
 
 static int cmd_dpdcei_help(void)

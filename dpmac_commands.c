@@ -130,10 +130,10 @@ static struct option dpmac_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpmac_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 static const struct flib_ops dpmac_ops = {
-	.obj_open = dpmac_open,
-	.obj_close = dpmac_close,
-	.obj_get_irq_mask = dpmac_get_irq_mask,
-	.obj_get_irq_status = dpmac_get_irq_status,
+	.obj_open = dpmac_open_v10,
+	.obj_close = dpmac_close_v10,
+	.obj_get_irq_mask = dpmac_get_irq_mask_v10,
+	.obj_get_irq_status = dpmac_get_irq_status_v10,
 };
 
 static int cmd_dpmac_help(void)

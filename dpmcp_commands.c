@@ -122,10 +122,10 @@ static struct option dpmcp_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpmcp_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 static const struct flib_ops dpmcp_ops = {
-	.obj_open = dpmcp_open,
-	.obj_close = dpmcp_close,
-	.obj_get_irq_mask = dpmcp_get_irq_mask,
-	.obj_get_irq_status = dpmcp_get_irq_status,
+	.obj_open = dpmcp_open_v10,
+	.obj_close = dpmcp_close_v10,
+	.obj_get_irq_mask = dpmcp_get_irq_mask_v10,
+	.obj_get_irq_status = dpmcp_get_irq_status_v10,
 };
 
 static int cmd_dpmcp_help(void)

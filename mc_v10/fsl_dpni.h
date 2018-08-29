@@ -379,5 +379,16 @@ int dpni_get_link_state_v10(struct fsl_mc_io *mc_io,
 			    uint16_t token,
 			    struct dpni_link_state_v10 *state);
 
+int dpni_get_irq_mask_v10(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  uint8_t irq_index,
+			  uint32_t *mask);
+
+int dpni_get_irq_status_v10(struct fsl_mc_io *mc_io,
+			    uint32_t cmd_flags,
+			    uint16_t token,
+			    uint8_t irq_index,
+			    uint32_t *status);
 
 #endif /* __FSL_DPNI_v10_H */
