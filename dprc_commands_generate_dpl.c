@@ -58,6 +58,14 @@
 #include "mc_v9/fsl_dpni.h"
 #include "mc_v9/fsl_dpsw.h"
 #include "mc_v10/fsl_dpni.h"
+#include "mc_v10/fsl_dpcon.h"
+#include "mc_v10/fsl_dpio.h"
+#include "mc_v10/fsl_dpci.h"
+#include "mc_v10/fsl_dpdcei.h"
+#include "mc_v10/fsl_dpdmai.h"
+#include "mc_v10/fsl_dpseci.h"
+#include "mc_v10/fsl_dpdmux.h"
+#include "mc_v10/fsl_dpsw.h"
 
 /* dprc stuff */
 #define ALL_DPRC_OPTS_DPL (                     \
@@ -758,14 +766,14 @@ static int parse_dpaiop(FILE *fp, struct obj_list *curr)
 	return 0;
 }
 
-static int parse_dpcon(FILE *fp, struct obj_list *curr)
+static int parse_dpcon_v9(FILE *fp, struct obj_list *curr)
 {
 	uint16_t dpcon_handle;
 	int error;
 	struct dpcon_attr dpcon_attr;
 	bool dpcon_opened = false;
 
-	error = dpcon_open(&restool.mc_io, 0, curr->id, &dpcon_handle);
+	error = dpcon_open_v10(&restool.mc_io, 0, curr->id, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -814,7 +822,64 @@ out:
 	return error;
 }
 
-static int parse_dpdcei(FILE *fp, struct obj_list *curr)
+
+static int parse_dpcon_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpcon_attr_v10 dpcon_attr;
+	bool dpcon_opened = false;
+	uint16_t dpcon_handle;
+	int error;
+
+	error = dpcon_open_v10(&restool.mc_io, 0, curr->id, &dpcon_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpcon_opened = true;
+	if (0 == dpcon_handle) {
+		DEBUG_PRINTF(
+			"dpcon_open() returned invalid handle (auth 0) for dpcon.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpcon_attr, 0, sizeof(dpcon_attr));
+	error = dpcon_get_attributes_v10(&restool.mc_io, 0, dpcon_handle,
+					 &dpcon_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(curr->id == dpcon_attr.id);
+
+	fprintf(fp, "\t\t\tnum_priorities = <%#x>;\n",
+		dpcon_attr.num_priorities);
+
+	error = 0;
+
+out:
+	if (dpcon_opened) {
+		int error2;
+
+		error2 = dpcon_close_v10(&restool.mc_io, 0, dpcon_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int parse_dpdcei_v9(FILE *fp, struct obj_list *curr)
 {
 	/* dpdcei_attr{} does not have a field called priority */
 	uint16_t dpdcei_handle;
@@ -880,7 +945,72 @@ out:
 	return error;
 }
 
-static int parse_dpdmai(FILE *fp, struct obj_list *curr)
+static int parse_dpdcei_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpdcei_attr_v10 dpdcei_attr;
+	bool dpdcei_opened = false;
+	uint16_t dpdcei_handle;
+	int error;
+
+	error = dpdcei_open_v10(&restool.mc_io, 0, curr->id, &dpdcei_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpdcei_opened = true;
+	if (0 == dpdcei_handle) {
+		DEBUG_PRINTF(
+			"dpdcei_open() returned invalid handle (auth 0) for dpdcei.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpdcei_attr, 0, sizeof(dpdcei_attr));
+	error = dpdcei_get_attributes_v10(&restool.mc_io, 0, dpdcei_handle,
+					  &dpdcei_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(curr->id == dpdcei_attr.id);
+
+	switch (dpdcei_attr.engine) {
+	case DPDCEI_ENGINE_COMPRESSION:
+		fprintf(fp, "\t\t\tengine = \"DPDCEI_ENGINE_COMPRESSION\";\n");
+		break;
+	case DPDCEI_ENGINE_DECOMPRESSION:
+		fprintf(fp, "\t\t\tengine = \"DPDCEI_ENGINE_DECOMPRESSION\";\n");
+		break;
+	default:
+		assert(false);
+		break;
+	}
+
+	error = 0;
+
+out:
+	if (dpdcei_opened) {
+		int error2;
+
+		error2 = dpdcei_close_v10(&restool.mc_io, 0, dpdcei_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int parse_dpdmai_v9(FILE *fp, struct obj_list *curr)
 {
 	uint16_t dpdmai_handle;
 	int error;
@@ -936,7 +1066,63 @@ out:
 	return error;
 }
 
-static int parse_dpio(FILE *fp, struct obj_list *curr)
+static int parse_dpdmai_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpdmai_attr_v10 dpdmai_attr;
+	bool dpdmai_opened = false;
+	uint16_t dpdmai_handle;
+	int error;
+
+	error = dpdmai_open_v10(&restool.mc_io, 0, curr->id, &dpdmai_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpdmai_opened = true;
+	if (0 == dpdmai_handle) {
+		DEBUG_PRINTF(
+			"dpdmai_open() returned invalid handle (auth 0) for dpdmai.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpdmai_attr, 0, sizeof(dpdmai_attr));
+	error = dpdmai_get_attributes_v10(&restool.mc_io, 0, dpdmai_handle,
+					  &dpdmai_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(curr->id == dpdmai_attr.id);
+
+	fprintf(fp, "\t\t\tpriorities = <%#x>;\n",
+		dpdmai_attr.num_of_priorities);
+
+	error = 0;
+
+out:
+	if (dpdmai_opened) {
+		int error2;
+
+		error2 = dpdmai_close_v10(&restool.mc_io, 0, dpdmai_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int parse_dpio_v9(FILE *fp, struct obj_list *curr)
 {
 	uint16_t dpio_handle;
 	int error;
@@ -995,7 +1181,66 @@ out:
 	return error;
 }
 
-static int parse_dpseci(FILE *fp, struct obj_list *curr)
+static int parse_dpio_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpio_attr_v10 dpio_attr;
+	bool dpio_opened = false;
+	uint16_t dpio_handle;
+	int error;
+
+	error = dpio_open_v10(&restool.mc_io, 0, curr->id, &dpio_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpio_opened = true;
+	if (0 == dpio_handle) {
+		DEBUG_PRINTF(
+			"dpio_open() returned invalid handle (auth 0) for dpio.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpio_attr, 0, sizeof(dpio_attr));
+	error = dpio_get_attributes_v10(&restool.mc_io, 0, dpio_handle, &dpio_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(curr->id == dpio_attr.id);
+
+	fprintf(fp, "\t\t\tchannel_mode = ");
+	dpio_attr.channel_mode == 0 ? fprintf(fp, "\"DPIO_NO_CHANNEL\";\n") :
+	dpio_attr.channel_mode == 1 ? fprintf(fp, "\"DPIO_LOCAL_CHANNEL\";\n") :
+	fprintf(fp, "\"wrong mode\"\n");
+	fprintf(fp, "\t\t\tnum_priorities = <%#x>;\n",
+	       (unsigned int)dpio_attr.num_priorities);
+
+	error = 0;
+
+out:
+	if (dpio_opened) {
+		int error2;
+
+		error2 = dpio_close_v10(&restool.mc_io, 0, dpio_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int parse_dpseci_v9(FILE *fp, struct obj_list *curr)
 {
 	int error;
 	uint16_t dpseci_handle;
@@ -1077,8 +1322,90 @@ out:
 	return 0;
 }
 
+static int parse_dpseci_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpseci_tx_queue_attr_v10 tx_attr;
+	struct dpseci_attr_v10 dpseci_attr;
+	bool dpseci_opened = false;
+	uint16_t dpseci_handle;
+	char *priorities;
+	int error;
+
+	error = dpseci_open_v10(&restool.mc_io, 0, curr->id, &dpseci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpseci_opened = true;
+	if (0 == dpseci_handle) {
+		DEBUG_PRINTF(
+			"dpseci_open() returned invalid handle (auth 0) for dpseci.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+	memset(&tx_attr, 0, sizeof(tx_attr));
+	memset(&dpseci_attr, 0, sizeof(dpseci_attr));
+
+	error = dpseci_get_attributes_v10(&restool.mc_io, 0, dpseci_handle,
+					  &dpseci_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	priorities = malloc(dpseci_attr.num_tx_queues * sizeof(*priorities));
+	if (priorities == NULL) {
+		ERROR_PRINTF("malloc failed\n");
+		error = -errno;
+		goto out;
+	}
+
+	for (int i = 0; i < dpseci_attr.num_tx_queues; i++) {
+		error = dpseci_get_tx_queue_v10(&restool.mc_io, 0, dpseci_handle,
+						i, &tx_attr);
+
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			free(priorities);
+			goto out;
+		}
+
+		priorities[i] = tx_attr.priority;
+	}
+	fprintf(fp, "\t\t\tpriorities = <");
+	for (int i = 0; i < dpseci_attr.num_tx_queues-1; i++)
+		fprintf(fp, "%d ", priorities[i]);
+
+	fprintf(fp, "%d>;\n", priorities[dpseci_attr.num_tx_queues-1]);
+
+	free(priorities);
+
+
+out:
+	if (dpseci_opened) {
+		int error2;
+
+		error2 = dpseci_close_v10(&restool.mc_io, 0, dpseci_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+	return 0;
+}
+
 /* following objects have possible connections*/
-static int parse_dpci(FILE *fp, struct obj_list *curr)
+static int parse_dpci_v9(FILE *fp, struct obj_list *curr)
 {
 	uint16_t dpci_handle;
 	int error;
@@ -1156,6 +1483,95 @@ out:
 		int error2;
 
 		error2 = dpci_close(&restool.mc_io, 0, dpci_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
+static int parse_dpci_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpci_peer_attr_v10 dpci_peer_attr;
+	struct dpci_attr_v10 dpci_attr;
+	struct conn_list *curr_conn;
+	bool dpci_opened = false;
+	uint16_t dpci_handle;
+	int error;
+
+	error = dpci_open_v10(&restool.mc_io, 0, curr->id, &dpci_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpci_opened = true;
+	if (0 == dpci_handle) {
+		DEBUG_PRINTF(
+			"dpci_open() returned invalid handle (auth 0) for dpci.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpci_attr, 0, sizeof(dpci_attr));
+	error = dpci_get_attributes_v10(&restool.mc_io, 0, dpci_handle, &dpci_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(curr->id == dpci_attr.id);
+
+	error = dpci_get_peer_attributes_v10(&restool.mc_io, 0, dpci_handle,
+					 &dpci_peer_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	fprintf(fp, "\t\t\tnum_of_priorities = <%#x>;\n",
+	       (unsigned int)dpci_attr.num_of_priorities);
+
+	if (-1 == dpci_peer_attr.peer_id) {
+		DEBUG_PRINTF("no peer\n");
+	} else {
+		/* dpci has connection */
+		curr_conn = malloc(sizeof(struct conn_list));
+		if (curr_conn == NULL) {
+			ERROR_PRINTF("malloc failed\n");
+			error = -errno;
+			goto out;
+		}
+		curr_conn->next = NULL;
+		strcpy(curr_conn->type1, "dpci");
+		strcpy(curr_conn->type2, "dpci");
+		curr_conn->id1 = dpci_attr.id;
+		curr_conn->id2 = dpci_peer_attr.peer_id;
+		curr_conn->if_id1 = -1;	/* -1 means no interface */
+		curr_conn->if_id2 = -1;
+
+		error = compare_insert_connection(&conn_head, curr_conn);
+		if (error)
+			goto out;
+	}
+
+	error = 0;
+
+out:
+	if (dpci_opened) {
+		int error2;
+
+		error2 = dpci_close_v10(&restool.mc_io, 0, dpci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1572,7 +1988,7 @@ static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
 	int error = 0;
 	int error2;
 
-	error = dpni_open(&restool.mc_io, 0, curr->id, &dpni_handle);
+	error = dpni_open_v10(&restool.mc_io, 0, curr->id, &dpni_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1614,7 +2030,7 @@ static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
 out:
 	if (dpni_opened) {
 
-		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
+		error2 = dpni_close_v10(&restool.mc_io, 0, dpni_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1762,6 +2178,67 @@ out:
 
 }
 
+static int parse_dpdmux_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpdmux_attr_v10 dpdmux_attr;
+	bool dpdmux_opened = false;
+	uint16_t dpdmux_handle;
+	int error;
+
+	error = dpdmux_open_v10(&restool.mc_io, 0, curr->id, &dpdmux_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpdmux_opened = true;
+	if (0 == dpdmux_handle) {
+		DEBUG_PRINTF(
+			"dpdmux_open() returned invalid handle (auth 0) for dpdmux.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
+	error = dpdmux_get_attributes_v10(&restool.mc_io, 0, dpdmux_handle,
+					&dpdmux_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(curr->id == dpdmux_attr.id);
+
+	parse_endpoint_dpl(curr, dpdmux_attr.num_ifs + 1);
+	parse_dpdmux_options(fp, dpdmux_attr.options);
+	parse_dpdmux_method(fp, dpdmux_attr.method);
+	parse_dpdmux_manip(fp, dpdmux_attr.manip);
+	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n",
+		(uint32_t)dpdmux_attr.num_ifs + 1);
+
+	error = 0;
+
+out:
+	if (dpdmux_opened) {
+		int error2;
+
+		error2 = dpdmux_close_v10(&restool.mc_io, 0, dpdmux_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+
+}
+
 static void parse_dpsw_options(FILE *fp, uint64_t options)
 {
 	char buf[300];
@@ -1878,6 +2355,77 @@ out:
 	return error;
 }
 
+static int parse_dpsw_v10(FILE *fp, struct obj_list *curr)
+{
+	struct dpsw_attr_v10 dpsw_attr;
+	bool dpsw_opened = false;
+	uint16_t dpsw_handle;
+	int error;
+
+	error = dpsw_open_v10(&restool.mc_io, 0, curr->id, &dpsw_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	dpsw_opened = true;
+	if (0 == dpsw_handle) {
+		DEBUG_PRINTF(
+			"dpsw_open() returned invalid handle (auth 0) for dpsw.%u\n",
+			curr->id);
+		error = -ENOENT;
+		goto out;
+	}
+
+	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
+	error = dpsw_get_attributes_v10(&restool.mc_io, 0, dpsw_handle,
+				       &dpsw_attr);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(curr->id == dpsw_attr.id);
+
+	parse_endpoint_dpl(curr, dpsw_attr.num_ifs);
+	parse_dpsw_options(fp, dpsw_attr.options);
+	fprintf(fp, "\t\t\tmax_vlans = <%#x>;\n",
+		(uint32_t)dpsw_attr.max_vlans);
+	fprintf(fp, "\t\t\tmax_fdbs = <%#x>;\n", (uint32_t)dpsw_attr.max_fdbs);
+	/* it should be num_fdb_entries,
+	 * but dpsw_attr {} call it max_fdb_entries (typo)
+	 */
+	fprintf(fp, "\t\t\tnum_fdb_entries = <%#x>;\n",
+		(uint32_t)dpsw_attr.max_fdb_entries);
+	fprintf(fp, "\t\t\tfdb_aging_time = <%#x>;\n",
+		(uint32_t)dpsw_attr.fdb_aging_time);
+	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n", (uint32_t)dpsw_attr.num_ifs);
+	fprintf(fp, "\t\t\tmax_fdb_mc_groups = <%#x>;\n",
+		(uint32_t)dpsw_attr.max_fdb_mc_groups);
+	fprintf(fp, "\t\t\tmax_meters_per_if = <%#x>;\n",
+		(uint32_t)dpsw_attr.max_meters_per_if);
+
+	error = 0;
+
+out:
+	if (dpsw_opened) {
+		int error2;
+
+		error2 = dpsw_close_v10(&restool.mc_io, 0, dpsw_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int write_objects(void)
 {
 	struct obj_list *curr_obj;
@@ -1919,24 +2467,48 @@ static int write_objects(void)
 		if (strcmp(curr_obj->type, "dpaiop") == 0)
 			parse_dpaiop(fp, curr_obj);
 
-		if (strcmp(curr_obj->type, "dpcon") == 0)
-			parse_dpcon(fp, curr_obj);
+		if (strcmp(curr_obj->type, "dpcon") == 0) {
+			if (restool.mc_fw_version.major == 9)
+				parse_dpcon_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpcon_v10(fp, curr_obj);
+		}
 
-		if (strcmp(curr_obj->type, "dpdcei") == 0)
-			parse_dpdcei(fp, curr_obj);
+		if (strcmp(curr_obj->type, "dpdcei") == 0) {
+			if (restool.mc_fw_version.major == 9)
+				parse_dpdcei_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpdcei_v10(fp, curr_obj);
+		}
 
-		if (strcmp(curr_obj->type, "dpdmai") == 0)
-			parse_dpdmai(fp, curr_obj);
+		if (strcmp(curr_obj->type, "dpdmai") == 0) {
+			if (restool.mc_fw_version.major == 9)
+				parse_dpdmai_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpdmai_v10(fp, curr_obj);
+		}
 
-		if (strcmp(curr_obj->type, "dpio") == 0)
-			parse_dpio(fp, curr_obj);
+		if (strcmp(curr_obj->type, "dpio") == 0) {
+			if (restool.mc_fw_version.major == 9)
+				parse_dpio_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpio_v10(fp, curr_obj);
+		}
 
-		if (strcmp(curr_obj->type, "dpseci") == 0)
-			parse_dpseci(fp, curr_obj);
+		if (strcmp(curr_obj->type, "dpseci") == 0) {
+			if (restool.mc_fw_version.major == 9)
+				parse_dpseci_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpseci_v10(fp, curr_obj);
+		}
 
 		/* following objects have possible connections */
-		if (strcmp(curr_obj->type, "dpci") == 0)
-			parse_dpci(fp, curr_obj);
+		if (strcmp(curr_obj->type, "dpci") == 0) {
+			if (restool.mc_fw_version.major == 9)
+				parse_dpci_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpci_v10(fp, curr_obj);
+		}
 
 		if (strcmp(curr_obj->type, "dpmac") == 0)
 			parse_dpmac(fp, curr_obj);
@@ -1952,15 +2524,17 @@ static int write_objects(void)
 
 		/* following objects have possible connections and interface*/
 		if (strcmp(curr_obj->type, "dpdmux") == 0) {
-			if (restool.mc_fw_version.major == 9 ||
-			    restool.mc_fw_version.major == 10)
+			if (restool.mc_fw_version.major == 9)
 				parse_dpdmux_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpdmux_v10(fp, curr_obj);
 		}
 
 		if (strcmp(curr_obj->type, "dpsw") == 0) {
-			if (restool.mc_fw_version.major == 9 ||
-			    restool.mc_fw_version.major == 10)
+			if (restool.mc_fw_version.major == 9)
 				parse_dpsw_v9(fp, curr_obj);
+			else if (restool.mc_fw_version.major == 10)
+				parse_dpsw_v10(fp, curr_obj);
 		}
 
 		fprintf(fp, "\t\t};\n");
