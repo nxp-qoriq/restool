@@ -341,7 +341,7 @@ struct option dpl_generate_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpl_generate_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
-static const struct flib_ops dprc_ops = {
+const struct flib_ops dprc_ops = {
 	.obj_open = dprc_open,
 	.obj_close = dprc_close,
 	.obj_get_irq_mask = dprc_get_irq_mask,

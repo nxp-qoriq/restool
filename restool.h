@@ -326,6 +326,22 @@ struct flib_ops {
 	flib_obj_get_irq_status_t *obj_get_irq_status;
 };
 
+extern const struct flib_ops dpaiop_ops;
+extern const struct flib_ops dpbp_ops;
+extern const struct flib_ops dpci_ops;
+extern const struct flib_ops dpcon_ops;
+extern const struct flib_ops dpdcei_ops;
+extern const struct flib_ops dpdmai_ops;
+extern const struct flib_ops dpdmux_ops;
+extern const struct flib_ops dpio_ops;
+extern const struct flib_ops dpmac_ops;
+extern const struct flib_ops dpmcp_ops;
+extern const struct flib_ops dpni_ops;
+extern const struct flib_ops dprc_ops;
+extern const struct flib_ops dprtc_ops;
+extern const struct flib_ops dpseci_ops;
+extern const struct flib_ops dpsw_ops;
+
 /* functions used for parsing user command line argumments */
 int parse_object_name(const char *obj_name,
 		      char *expected_obj_type,

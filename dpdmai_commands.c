@@ -136,7 +136,7 @@ static struct option dpdmai_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpdmai_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
-static const struct flib_ops dpdmai_ops = {
+const struct flib_ops dpdmai_ops = {
 	.obj_open = dpdmai_open_v10,
 	.obj_close = dpdmai_close_v10,
 	.obj_get_irq_mask = dpdmai_get_irq_mask_v10,

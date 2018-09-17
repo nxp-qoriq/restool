@@ -130,7 +130,7 @@ static struct option dpcon_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpcon_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
-static const struct flib_ops dpcon_ops = {
+const struct flib_ops dpcon_ops = {
 	.obj_open = dpcon_open_v10,
 	.obj_close = dpcon_close_v10,
 	.obj_get_irq_mask = dpcon_get_irq_mask_v10,

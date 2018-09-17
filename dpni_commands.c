@@ -355,7 +355,7 @@ static struct option dpni_update_options_v10[] = {
 
 C_ASSERT(ARRAY_SIZE(dpni_update_options_v10) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
-static const struct flib_ops dpni_ops = {
+const struct flib_ops dpni_ops = {
 	.obj_open = dpni_open_v10,
 	.obj_close = dpni_close_v10,
 	.obj_get_irq_mask = dpni_get_irq_mask_v10,

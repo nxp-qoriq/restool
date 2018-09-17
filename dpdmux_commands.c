@@ -256,7 +256,7 @@ static struct option_entry options_map[] = {
 };
 static unsigned options_num = ARRAY_SIZE(options_map);
 
-static const struct flib_ops dpdmux_ops_v9 = {
+const struct flib_ops dpdmux_ops = {
 	.obj_open = dpdmux_open_v10,
 	.obj_close = dpdmux_close_v10,
 	.obj_get_irq_mask = dpdmux_get_irq_mask_v10,

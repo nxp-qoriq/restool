@@ -145,7 +145,7 @@ static struct option dpseci_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpseci_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
-static const struct flib_ops dpseci_ops = {
+const struct flib_ops dpseci_ops = {
 	.obj_open = dpseci_open_v10,
 	.obj_close = dpseci_close_v10,
 	.obj_get_irq_mask = dpseci_get_irq_mask_v10,
