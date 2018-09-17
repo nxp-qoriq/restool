@@ -567,7 +567,7 @@ static int print_dpdmux_info(uint32_t dpdmux_id, int mc_fw_version)
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_obj_verbose(&target_obj_desc, &dpdmux_ops_v9);
+		error = print_obj_verbose(&target_obj_desc, &dpdmux_ops);
 	}
 
 out:
