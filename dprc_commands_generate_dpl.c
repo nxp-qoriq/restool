@@ -536,11 +536,10 @@ static char *to_upper(char *string)
 	return upper_string;
 }
 
-static int write_obj_set(char *obj_type, int start_index, int end_index)
+static int start_obj_set(char *obj_type)
 {
 	char *obj_type_upper;
 	FILE *fp = stdout;
-	int i;
 
 	obj_type_upper = to_upper(obj_type);
 	if (!obj_type_upper)
@@ -552,14 +551,24 @@ static int write_obj_set(char *obj_type, int start_index, int end_index)
 	fprintf(fp, "\t\t\t\t\ttype = \"%s\";\n", obj_type);
 	fprintf(fp, "\t\t\t\t\tids = <");
 
-	for (i = start_index; i <= end_index; i++)
-		fprintf(fp, "%d ", i);
+	free(obj_type_upper);
+
+	return 0;
+}
+
+static void add_to_obj_set(int index)
+{
+	FILE *fp = stdout;
+
+	fprintf(fp, "%d ", index);
+}
+
+static void end_obj_set(void)
+{
+	FILE *fp = stdout;
 
 	fprintf(fp, ">;\n");
 	fprintf(fp, "\t\t\t\t};\n");
-
-	free(obj_type_upper);
-	return 0;
 }
 
 static int write_containers(void)
@@ -568,8 +577,7 @@ static int write_containers(void)
 	struct obj_list *curr_obj;
 	struct obj_list *prev_obj;
 	char curr_obj_type[OBJ_TYPE_MAX_LENGTH];
-	int remain, obj_set_start, error;
-	int curr_obj_id;
+	int remain, error;
 	int obj_num = 99;
 	int base = 100;
 	FILE *fp = stdout;
@@ -625,20 +633,25 @@ static int write_containers(void)
 			} else if (restool.mc_fw_version.major == MC_FW_VERSION_10) {
 				if (curr_obj_type[0] == '\0') {
 					memcpy(curr_obj_type, curr_obj->type, OBJ_TYPE_MAX_LENGTH);
-					curr_obj_id = curr_obj->id;
-					obj_set_start = curr_obj->id;
-				} else if (strcmp(curr_obj_type, curr_obj->type)) {
-					error = write_obj_set(curr_obj_type, obj_set_start, curr_obj_id);
+					error = start_obj_set(curr_obj->type);
 					if (error) {
-						ERROR_PRINTF("write_obj_set() failed with error = %d\n", error);
+						ERROR_PRINTF("start_obj_set() failed with error = %d\n", error);
 						return error;
 					}
 
-					obj_set_start = curr_obj->id;
+					add_to_obj_set(curr_obj->id);
+				} else if (strcmp(curr_obj_type, curr_obj->type)) {
+					end_obj_set();
+
 					memcpy(curr_obj_type, curr_obj->type, OBJ_TYPE_MAX_LENGTH);
-					curr_obj_id = curr_obj->id;
+					error = start_obj_set(curr_obj->type);
+					if (error) {
+						ERROR_PRINTF("start_obj_set() failed with error = %d\n", error);
+						return error;
+					}
+					add_to_obj_set(curr_obj->id);
 				} else {
-					curr_obj_id = curr_obj->id;
+					add_to_obj_set(curr_obj->id);
 				}
 			}
 
@@ -647,11 +660,7 @@ static int write_containers(void)
 			curr_obj = curr_obj->next;
 		}
 
-		error = write_obj_set(curr_obj_type, obj_set_start, curr_obj_id);
-		if (error) {
-			ERROR_PRINTF("write_obj_set() failed with error = %d\n", error);
-			return error;
-		}
+		end_obj_set();
 
 		fprintf(fp, "\t\t\t};\n");
 		fprintf(fp, "\t\t};\n");
