@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -148,9 +148,11 @@ int dpni_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->num_queues = cfg->num_queues;
 	cmd_params->num_tcs = cfg->num_tcs;
 	cmd_params->mac_filter_entries = cfg->mac_filter_entries;
+	cmd_params->num_rx_tcs = cfg->num_rx_tcs;
 	cmd_params->vlan_filter_entries =  cfg->vlan_filter_entries;
 	cmd_params->qos_entries = cfg->qos_entries;
 	cmd_params->fs_entries = cpu_to_le16(cfg->fs_entries);
+	cmd_params->num_cgs = cfg->num_cgs;
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -240,6 +242,7 @@ int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
 	attr->qos_key_size = rsp_params->qos_key_size;
 	attr->fs_key_size = rsp_params->fs_key_size;
 	attr->wriop_version = le16_to_cpu(rsp_params->wriop_version);
+	attr->num_cgs = rsp_params->num_cgs;
 
 	return 0;
 }
@@ -294,7 +297,7 @@ int dpni_get_statistics_v10(struct fsl_mc_io *mc_io,
 			    uint32_t cmd_flags,
 			    uint16_t token,
 			    uint8_t page,
-			    uint8_t param,
+			    uint16_t param,
 			    union dpni_statistics_v10 *stat)
 {
 	struct mc_command cmd = { 0 };

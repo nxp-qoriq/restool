@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -68,7 +68,8 @@
 	DPNI_OPT_NO_FS |				\
 	DPNI_OPT_HAS_OPR |				\
 	DPNI_OPT_OPR_PER_TC |				\
-	DPNI_OPT_SINGLE_SENDER)
+	DPNI_OPT_SINGLE_SENDER |			\
+	DPNI_OPT_CUSTOM_CG)
 
 enum mc_cmd_status mc_status;
 
@@ -148,6 +149,7 @@ enum dpni_create_options {
 	CREATE_OPT_PARENT_DPRC,
 	CREATE_OPT_MAC_FILTER_ENTRIES,
 	CREATE_OPT_VLAN_FILTER_ENTRIES,
+	CREATE_OPT_NUM_CGS,
 };
 
 static struct option dpni_create_options[] = {
@@ -305,6 +307,13 @@ static struct option dpni_create_options[] = {
 		.val = 0,
 	},
 
+	[CREATE_OPT_NUM_CGS] = {
+		.name = "num-cgs",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
 	{ 0 },
 };
 
@@ -399,6 +408,7 @@ static struct option_entry options_map_v10_1[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_HAS_OPR),
 	OPTION_MAP_ENTRY(DPNI_OPT_OPR_PER_TC),
 	OPTION_MAP_ENTRY(DPNI_OPT_SINGLE_SENDER),
+	OPTION_MAP_ENTRY(DPNI_OPT_CUSTOM_CG),
 };
 static unsigned int options_num_v10_1 = ARRAY_SIZE(options_map_v10_1);
 
@@ -545,6 +555,9 @@ static void print_dpni_options_v10(uint32_t options)
 
 	if (options & DPNI_OPT_SINGLE_SENDER)
 		printf("\tDPNI_OPT_SINGLE_SENDER\n");
+
+	if (options & DPNI_OPT_CUSTOM_CG)
+		printf("\tDPNI_OPT_CUSTOM_CG\n");
 }
 
 static int print_dpni_endpoint(uint32_t target_id)
@@ -841,6 +854,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	print_dpni_options_v10(dpni_attr.options);
 
 	printf("num_queues: %u\n", (uint32_t)dpni_attr.num_queues);
+	printf("num_cgs: %u\n", (uint32_t)dpni_attr.num_cgs);
 	printf("num_rx_tcs: %u\n", (uint32_t)dpni_attr.num_rx_tcs);
 	printf("num_tx_tcs: %u\n", (uint32_t)dpni_attr.num_tx_tcs);
 	printf("mac_entries: %u\n",
@@ -1519,6 +1533,15 @@ static int create_dpni_v10(const char *usage_msg)
 		dpni_cfg.fs_entries = (uint16_t)value;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_CGS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_CGS);
+		error = get_option_value(CREATE_OPT_NUM_CGS, &value,
+				     "Invalid num-cgs value\n", 1, 128);
+		if (error)
+			return error;
+		dpni_cfg.num_cgs = (uint8_t)value;
+	}
+
 	dprc_handle = restool.root_dprc_handle;
 	dprc_opened = false;
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
@@ -1615,6 +1638,7 @@ static int cmd_dpni_create_v10(void)
 		"	DPNI_OPT_HAS_OPR\n"
 		"	DPNI_OPT_OPR_PER_TC\n"
 		"	DPNI_OPT_SINGLE_SENDER\n"
+		"	DPNI_OPT_CUSTOM_CG\n"
 		"--num-queues=<number>\n"
 		"   Number of TX/RX queues use for traffic distribution.\n"
 		"   Used to distribute traffic to multiple GPP cores,\n"
@@ -1642,6 +1666,9 @@ static int cmd_dpni_create_v10(void)
 		"--fs-entries=<number>\n"
 		"   Number of entries in the flow steering table.\n"
 		"   Defaults to 64. Maximum value is 1024\n"
+		"--num-cgs=<number>\n"
+		"   Number of congestion groups (CGs), reserved for the DPNI.\n"
+		"   Defaults to one per TC. Maximum supported value is 128.\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"\n";

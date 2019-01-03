@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -117,7 +117,10 @@ struct fsl_mc_io;
  * All Tx traffic classes will use a single sender (ignore num_queueus for tx)
  */
 #define DPNI_OPT_SINGLE_SENDER			0x000100
-
+/**
+ * Define a custom number of congestion groups
+ */
+#define DPNI_OPT_CUSTOM_CG				0x000200
 /**
  * struct dpni_cfg_v10 - Structure representing DPNI configuration
  * @mac_addr:	Primary MAC address
@@ -134,6 +137,7 @@ struct dpni_cfg_v10 {
 	 *		DPNI_OPT_HAS_KEY_MASKING
 	 *		DPNI_OPT_NO_FS
 	 *		DPNI_OPT_SINGLE_SENDER
+	 *		DPNI_OPT_CUSTOM_CG
 	 * @fs_entries: Number of entries in the flow steering table.
 	 *		This table is used to select the ingress queue for
 	 *		ingress traffic, targeting a GPP core or another.
@@ -174,6 +178,10 @@ struct dpni_cfg_v10 {
 	 *		is 16. There are maximum 16 TCs for Tx and 8 TCs for Rx.
 	 *		When num_tcs>8 Tx will use this value but Rx will have
 	 *		only 8 traffic classes.
+	 * @num_rx_tcs: if set to other value than zero represents number
+	 *		of TCs used for Rx. Maximum value is 8. If set to zero the
+	 *		number of Rx TCs will be initialized with the value provided
+	 *		in num_tcs parameter.
 	 * @qos_entries: Number of entries in the QoS classification table. This
 	 *		table is used to select the TC for ingress traffic. It
 	 *		is either an exact match or a TCAM table, depending on
@@ -188,7 +196,9 @@ struct dpni_cfg_v10 {
 	uint8_t  mac_filter_entries;
 	uint8_t  num_queues;
 	uint8_t  num_tcs;
+	uint8_t  num_rx_tcs;
 	uint8_t  qos_entries;
+	uint8_t  num_cgs;
 };
 
 int dpni_create_v10(struct fsl_mc_io *mc_io,
@@ -245,6 +255,8 @@ int dpni_close_v10(struct fsl_mc_io *mc_io,
  *			variants,
  *			- 0x422 - WRIOP version 1.1.2, used on LS1088 and
  *			variants.
+ *			- 0xC00 - WRIOP version 3.0.0, used on LX2160 and
+ *			variants.
  */
 struct dpni_attr_v10 {
 	uint32_t options;
@@ -258,6 +270,7 @@ struct dpni_attr_v10 {
 	uint8_t  qos_key_size;
 	uint8_t  fs_key_size;
 	uint16_t wriop_version;
+	uint8_t  num_cgs;
 };
 
 int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
@@ -332,9 +345,17 @@ union dpni_statistics_v10 {
 		uint64_t ceetm_reject_bytes;
 		uint64_t ceetm_reject_frames;
 	} page_3;
-	/**
-	 * struct raw - raw statistics structure, used to index counters
-	 */
+	struct {
+		uint64_t cgr_reject_frames;
+		uint64_t cgr_reject_bytes;
+	} page_4;
+	struct {
+		uint64_t policer_cnt_red;
+		uint64_t policer_cnt_yellow;
+		uint64_t policer_cnt_green;
+		uint64_t policer_cnt_re_red;
+		uint64_t policer_cnt_re_yellow;
+	} page_5;
 	struct {
 		uint64_t counter[DPNI_STATISTICS_CNT];
 	} raw;
@@ -349,7 +370,7 @@ int dpni_get_statistics_v10(struct fsl_mc_io *mc_io,
 			    uint32_t cmd_flags,
 			    uint16_t token,
 			    uint8_t page,
-			    uint8_t param,
+			    uint16_t param,
 			    union dpni_statistics_v10 *stat);
 
 int dpni_get_primary_mac_addr_v10(struct fsl_mc_io *mc_io,

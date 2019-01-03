@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,26 +35,28 @@
 
 /* DPNI Version */
 #define DPNI_VER_MAJOR				7
-#define DPNI_VER_MINOR				4
+#define DPNI_VER_MINOR				9
 
 #define DPNI_CMD_BASE_VERSION			1
 #define DPNI_CMD_VERSION_2			2
+#define DPNI_CMD_VERSION_3			3
 #define DPNI_CMD_ID_OFFSET			4
 
 #define DPNI_CMD(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_BASE_VERSION)
 #define DPNI_CMD_V2(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_VERSION_2)
+#define DPNI_CMD_V3(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_VERSION_3)
 
 /* Command IDs */
 #define DPNI_CMDID_OPEN				DPNI_CMD(0x801)
 #define DPNI_CMDID_CLOSE			DPNI_CMD(0x800)
-#define DPNI_CMDID_CREATE			DPNI_CMD(0x901)
+#define DPNI_CMDID_CREATE			DPNI_CMD_V3(0x901)
 #define DPNI_CMDID_DESTROY			DPNI_CMD(0x981)
 #define DPNI_CMDID_GET_API_VERSION		DPNI_CMD(0xa01)
-#define DPNI_CMDID_GET_ATTR			DPNI_CMD_V2(0x004)
+#define DPNI_CMDID_GET_ATTR			DPNI_CMD_V3(0x004)
 #define DPNI_CMDID_SET_PRIM_MAC			DPNI_CMD(0x224)
 #define DPNI_CMDID_GET_PRIM_MAC			DPNI_CMD(0x225)
-#define DPNI_CMDID_GET_STATISTICS		DPNI_CMD_V2(0x25D)
-#define DPNI_CMDID_GET_LINK_STATE		DPNI_CMD(0x215)
+#define DPNI_CMDID_GET_STATISTICS		DPNI_CMD_V3(0x25D)
+#define DPNI_CMDID_GET_LINK_STATE		DPNI_CMD_V2(0x215)
 #define DPNI_CMDID_GET_IRQ_MASK			DPNI_CMD(0x015)
 #define DPNI_CMDID_GET_IRQ_STATUS		DPNI_CMD(0x016)
 
@@ -84,6 +86,9 @@ struct dpni_cmd_create {
 	uint8_t qos_entries;
 	uint8_t pad3;
 	uint16_t fs_entries;
+	uint8_t num_rx_tcs;
+	uint8_t pad4;
+	uint8_t num_cgs;
 };
 
 struct dpni_cmd_destroy {
@@ -113,6 +118,7 @@ struct dpni_rsp_get_attr {
 	uint8_t qos_key_size;
 	uint8_t fs_key_size;
 	uint16_t wriop_version;
+	uint8_t num_cgs;
 };
 
 struct dpni_cmd_set_primary_mac_addr {
