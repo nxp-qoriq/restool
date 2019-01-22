@@ -744,7 +744,7 @@ static int show_mc_objects(uint16_t dprc_handle, const char *dprc_name)
 		else if (obj_desc.state & DPRC_OBJ_STATE_PLUGGED)
 			strncpy(plug_stat, "plugged", 9);
 		else
-			strncpy(plug_stat, "unplugged", 9);
+			strncpy(plug_stat, "unplugged", 10);
 		plug_stat[9] = '\0';
 
 		if (width < 8 && labelen < 8)
