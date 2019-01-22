@@ -2098,6 +2098,9 @@ static void parse_dpdmux_method(FILE *fp, enum dpdmux_method method)
 	case DPDMUX_METHOD_C_VLAN:
 		fprintf(fp, "\"DPDMUX_METHOD_C_VLAN\";\n");
 		break;
+	case DPDMUX_METHOD_CUSTOM:
+		fprintf(fp, "\"DPDMUX_METHOD_CUSTOM\";\n");
+		break;
 #if 0 /* TODO: Enable when MC support added */
 	case DPDMUX_METHOD_S_VLAN:
 		fprintf(fp, "DPDMUX_METHOD_S_VLAN\n");
