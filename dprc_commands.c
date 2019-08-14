@@ -49,7 +49,8 @@
 	DPRC_CFG_OPT_OBJ_CREATE_ALLOWED |	\
 	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED |	\
 	DPRC_CFG_OPT_AIOP |			\
-	DPRC_CFG_OPT_IRQ_CFG_ALLOWED)
+	DPRC_CFG_OPT_IRQ_CFG_ALLOWED |		\
+	DPRC_CFG_OPT_PL_ALLOWED)
 
 enum mc_cmd_status mc_status;
 
@@ -355,6 +356,7 @@ static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED),
 	OPTION_MAP_ENTRY(DPRC_CFG_OPT_AIOP),
 	OPTION_MAP_ENTRY(DPRC_CFG_OPT_IRQ_CFG_ALLOWED),
+	OPTION_MAP_ENTRY(DPRC_CFG_OPT_PL_ALLOWED),
 };
 static unsigned int options_num = ARRAY_SIZE(options_map);
 
@@ -870,6 +872,9 @@ static void print_dprc_options(uint64_t options)
 
 	if (options & DPRC_CFG_OPT_IRQ_CFG_ALLOWED)
 		printf("\tDPRC_CFG_OPT_IRQ_CFG_ALLOWED\n");
+
+	if (options & DPRC_CFG_OPT_PL_ALLOWED)
+		printf("\tDPRC_CFG_OPT_PL_ALLOWED\n");
 }
 
 static int print_dprc_attr(uint32_t dprc_id,
@@ -1087,6 +1092,7 @@ static int cmd_dprc_create_child(void)
 		"	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED\n"
 		"	DPRC_CFG_OPT_AIOP\n"
 		"	DPRC_CFG_OPT_IRQ_CFG_ALLOWED\n"
+		"	DPRC_CFG_OPT_PL_ALLOWED\n"
 		"--label=<label-string>\n"
 		"   Where <label-string> is a string of up to 15 chars to label\n"
 		"   the container\n"

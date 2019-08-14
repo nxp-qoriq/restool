@@ -107,6 +107,8 @@ int dprc_close(struct fsl_mc_io *mc_io,
 /* IRQ Config - Indicates that the container allowed to configure its IRQs.  */
 #define DPRC_CFG_OPT_IRQ_CFG_ALLOWED		0x00000040
 
+#define DPRC_CFG_OPT_PL_ALLOWED			0x00000080
+
 /**
  * struct dprc_cfg - Container configuration options
  * @icid: Container's ICID; if set to 'DPRC_GET_ICID_FROM_POOL', a free
