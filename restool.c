@@ -74,6 +74,11 @@ static struct option global_options[] = {
 		.has_arg = optional_argument,
 	},
 
+	[GLOBAL_OPT_RESCAN] = {
+		.name = "rescan",
+		.val = 'e',
+	},
+
 	{ 0 },
 };
 
@@ -700,6 +705,7 @@ static void print_usage(void)
 		"   -m,--mc-version  Displays mc firmware version\n"
 		"   -h,-?,--help     Displays general help info\n"
 		"   -s, --script     Display script friendly output\n"
+		"   --rescan         Issues a rescan of fsl-mc bus before exiting\n"
 		"   --root=[dprc]    Specifies root container name\n"
 		"\n"
 		"  Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|\n"
@@ -744,6 +750,7 @@ static void print_usage_v9(void)
 		"   -m,--mc-version  Displays mc firmware version\n"
 		"   -h,-?,--help     Displays general help info\n"
 		"   -s, --script     Display script friendly output\n"
+		"   --rescan         Issues a rescan of fsl-mc bus before exiting\n"
 		"   --root=[dprc]    Specifies root container name\n"
 		"\n"
 		"  Valid <object-type> values: <dprc|dpni|dpio|dpsw|dpbp|dpci|dpcon|dpseci|dpdmux|\n"
@@ -919,7 +926,9 @@ static int parse_global_options(int argc, char *argv[],
 			}
 
 			break;
-
+		case 'e':
+			opt_index = GLOBAL_OPT_RESCAN;
+			break;
 		default:
 			DEBUG_PRINTF("\n");
 			assert(false);
@@ -1457,6 +1466,13 @@ int main(int argc, char *argv[])
 				~ONE_BIT_MASK(GLOBAL_OPT_ROOT);
 		}
 
+		if (restool.global_option_mask &
+		    ONE_BIT_MASK(GLOBAL_OPT_RESCAN)) {
+			restool.global_option_mask &=
+				~ONE_BIT_MASK(GLOBAL_OPT_RESCAN);
+			restool.rescan = true;
+		}
+
 		int num_remaining_args;
 
 		assert(next_argv_index < argc);
@@ -1487,13 +1503,14 @@ int main(int argc, char *argv[])
 			goto out;
 	}
 
-	DEBUG_PRINTF("calling sytem()\n");
-	error = system("echo 1 > /sys/bus/fsl-mc/rescan");
-	if (error == -1) {
-		error = -errno;
-		DEBUG_PRINTF(
-			"fsl-mc bus rescan failed (error %d)\n", error);
-		goto out;
+	if (restool.rescan) {
+		error = system("echo 1 > /sys/bus/fsl-mc/rescan");
+		if (error == -1) {
+			error = -errno;
+			DEBUG_PRINTF(
+				"fsl-mc bus rescan failed (error %d)\n", error);
+			goto out;
+		}
 	}
 
 out:

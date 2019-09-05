@@ -266,6 +266,13 @@ struct restool {
 	bool script;
 
 	/**
+	 * global flag to issue a rescan of the
+	 * entire fsl-mc bus after the MC command
+	 * is run
+	 */
+	bool rescan;
+
+	/**
 	 * device file used by restool
 	 */
 	char device_file[DEV_FILE_SIZE];
@@ -286,7 +293,8 @@ enum global_options {
 	GLOBAL_OPT_MC_VERSION,
 	GLOBAL_OPT_DEBUG,
 	GLOBAL_OPT_SCRIPT,
-	GLOBAL_OPT_ROOT
+	GLOBAL_OPT_ROOT,
+	GLOBAL_OPT_RESCAN,
 };
 
 /* object option map entry */
