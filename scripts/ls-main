@@ -244,6 +244,27 @@ object_exists() {
 	object_exists_status=$($restool dprc show $parent_container | grep $object | wc -l)
 }
 
+PROBE_MAX_TRIES=10000
+
+get_interface_name() {
+	get_root_container
+
+	local tries=0
+	local dir="$SYS_DPRC/$root_c/$1/net/"
+	local interface=""
+	while true; do
+		if [ -d "$dir" ]; then
+			interface=$(ls $dir)
+			break;
+		fi
+
+		tries=$(($tries + 1))
+		if [ $tries -gt $PROBE_MAX_TRIES ]; then
+			break;
+		fi
+	done
+	echo "$interface"
+}
 
 #####################################################################
 ###              DPDMUX related functions                         ###
@@ -417,7 +438,8 @@ process_addmux() {
 	if [ $object_exists_status = 1 ]; then
 
 		if [ "$root_c" = "$container" ]; then
-			evb=$(ls $SYS_DPRC/"$root_c"/"$dpdmux"/net/ | grep -v "p")
+			evb=$(get_interface_name "$dpdmux")
+			evb=$(echo "$evb" | grep -v "p")
 		fi
 
 		echo "Created EVB: $evb (object: $dpdmux, uplink: $endpoint)"
@@ -619,7 +641,8 @@ process_addsw() {
 	object_exists $container $dpsw
 	if [ $object_exists_status = 1 ]; then
 		if [ "$root_c" = "$container" ]; then
-			interfaces=$(ls $SYS_DPRC/"$root_c"/"$dpsw"/net/ | tr '\n' ',' | sed 's/.$//')
+			interfaces=$(get_interface_name "$dpsw")
+			interfaces=$(echo "$interfaces" | tr '\n' ',' | sed 's/.$//')
 			echo "Created ETHSW object $dpsw with the following ${num_ifs} ports: ${interfaces}"
 		else
 			echo "Created ETHSW object $dpsw with ${num_ifs} ports"
@@ -880,7 +903,7 @@ process_addni() {
 	object_exists $container $dpni
 	if [ $object_exists_status = 1 ]; then
 		if [ "$root_c" = "$container" ]; then
-			ni=$(ls $SYS_DPRC/"$root_c"/"$dpni"/net/)
+			ni=$(get_interface_name "$dpni")
 		fi
 		echo "Created interface: $ni (object:$dpni, endpoint: $endpoint)"
 	else
@@ -903,9 +926,7 @@ process_listni() {
 			ni=""
 			details=""
 			# Query the interface name
-			if [ -d "$SYS_DPRC"/"$crt_c"/"$dpni"/net/ ]; then
-				ni=$(ls $SYS_DPRC/"$crt_c"/"$dpni"/net/)
-			fi
+			ni=$(get_interface_name "$dpni")
 
 			end_point=$(get_endpoint "$dpni")
 
