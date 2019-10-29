@@ -75,6 +75,9 @@
 # Intercept the Ctrl+C command but do not interrupt execution
 trap ' ' INT
 
+# Intercept EXIT to do the cleanup
+trap do_cleanup EXIT
+
 # Name of restool script
 restool="restool"
 
@@ -84,6 +87,9 @@ root_c=
 # Type of endpoint object
 toe=
 
+# Previous state of MC creation/deletion IRQ
+irq_prev=
+
 SYS_DPRC="/sys/bus/fsl-mc/drivers/fsl_mc_dprc"
 
 set -e
@@ -91,6 +97,14 @@ set -e
 #####################################################################
 ###                   Helper functions                            ###
 #####################################################################
+# Perform any cleanup needed
+do_cleanup() {
+	if [ -f /sys/bus/fsl-mc/autorescan ]; then
+		# Put the autorescan attribute in the previous state
+		echo $irq_prev > /sys/bus/fsl-mc/autorescan
+	fi
+}
+
 # Create a DPMCP object
 create_dpmcp() {
 	local parent_container=$1
@@ -1024,6 +1038,14 @@ mc_major=$($restool --mc-version | cut -f2 -d':' | cut -f1 -d'.' | tr -d ' ')
 if [ "$mc_major" != 10 ]; then
 	echo "Restool wrapper scripts only support the latest major MC version"
 	echo "that currently is MC10.x. Use with caution."
+fi
+
+if [ -f /sys/bus/fsl-mc/autorescan ]; then
+	# Get the previous state of the autorescan attribute
+	irq_prev=$(cat /sys/bus/fsl-mc/autorescan)
+
+	# Disable autorescan in the fsl-mc bus (we manually handle this)
+	echo 0 > /sys/bus/fsl-mc/autorescan
 fi
 
 # The operation name will be one of ls-addmux/ls-addsw/ls-addni/ls-listni/ls-listmac,
