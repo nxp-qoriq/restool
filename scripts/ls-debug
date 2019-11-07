@@ -1,0 +1,295 @@
+#!/bin/sh
+
+# Copyright 2019 NXP
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# * Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+# * Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+# * Neither the name of the above-listed copyright holders nor the
+# names of any contributors may be used to endorse or promote products
+# derived from this software without specific prior written permission.
+
+
+# ALTERNATIVELY, this software may be distributed under the terms of the
+# GNU General Public License ("GPL") as published by the Free Software
+# Foundation, either version 2 of that License or (at your option) any
+# later version.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+##      Restool wrapper script
+#
+# Prerequisites:
+#       - Management Complex version 10.x
+#       - restool version 1.4 or newer
+#       - Bourne Shell (sh)
+#
+#
+# The purpose of this script is to offer a user friendly way to dump DPAA2
+# objects and to set state of some MC modules. The script relies on restool
+# utility which provides advanced commands and options for objects manipulation
+#
+# For more information about the available options use -h parameter with the
+# above commands.
+#
+##
+
+# Intercept the Ctrl+C command but do not interrupt execution
+trap ' ' INT
+
+# Intercept EXIT to do the cleanup
+trap do_cleanup EXIT
+
+# Name of restool script
+restool="restool"
+
+#Root container
+root_c=
+
+# Type of endpoint object
+toe=
+
+# Previous state of MC creation/deletion IRQ
+irq_prev=
+
+SYS_DPRC="/sys/bus/fsl-mc/drivers/fsl_mc_dprc"
+
+set -e
+
+#####################################################################
+###                   Helper functions                            ###
+#####################################################################
+do_cleanup() {
+        if [ -f /sys/bus/fsl-mc/autorescan ]; then
+                # Put the autorescan attribute in the previous state
+                echo $irq_prev > /sys/bus/fsl-mc/autorescan
+        fi
+}
+
+#####################################################################
+###               DPDBG related functions                         ###
+#####################################################################
+usage_debug() {
+        echo "Create the DPAA2 DEBUG object
+
+Usage: $0 [OPTIONS]
+
+The options are:
+        -h, --help 		-	This message.
+	-ts, --timestamp=X	-	Enable/Disable timestamp printing, X is ON or OFF
+	-c, --console=X		-	Enable/Disable printing in UART console, X is ON or OFF
+	-l, --log=X		-	Enable/Disable printing in DDR log, X is ON or OF
+	-u, --uart=X		-	Set UART id of the console, X = [0 - 4], 0 = OFF
+	-ll, --level=X		- 	Set logging level, X = [0 - 5]
+						- 0: GLOBAL
+						- 1: DEBUG
+						- 2: INFO
+						- 3: WARRNING
+						- 4: ERROR
+						- 5: CRITICAL
+	-m, mem, --memory 	- 	Dump information about memory modules available
+	dpxy.z			- 	Dump information about MC respective object"
+}
+
+# verify if the DPDBG object exists
+exist_dpdbg() {
+        cep=$(restool dpdbg info || echo "")
+
+        if [ "$cep" != "${cep%"does not exist"*}" ]; then
+                echo 0
+        else
+                echo 1
+        fi
+}
+
+# Create the DPDBG object
+create_dpdbg() {
+	dpdbg=$($restool dpdbg create)
+
+	if [ -z "$dpdbg" ]; then
+                echo "Error: DPDBG object was not created"
+                exit 1
+        fi
+
+        echo "dpdbg.0 created"
+}
+
+# Distroy the DPDBG object
+destroy_dpdbg() {
+	dpdbg=$($restool dpdbg destroy)
+
+	if [ -z "$dpdbg" ]; then
+                echo "Error: dpdbg object was not destroyed"
+                exit 1
+        fi
+
+	echo "dpdbg.0 destroyed"
+}
+
+# process ls-debug command
+process_debug() {
+
+	state=
+
+	n=$(echo $@ | wc -w)
+	if [ "$n" -eq "0" ]; then
+		usage_debug;
+		exit 0
+	fi
+
+	exist=$(exist_dpdbg)
+	if [ $exist -eq 0 ]; then
+		create_dpdbg
+	fi
+
+	for i in $@;
+	do
+		case $i in
+			-h | --help)
+				usage_debug
+				exit 0
+				;;
+			-c=* | --console=*)
+				state="${i#*=}"
+				case $state in
+					ON | on | 1)
+						restool dpdbg set --console=1
+						echo "UART console printing ON"
+						;;
+					OFF | off | 0)
+						restool dpdbg set --console=0
+						echo "UART console printing OFF"
+						;;
+					*)
+						echo "Invalid console mode, ON/on/1 or OFF/off/0"
+						exit 1
+						;;
+				esac
+				;;
+			-l=* | --log=*)
+				state="${i#*=}"
+                                case $state in
+                                        ON | on | 1)
+                                                restool dpdbg set --log=1
+						echo "DDR log printing ON"
+                                                ;;
+                                        OFF | off | 0)
+                                                restool dpdbg set --log=0
+						echo "DDR log printing OFF"
+                                                ;;
+                                        *)
+						echo "Invalid log mode, ON/on/1 or OFF/off/0"
+                                                exit 1
+                                                ;;
+                                esac
+                                ;;
+			-ts=* | --timestamp=*)
+				state="${i#*=}"
+                                case $state in
+                                        ON | on | 1)
+                                                restool dpdbg set --timestamp=1
+						echo "Timestamp printing ON"
+                                                ;;
+                                        OFF | off | 0)
+                                                restool dpdbg set --timestamp=0
+						echo "Timestamp printing OFF"
+                                                ;;
+                                        *)
+						echo "Invalid timestamp mode, ON/on/1 or OFF/off/0"
+                                                exit 1
+                                                ;;
+                                esac
+                                ;;
+			-ll=* | --level=*)
+				state="${i#*=}"
+                                case $state in
+                                        0 | 1 | 2 | 3 | 4 | 5)
+                                                restool dpdbg set --level=$state
+						echo "Log level set to $state"
+                                                ;;
+                                        *)
+                                                echo "Invalid logging level, from 0 to 5"
+                                                exit 1
+                                                ;;
+                                esac
+                                ;;
+			-u=* | --uart=*)
+				state="${i#*=}"
+                                case $state in
+                                        0 | 1 | 2 | 3 | 4)
+                                                restool dpdbg set --uart=$state
+						echo "UART id set to $state"
+                                                ;;
+                                        *)
+                                                echo "Invalid UART ID, from 0 to 4"
+                                                exit 1
+                                                ;;
+                                esac
+                                ;;
+			-m | mem | --memory)
+				restool dpdbg dump --memory
+				echo "Memory dumped information available in MC log/console"
+				;;
+			dpaiop.* | dpbp.* | dpci.* | dpcon.* | dpdcei.* | dpdmai.* | dpdmux.* | dpio.* | dpmac.* | dpmcp.* | dpni.* | dprc.* | dprtc.* | dpseci.* | dpsw.*)
+				state="${i#*.}"
+				case $state in
+					''|*[!0-9]*)
+						echo "Object id must be a positive number"
+						exit 1
+						;;
+				    	*)
+						restool dpdbg dump --object=$i
+						echo "$i dumped information available in MC log/console"
+						;;
+				esac
+				;;
+			*)
+				echo "Invalid option"
+				exit 1
+				;;
+		esac
+	done
+
+}
+
+#####################################################################
+##################### Script starts here ############################
+#####################################################################
+
+# First check if $restool exists
+if [ ! "$(which $restool)" ]; then
+        echo "restool is not installed. Aborting."
+        exit 1
+fi
+
+# Check compatibility with MC version
+mc_major=$($restool --mc-version | cut -f2 -d':' | cut -f1 -d'.' | tr -d ' ')
+if [ "$mc_major" != 10 ]; then
+        echo "Restool wrapper scripts only support the latest major MC version"
+        echo "that currently is MC10.x. Use with caution."
+fi
+
+if [ -f /sys/bus/fsl-mc/autorescan ]; then
+        # Get the previous state of the autorescan attribute
+        irq_prev=$(cat /sys/bus/fsl-mc/autorescan)
+
+        # Disable autorescan in the fsl-mc bus (we manually handle this)
+        echo 0 > /sys/bus/fsl-mc/autorescan
+fi
+
+process_debug "$@"
+

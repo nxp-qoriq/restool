@@ -39,10 +39,11 @@ restool: $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-install: restool scripts/ls-main
+install: restool scripts/ls-main scripts/ls-append-dpl scripts/ls-debug
 	install -D -m 755 restool $(DESTDIR)$(bindir)/restool
 	install -D -m 755 scripts/ls-main $(DESTDIR)$(bindir)/ls-main
 	install -D -m 755 scripts/ls-append-dpl $(DESTDIR)$(bindir)/ls-append-dpl
+	install -D -m 755 scripts/ls-debug $(DESTDIR)$(bindir)/ls-debug
 	$(foreach symlink, $(RESTOOL_SCRIPT_SYMLINKS), sh -c "cd $(DESTDIR)$(bindir) && ln -sf ls-main $(symlink)" ;)
 
 clean:

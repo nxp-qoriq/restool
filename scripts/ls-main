@@ -1022,6 +1022,8 @@ The operations are:
 	- ls-addsw	-   Create a switch (and the corresponding dpsw object)
 	- ls-listni	-   List the available dpni objects in the root and child containers
 	- ls-listmac 	-   List the available dpmac objects in the root and child containers
+	- ls-debug	-   Dump MC information and enable/disable some modules
+	- ls-append-dpl -   Create objects based on a DPL file
 
 The options depend on the used operation. Use -h parameter for each operation
 to get more details on available options."
