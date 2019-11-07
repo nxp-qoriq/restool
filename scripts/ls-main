@@ -409,6 +409,9 @@ process_addmux() {
 	# Create the MUX
 	create_dpdmux
 
+	# sync objects between MC and fsl-mc bus
+	restool dprc sync
+
 	# check the status
 	object_exists $container $dpdmux
 	if [ $object_exists_status = 1 ]; then
@@ -608,6 +611,9 @@ process_addsw() {
 
 	# Create the SWITCH
 	create_dpsw
+
+	# sync objects between MC and fsl-mc bus
+	restool dprc sync
 
 	# check the status
 	object_exists $container $dpsw
@@ -866,6 +872,9 @@ process_addni() {
 		endpoint=$dpni
 		connect "$root_c" "$dpni" "$endpoint"
 	fi
+
+	# sync objects between MC and fsl-mc bus
+	restool dprc sync
 
 	# check the status
 	object_exists $container $dpni
