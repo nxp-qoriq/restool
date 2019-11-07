@@ -182,7 +182,7 @@ type_of_endpoint() {
 
 # Check if endpoint object exists
 check_endpoint() {
-	cep=$(trap "$restool "$toe" info "$1"" EXIT)
+	cep=$(restool "$toe" info "$1" || echo "")
 
 	if [ "$cep" != "${cep%"does not exist"*}" ]; then
 		echo "End point $1 does not exist"
