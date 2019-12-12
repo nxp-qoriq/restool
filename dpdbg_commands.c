@@ -695,6 +695,19 @@ static int cmd_dpdbg_create(void)
 	struct dpdbg_cfg dpdbg_cfg;
 	uint32_t dpdbg_id;
 
+	if (restool.mc_fw_version.major < 10 ||
+			(restool.mc_fw_version.major >= 10 &&
+			restool.mc_fw_version.minor < 20)) {
+		ERROR_PRINTF("Unavailable feature\n");
+		ERROR_PRINTF("MC version must be grater than 10.20.0\n");
+		ERROR_PRINTF("Actual MC firmware version: %u.%u.%u\n",
+				restool.mc_fw_version.major,
+				restool.mc_fw_version.minor,
+				restool.mc_fw_version.revision);
+
+		return 1;
+	}
+
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
