@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -259,6 +259,29 @@ static struct option dprc_set_label_options[] = {
 C_ASSERT(ARRAY_SIZE(dprc_set_label_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 /**
+ * dprc set-locked command options
+ */
+enum dprc_set_loced_options {
+	SET_LOCKED_OPT_HELP = 0,
+	SET_LOCKED_OPT_LOCKED,
+};
+
+static struct option dprc_set_locked_options[] = {
+	[SET_LOCKED_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[SET_LOCKED_OPT_LOCKED] = {
+		.name = "locked",
+		.has_arg = 1,
+	},
+
+	{ 0 },
+};
+
+C_ASSERT(ARRAY_SIZE(dprc_set_locked_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+/**
  * dprc connect command options
  */
 enum dprc_connect_options {
@@ -376,9 +399,10 @@ static int cmd_dprc_help(void)
 		"                  change an object's plugged state\n"
 		"   unassign     - moves an object from a child container to a parent container.\n"
 		"   set-label    - sets label/alias for any objects except root container.\n"
+		"   set-locked   - lock/unlock a child container.\n"
 		"   connect      - connects 2 objects, creating a link between them.\n"
 		"   disconnect   - removes the link between two objects. Either endpoint can\n"
-		"		   be specified as the target of the operation.\n"
+		"                  be specified as the target of the operation.\n"
 		"   generate-dpl - generate DPL syntax for the specified container\n"
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
@@ -1790,6 +1814,138 @@ out:
 	return error;
 }
 
+static int cmd_dprc_set_locked(void)
+{
+
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dprc set-locked <child_container> --locked=<state>\n"
+		"\n"
+		"  --locked=<state>\n"
+		"    state = 1; child container is locked\n"
+		"    state = 0; child container is unlocked\n"
+		"\n"
+		"NOTE:\n"
+		"  <child_container>\n"
+		"    Must be one of the child containers of the container executing the command\n"
+		"\n"
+		"EXAMPLE:\n"
+		"To lock the container dprc.2 that is the child container of dprc.1:\n"
+		"  $ restool dprc set-locked dprc.2 --locked=1\n"
+		"\n";
+
+	char obj_type[OBJ_TYPE_MAX_LENGTH + 1];
+	bool target_parent_dprc_opened = false;
+	struct dprc_obj_desc target_obj_desc;
+	uint16_t target_parent_dprc_handle;
+	uint32_t target_parent_dprc_id;
+	uint8_t locked = -1;
+	uint32_t obj_id;
+	bool found;
+	int error;
+	int n;
+
+	memset(&target_obj_desc, 0, sizeof(target_obj_desc));
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SET_LOCKED_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_LOCKED_OPT_HELP);
+		error = 0;
+		goto out;
+	}
+
+	if (restool.obj_name == NULL) {
+		ERROR_PRINTF("<child_container> argument missing\n");
+		puts(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	n = sscanf(restool.obj_name, "%" STRINGIFY(OBJ_TYPE_MAX_LENGTH)
+		   "[a-z].%u", obj_type, &obj_id);
+	if (n != 2) {
+		ERROR_PRINTF("Invalid MC object name: %s\n", restool.obj_name);
+		return -EINVAL;
+	}
+
+	if (strcmp(obj_type, "dprc") != 0) {
+		ERROR_PRINTF("Locking can be made only on child containers\n");
+		puts(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(SET_LOCKED_OPT_LOCKED)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(SET_LOCKED_OPT_LOCKED);
+		n = sscanf(restool.cmd_option_args[SET_LOCKED_OPT_LOCKED],
+			"%hhu",
+			&locked);
+
+		if (n != 1 || (locked != 0 && locked != 1)) {
+			ERROR_PRINTF("Invalid locked state: %s\n",
+				restool.cmd_option_args[SET_LOCKED_OPT_LOCKED]);
+			puts(usage_msg);
+			return -EINVAL;
+		}
+	} else {
+		ERROR_PRINTF("missing --locked option\n");
+		puts(usage_msg);
+		error = -EINVAL;
+		goto out;
+	}
+
+	error = find_target_obj_desc(restool.root_dprc_id,
+			restool.root_dprc_handle, 0, obj_id, obj_type,
+			&target_obj_desc, &target_parent_dprc_id, &found);
+
+	if (!found) {
+		if (error == 0)
+			printf("%s does not exist\n", restool.obj_name);
+		error = -EINVAL;
+		goto out;
+	}
+
+	if (error < 0)
+		goto out;
+
+	if (target_parent_dprc_id == restool.root_dprc_id)
+		target_parent_dprc_handle = restool.root_dprc_handle;
+	else {
+		error = open_dprc(target_parent_dprc_id,
+				&target_parent_dprc_handle);
+		if (error < 0)
+			goto out;
+		target_parent_dprc_opened = true;
+	}
+
+	error = dprc_set_locked(&restool.mc_io, 0,
+			target_parent_dprc_handle, locked, obj_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+		     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+out:
+	DEBUG_PRINTF("target_parent_dprc_opened=%d\n",
+			(int)target_parent_dprc_opened);
+	if (target_parent_dprc_opened) {
+		int error2;
+
+		error2 = dprc_close(&restool.mc_io, 0,
+					target_parent_dprc_handle);
+		if (error2 < 0) {
+			mc_status = flib_error_to_mc_status(error2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (error == 0)
+				error = error2;
+		}
+	}
+
+	return error;
+}
+
 static int parse_endpoint(char *endpoint_str, struct dprc_endpoint *endpoint)
 {
 	int n;
@@ -2154,6 +2310,9 @@ struct object_command dprc_commands[] = {
 	  .options = dprc_set_label_options,
 	  .cmd_func = cmd_dprc_set_label },
 
+	{ .cmd_name = "set-locked",
+	  .options = dprc_set_locked_options,
+	  .cmd_func = cmd_dprc_set_locked },
 
 	{ .cmd_name = "connect",
 	  .options = dprc_connect_options,

@@ -223,6 +223,54 @@ int dprc_get_attributes(struct fsl_mc_io *mc_io,
 }
 
 /**
+ * dprc_set_locked() 	- Set locked the child container
+ * @mc_io:		- Pointer to MC portal's I/O object
+ * @cmd_flags:		- Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		- Token of DPRC object
+ * @locked:		- locked bit
+ * 				1 = locked
+ * 				0 = unlocked
+ * @child_container_id:	- ID of the container to reset
+ *
+ * Locking is done by a parent (this DPRC) to one of its child
+ * containers.
+ *
+ * This command will lock the child_container_id and the entire
+ * hierarchy that belongs to it down.
+ * That means the containers will not be longer allowed to:
+ * - create/destroy objects
+ * - create/destroy child containers
+ * - assign/unassign objects to/from its child containers
+ * - lock/unlock a child container
+ *
+ * The use case is for DPAA2 direct assignment. It will permit the host
+ * to create objects in its container and after that to move them in the guest container.
+ * The guest container will be locked by its parent and will not be able to mount a denial
+ * of service attack by creating multiple objects.
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dprc_set_locked(struct fsl_mc_io *mc_io,
+			 uint32_t cmd_flags,
+			 uint16_t token,
+			 uint8_t locked,
+			 int child_container_id)
+{
+	struct mc_command cmd = { 0 };
+	struct dprc_cmd_set_locked *cmd_params;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPRC_CMDID_SET_LOCKED,
+					  cmd_flags, token);
+	cmd_params = (struct dprc_cmd_set_locked *)cmd.params;
+	cmd_params->child_container_id = cpu_to_le32(child_container_id);
+	cmd_params->locked = locked;
+
+	/* send command to mc*/
+	return mc_send_command(mc_io, &cmd);
+}
+
+/**
  * dprc_assign() - Assigns objects or resource to a child container.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'

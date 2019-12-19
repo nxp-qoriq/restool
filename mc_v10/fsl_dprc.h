@@ -396,5 +396,11 @@ int dprc_get_container_id(struct fsl_mc_io *mc_io,
 			  uint32_t cmd_flags,
 			  int *container_id);
 
+int dprc_set_locked(struct fsl_mc_io *mc_io,
+			 uint32_t cmd_flags,
+			 uint16_t token,
+			 uint8_t locked,
+			 int child_container_id);
+
 #endif /* _FSL_DPRC_H */
 

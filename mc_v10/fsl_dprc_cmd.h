@@ -36,7 +36,7 @@
 
 /* Minimal supported DPRC Version */
 #define DPRC_VER_MAJOR			6
-#define DPRC_VER_MINOR			3
+#define DPRC_VER_MINOR			4
 
 /* Command versioning */
 #define DPRC_CMD_BASE_VERSION			1
@@ -51,7 +51,7 @@
 #define DPRC_CMDID_OPEN                         DPRC_CMD(0x805)
 #define DPRC_CMDID_GET_API_VERSION              DPRC_CMD(0xa05)
 #define DPRC_CMDID_GET_ATTR                     DPRC_CMD(0x004)
-#define DPRC_CMDID_CREATE_CONT                  DPRC_CMD(0x151)
+#define DPRC_CMDID_CREATE_CONT                  DPRC_CMD_V2(0x151)
 #define DPRC_CMDID_DESTROY_CONT                 DPRC_CMD(0x152)
 #define DPRC_CMDID_GET_IRQ_MASK                 DPRC_CMD(0x015)
 #define DPRC_CMDID_GET_IRQ_STATUS               DPRC_CMD(0x016)
@@ -63,6 +63,7 @@
 #define DPRC_CMDID_GET_RES_COUNT                DPRC_CMD(0x15B)
 #define DPRC_CMDID_GET_RES_IDS                  DPRC_CMD(0x15C)
 #define DPRC_CMDID_SET_OBJ_LABEL                DPRC_CMD(0x161)
+#define DPRC_CMDID_SET_LOCKED                   DPRC_CMD(0x16B)
 
 #define DPRC_CMDID_CONNECT                      DPRC_CMD(0x167)
 #define DPRC_CMDID_DISCONNECT                   DPRC_CMD(0x168)
@@ -101,6 +102,12 @@ struct dprc_rsp_create_container {
 };
 
 struct dprc_cmd_destroy_container {
+	uint32_t child_container_id;
+};
+
+struct dprc_cmd_set_locked {
+	uint8_t locked;
+	uint8_t pad[3];
 	uint32_t child_container_id;
 };
 
