@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,21 +35,23 @@
 
 /* DPDMUX Version */
 #define DPDMUX_VER_MAJOR		6
-#define DPDMUX_VER_MINOR		2
+#define DPDMUX_VER_MINOR		5
 
 #define DPDMUX_CMD_BASE_VERSION		1
+#define DPDMUX_CMD_VERSION_2		2
 #define DPDMUX_CMD_ID_OFFSET		4
 
 #define DPDMUX_CMD(id)	((id << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_BASE_VERSION)
+#define DPDMUX_CMD_V2(id)	(((id) << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_VERSION_2)
 
 /* Command IDs */
 #define DPDMUX_CMDID_CLOSE			DPDMUX_CMD(0x800)
 #define DPDMUX_CMDID_OPEN			DPDMUX_CMD(0x806)
-#define DPDMUX_CMDID_CREATE			DPDMUX_CMD(0x906)
+#define DPDMUX_CMDID_CREATE			DPDMUX_CMD_V2(0x906)
 #define DPDMUX_CMDID_DESTROY			DPDMUX_CMD(0x986)
 #define DPDMUX_CMDID_GET_API_VERSION		DPDMUX_CMD(0xa06)
 
-#define DPDMUX_CMDID_GET_ATTR			DPDMUX_CMD(0x004)
+#define DPDMUX_CMDID_GET_ATTR			DPDMUX_CMD_V2(0x004)
 
 #define DPDMUX_CMDID_GET_IRQ_MASK		DPDMUX_CMD(0x015)
 #define DPDMUX_CMDID_GET_IRQ_STATUS		DPDMUX_CMD(0x016)
@@ -71,7 +73,8 @@ struct dpdmux_cmd_create {
 	uint8_t method;
 	uint8_t manip;
 	uint16_t num_ifs;
-	uint32_t pad;
+	uint16_t default_if;
+	uint16_t pad;
 
 	uint16_t adv_max_dmat_entries;
 	uint16_t adv_max_mc_groups;
@@ -108,7 +111,7 @@ struct dpdmux_rsp_get_attr {
 	uint8_t manip;
 	uint16_t num_ifs;
 	uint16_t mem_size;
-	uint16_t pad;
+	uint16_t default_if;
 
 	uint64_t pad1;
 

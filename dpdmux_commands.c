@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -165,6 +165,7 @@ enum dpdmux_create_options_v9 {
 	CREATE_OPT_MAX_DMAT_ENTRIES_V9,
 	CREATE_OPT_MAX_MC_GROUPS_V9,
 	CREATE_OPT_PARENT_DPRC,
+	CREATE_OPT_DEFAULT_IF,
 };
 
 static struct option dpdmux_create_options_v9[] = {
@@ -219,6 +220,13 @@ static struct option dpdmux_create_options_v9[] = {
 
 	[CREATE_OPT_PARENT_DPRC] = {
 		.name = "container",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_DEFAULT_IF] = {
+		.name = "default-if",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -514,6 +522,8 @@ static int print_dpdmux_attr_v10(uint32_t dpdmux_id,
 	print_dpdmux_manip(dpdmux_attr.manip);
 	printf("number of interfaces (excluding the uplink interface): %u\n",
 		(uint32_t)dpdmux_attr.num_ifs);
+	printf("default interface: %u\n",
+		(uint32_t)dpdmux_attr.default_if);
 	printf("frame storage memory size: %u\n",
 		(uint32_t)dpdmux_attr.mem_size);
 	print_obj_label(target_obj_desc);
@@ -937,6 +947,18 @@ static int create_dpdmux_v10(const char *usage_msg)
 		return -EINVAL;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_DEFAULT_IF)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_DEFAULT_IF);
+		error = get_option_value(CREATE_OPT_DEFAULT_IF, &val,
+				     "Invalid ID for default interface\n",
+				     0, dpdmux_cfg.num_ifs);
+		if (error)
+			return error;
+		dpdmux_cfg.default_if = (uint16_t)val;
+	} else {
+		dpdmux_cfg.default_if = 0;
+	}
+
 	if (restool.cmd_option_mask &
 	    ONE_BIT_MASK(CREATE_OPT_MAX_DMAT_ENTRIES_V9)) {
 		restool.cmd_option_mask &=
@@ -1032,6 +1054,8 @@ static int cmd_dpdmux_create_v10(void)
 		"	DPDMUX_OPT_BRIDGE_EN\n"
 		"	DPDMUX_OPT_CLS_MASK_SUPPORT\n"
 		"   Default is 0\n"
+		"--default-if=<if-id-number>\n"
+		"   Desired default interface ID. Default is 0 (no default interface). Maximum num_ifs.\n"
 		"--max-dmat-entries=<number>\n"
 		"   Maximum entries in DPDMUX address table. Default is 64.\n"
 		"--max-mc-groups=<number>\n"

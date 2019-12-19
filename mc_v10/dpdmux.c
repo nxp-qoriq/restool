@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -145,6 +145,7 @@ int dpdmux_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->method = cfg->method;
 	cmd_params->manip = cfg->manip;
 	cmd_params->num_ifs = cpu_to_le16(cfg->num_ifs);
+	cmd_params->default_if = cpu_to_le16(cfg->default_if);
 	cmd_params->adv_max_dmat_entries = cpu_to_le16(cfg->adv.max_dmat_entries);
 	cmd_params->adv_max_mc_groups = cpu_to_le16(cfg->adv.max_mc_groups);
 	cmd_params->adv_max_vlan_ids = cpu_to_le16(cfg->adv.max_vlan_ids);
@@ -317,6 +318,7 @@ int dpdmux_get_attributes_v10(struct fsl_mc_io *mc_io,
 	attr->manip = rsp_params->manip;
 	attr->num_ifs = le16_to_cpu(rsp_params->num_ifs);
 	attr->mem_size = le16_to_cpu(rsp_params->mem_size);
+	attr->default_if = le16_to_cpu(rsp_params->default_if);
 
 	return 0;
 }

@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2019 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -57,6 +57,7 @@ int dpdmux_close_v10(struct fsl_mc_io *mc_io,
  * @method: Defines the operation method for the DPDMUX address table
  * @manip: Required manipulation operation
  * @num_ifs: Number of interfaces (excluding the uplink interface)
+ * @default_if: Default interface number (different from uplink, maximum value num_ifs)
  * @adv: Advanced parameters; default is all zeros;
  *	 use this structure to change default settings
  */
@@ -64,6 +65,7 @@ struct dpdmux_cfg_v10 {
 	enum dpdmux_method method;
 	enum dpdmux_manip manip;
 	uint16_t num_ifs;
+	uint16_t default_if;
 	/**
 	 * struct adv - Advanced parameters
 	 * @options: DPDMUX options - combination of 'DPDMUX_OPT_<X>' flags
@@ -114,6 +116,7 @@ int dpdmux_get_irq_status_v10(struct fsl_mc_io *mc_io,
  * @manip: DPDMUX manipulation type
  * @num_ifs: Number of interfaces (excluding the uplink interface)
  * @mem_size: DPDMUX frame storage memory size
+ * @default_if: Default interface number (different from uplink, maximum value num_ifs)
  */
 struct dpdmux_attr_v10 {
 	int id;
@@ -122,6 +125,7 @@ struct dpdmux_attr_v10 {
 	enum dpdmux_manip manip;
 	uint16_t num_ifs;
 	uint16_t mem_size;
+	uint16_t default_if;
 };
 
 int dpdmux_get_attributes_v10(struct fsl_mc_io *mc_io,

@@ -297,6 +297,8 @@ The options are:
 							DPDMUX_METHOD_C_VLAN_MAC, DPDMUX_METHOD_MAC,
 							DPDMUX_METHOD_C_VLAN, DPDMUX_METHOD_CUSTOM.
 							Default is DPDMUX_METHOD_MAC
+	-f, --default-if=IF_ID				Default interface ID. Only for method DPDMUX_METHOD_CUSTOM.
+							Default is 0. Maximum num-ifs.
 	-e, --max-dmat-entries=NUM_ENTRIES		Entries in address table.
 							Default value is 64.
 	-g, --max-mcast-groups=NUM_MGROUPS		Multicast groups in address table.
@@ -337,6 +339,7 @@ create_dpdmux() {
 		--num-ifs="$num_ifs"					\
 		$options_str						\
 		--method="$method"					\
+		--default-if="$default_if"				\
 		--max-dmat-entries="$max_dmat_entries"			\
 		--max-mc-groups="$max_mc_groups"			\
 		--manip=DPDMUX_MANIP_NONE				\
@@ -371,6 +374,8 @@ process_addmux() {
 	num_ifs=
 	#  Where <dmat-method> defines the method of the DMux address table.
 	method="DPDMUX_METHOD_MAC"
+	#Default interface ID. Default is 0 that means no default interface.
+	default_if=0
 	#Max entries in DMux address table. Default is 64.
 	max_dmat_entries=64
 	#Number of multicast groups in DMAT. Default is 32 groups.
@@ -398,6 +403,9 @@ process_addmux() {
 				;;
 			-d=* | --num-ifs=*)
 				num_ifs="${i#*=}"
+				;;
+			-f=* | --default-if=*)
+				default_if="${i#*=}"
 				;;
 			-e=* | --max-dmat-entries=*)
 				max_dmat_entries="${i#*=}"
