@@ -152,7 +152,7 @@ process_debug() {
 	fi
 
 	exist=$(exist_dpdbg)
-	if [ $exist -eq 0 ]; then
+	if [ $exist -eq 0 ] && [ $1 != "--help" ] && [ $1 != "-h" ]; then
 		create_dpdbg
 	fi
 
