@@ -108,14 +108,14 @@ static struct option dpni_info_options[] = {
 		.name = "help",
 		.has_arg = 0,
 		.flag = NULL,
-		.val = 0,
+		.val = 'h',
 	},
 
 	[INFO_OPT_VERBOSE] = {
 		.name = "verbose",
 		.has_arg = 0,
 		.flag = NULL,
-		.val = 0,
+		.val = 'v',
 	},
 
 	{ 0 },
@@ -1904,7 +1904,7 @@ static int cmd_dpni_update_v10(void)
 }
 
 struct object_command dpni_commands_v9[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpni_help },
 
@@ -1924,7 +1924,7 @@ struct object_command dpni_commands_v9[] = {
 };
 
 struct object_command dpni_commands_v10[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpni_help_v10 },
 

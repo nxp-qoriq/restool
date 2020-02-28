@@ -743,7 +743,7 @@ static int cmd_dpdbg_create(void)
 
 
 struct object_command dpdbg_commands[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpdbg_help },
 

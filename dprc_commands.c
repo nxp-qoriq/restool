@@ -2270,7 +2270,7 @@ static int cmd_dpl_generate(void)
  * DPRC command table
  */
 struct object_command dprc_commands[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dprc_help },
 

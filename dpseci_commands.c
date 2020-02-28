@@ -901,7 +901,7 @@ static int cmd_dpseci_destroy_v10(void)
 }
 
 struct object_command dpseci_commands_v9[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpseci_help },
 
@@ -921,7 +921,7 @@ struct object_command dpseci_commands_v9[] = {
 };
 
 struct object_command dpseci_commands_v10[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpseci_help },
 

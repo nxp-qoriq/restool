@@ -694,7 +694,7 @@ static int cmd_dpcon_destroy_v10(void)
 }
 
 struct object_command dpcon_commands_v9[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpcon_help },
 
@@ -714,7 +714,7 @@ struct object_command dpcon_commands_v9[] = {
 };
 
 struct object_command dpcon_commands_v10[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpcon_help },
 

@@ -754,7 +754,7 @@ static int cmd_dpdmai_destroy_v10(void)
 }
 
 struct object_command dpdmai_commands_v9[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpdmai_help },
 
@@ -774,7 +774,7 @@ struct object_command dpdmai_commands_v9[] = {
 };
 
 struct object_command dpdmai_commands_v10[] = {
-	{ .cmd_name = "help",
+	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpdmai_help },
 
