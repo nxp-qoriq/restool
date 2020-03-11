@@ -521,7 +521,7 @@ static int cmd_dpcon_create_v9(void)
 		"EXAMPLES:\n"
 		"Create a DPCON object with all default options:\n"
 		"   $ restool dpcon create\n"
-		"Create a DPCON with 4 priorities:\n"
+		"Create a DPCON with 2 priorities:\n"
 		"   $ restool dpcon create --num-priorities=2\n"
 		"\n";
 
@@ -545,7 +545,7 @@ static int cmd_dpcon_create_v10(void)
 		"EXAMPLES:\n"
 		"Create a DPCON object with all default options:\n"
 		"   $ restool dpcon create\n"
-		"Create a DPCON with 4 priorities:\n"
+		"Create a DPCON with 2 priorities:\n"
 		"   $ restool dpcon create --num-priorities=2\n"
 		"\n";
 
