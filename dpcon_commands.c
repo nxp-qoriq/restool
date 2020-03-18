@@ -493,8 +493,8 @@ static int create_dpcon(int mc_fw_version, const char *usage_msg)
 		dpcon_cfg.num_priorities = (uint8_t)val;
 		dpcon_cfg_v10.num_priorities = (uint8_t)val;
 	} else {
-		dpcon_cfg.num_priorities = 1;
-		dpcon_cfg_v10.num_priorities = 1;
+		dpcon_cfg.num_priorities = 2;
+		dpcon_cfg_v10.num_priorities = 2;
 	}
 
 	if (mc_fw_version == MC_FW_VERSION_9)
@@ -516,7 +516,7 @@ static int cmd_dpcon_create_v9(void)
 		"OPTIONS:\n"
 		"if options are not specified, create DPCON by default options\n"
 		"--num-priorities=<number>\n"
-		"   Valid values for <number> are 1-8. Default value is 1.\n"
+		"   Valid values for <number> are 1-8. Default value is 2.\n"
 		"\n"
 		"EXAMPLES:\n"
 		"Create a DPCON object with all default options:\n"
@@ -537,7 +537,7 @@ static int cmd_dpcon_create_v10(void)
 		"OPTIONS:\n"
 		"if options are not specified, create DPCON by default options\n"
 		"--num-priorities=<number>\n"
-		"   Valid values for <number> are 1-8. Default value is 1.\n"
+		"   Valid values for <number> are 1-8. Default value is 2.\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
