@@ -208,7 +208,7 @@ check_endpoint() {
 has_endpoint() {
 	if [ "$toe" = "dpdmux" ]; then
 		itf_id=$(echo "$1" | sed "s/\(dpdmux\.[0-9]*\.\)//g")
-		ep=$($restool "$toe" info "$1" | awk "/interface $itf_id/{getline; print}" | sed "s/.*connection: //")
+		ep=$($restool "$toe" info "$1" | awk "/interface $itf_id:/{getline; print}" | sed "s/.*connection: //")
 	else
 		ep=$($restool "$toe" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
 	fi
@@ -241,7 +241,7 @@ get_endpoint() {
 
 	if [ "$too" = "dpdmux" ]; then
 		itf_id=$(echo "$1" | sed "s/\(dpdmux\.[0-9]*\.\)//g")
-		end_point=$($restool "$too" info "$1" | awk "/interface $itf_id/{getline; print}" | sed "s/.*connection: //")
+		end_point=$($restool "$too" info "$1" | awk "/interface $itf_id:/{getline; print}" | sed "s/.*connection: //")
 	else
 		end_point=$($restool "$too" info "$1" | grep "endpoint:" | sed "s/endpoint: \([^ ]*\)\,.*/\1/")
 	fi
