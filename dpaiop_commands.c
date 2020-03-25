@@ -621,7 +621,7 @@ static int cmd_dpaiop_create_v10(void)
 		"      Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
 		"\n"
 		"OPTIONS:\n"
-		"if options are not specified, create DPSW by default options\n"
+		"if options are not specified, create DPAIOP by default options\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
