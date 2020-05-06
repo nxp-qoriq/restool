@@ -333,6 +333,18 @@ static int print_dpmac_counters(struct fsl_mc_io *mc_io, uint16_t token)
 	return 0;
 }
 
+#define MAC_ADDR_LEN	6
+
+static void print_dpmac_addr(uint8_t mac_addr[MAC_ADDR_LEN])
+{
+	int idx;
+
+	printf("MAC address: ");
+	for (idx = 0; idx < MAC_ADDR_LEN - 1; ++idx)
+		printf("%02x:", (unsigned char) mac_addr[idx]);
+	printf("%02x\n", (unsigned char) mac_addr[idx]);
+}
+
 static int print_dpmac_attr_v9(uint32_t dpmac_id,
 			       struct dprc_obj_desc *target_obj_desc)
 {
@@ -405,6 +417,7 @@ static int print_dpmac_attr_v10(uint32_t dpmac_id,
 	struct dpmac_attr_v10 dpmac_attr;
 	uint16_t obj_major, obj_minor;
 	bool dpmac_opened = false;
+	uint8_t dpmac_addr[MAC_ADDR_LEN];
 	uint16_t dpmac_handle;
 	int error;
 
@@ -444,6 +457,15 @@ static int print_dpmac_attr_v10(uint32_t dpmac_id,
 		goto out;
 	}
 
+	error = dpmac_get_mac_addr_v10(&restool.mc_io, 0,
+				dpmac_handle, dpmac_addr);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
 	printf("dpmac version: %u.%u\n", obj_major, obj_minor);
 	printf("dpmac object id/portal id: %d\n", dpmac_attr.id);
 	printf("plugged state: %splugged\n",
@@ -451,6 +473,7 @@ static int print_dpmac_attr_v10(uint32_t dpmac_id,
 	print_dpmac_endpoint(dpmac_id);
 	print_dpmac_link_type(dpmac_attr.link_type);
 	print_dpmac_eth_if(dpmac_attr.eth_if);
+	print_dpmac_addr(dpmac_addr);
 	printf("maximum supported rate %lu Mbps\n",
 			(unsigned long)dpmac_attr.max_rate);
 	print_obj_label(target_obj_desc);

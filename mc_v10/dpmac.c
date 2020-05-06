@@ -383,3 +383,39 @@ int dpmac_get_api_version_v10(struct fsl_mc_io *mc_io,
 	return 0;
 }
 
+/**
+ * dpmac_get_mac_addr_v10() - Retrieve MAC address associated to the DPMAC
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPMAC object
+ * @mac_addr:	MAC address of the physical port, if any, otherwise 0
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpmac_get_mac_addr_v10(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
+			   uint16_t token,
+			   uint8_t mac_addr[6])
+{
+	struct mc_command cmd = { 0 };
+	struct dpmac_rsp_get_mac_addr *rsp_params;
+	int i, err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_GET_MAC_ADDR,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dpmac_rsp_get_mac_addr *)cmd.params;
+	for (i = 0; i < 6; i++)
+		mac_addr[5 - i] = rsp_params->mac_addr[i];
+
+	return 0;
+}
+

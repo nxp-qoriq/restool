@@ -51,6 +51,7 @@
 #define DPMAC_CMDID_GET_IRQ_MASK	DPMAC_CMD(0x015)
 #define DPMAC_CMDID_GET_IRQ_STATUS	DPMAC_CMD(0x016)
 #define DPMAC_CMDID_GET_COUNTER		DPMAC_CMD(0x0c4)
+#define DPMAC_CMDID_GET_MAC_ADDR	DPMAC_CMD(0x0c5)
 
 /* Macros for accessing command fields smaller than 1byte */
 #define DPMAC_MASK(field)        \
@@ -111,6 +112,11 @@ struct dpmac_rsp_get_counter {
 struct dpmac_rsp_get_api_version {
 	uint16_t major;
 	uint16_t minor;
+};
+
+struct dpmac_rsp_get_mac_addr {
+	uint16_t pad;
+	uint8_t mac_addr[6];
 };
 #pragma pack(pop)
 #endif /* _FSL_DPMAC_CMD_H */

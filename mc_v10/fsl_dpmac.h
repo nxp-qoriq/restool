@@ -73,6 +73,11 @@ int dpmac_get_irq_status_v10(struct fsl_mc_io *mc_io,
 			     uint8_t irq_index,
 			     uint32_t *status);
 
+int dpmac_get_mac_addr_v10(struct fsl_mc_io *mc_io,
+			   uint32_t cmd_flags,
+			   uint16_t token,
+			   uint8_t mac_addr[6]);
+
 /**
  * struct dpmac_attr_v10 - Structure representing DPMAC attributes
  * @id:		DPMAC object ID
