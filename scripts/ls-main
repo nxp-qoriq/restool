@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Copyright 2013-2016 Freescale Semiconductor Inc.
-# Copyright 2017-2020 NXP
+# Copyright 2017-2021 NXP
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -139,6 +139,10 @@ create_dpio() {
 			echo "Error: dpio object was not created!"
 			return 1
 		fi
+
+		#  create also a dpmcp object for each dpio
+		create_dpmcp $parent_container
+
 		$restool dprc assign $parent_container --object="$obj" --plugged=1
 	done
 }
