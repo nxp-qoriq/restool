@@ -5,7 +5,7 @@ endif
 SRC = $(shell find . -name "*.c")
 OBJ = $(patsubst %.c, %.o, $(SRC))
 
-RESTOOL_SCRIPT_SYMLINKS = ls-addmux ls-addsw ls-addni ls-listni ls-listmac
+RESTOOL_SCRIPT_SYMLINKS = ls-addmux ls-addsw ls-addni ls-listni ls-listmac ls-delete
 
 CFLAGS = ${EXTRA_CFLAGS} \
 	  -Wall \

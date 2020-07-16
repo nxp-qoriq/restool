@@ -1032,6 +1032,141 @@ process_listmac() {
 	done
 }
 
+usage_delete() {
+	echo "Usage: $0 [OPTIONS] <object>
+The options are:
+	-h, --help					This message.
+<object> is one of the following:
+	dpni.X						X is the index of the dpni object
+	dpsw.X						X is the index of the dpsw object
+	all						all objects
+<endpoint> is mandatory
+
+Usage examples:
+	# ls-delete dpni.2				// Deletes dpni.2 and all objects used by it
+	# ls-delete all					// Deletes all objects from the root container"
+}
+
+object_has_other_consumers() {
+	ls /sys/bus/fsl-mc/devices/$1/ | grep consumer:dp | cut -d':' -f2
+}
+
+delete_object() {
+	local object=$1
+	local all=$2
+
+	object_exists dprc.1 $object
+	if [ $object_exists_status = 0 ]; then
+		if [ $all = 0 ];then
+			echo "Object $object does not exist!"
+			usage_delete
+			exit 1
+		else
+			return
+		fi
+	fi
+
+	# do not destroy the root DPRC
+	if [ "$object" = dprc.1 ]; then
+		return
+	fi
+
+	if [ ! -d /sys/bus/fsl-mc/devices/$object/ ]; then
+		return
+	fi
+
+	local suppliers="$(ls /sys/bus/fsl-mc/devices/$object/ | grep supplier:dp | cut -d':' -f2)"
+	local driver="$(realpath /sys/bus/fsl-mc/devices/$object/driver)"
+	local type="$(echo $object | cut -d '.' -f 1 )"
+
+	# if the object is probed, unbind it
+	if [ -d $driver ]; then
+		echo $object > $driver/unbind
+		#echo "Unbind $object from the $driver driver: done"
+	fi
+
+	# destroy the object
+	$restool --script $type destroy $object > /dev/null 2>&1
+	#echo "Destroy $object: done"
+
+	printf "$object "
+	if [ ! -z "$suppliers" ]; then
+		echo "${suppliers}" |
+		while read -r supplier; do
+			if [ ! -z "$(object_has_other_consumers $supplier)" ]; then
+				continue
+			fi
+
+			delete_object $supplier $all
+		done
+	fi
+
+	echo 1 > /sys/bus/fsl-mc/rescan
+}
+
+process_delete() {
+	local arg_dpni
+	local dpni
+	local all
+
+	if [ -z "$@" ]; then
+		usage_delete
+		exit 1
+	fi
+
+	for i in "$@"
+	do
+		case $i in
+			-h | --help)
+				usage_delete
+				exit 0
+				;;
+			all)
+				objects="$(ls /sys/bus/fsl-mc/devices/)"
+				all=1
+				;;
+			*)
+				arg_dpni="$(echo "$i" | grep -x -E "(dprc.+[0-9]+/)*dpni.[0-9]+" || true )"
+				arg_dpsw="$(echo "$i" | grep -x -E "(dprc.[0-9]+/)*dpsw.[0-9]+" || true )"
+				if [ "$i" = "$arg_dpni"  ] ||
+				   [ "$i" = "$arg_dpsw"   ]; then
+					# Check if the object exists
+					object_exists "dprc.1" "$i"
+					if [ $object_exists_status = 1 ]; then
+						objects=$i
+					else
+						echo "Object $i does not exist!"
+						usage_delete
+						exit 1
+					fi
+				else
+					echo "Object type not supported!"
+					usage_delete
+					exit 1
+				fi
+				;;
+		esac
+	done
+
+	printf "Deleted objects: "
+
+	echo "${objects}" |
+	while read -r obj; do
+		# Destroy directly only the objects that don't have consumers,
+		# the other objects will be destroyed indirectly as they are
+		# reached from their consumers
+
+		if [ ! -z "$(object_has_other_consumers $obj)" ] && [ $all = 1 ] ; then
+			continue
+		fi
+		delete_object $obj $all
+	done
+
+	printf "\n"
+
+	exit 0
+}
+
 #####################################################################
 ##################### Script starts here ############################
 #####################################################################
@@ -1048,6 +1183,7 @@ The operations are:
 	- ls-listmac 	-   List the available dpmac objects in the root and child containers
 	- ls-debug	-   Dump MC information and enable/disable some modules
 	- ls-append-dpl -   Create objects based on a DPL file
+	- ls-delete     -   Deletes an object and its dependencies
 
 The options depend on the used operation. Use -h parameter for each operation
 to get more details on available options."
@@ -1093,6 +1229,9 @@ case $operation in
 		;;
 	ls-listmac)
 		process_listmac "$@"
+		;;
+	ls-delete)
+		process_delete "$@"
 		;;
 	*)
 		echo "Unknown operation $operation"
