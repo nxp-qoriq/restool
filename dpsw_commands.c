@@ -182,6 +182,56 @@ static struct option dpsw_destroy_options[] = {
 	{ 0 },
 };
 
+/**
+ * dpsw update command options
+ */
+enum dpsw_update_options {
+	UPDATE_OPT_HELP = 0,
+	UPDATE_OPT_IF_ID,
+	UPDATE_OPT_TAILDROP,
+	UPDATE_OPT_UNITS,
+	UPDATE_OPT_THRESHOLD,
+};
+
+static struct option dpsw_update_options[] = {
+	[UPDATE_OPT_HELP] = {
+		.name = "help",
+		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[UPDATE_OPT_IF_ID] = {
+		.name = "if-id",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[UPDATE_OPT_TAILDROP] = {
+		.name = "taildrop",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[UPDATE_OPT_UNITS] = {
+		.name = "units",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[UPDATE_OPT_THRESHOLD] = {
+		.name = "threshold",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	{ 0 },
+};
+
 C_ASSERT(ARRAY_SIZE(dpsw_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 const struct flib_ops dpsw_ops = {
@@ -209,6 +259,7 @@ static int cmd_dpsw_help(void)
 		"   info - displays detailed information about a DPSW object.\n"
 		"   create - creates a new child DPSW under the root DPRC.\n"
 		"   destroy - destroys a child DPSW under the root DPRC.\n"
+		"   update - configure a child DPSW under the root DPRC.\n"
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
 		"\n";
@@ -244,9 +295,24 @@ static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs)
 {
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
+	struct dpsw_taildrop_cfg cfg;
 	int state;
 	int error = 0;
 	int k;
+	uint32_t dpsw_id;
+	uint16_t dpsw_handle;
+
+	error = parse_object_name(restool.obj_name, "dpsw", &dpsw_id);
+	if (error)
+		return error;
+
+	error = dpsw_open(&restool.mc_io, 0, dpsw_id, &dpsw_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
 
 	printf("endpoints:\n");
 	for (k = 0; k < num_ifs; ++k) {
@@ -288,8 +354,34 @@ static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs)
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
 				mc_status_to_string(mc_status), mc_status);
 		}
+		if (error == 0) {
+			error = dpsw_if_get_taildrop(&restool.mc_io,
+					0, dpsw_handle, endpoint1.if_id,
+					0, &cfg);
+			if (error)
+				return error;
+			printf("\tTaildrop enabled: ");
+			if (cfg.enable == 0)
+				printf("false\n");
+			else
+				printf("true\n");
+			printf("\tTaildrop units: ");
+			switch(cfg.units) {
+			case DPSW_TAILDROP_DROP_UNIT_BYTE:
+				printf("BYTES\n");
+				break;
+			case DPSW_TAILDROP_DROP_UNIT_FRAMES:
+				printf("FRAMES\n");
+				break;
+			case DPSW_TAILDROP_DROP_UNIT_BUFFERS:
+				printf("BUFFERS\n");
+				break;
+			}
+			printf("\tTaildrop threshold: %d\n", cfg.threshold);
+		}
 	}
 
+	dpsw_close(&restool.mc_io, 0, dpsw_handle);
 	return 0;
 }
 
@@ -1047,6 +1139,143 @@ static int cmd_dpsw_destroy_v10(void)
 	return destroy_dpsw(MC_FW_VERSION_10);
 }
 
+static int update_dpsw(const char *usage_msg)
+{
+	long id_if = -1, enable = -1, threshold = -1;
+	char *str, changed_congestion_unit = 0;
+	enum dpsw_congestion_unit units;
+	struct dpsw_attr_v10 dpsw_attr;
+	struct dpsw_taildrop_cfg cfg;
+	uint16_t dpsw_handle;
+	uint32_t dpsw_id;
+	int error, k;
+
+	if (restool.obj_name == NULL) {
+		ERROR_PRINTF("Should provide a dpsw!\n");
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	error = parse_object_name(restool.obj_name, "dpsw", &dpsw_id);
+	if (error)
+		return error;
+
+	error = dpsw_open_v10(&restool.mc_io, 0, dpsw_id, &dpsw_handle);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return 0;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(UPDATE_OPT_HELP)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(UPDATE_OPT_HELP);
+		puts(usage_msg);
+		return 0;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(UPDATE_OPT_IF_ID)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(UPDATE_OPT_IF_ID);
+		error = get_option_value(UPDATE_OPT_IF_ID, &id_if,
+					 "Invalid interface id",
+					 0, UINT16_MAX);
+		if (error)
+			return -EINVAL;
+		error = dpsw_if_get_taildrop(&restool.mc_io, 0, dpsw_handle,
+					     id_if, 0, &cfg);
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(UPDATE_OPT_TAILDROP)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(UPDATE_OPT_TAILDROP);
+		error = get_option_value(UPDATE_OPT_TAILDROP, &enable,
+					 "Invalid taildrop enable value",
+					 0, 1);
+		if (error)
+			return -EINVAL;
+		cfg.enable = enable;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(UPDATE_OPT_UNITS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(UPDATE_OPT_UNITS);
+		str = restool.cmd_option_args[UPDATE_OPT_UNITS];
+		if (!strcmp(str, "BYTES"))
+			cfg.units = DPSW_TAILDROP_DROP_UNIT_BYTE;
+		else if (!strcmp(str, "FRAMES"))
+			cfg.units = DPSW_TAILDROP_DROP_UNIT_FRAMES;
+		else if (!strcmp(str, "BUFFERS"))
+			cfg.units = DPSW_TAILDROP_DROP_UNIT_BUFFERS;
+		else
+			return -EINVAL;
+		units = cfg.units;
+		changed_congestion_unit = 1;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(UPDATE_OPT_THRESHOLD)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(UPDATE_OPT_THRESHOLD);
+		error = get_option_value(UPDATE_OPT_THRESHOLD, &threshold,
+					 "Invalid threshold value",
+					 0,
+					 UINT32_MAX);
+		if (error)
+			return -EINVAL;
+		cfg.threshold = threshold;
+	}
+
+	if (id_if != -1) {
+		return dpsw_if_set_taildrop(&restool.mc_io,
+				0, dpsw_handle, id_if, 0, &cfg);
+	} else {
+		memset(&dpsw_attr, 0, sizeof(struct dpsw_attr_v10));
+		error = dpsw_get_attributes_v10(&restool.mc_io,
+				0, dpsw_handle, &dpsw_attr);
+		if (error)
+			return error;
+
+		for (k = 0; k < dpsw_attr.num_ifs; ++k) {
+			if (enable == -1 || changed_congestion_unit == 0 ||
+				threshold == -1)
+			{
+				error = dpsw_if_get_taildrop(&restool.mc_io,
+						0, dpsw_handle, k, 0, &cfg);
+				if (error)
+					return error;
+			}
+			if (enable != -1)
+				cfg.enable = enable;
+			if (changed_congestion_unit != 0)
+				cfg.units = units;
+			if (threshold != -1)
+				cfg.threshold = threshold;
+			error = dpsw_if_set_taildrop(&restool.mc_io,
+					0, dpsw_handle, k, 0, &cfg);
+			if (error)
+				return error;
+		}
+	}
+
+	dpsw_close(&restool.mc_io, 0, dpsw_handle);
+	return 0;
+}
+
+static int cmd_dpsw_update_v10(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpsw update <dpsw-object> [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"--if-id=<number>\n"
+		"\tSpecifies the number of the interface to configure.\n"
+		"\tIf not specified, configure all interfaces.\n"
+		"--taildrop=<0|1>\n"
+		"\tUsed to enable or disable the feature.\n"
+		"--units=<units>\n"
+		"\tSpecifies taildrop units: BYTES\\FRAMES\\BUFFERS\n"
+		"--threshold=<number>\n"
+		"\tSpecifies taildrop threshold\n";
+	return update_dpsw(usage_msg);
+}
+
 struct object_command dpsw_commands_v9[] = {
 	{ .cmd_name = "--help",
 	  .options = NULL,
@@ -1083,6 +1312,10 @@ struct object_command dpsw_commands_v10[] = {
 	{ .cmd_name = "destroy",
 	  .options = dpsw_destroy_options,
 	  .cmd_func = cmd_dpsw_destroy_v10 },
+
+	{ .cmd_name = "update",
+	  .options = dpsw_update_options,
+	  .cmd_func = cmd_dpsw_update_v10 }, 
 
 	{ .cmd_name = NULL },
 };

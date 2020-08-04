@@ -366,3 +366,70 @@ int dpsw_get_api_version_v10(struct fsl_mc_io *mc_io,
 	return 0;
 }
 
+/**
+ * dpsw_if_set_taildrop() - enable taildrop for egress interface queues.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @if_id:	Interface Identifier
+ * @tc_id:  Traffic class Id
+ * @cfg: Taildrop configuration
+ */
+int dpsw_if_set_taildrop(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint16_t if_id, uint8_t tc_id, struct dpsw_taildrop_cfg *cfg)
+{
+	struct dpsw_cmd_set_taildrop *cmd_params;
+	struct mc_command cmd = { 0 };
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_SET_TAILDROP,
+					  cmd_flags, token);
+
+	cmd_params = (struct dpsw_cmd_set_taildrop *)cmd.params;
+	cmd_params->if_id = cpu_to_le16(if_id);
+	cmd_params->tc = tc_id;
+	cmd_params->units = cfg->units;
+	cmd_params->threshold = cpu_to_le32(cfg->threshold);
+	dpsw_set_field(cmd_params->oal_en, ENABLE, (!!cfg->enable));
+
+	return mc_send_command(mc_io, &cmd);;
+}
+
+/**
+ * dpsw_if_get_taildrop() - get current taildrop configuration.
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @if_id:	Interface Identifier
+ * @tc_id:  Traffic class Id
+ * @cfg: Taildrop configuration
+ */
+int dpsw_if_get_taildrop(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint16_t if_id, uint8_t tc_id, struct dpsw_taildrop_cfg *cfg)
+{
+	struct dpsw_cmd_get_taildrop *cmd_params;
+	struct dpsw_rsp_get_taildrop *rsp_params;
+	struct mc_command cmd = {0};
+	int err = 0;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_GET_TAILDROP,
+					  cmd_flags, token);
+
+	cmd_params = (struct dpsw_cmd_get_taildrop *)cmd.params;
+	cmd_params->if_id = cpu_to_le16(if_id);
+	cmd_params->tc = tc_id;
+
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dpsw_rsp_get_taildrop *)cmd.params;
+	cfg->threshold = le32_to_cpu(rsp_params->threshold);
+	cfg->units = rsp_params->units;
+	cfg->enable = dpsw_get_field(rsp_params->oal_en, ENABLE);
+
+	return err;
+}
+

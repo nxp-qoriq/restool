@@ -53,6 +53,9 @@
 #define DPSW_CMDID_GET_IRQ_MASK                 DPSW_CMD(0x015)
 #define DPSW_CMDID_GET_IRQ_STATUS               DPSW_CMD(0x016)
 
+#define DPSW_CMDID_IF_SET_TAILDROP		DPSW_CMD(0x0A8)
+#define DPSW_CMDID_IF_GET_TAILDROP		DPSW_CMD(0x0A9)
+
 /* Macros for accessing command fields smaller than 1byte */
 #define DPSW_MASK(field)        \
 	GENMASK(DPSW_##field##_SHIFT + DPSW_##field##_SIZE - 1, \
@@ -94,6 +97,9 @@ struct dpsw_cmd_create {
 struct dpsw_cmd_destroy {
 	uint32_t dpsw_id;
 };
+
+#define DPSW_ENABLE_SHIFT		0
+#define DPSW_ENABLE_SIZE		1
 
 struct dpsw_cmd_get_irq_mask {
 	uint32_t pad;
@@ -142,6 +148,36 @@ struct dpsw_rsp_get_attr {
 struct dpsw_rsp_get_api_version {
 	uint16_t version_major;
 	uint16_t version_minor;
+};
+
+struct dpsw_cmd_set_taildrop {
+	uint16_t pad1;
+	uint8_t tc;
+	uint8_t pad2;
+	uint16_t if_id;
+	uint16_t pad3;
+	uint16_t oal_en;
+	uint8_t units;
+	uint8_t pad4;
+	uint32_t threshold;
+};
+
+struct dpsw_cmd_get_taildrop {
+	uint16_t pad1;
+	uint8_t tc;
+	uint8_t pad2;
+	uint16_t if_id;
+};
+
+struct dpsw_rsp_get_taildrop {
+	uint16_t pad1;
+	uint16_t pad2;
+	uint16_t if_id;
+	uint16_t pad3;
+	uint16_t oal_en;
+	uint8_t units;
+	uint8_t pad4;
+	uint32_t threshold;
 };
 
 #pragma pack(pop)

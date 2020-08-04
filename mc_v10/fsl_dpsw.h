@@ -152,4 +152,28 @@ int dpsw_get_api_version_v10(struct fsl_mc_io *mc_io,
 			     uint16_t *major_ver,
 			     uint16_t *minor_ver);
 
+enum dpsw_congestion_unit {
+	DPSW_TAILDROP_DROP_UNIT_BYTE = 0,
+	DPSW_TAILDROP_DROP_UNIT_FRAMES,
+	DPSW_TAILDROP_DROP_UNIT_BUFFERS
+};
+
+/**
+ * struct dpsw_taildrop_cfg - interface taildrop configuration
+ * @enable - enable (1 ) or disable (0) taildrop
+ * @units - taildrop units
+ * @threshold - taildtop threshold
+ */
+struct dpsw_taildrop_cfg {
+	char enable;
+	enum dpsw_congestion_unit units;
+	uint32_t threshold;
+};
+
+int dpsw_if_set_taildrop(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint16_t if_id, uint8_t tc, struct dpsw_taildrop_cfg *cfg);
+
+int dpsw_if_get_taildrop(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint16_t if_id, uint8_t tc, struct dpsw_taildrop_cfg *cfg);
+
 #endif /* __FSL_DPSW_H */
