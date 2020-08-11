@@ -69,7 +69,8 @@
 	DPNI_OPT_HAS_OPR |				\
 	DPNI_OPT_OPR_PER_TC |				\
 	DPNI_OPT_SINGLE_SENDER |			\
-	DPNI_OPT_CUSTOM_CG)
+	DPNI_OPT_CUSTOM_CG |				\
+	DPNI_OPT_SHARED_HASH_KEY)
 
 enum mc_cmd_status mc_status;
 
@@ -150,6 +151,7 @@ enum dpni_create_options {
 	CREATE_OPT_MAC_FILTER_ENTRIES,
 	CREATE_OPT_VLAN_FILTER_ENTRIES,
 	CREATE_OPT_NUM_CGS,
+	CREATE_OPT_DIST_KEY_SIZE,
 };
 
 static struct option dpni_create_options[] = {
@@ -314,6 +316,13 @@ static struct option dpni_create_options[] = {
 		.val = 0,
 	},
 
+	[CREATE_OPT_DIST_KEY_SIZE] = {
+		.name = "dist-key-size",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
 	{ 0 },
 };
 
@@ -409,6 +418,7 @@ static struct option_entry options_map_v10_1[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_OPR_PER_TC),
 	OPTION_MAP_ENTRY(DPNI_OPT_SINGLE_SENDER),
 	OPTION_MAP_ENTRY(DPNI_OPT_CUSTOM_CG),
+	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_HASH_KEY),
 };
 static unsigned int options_num_v10_1 = ARRAY_SIZE(options_map_v10_1);
 
@@ -558,6 +568,9 @@ static void print_dpni_options_v10(uint32_t options)
 
 	if (options & DPNI_OPT_CUSTOM_CG)
 		printf("\tDPNI_OPT_CUSTOM_CG\n");
+
+	if (options & DPNI_OPT_SHARED_HASH_KEY)
+		printf("\tDPNI_OPT_SHARED_HASH_KEY\n");
 }
 
 static int print_dpni_endpoint(uint32_t target_id)
@@ -1560,6 +1573,15 @@ static int create_dpni_v10(const char *usage_msg)
 		}
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_DIST_KEY_SIZE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_DIST_KEY_SIZE);
+		error = get_option_value(CREATE_OPT_DIST_KEY_SIZE, &value,
+				"Invalid dist-key-size value", 1, 56);
+		if (error)
+			return error;
+		dpni_cfg.dist_key_size = (uint8_t)value;
+	}
+
 	error = dpni_create_v10(&restool.mc_io, dprc_handle, 0,
 				&dpni_cfg, &dpni_id);
 	if (error) {
@@ -1639,6 +1661,7 @@ static int cmd_dpni_create_v10(void)
 		"	DPNI_OPT_OPR_PER_TC\n"
 		"	DPNI_OPT_SINGLE_SENDER\n"
 		"	DPNI_OPT_CUSTOM_CG\n"
+		"	DPNI_OPT_SHARED_HASH_KEY\n"
 		"--num-queues=<number>\n"
 		"   Number of TX/RX queues use for traffic distribution.\n"
 		"   Used to distribute traffic to multiple GPP cores,\n"
@@ -1671,6 +1694,9 @@ static int cmd_dpni_create_v10(void)
 		"   Defaults to one per TC. Maximum supported value is 128.\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"--dist-key-size=<number>\n"
+		"       maximum key size for the distribution;\n"
+		"       '0' will be treated as '24' which enough for IPv4 5-tuple\n"
 		"\n";
 
 	if (restool.mc_fw_version.minor == 0)

@@ -153,6 +153,8 @@ int dpni_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->qos_entries = cfg->qos_entries;
 	cmd_params->fs_entries = cpu_to_le16(cfg->fs_entries);
 	cmd_params->num_cgs = cfg->num_cgs;
+	cmd_params->num_opr = cpu_to_le16(cfg->num_opr);
+	cmd_params->dist_key_size = cfg->dist_key_size;
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);

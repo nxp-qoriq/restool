@@ -35,21 +35,23 @@
 
 /* DPNI Version */
 #define DPNI_VER_MAJOR				7
-#define DPNI_VER_MINOR				9
+#define DPNI_VER_MINOR				16
 
 #define DPNI_CMD_BASE_VERSION			1
 #define DPNI_CMD_VERSION_2			2
 #define DPNI_CMD_VERSION_3			3
+#define DPNI_CMD_VERSION_5			5
 #define DPNI_CMD_ID_OFFSET			4
 
 #define DPNI_CMD(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_BASE_VERSION)
 #define DPNI_CMD_V2(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_VERSION_2)
 #define DPNI_CMD_V3(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_VERSION_3)
+#define DPNI_CMD_V5(id)	(((id) << DPNI_CMD_ID_OFFSET) | DPNI_CMD_VERSION_5)
 
 /* Command IDs */
 #define DPNI_CMDID_OPEN				DPNI_CMD(0x801)
 #define DPNI_CMDID_CLOSE			DPNI_CMD(0x800)
-#define DPNI_CMDID_CREATE			DPNI_CMD_V3(0x901)
+#define DPNI_CMDID_CREATE			DPNI_CMD_V5(0x901)
 #define DPNI_CMDID_DESTROY			DPNI_CMD(0x981)
 #define DPNI_CMDID_GET_API_VERSION		DPNI_CMD(0xa01)
 #define DPNI_CMDID_GET_ATTR			DPNI_CMD_V3(0x004)
@@ -76,11 +78,13 @@ struct dpni_cmd_open {
 };
 
 struct dpni_cmd_create {
+	/* word 0 */
 	uint32_t options;
 	uint8_t num_queues;
 	uint8_t num_tcs;
 	uint8_t mac_filter_entries;
 	uint8_t pad1;
+	/* word 1 */
 	uint8_t vlan_filter_entries;
 	uint8_t pad2;
 	uint8_t qos_entries;
@@ -88,7 +92,10 @@ struct dpni_cmd_create {
 	uint16_t fs_entries;
 	uint8_t num_rx_tcs;
 	uint8_t pad4;
+	/* word 2 */
 	uint8_t num_cgs;
+	uint16_t num_opr;
+	uint8_t dist_key_size;
 };
 
 struct dpni_cmd_destroy {

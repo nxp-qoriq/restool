@@ -122,6 +122,10 @@ struct fsl_mc_io;
  */
 #define DPNI_OPT_CUSTOM_CG				0x000200
 /**
+ * Hash key is shared between all traffic classes
+ */
+#define DPNI_OPT_SHARED_HASH_KEY			0x000800
+/**
  * struct dpni_cfg_v10 - Structure representing DPNI configuration
  * @mac_addr:	Primary MAC address
  * @adv:	Advanced parameters; default is all zeros;
@@ -199,6 +203,8 @@ struct dpni_cfg_v10 {
 	uint8_t  num_rx_tcs;
 	uint8_t  qos_entries;
 	uint8_t  num_cgs;
+	uint16_t num_opr;
+	uint8_t	 dist_key_size;
 };
 
 int dpni_create_v10(struct fsl_mc_io *mc_io,

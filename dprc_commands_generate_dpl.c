@@ -1721,6 +1721,11 @@ static void parse_dpni_options_v10(FILE *fp, uint32_t options)
 		snprintf(buf+len, 50, "\"DPNI_OPT_NO_FS\", ");
 	}
 
+	if (options & DPNI_OPT_SHARED_HASH_KEY) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_SHARED_HASH_KEY\", ");
+	}
+
 	len = strlen(buf);
 	if (13 == len)
 		return;
@@ -2036,6 +2041,7 @@ static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
 	fprintf(fp, "\t\t\tvlan_filter_entries = <%u>;\n", dpni_attr.vlan_filter_entries);
 	fprintf(fp, "\t\t\tfs_entries = <%u>;\n", dpni_attr.fs_entries);
 	fprintf(fp, "\t\t\tqos_entries = <%u>;\n", dpni_attr.qos_entries);
+	fprintf(fp, "\t\t\tdist_key_size = <%u>;\n", dpni_attr.fs_key_size);
 
 out:
 	if (dpni_opened) {
