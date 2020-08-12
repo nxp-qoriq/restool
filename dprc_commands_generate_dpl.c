@@ -1721,6 +1721,11 @@ static void parse_dpni_options_v10(FILE *fp, uint32_t options)
 		snprintf(buf+len, 50, "\"DPNI_OPT_NO_FS\", ");
 	}
 
+	if (options & DPNI_OPT_NO_MAC_FILTER) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_NO_MAC_FILTER\", ");
+	}
+
 	if (options & DPNI_OPT_SHARED_HASH_KEY) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPNI_OPT_SHARED_HASH_KEY\", ");
