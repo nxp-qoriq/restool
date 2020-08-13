@@ -516,6 +516,9 @@ static int print_dpsw_attr_v10(uint32_t dpsw_id,
 	print_dpsw_options(dpsw_attr.options);
 	printf("max VLANs: %u\n", (uint32_t)dpsw_attr.max_vlans);
 	printf("max FDBs: %u\n", (uint32_t)dpsw_attr.max_fdbs);
+	printf("max FDB entries: %u\n", (uint32_t)dpsw_attr.max_fdb_entries);
+	printf("FDB aging time: %u\n", (uint32_t)dpsw_attr.fdb_aging_time);
+	printf("max FDB MC groups: %u\n", (uint32_t)dpsw_attr.max_fdb_mc_groups);
 	printf("frame storage memory size: %u\n",
 	       (uint32_t)dpsw_attr.mem_size);
 	printf("number of interfaces: %u\n", (uint32_t)dpsw_attr.num_ifs);
