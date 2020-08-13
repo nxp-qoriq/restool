@@ -128,7 +128,8 @@ struct dpni_config {
 	DPSW_OPT_MULTICAST_DIS |	\
 	DPSW_OPT_CTRL_IF_DIS |	\
 	DPSW_OPT_FLOODING_METERING_DIS |	\
-	DPSW_OPT_METERING_EN)
+	DPSW_OPT_METERING_EN |		\
+	DPSW_OPT_LAG_DIS)
 
 
 /* dpl stuff */
@@ -2296,6 +2297,11 @@ static void parse_dpsw_options(FILE *fp, uint64_t options)
 	if (options & DPSW_OPT_METERING_EN) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPSW_OPT_METERING_EN\", ");
+	}
+
+	if (options & DPSW_OPT_LAG_DIS) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPSW_OPT_LAG_DIS\", ");
 	}
 
 	len = strlen(buf);

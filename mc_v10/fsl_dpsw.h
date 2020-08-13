@@ -51,6 +51,15 @@ int dpsw_close_v10(struct fsl_mc_io *mc_io,
 		   uint16_t token);
 
 /**
+ * DPSW options
+ */
+
+/**
+ * Disable link aggregation
+ */
+#define DPSW_OPT_LAG_DIS		0x0000000000000100ULL
+
+/**
  * struct dpsw_cfg - DPSW configuration
  * @num_ifs: Number of external and internal interfaces
  * @adv: Advanced parameters; default is all zeros;
