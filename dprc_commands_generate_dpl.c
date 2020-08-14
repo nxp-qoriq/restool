@@ -2181,7 +2181,7 @@ static int parse_dpdmux_v9(FILE *fp, struct obj_list *curr)
 	parse_dpdmux_method(fp, dpdmux_attr.method);
 	parse_dpdmux_manip(fp, dpdmux_attr.manip);
 	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n",
-		(uint32_t)dpdmux_attr.num_ifs + 1);
+		(uint32_t)dpdmux_attr.num_ifs);
 
 	error = 0;
 
@@ -2242,7 +2242,7 @@ static int parse_dpdmux_v10(FILE *fp, struct obj_list *curr)
 	parse_dpdmux_method(fp, dpdmux_attr.method);
 	parse_dpdmux_manip(fp, dpdmux_attr.manip);
 	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n",
-		(uint32_t)dpdmux_attr.num_ifs + 1);
+		(uint32_t)dpdmux_attr.num_ifs);
 
 	error = 0;
 
