@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -43,6 +43,9 @@
 #include "mc_v9/fsl_dpio.h"
 #include "mc_v10/fsl_dpio.h"
 
+#define ALL_DPIO_OPTIONS (			\
+		DPIO_OPT_PRIVILEGED)
+
 enum mc_cmd_status mc_status;
 
 /**
@@ -81,6 +84,7 @@ enum dpio_create_options {
 	CREATE_OPT_CHANNEL_MODE,
 	CREATE_OPT_NUM_PRIORITIES,
 	CREATE_OPT_PARENT_DPRC,
+	CREATE_OPT_OPTIONS,
 };
 
 static struct option dpio_create_options[] = {
@@ -107,6 +111,13 @@ static struct option dpio_create_options[] = {
 
 	[CREATE_OPT_PARENT_DPRC] = {
 		.name = "container",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_OPTIONS] = {
+		.name = "options",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -144,6 +155,12 @@ const struct flib_ops dpio_ops = {
 	.obj_get_irq_status = dpio_get_irq_status_v10,
 };
 
+static struct option_entry options_map_v10[] = {
+	OPTION_MAP_ENTRY(DPIO_OPT_PRIVILEGED),
+};
+
+static unsigned int options_num_v10 = ARRAY_SIZE(options_map_v10);
+
 static int cmd_dpio_help(void)
 {
 	static const char help_msg[] =
@@ -159,6 +176,17 @@ static int cmd_dpio_help(void)
 
 	printf(help_msg);
 	return 0;
+}
+
+static void print_dpio_options(uint32_t options)
+{
+	if ((options & ~ALL_DPIO_OPTIONS) != 0) {
+		printf("\tUnrecognized options found...\n");
+		return;
+	}
+
+	if (options & DPIO_OPT_PRIVILEGED)
+		printf("\tDPIO_OPT_PRIVILEGED\n");
 }
 
 static int print_dpio_attr_v9(uint32_t dpio_id,
@@ -283,6 +311,9 @@ static int print_dpio_attr_v10(uint32_t dpio_id,
 	printf("dpio id: %d\n", dpio_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	printf("dpio_attr.options value is: %#lx\n",
+		(unsigned long)dpio_attr.options);
+	print_dpio_options(dpio_attr.options);
 	printf(
 		"offset of qbman software portal cache-enabled area: %#llx\n",
 		(unsigned long long)dpio_attr.qbman_portal_ce_offset);
@@ -542,6 +573,23 @@ static int create_dpio(int mc_fw_version, const char *usage_msg)
 		dpio_cfg_v10.num_priorities = 8;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+
+		error = parse_generic_create_options(
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
+				(uint64_t *)&dpio_cfg_v10.options,
+				options_map_v10,
+				options_num_v10);
+		if (error) {
+			DEBUG_PRINTF("parse_generic_create_options() = %d\n",
+				     error);
+			return error;
+		}
+	} else {
+		dpio_cfg_v10.options = 0;
+	}
+
 	if (mc_fw_version == MC_FW_VERSION_9)
 		error = create_dpio_v9(&dpio_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
@@ -594,6 +642,9 @@ static int cmd_dpio_create_v10(void)
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"--options=<options-mask>\n"
+		"   Where <options-mask> is a comma or space separated list of DPIO options:\n"
+		"	DPIO_OPT_PRIVILEGED\n"
 		"\n"
 		"EXAMPLE:\n"
 		"Create a DPIO object with all default options:\n"

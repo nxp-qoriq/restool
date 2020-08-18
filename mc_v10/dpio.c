@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -143,6 +143,7 @@ int dpio_create_v10(struct fsl_mc_io *mc_io,
 	dpio_set_field(cmd_params->channel_mode,
 		       CHANNEL_MODE,
 		       cfg->channel_mode);
+	cmd_params->options = cpu_to_le32(cfg->options);
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -229,6 +230,7 @@ int dpio_get_attributes_v10(struct fsl_mc_io *mc_io,
 	attr->qbman_version = le32_to_cpu(rsp_params->qbman_version);
 	attr->clk = le32_to_cpu(rsp_params->clk);
 	attr->channel_mode = dpio_get_field(rsp_params->channel_mode, ATTR_CHANNEL_MODE);
+	attr->options = le32_to_cpu(rsp_params->options);
 
 	return 0;
 }

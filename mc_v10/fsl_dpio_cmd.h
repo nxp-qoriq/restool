@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,20 +35,22 @@
 
 /* DPIO Version */
 #define DPIO_VER_MAJOR			4
-#define DPIO_VER_MINOR			2
+#define DPIO_VER_MINOR			4
 
 #define DPIO_CMD_BASE_VERSION		1
+#define DPIO_CMD_VERSION_2		2
 #define DPIO_CMD_ID_OFFSET		4
 
 #define DPIO_CMD(id)	(((id) << DPIO_CMD_ID_OFFSET) | DPIO_CMD_BASE_VERSION)
+#define DPIO_CMD_V2(id)	(((id) << DPIO_CMD_ID_OFFSET) | DPIO_CMD_VERSION_2)
 
 /* Command IDs */
 #define DPIO_CMDID_CLOSE				DPIO_CMD(0x800)
 #define DPIO_CMDID_OPEN					DPIO_CMD(0x803)
-#define DPIO_CMDID_CREATE				DPIO_CMD(0x903)
+#define DPIO_CMDID_CREATE				DPIO_CMD_V2(0x903)
 #define DPIO_CMDID_DESTROY				DPIO_CMD(0x983)
 #define DPIO_CMDID_GET_API_VERSION			DPIO_CMD(0xa03)
-#define DPIO_CMDID_GET_ATTR				DPIO_CMD(0x004)
+#define DPIO_CMDID_GET_ATTR				DPIO_CMD_V2(0x004)
 #define DPIO_CMDID_GET_IRQ_MASK				DPIO_CMD(0x015)
 #define DPIO_CMDID_GET_IRQ_STATUS			DPIO_CMD(0x016)
 
@@ -75,6 +77,8 @@ struct dpio_cmd_create {
 	uint8_t channel_mode;
 	uint8_t pad2;
 	uint8_t num_priorities;
+	uint8_t pad3[3];
+	uint32_t options;
 };
 
 struct dpio_cmd_destroy {
@@ -111,7 +115,7 @@ struct dpio_rsp_get_attr {
 	uint64_t qbman_portal_ce_offset;
 	uint64_t qbman_portal_ci_offset;
 	uint32_t qbman_version;
-	uint32_t pad;
+	uint32_t options;
 	uint32_t clk;
 };
 
