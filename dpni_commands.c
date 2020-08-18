@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -70,7 +70,8 @@
 	DPNI_OPT_OPR_PER_TC |				\
 	DPNI_OPT_SINGLE_SENDER |			\
 	DPNI_OPT_CUSTOM_CG |				\
-	DPNI_OPT_SHARED_HASH_KEY)
+	DPNI_OPT_SHARED_HASH_KEY |			\
+	DPNI_OPT_SHARED_FS)
 
 enum mc_cmd_status mc_status;
 
@@ -419,6 +420,7 @@ static struct option_entry options_map_v10_1[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_SINGLE_SENDER),
 	OPTION_MAP_ENTRY(DPNI_OPT_CUSTOM_CG),
 	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_HASH_KEY),
+	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_FS),
 };
 static unsigned int options_num_v10_1 = ARRAY_SIZE(options_map_v10_1);
 
@@ -571,6 +573,9 @@ static void print_dpni_options_v10(uint32_t options)
 
 	if (options & DPNI_OPT_SHARED_HASH_KEY)
 		printf("\tDPNI_OPT_SHARED_HASH_KEY\n");
+
+	if (options & DPNI_OPT_SHARED_FS)
+		printf("\tDPNI_OPT_SHARED_FS\n");
 }
 
 static int print_dpni_endpoint(uint32_t target_id)
@@ -1662,6 +1667,7 @@ static int cmd_dpni_create_v10(void)
 		"	DPNI_OPT_SINGLE_SENDER\n"
 		"	DPNI_OPT_CUSTOM_CG\n"
 		"	DPNI_OPT_SHARED_HASH_KEY\n"
+		"	DPNI_OPT_SHARED_FS\n"
 		"--num-queues=<number>\n"
 		"   Number of TX/RX queues use for traffic distribution.\n"
 		"   Used to distribute traffic to multiple GPP cores,\n"

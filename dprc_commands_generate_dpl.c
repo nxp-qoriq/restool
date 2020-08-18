@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -102,7 +102,8 @@
 	DPNI_OPT_SHARED_CONGESTION |			\
 	DPNI_OPT_HAS_KEY_MASKING |			\
 	DPNI_OPT_NO_FS |				\
-	DPNI_OPT_FS_MASK_SUPPORT)
+	DPNI_OPT_FS_MASK_SUPPORT |			\
+	DPNI_OPT_SHARED_FS)
 
 struct dpni_config {
 	struct dpni_extended_cfg dpni_extended_cfg;
@@ -1676,6 +1677,11 @@ static void parse_dpni_options(FILE *fp, uint32_t options)
 	if (options & DPNI_OPT_FS_MASK_SUPPORT) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPNI_OPT_FS_MASK_SUPPORT\", ");
+	}
+
+	if (options & DPNI_OPT_SHARED_FS) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_SHARED_FS\", ");
 	}
 
 	len = strlen(buf);

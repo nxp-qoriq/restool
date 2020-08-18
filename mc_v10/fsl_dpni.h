@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -125,6 +125,10 @@ struct fsl_mc_io;
  * Hash key is shared between all traffic classes
  */
 #define DPNI_OPT_SHARED_HASH_KEY			0x000800
+/**
+ * Flow steering table is shared between all traffic classes
+ */
+#define DPNI_OPT_SHARED_FS				0x001000
 /**
  * struct dpni_cfg_v10 - Structure representing DPNI configuration
  * @mac_addr:	Primary MAC address
