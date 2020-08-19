@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -37,9 +37,11 @@
 #define DPMAC_VER_MAJOR			4
 #define DPMAC_VER_MINOR			2
 #define DPMAC_CMD_BASE_VERSION		1
+#define DPMAC_CMD_VERSION_4		4
 #define DPMAC_CMD_ID_OFFSET		4
 
-#define DPMAC_CMD(id)	(((id) << DPMAC_CMD_ID_OFFSET) | DPMAC_CMD_BASE_VERSION)
+#define DPMAC_CMD(id)		(((id) << DPMAC_CMD_ID_OFFSET) | DPMAC_CMD_BASE_VERSION)
+#define DPMAC_CMD_V4(id)	(((id) << DPMAC_CMD_ID_OFFSET) | DPMAC_CMD_VERSION_4)
 
 /* Command IDs */
 #define DPMAC_CMDID_CLOSE		DPMAC_CMD(0x800)
@@ -47,7 +49,7 @@
 #define DPMAC_CMDID_CREATE		DPMAC_CMD(0x90c)
 #define DPMAC_CMDID_DESTROY		DPMAC_CMD(0x98c)
 #define DPMAC_CMDID_GET_API_VERSION	DPMAC_CMD(0xa0c)
-#define DPMAC_CMDID_GET_ATTR		DPMAC_CMD(0x004)
+#define DPMAC_CMDID_GET_ATTR		DPMAC_CMD_V4(0x004)
 #define DPMAC_CMDID_GET_IRQ_MASK	DPMAC_CMD(0x015)
 #define DPMAC_CMDID_GET_IRQ_STATUS	DPMAC_CMD(0x016)
 #define DPMAC_CMDID_GET_COUNTER		DPMAC_CMD(0x0c4)
@@ -98,6 +100,20 @@ struct dpmac_rsp_get_attributes {
 	uint8_t link_type;
 	uint16_t id;
 	uint32_t max_rate;
+
+	uint8_t fec_mode;
+	uint8_t ipg_mode;
+	uint8_t ipg_length;
+	uint8_t pad1[5];
+
+	uint8_t sgn;
+	uint8_t eq_mode;
+	uint8_t eq_amp_red;
+	uint8_t eq_post1q;
+	uint8_t eq_preq;
+	uint8_t eq_type;
+	uint16_t lni;
+	uint16_t ceetm_id;
 };
 
 struct dpmac_cmd_get_counter {

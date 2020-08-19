@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -307,6 +307,8 @@ int dpmac_get_attributes_v10(struct fsl_mc_io *mc_io,
 	attr->link_type = rsp_params->link_type;
 	attr->id = le16_to_cpu(rsp_params->id);
 	attr->max_rate = le32_to_cpu(rsp_params->max_rate);
+	attr->lni = le16_to_cpu(rsp_params->lni);
+	attr->ceetm_id = le16_to_cpu(rsp_params->ceetm_id);
 
 	return 0;
 }

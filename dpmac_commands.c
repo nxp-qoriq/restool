@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -470,6 +470,8 @@ static int print_dpmac_attr_v10(uint32_t dpmac_id,
 	printf("dpmac object id/portal id: %d\n", dpmac_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
+	printf("LNI = %d\n", dpmac_attr.lni);
+	printf("CEETM ID = %d\n", dpmac_attr.ceetm_id);
 	print_dpmac_endpoint(dpmac_id);
 	print_dpmac_link_type(dpmac_attr.link_type);
 	print_dpmac_eth_if(dpmac_attr.eth_if);
