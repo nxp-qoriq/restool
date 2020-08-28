@@ -103,7 +103,8 @@
 	DPNI_OPT_HAS_KEY_MASKING |			\
 	DPNI_OPT_NO_FS |				\
 	DPNI_OPT_FS_MASK_SUPPORT |			\
-	DPNI_OPT_SHARED_FS)
+	DPNI_OPT_SHARED_FS |				\
+	DPNI_OPT_NO_TX)
 
 struct dpni_config {
 	struct dpni_extended_cfg dpni_extended_cfg;
@@ -1682,6 +1683,11 @@ static void parse_dpni_options(FILE *fp, uint32_t options)
 	if (options & DPNI_OPT_SHARED_FS) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPNI_OPT_SHARED_FS\", ");
+	}
+
+	if (options & DPNI_OPT_NO_TX) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_NO_TX\", ");
 	}
 
 	len = strlen(buf);

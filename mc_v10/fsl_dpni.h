@@ -130,6 +130,10 @@ struct fsl_mc_io;
  */
 #define DPNI_OPT_SHARED_FS				0x001000
 /**
+ * RX only variant of the DPNI (TX configuration is done by the user)
+ */
+#define DPNI_OPT_NO_TX					0x002000
+/**
  * struct dpni_cfg_v10 - Structure representing DPNI configuration
  * @mac_addr:	Primary MAC address
  * @adv:	Advanced parameters; default is all zeros;
