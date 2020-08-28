@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -290,6 +290,8 @@ enum dprc_connect_options {
 	CONNECT_OPT_ENDPOINT2,
 	CONNECT_OPT_COMMITTED_RATE,
 	CONNECT_OPT_MAX_RATE,
+	CONNECT_OPT_RECYCLE_PORT_1,
+	CONNECT_OPT_RECYCLE_PORT_2,
 };
 
 static struct option dprc_connect_options[] = {
@@ -316,6 +318,20 @@ static struct option dprc_connect_options[] = {
 
 	[CONNECT_OPT_MAX_RATE] = {
 		.name = "max-rate",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CONNECT_OPT_RECYCLE_PORT_1] = {
+		.name = "rp1",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CONNECT_OPT_RECYCLE_PORT_2] = {
+		.name = "rp2",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -1979,6 +1995,12 @@ static int cmd_dprc_connect(void)
 		"    Specifies an endpoint object.\n"
 		"  --endpoint2=<object>\n"
 		"    Specifies an endpoint object.\n"
+		"  --rp1=< ep1->ep2 recycle port >\n"
+		"    Specifies the recycle port number to be used for the\n"
+		"    endpoint1 to endpoint2 direction of a virtual link.\n"
+		"  --rp2=< ep2->ep1 recycle port >\n"
+		"    Specifies the recycle port number to be used for the\n"
+		"    endpoint2 to endpoint1 direction of a virtual link.\n"
 		"\n"
 		"OPTIONS:\n"
 		"  --committed-rate=<number>\n"
@@ -2108,6 +2130,30 @@ static int cmd_dprc_connect(void)
 	if (committed_rate_given != max_rate_given) {
 		ERROR_PRINTF("Both committed-rate and max-rate must be provided!\n");
 		return -EINVAL;
+	}
+
+	if (restool.cmd_option_args[CONNECT_OPT_RECYCLE_PORT_1]) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_RECYCLE_PORT_1);
+		error = get_option_value(CONNECT_OPT_RECYCLE_PORT_1, &value,
+					 "Invalid recycle port value\n",
+					 1, UINT32_MAX);
+		if (error)
+			return error;
+		dprc_connection_cfg.recycle_port[0] = value;
+	} else {
+		dprc_connection_cfg.recycle_port[0] = 0;
+	}
+
+	if (restool.cmd_option_args[CONNECT_OPT_RECYCLE_PORT_2]) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CONNECT_OPT_RECYCLE_PORT_2);
+		error = get_option_value(CONNECT_OPT_RECYCLE_PORT_2, &value,
+					 "Invalid recycle port value\n",
+					 1, UINT32_MAX);
+		if (error)
+			return error;
+		dprc_connection_cfg.recycle_port[1] = value;
+	} else {
+		dprc_connection_cfg.recycle_port[1] = 0;
 	}
 
 	error = dprc_connect(&restool.mc_io, 0,

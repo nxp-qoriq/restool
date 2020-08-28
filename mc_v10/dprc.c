@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -794,6 +794,8 @@ int dprc_connect(struct fsl_mc_io *mc_io,
 		cmd_params->ep1_type[i] = endpoint1->type[i];
 		cmd_params->ep2_type[i] = endpoint2->type[i];
 	}
+	cmd_params->recycle_port1 = cpu_to_le16(cfg->recycle_port[0]);
+	cmd_params->recycle_port2 = cpu_to_le16(cfg->recycle_port[1]);
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);

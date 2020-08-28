@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -366,6 +366,7 @@ struct dprc_endpoint {
 struct dprc_connection_cfg {
 	uint32_t committed_rate;
 	uint32_t max_rate;
+	uint16_t recycle_port[2];
 };
 
 int dprc_connect(struct fsl_mc_io *mc_io,

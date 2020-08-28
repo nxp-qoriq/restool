@@ -1,6 +1,6 @@
 /*
  * Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 
 /* Minimal supported DPRC Version */
 #define DPRC_VER_MAJOR			6
-#define DPRC_VER_MINOR			4
+#define DPRC_VER_MINOR			7
 
 /* Command versioning */
 #define DPRC_CMD_BASE_VERSION			1
@@ -65,7 +65,7 @@
 #define DPRC_CMDID_SET_OBJ_LABEL                DPRC_CMD(0x161)
 #define DPRC_CMDID_SET_LOCKED                   DPRC_CMD(0x16B)
 
-#define DPRC_CMDID_CONNECT                      DPRC_CMD(0x167)
+#define DPRC_CMDID_CONNECT                      DPRC_CMD_V2(0x167)
 #define DPRC_CMDID_DISCONNECT                   DPRC_CMD(0x168)
 #define DPRC_CMDID_GET_POOL                     DPRC_CMD(0x169)
 #define DPRC_CMDID_GET_POOL_COUNT               DPRC_CMD(0x16A)
@@ -233,11 +233,11 @@ struct dprc_rsp_get_irq_status {
 struct dprc_cmd_connect {
 	uint32_t ep1_id;
 	uint16_t ep1_interface_id;
-	uint16_t pad0;
+	uint16_t recycle_port1;
 
 	uint32_t ep2_id;
 	uint16_t ep2_interface_id;
-	uint16_t pad1;
+	uint16_t recycle_port2;
 
 	uint8_t ep1_type[16];
 
