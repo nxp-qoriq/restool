@@ -493,6 +493,7 @@ The options are:
 								DPSW_OPT_FLOODING_METERING_DIS
 								DPSW_OPT_METERING_EN
 								DPSW_OPT_LAG_DIS
+								DPSW_OPT_BP_PER_IF
 	-v, --max-vlans=<number>			Maximum number of VLAN's. Default is 16.
 	-f, --max-fdbs=<number>				Maximum Number of FDB's. Default is 1.
 	-e, --max-fdb-entries=<number>			Number of FDB entries. Default is 1024.

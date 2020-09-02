@@ -49,7 +49,8 @@
 	DPSW_OPT_CTRL_IF_DIS |	\
 	DPSW_OPT_FLOODING_METERING_DIS |	\
 	DPSW_OPT_METERING_EN |		\
-	DPSW_OPT_LAG_DIS)
+	DPSW_OPT_LAG_DIS |		\
+	DPSW_OPT_BP_PER_IF)
 
 static enum mc_cmd_status mc_status;
 
@@ -273,6 +274,7 @@ static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPSW_OPT_FLOODING_METERING_DIS),
 	OPTION_MAP_ENTRY(DPSW_OPT_METERING_EN),
 	OPTION_MAP_ENTRY(DPSW_OPT_LAG_DIS),
+	OPTION_MAP_ENTRY(DPSW_OPT_BP_PER_IF),
 };
 static unsigned int options_num = ARRAY_SIZE(options_map);
 
@@ -324,6 +326,9 @@ static void print_dpsw_options(uint64_t options)
 
 	if (options & DPSW_OPT_LAG_DIS)
 		printf("\tDPSW_OPT_LAG_DIS\n");
+
+	if (options & DPSW_OPT_BP_PER_IF)
+		printf("\tDPSW_OPT_BP_PER_IF\n");
 }
 
 static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs,
@@ -1062,6 +1067,7 @@ static int cmd_dpsw_create_v10(void)
 		"	DPSW_OPT_FLOODING_METERING_DIS\n"
 		"	DPSW_OPT_METERING_EN\n"
 		"	DPSW_OPT_LAG_DIS\n"
+		"	DPSW_OPT_BP_PER_IF\n"
 		"--max-vlans=<number>\n"
 		"	Maximum number of VLAN's. Default is 16.\n"
 		"--max-fdbs=<number>\n"
