@@ -58,6 +58,10 @@ int dpsw_close_v10(struct fsl_mc_io *mc_io,
  * Disable link aggregation
  */
 #define DPSW_OPT_LAG_DIS		0x0000000000000100ULL
+/**
+ * Each interface will use own buffer pool
+ */
+#define DPSW_OPT_BP_PER_IF		0x0000000000000080ULL
 
 /**
  * struct dpsw_cfg - DPSW configuration
