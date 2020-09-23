@@ -150,6 +150,7 @@ int dpsw_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->fdb_aging_time = cpu_to_le16(cfg->adv.fdb_aging_time);
 	cmd_params->max_fdb_mc_groups = cpu_to_le16(cfg->adv.max_fdb_mc_groups);
 	cmd_params->options = cpu_to_le64(cfg->adv.options);
+	cmd_params->mem_size = cpu_to_le16(cfg->adv.mem_size);
 	dpsw_set_field(cmd_params->component_type,
 		       COMPONENT_TYPE,
 		       cfg->adv.component_type);

@@ -149,6 +149,7 @@ int dpdmux_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->adv_max_dmat_entries = cpu_to_le16(cfg->adv.max_dmat_entries);
 	cmd_params->adv_max_mc_groups = cpu_to_le16(cfg->adv.max_mc_groups);
 	cmd_params->adv_max_vlan_ids = cpu_to_le16(cfg->adv.max_vlan_ids);
+	cmd_params->mem_size = cpu_to_le16(cfg->adv.mem_size);
 	cmd_params->options = cpu_to_le64(cfg->adv.options);
 
 	/* send command to mc*/

@@ -96,6 +96,7 @@ enum dpsw_create_options {
 	CREATE_OPT_FDB_AGING_TIME,
 	CREATE_OPT_MAX_FDB_MC_GROUPS,
 	CREATE_OPT_PARENT_DPRC,
+	CREATE_OPT_MEM_SIZE,
 };
 
 static struct option dpsw_create_options[] = {
@@ -157,6 +158,13 @@ static struct option dpsw_create_options[] = {
 
 	[CREATE_OPT_PARENT_DPRC] = {
 		.name = "container",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_MEM_SIZE] = {
+		.name = "mem-size",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -939,6 +947,17 @@ static int create_dpsw_v10(const char *usage_msg)
 		dpsw_cfg.adv.max_fdb_mc_groups = 0;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MEM_SIZE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MEM_SIZE);
+		error = get_option_value(CREATE_OPT_MEM_SIZE, &val,
+				"Invalid mem_size value\n", 1, UINT16_MAX);
+		if (error)
+			return error;
+		dpsw_cfg.adv.mem_size = (uint16_t)val;
+	} else {
+		dpsw_cfg.adv.mem_size = 32;
+	}
+
 	dprc_handle = restool.root_dprc_handle;
 	dprc_opened = false;
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
@@ -1010,6 +1029,9 @@ static int cmd_dpsw_create_v10(void)
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"--mem-size=<number>\n"
+		"   Size of the memory used for internal buffers expressed as number of 256byte buffers.\n"
+		"   Default is 32.\n"
 		"\n"
 		"EXAMPLE:\n"
 		"Create a DPSW object with all default options:\n"

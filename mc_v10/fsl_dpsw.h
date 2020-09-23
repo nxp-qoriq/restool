@@ -88,6 +88,9 @@ struct dpsw_cfg_v10 {
 	 *			0 - indicates default 300 seconds
 	 * @max_fdb_mc_groups: Number of multicast groups in each FDB table;
 	 *			0 - indicates default 32
+	 * @mem_size: Size of the memory used for internal buffers
+	 * expressed as number of 256 byte buffers. Must be an integer
+	 * multiple of number of interfaces.
 	 * @component_type: Indicates the component type of this bridge
 	 */
 	struct {
@@ -98,6 +101,7 @@ struct dpsw_cfg_v10 {
 		uint16_t max_fdb_entries;
 		uint16_t fdb_aging_time;
 		uint16_t max_fdb_mc_groups;
+		uint16_t mem_size;
 		enum dpsw_component_type component_type;
 	} adv;
 };

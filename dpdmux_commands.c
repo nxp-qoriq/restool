@@ -166,6 +166,7 @@ enum dpdmux_create_options_v9 {
 	CREATE_OPT_MAX_MC_GROUPS_V9,
 	CREATE_OPT_PARENT_DPRC,
 	CREATE_OPT_DEFAULT_IF,
+	CREATE_OPT_MEM_SIZE,
 };
 
 static struct option dpdmux_create_options_v9[] = {
@@ -227,6 +228,13 @@ static struct option dpdmux_create_options_v9[] = {
 
 	[CREATE_OPT_DEFAULT_IF] = {
 		.name = "default-if",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_MEM_SIZE] = {
+		.name = "mem-size",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -987,6 +995,17 @@ static int create_dpdmux_v10(const char *usage_msg)
 		dpdmux_cfg.adv.max_mc_groups = 0;
 	}
 
+        if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MEM_SIZE)) {
+                restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MEM_SIZE);
+                error = get_option_value(CREATE_OPT_MEM_SIZE, &val,
+                                "Invalid mem_size value\n", 1, UINT16_MAX);
+                if (error)
+                        return error;
+                dpdmux_cfg.adv.mem_size = (uint16_t)val;
+        } else {
+                dpdmux_cfg.adv.mem_size = 32;
+        }
+
 	dprc_handle = restool.root_dprc_handle;
 	dprc_opened = false;
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
@@ -1063,6 +1082,9 @@ static int cmd_dpdmux_create_v10(void)
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"--mem-size=<number>\n"
+		"   Size of the memory used for internal buffers expressed as number of 256byte buffers.\n"
+		"   Default is 32.\n"
 		"\n";
 
 	return create_dpdmux_v10(usage_msg);
