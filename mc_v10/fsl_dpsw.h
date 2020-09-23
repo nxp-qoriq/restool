@@ -63,6 +63,11 @@ int dpsw_close_v10(struct fsl_mc_io *mc_io,
  */
 #define DPSW_OPT_BP_PER_IF		0x0000000000000080ULL
 
+/*
+ * VLAN miss action is reprogrammed to look-up in FDB
+ */
+#define DPSW_OPT_VLAN_MISS		0x0000000000000200ULL
+
 /**
  * struct dpsw_cfg - DPSW configuration
  * @num_ifs: Number of external and internal interfaces
