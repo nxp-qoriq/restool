@@ -35,7 +35,7 @@
 
 /* DPSW Version */
 #define DPSW_VER_MAJOR		8
-#define DPSW_VER_MINOR		2
+#define DPSW_VER_MINOR		8
 
 /* Command versioning */
 #define DPSW_CMD_BASE_VERSION	1
@@ -48,7 +48,7 @@
 /* Command IDs */
 #define DPSW_CMDID_CLOSE                        DPSW_CMD(0x800)
 #define DPSW_CMDID_OPEN                         DPSW_CMD(0x802)
-#define DPSW_CMDID_CREATE                       DPSW_CMD(0x902)
+#define DPSW_CMDID_CREATE                       DPSW_CMD_V2(0x902)
 #define DPSW_CMDID_DESTROY                      DPSW_CMD(0x982)
 #define DPSW_CMDID_GET_API_VERSION              DPSW_CMD(0xa02)
 #define DPSW_CMDID_GET_ATTR                     DPSW_CMD(0x004)
@@ -89,7 +89,8 @@ struct dpsw_cmd_create {
 	uint8_t max_meters_per_if;
 	/* from LSB: only the first 4 bits */
 	uint8_t component_type;
-	uint8_t pad[3];
+	uint8_t pad;
+	uint16_t mem_size;
 	/* cmd word 1 */
 	uint16_t max_vlans;
 	uint16_t max_fdb_entries;

@@ -311,6 +311,8 @@ The options are:
 	-l, --label=LABEL				The label of the resulting object associated to the MUX.
 							Maximum length is 15 characters.
 	-c, --container <dprc.X>			Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
+	-s, --mem-size=<number>				Size of the memory used for internal buffers expressed as number of
+							256byte buffers.
 
 The arguments are:
 	-d, --num-ifs=NUM_IFS				Number of virtual interfaces (excluding the uplink
@@ -349,6 +351,7 @@ create_dpdmux() {
 		--max-mc-groups="$max_mc_groups"			\
 		--manip=DPDMUX_MANIP_NONE				\
 		--container="$container"				\
+		--mem-size="$mem_size"					\
 	)
 
 	if [ -z "$dpdmux" ]; then
@@ -385,6 +388,9 @@ process_addmux() {
 	max_dmat_entries=64
 	#Number of multicast groups in DMAT. Default is 32 groups.
 	max_mc_groups=32
+	# Size of the memory used for internal buffers expressed as number of
+	# 256byte buffers.
+	mem_size=32
 	#Endpoint object provided as argument
 	endpoint=
 	# default parent container is the root container
@@ -423,6 +429,9 @@ process_addmux() {
 				;;
 			-c=* | --container=*)
 				container="${i#*=}"
+				;;
+			-s=* | --mem-size=*)
+				mem_size="${i#*=}"
 				;;
 			*)
 				arg_dpmac="$(echo $i | grep -x -E "(dprc.[0-9]+/)*dpmac.[0-9]+" || true )"
@@ -510,6 +519,8 @@ The options are:
 	-l, --label=LABEL     				The label of the resulting object associated to the SWITCH.
 							Maximum length is 15 characters.
 	-c, --container <dprc.X>                        Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
+	-s, --mem-size=<number>				Size of the memory used for internal buffers expressed as number of
+							256byte buffers.
 
 Usage examples:
 	ls-addsw
@@ -537,6 +548,7 @@ create_dpsw() {
 		--options="$options"					\
 		--container="$container"				\
 		--component-type="$component_type"				\
+		--mem-size="$mem_size"					\
 	)
 	if [ -z "$dpsw" ]; then
 		echo "Error: dpsw object was not created!"
@@ -583,6 +595,9 @@ process_addsw() {
 	max_fdb_mc_groups=32
 	# Component type configuration. Default is _C_VLAN.
 	component_type="DPSW_COMPONENT_TYPE_C_VLAN"
+	# Size of the memory used for internal buffers expressed as number of
+	# 256byte buffers.
+	mem_size=32
 	# dpsw object label
 	label=
 	# Endpoint objects provided as argument
@@ -627,6 +642,9 @@ process_addsw() {
 				;;
 			--component-type=*)
 				component_type="${i#*=}"
+				;;
+			-s=* | --mem-size=*)
+				mem_size="${i#*=}"
 				;;
 			*)
 				arg_dpmac="$(echo $i | grep -x -E "dpmac.[0-9]+" || true )"

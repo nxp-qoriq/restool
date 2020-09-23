@@ -35,7 +35,7 @@
 
 /* DPDMUX Version */
 #define DPDMUX_VER_MAJOR		6
-#define DPDMUX_VER_MINOR		5
+#define DPDMUX_VER_MINOR		8
 
 #define DPDMUX_CMD_BASE_VERSION		1
 #define DPDMUX_CMD_VERSION_2		2
