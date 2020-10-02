@@ -998,12 +998,12 @@ static int create_dpdmux_v10(const char *usage_msg)
         if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MEM_SIZE)) {
                 restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MEM_SIZE);
                 error = get_option_value(CREATE_OPT_MEM_SIZE, &val,
-                                "Invalid mem_size value\n", 1, UINT16_MAX);
+                                "Invalid mem_size value\n", 0, UINT16_MAX);
                 if (error)
                         return error;
                 dpdmux_cfg.adv.mem_size = (uint16_t)val;
         } else {
-                dpdmux_cfg.adv.mem_size = 32;
+                dpdmux_cfg.adv.mem_size = 0;
         }
 
 	dprc_handle = restool.root_dprc_handle;
@@ -1084,7 +1084,7 @@ static int cmd_dpdmux_create_v10(void)
 		"   If it is not specified, the new object will be created under the default dprc.\n"
 		"--mem-size=<number>\n"
 		"   Size of the memory used for internal buffers expressed as number of 256byte buffers.\n"
-		"   Default is 32.\n"
+		"   Default is 1024.\n"
 		"\n";
 
 	return create_dpdmux_v10(usage_msg);

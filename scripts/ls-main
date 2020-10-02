@@ -307,7 +307,7 @@ The options are:
 							Maximum length is 15 characters.
 	-c, --container <dprc.X>			Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
 	-s, --mem-size=<number>				Size of the memory used for internal buffers expressed as number of
-							256byte buffers.
+							256byte buffers. Default is 1024.
 
 The arguments are:
 	-d, --num-ifs=NUM_IFS				Number of virtual interfaces (excluding the uplink
@@ -385,7 +385,7 @@ process_addmux() {
 	max_mc_groups=32
 	# Size of the memory used for internal buffers expressed as number of
 	# 256byte buffers.
-	mem_size=32
+	mem_size=0
 	#Endpoint object provided as argument
 	endpoint=
 	# default parent container is the root container
@@ -512,7 +512,7 @@ The options are:
 							Maximum length is 15 characters.
 	-c, --container <dprc.X>                        Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
 	-s, --mem-size=<number>				Size of the memory used for internal buffers expressed as number of
-							256byte buffers.
+							256byte buffers. The default value depends on the number of interfaces.
 
 Usage examples:
 	ls-addsw
@@ -586,7 +586,7 @@ process_addsw() {
 	max_fdb_mc_groups=32
 	# Size of the memory used for internal buffers expressed as number of
 	# 256byte buffers.
-	mem_size=32
+	mem_size=0
 	# dpsw object label
 	label=
 	# Endpoint objects provided as argument
