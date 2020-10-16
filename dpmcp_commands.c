@@ -43,7 +43,7 @@
 #include "mc_v9/fsl_dpmcp.h"
 #include "mc_v10/fsl_dpmcp.h"
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * dpmcp info command options

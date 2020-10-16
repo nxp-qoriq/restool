@@ -52,7 +52,7 @@
 	DPRC_CFG_OPT_IRQ_CFG_ALLOWED |		\
 	DPRC_CFG_OPT_PL_ALLOWED)
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * dprc sync command options

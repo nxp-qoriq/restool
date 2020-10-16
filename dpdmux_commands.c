@@ -47,7 +47,7 @@
 	DPDMUX_OPT_BRIDGE_EN |		\
 	DPDMUX_OPT_CLS_MASK_SUPPORT)
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * dpdmux info command options

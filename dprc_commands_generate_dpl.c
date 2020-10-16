@@ -191,7 +191,7 @@ static struct container_list *container_head;
 static struct obj_list *obj_head;
 static struct conn_list *conn_head;
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * compare_insert_obj - compare the newly added object node with existing ones,
@@ -275,7 +275,7 @@ static int find_all_obj_desc(uint32_t dprc_id,
 
 	int num_child_devices;
 	int error = 0;
-	enum mc_cmd_status mc_status;
+	static enum mc_cmd_status mc_status;
 	struct container_list *prev_cont;
 	struct container_list *curr_cont;
 	struct dprc_attributes dprc_attr;

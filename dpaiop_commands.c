@@ -44,7 +44,7 @@
 #include "mc_v9/fsl_dpaiop.h"
 #include "mc_v10/fsl_dpaiop.h"
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * dpaiop info command options

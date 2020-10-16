@@ -51,7 +51,7 @@
 	DPSW_OPT_METERING_EN |		\
 	DPSW_OPT_LAG_DIS)
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * dpsw info command options

@@ -44,7 +44,7 @@
 #include "mc_v9/fsl_dpci.h"
 #include "mc_v10/fsl_dpci.h"
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * dpci info command options

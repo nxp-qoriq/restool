@@ -73,7 +73,7 @@
 	DPNI_OPT_SHARED_HASH_KEY |			\
 	DPNI_OPT_SHARED_FS)
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * max_dist: Maximum distribution size for Rx traffic class;

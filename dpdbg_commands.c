@@ -41,7 +41,7 @@
 #include "utils.h"
 #include "mc_v10/fsl_dpdbg.h"
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 enum dpdbg_info_options {
 	INFO_OPT_HELP = 0,

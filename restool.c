@@ -360,7 +360,7 @@ int find_target_obj_desc(uint32_t dprc_id, uint16_t dprc_handle,
 {
 	int num_child_devices;
 	int error = 0;
-	enum mc_cmd_status mc_status;
+	static enum mc_cmd_status mc_status;
 
 	assert(nesting_level <= MAX_DPRC_NESTING);
 
@@ -492,7 +492,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 	uint16_t obj_handle;
 	uint32_t irq_mask;
 	uint32_t irq_status;
-	enum mc_cmd_status mc_status;
+	static enum mc_cmd_status mc_status;
 	int error = 0;
 
 	if (strcmp(target_obj_desc->type, "dprc") == 0 &&
@@ -816,7 +816,7 @@ int parse_object_name(const char *obj_name, char *expected_obj_type,
 int open_dprc(uint32_t dprc_id, uint16_t *dprc_handle)
 {
 	int error;
-	enum mc_cmd_status mc_status;
+	static enum mc_cmd_status mc_status;
 
 	error = dprc_open(&restool.mc_io, 0,
 			  dprc_id,
@@ -1325,7 +1325,7 @@ int main(int argc, char *argv[])
 	const char *cmd_name;
 	bool mc_io_initialized = false;
 	bool root_dprc_opened = false;
-	enum mc_cmd_status mc_status;
+	static enum mc_cmd_status mc_status;
 	bool talk_to_mc = true;
 
 	#ifdef DEBUG

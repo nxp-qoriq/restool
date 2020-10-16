@@ -42,7 +42,7 @@
 #include "mc_v9/fsl_dpdmai.h"
 #include "mc_v10/fsl_dpdmai.h"
 
-enum mc_cmd_status mc_status;
+static enum mc_cmd_status mc_status;
 
 /**
  * dpdmai info command options
