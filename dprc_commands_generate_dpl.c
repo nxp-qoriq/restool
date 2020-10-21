@@ -133,7 +133,8 @@ struct dpni_config {
 	DPSW_OPT_METERING_EN |		\
 	DPSW_OPT_LAG_DIS |		\
 	DPSW_OPT_BP_PER_IF | \
-	DPSW_OPT_VLAN_MISS)
+	DPSW_OPT_VLAN_MISS |		\
+	DPSW_OPT_FILTER_RCV_UNICAST)
 
 
 /* dpl stuff */
@@ -2326,6 +2327,11 @@ static void parse_dpsw_options(FILE *fp, uint64_t options)
 	if (options & DPSW_OPT_VLAN_MISS) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPSW_OPT_VLAN_MISS\", ");
+	}
+
+	if (options & DPSW_OPT_FILTER_RCV_UNICAST) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPSW_OPT_FILTER_RCV_UNICAST\", ");
 	}
 
 	len = strlen(buf);

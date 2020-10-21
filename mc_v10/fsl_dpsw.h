@@ -67,6 +67,10 @@ int dpsw_close_v10(struct fsl_mc_io *mc_io,
  * VLAN miss action is reprogrammed to look-up in FDB
  */
 #define DPSW_OPT_VLAN_MISS		0x0000000000000200ULL
+/**
+ * Filter unicast frames sent back on the receiving interface
+ */
+#define DPSW_OPT_FILTER_RCV_UNICAST	0x0000000000000400ULL
 
 /**
  * struct dpsw_cfg - DPSW configuration

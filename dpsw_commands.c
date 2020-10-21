@@ -51,7 +51,8 @@
 	DPSW_OPT_METERING_EN |		\
 	DPSW_OPT_LAG_DIS |		\
 	DPSW_OPT_BP_PER_IF | \
-	DPSW_OPT_VLAN_MISS)
+	DPSW_OPT_VLAN_MISS |		\
+	DPSW_OPT_FILTER_RCV_UNICAST)
 
 enum mc_cmd_status mc_status;
 
@@ -261,6 +262,7 @@ static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPSW_OPT_LAG_DIS),
 	OPTION_MAP_ENTRY(DPSW_OPT_BP_PER_IF),
 	OPTION_MAP_ENTRY(DPSW_OPT_VLAN_MISS),
+	OPTION_MAP_ENTRY(DPSW_OPT_FILTER_RCV_UNICAST),
 };
 static unsigned int options_num = ARRAY_SIZE(options_map);
 
@@ -312,6 +314,9 @@ static void print_dpsw_options(uint64_t options)
 
 	if (options & DPSW_OPT_VLAN_MISS)
 		printf("\tDPSW_OPT_VLAN_MISS\n");
+
+	if (options & DPSW_OPT_FILTER_RCV_UNICAST)
+		printf("\tDPSW_OPT_FILTER_RCV_UNICAST\n");
 }
 
 static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs)
@@ -1016,6 +1021,7 @@ static int cmd_dpsw_create_v10(void)
 		"	DPSW_OPT_LAG_DIS\n"
 		"	DPSW_OPT_BP_PER_IF\n"
 		"	DPSW_OPT_VLAN_MISS\n"
+		"	DPSW_OPT_FILTER_RCV_UNICAST\n"
 		"--max-vlans=<number>\n"
 		"	Maximum number of VLAN's. Default is 16.\n"
 		"--max-fdbs=<number>\n"
