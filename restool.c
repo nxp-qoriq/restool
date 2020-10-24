@@ -1052,7 +1052,7 @@ static struct object_command *get_obj_cmd(const char *obj_type,
 	unsigned int i;
 	const struct object_cmd_parser *obj_cmd_parser = NULL;
 	const struct obj_command_versions *obj_cmd_versions;
-	struct object_command *obj_commands;
+	struct object_command *obj_commands = NULL;
 	struct object_command *obj_cmd = NULL;
 	uint16_t obj_version;
 
@@ -1194,9 +1194,9 @@ out:
 static int get_device_file(void)
 {
 	int num_dev_files = 0;
+	char *device = NULL;
 	struct dirent *dir;
 	int error = 0;
-	char *device;
 	int num_char;
 	long val;
 	DIR *d;
@@ -1274,7 +1274,8 @@ static int get_device_file(void)
 	}
 
 out_free_device:
-	free(device);
+	if (device)
+		free(device);
 out:
 	return error;
 }

@@ -489,7 +489,7 @@ static int list_dprc(uint32_t dprc_id, uint16_t dprc_handle,
 	}
 
 	for (int i = 0; i < num_child_devices; i++) {
-		struct dprc_obj_desc obj_desc;
+		struct dprc_obj_desc obj_desc = {0};
 		uint16_t child_dprc_handle;
 		int error2;
 
@@ -1548,7 +1548,7 @@ static int do_dprc_assign_or_unassign(const char *usage_msg, bool do_assign)
 				goto out;
 			}
 
-			struct dprc_obj_desc obj_desc;
+			struct dprc_obj_desc obj_desc = {0};
 
 			error = lookup_obj_desc(do_assign ? parent_dprc_id :
 							    child_dprc_id,

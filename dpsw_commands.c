@@ -1152,7 +1152,7 @@ static int update_dpsw(const char *usage_msg)
 {
 	long id_if = -1, enable = -1, threshold = -1;
 	char *str, changed_congestion_unit = 0;
-	enum dpsw_congestion_unit units;
+	enum dpsw_congestion_unit units = {0};
 	struct dpsw_attr_v10 dpsw_attr;
 	struct dpsw_taildrop_cfg cfg;
 	uint16_t dpsw_handle;

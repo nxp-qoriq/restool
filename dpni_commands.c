@@ -1336,7 +1336,7 @@ static int create_dpni_v9(const char *usage_msg)
 	}
 
 
-	memset(&dpni_attr, 0, sizeof(struct dpni_attr));
+	memset(&dpni_attr, 0, sizeof(struct dpni_attr_v9));
 	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle,
 				       &dpni_attr, &dpni_extended_cfg);
 	if (error < 0) {
