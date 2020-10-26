@@ -252,7 +252,8 @@ int dpdbg_dump_v10(struct fsl_mc_io *mc_io,
 	cmd.header = mc_encode_cmd_header(DPDBG_CMDID_DUMP, cmd_flags, token);
 	cmd_params = (struct dpdbg_cmd_dump *)cmd.params;
 	cmd_params->id = cpu_to_le32(obj_id);
-	strncpy((char *)(cmd_params->type), (char *)obj_type, OBJ_TYPE_LENGTH);
+	strncpy((char *)(cmd_params->type), (char *)obj_type, OBJ_TYPE_LENGTH - 1);
+	cmd_params->type[OBJ_TYPE_LENGTH - 1] = '\0';
 
 	/* send command to MC */
 	err = mc_send_command(mc_io, &cmd);
@@ -288,7 +289,8 @@ int dpdbg_set_v10(struct fsl_mc_io *mc_io,
 	cmd_params->state = cpu_to_le32(state);
 	strncpy((char *)(cmd_params->module),
 			(char *)module,
-			MODULE_NAME_LENGTH);
+			MODULE_NAME_LENGTH - 1);
+	cmd_params->module[MODULE_NAME_LENGTH - 1] = '\0';
 
 	/* send command to MC */
 	err = mc_send_command(mc_io, &cmd);

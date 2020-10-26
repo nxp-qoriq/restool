@@ -386,9 +386,11 @@ static int find_all_obj_desc(uint32_t dprc_id,
 			}
 
 			curr_obj->next = NULL;
-			strncpy(curr_obj->type, obj_desc.type, 16);
+			strncpy(curr_obj->type, obj_desc.type, EP_OBJ_TYPE_MAX_LEN - 1);
+			curr_obj->type[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 			curr_obj->id = obj_desc.id;
-			strncpy(curr_obj->label, obj_desc.label, 16);
+			strncpy(curr_obj->label, obj_desc.label, EP_OBJ_TYPE_MAX_LEN - 1);
+			curr_obj->label[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 
 			struct obj_list *curr_obj2 =
 				malloc(sizeof(struct obj_list));
@@ -399,9 +401,11 @@ static int find_all_obj_desc(uint32_t dprc_id,
 			}
 
 			curr_obj2->next = NULL;
-			strncpy(curr_obj2->type, obj_desc.type, 16);
+			strncpy(curr_obj2->type, obj_desc.type, EP_OBJ_TYPE_MAX_LEN - 1);
+			curr_obj2->type[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 			curr_obj2->id = obj_desc.id;
-			strncpy(curr_obj2->label, obj_desc.label, 16);
+			strncpy(curr_obj2->label, obj_desc.label, EP_OBJ_TYPE_MAX_LEN - 1);
+			curr_obj2->label[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 
 			error = compare_insert_obj(&obj_head, curr_obj);
 			if (error)
@@ -1765,11 +1769,10 @@ static int parse_endpoint_dpl(struct obj_list *curr_obj, uint16_t num_ifs)
 	for (k = 0; k < num_ifs; ++k) {
 		memset(&endpoint1, 0, sizeof(struct dprc_endpoint));
 		memset(&endpoint2, 0, sizeof(struct dprc_endpoint));
-		strncpy(endpoint1.type, curr_obj->type, EP_OBJ_TYPE_MAX_LEN);
-		endpoint1.type[EP_OBJ_TYPE_MAX_LEN] = '\0';
 		endpoint1.id = curr_obj->id;
 		endpoint1.if_id = k;
-
+		strcpy(endpoint1.type, curr_obj->type);
+		endpoint1.type[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 		error = dprc_get_connection(&restool.mc_io, 0,
 					restool.root_dprc_handle,
 					&endpoint1,
@@ -1795,11 +1798,11 @@ static int parse_endpoint_dpl(struct obj_list *curr_obj, uint16_t num_ifs)
 				}
 				curr_conn->next = NULL;
 				strncpy(curr_conn->type1, endpoint1.type,
-					EP_OBJ_TYPE_MAX_LEN);
+					EP_OBJ_TYPE_MAX_LEN - 1);
+				curr_conn->type1[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 				strncpy(curr_conn->type2, endpoint2.type,
-					EP_OBJ_TYPE_MAX_LEN);
-				curr_conn->type1[EP_OBJ_TYPE_MAX_LEN] = '\0';
-				curr_conn->type2[EP_OBJ_TYPE_MAX_LEN] = '\0';
+					EP_OBJ_TYPE_MAX_LEN - 1);
+				curr_conn->type2[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 				curr_conn->id1 = endpoint1.id;
 				curr_conn->id2 = endpoint2.id;
 				if (strcmp(curr_obj->type, "dpni") == 0)
@@ -1826,11 +1829,11 @@ static int parse_endpoint_dpl(struct obj_list *curr_obj, uint16_t num_ifs)
 				}
 				curr_conn->next = NULL;
 				strncpy(curr_conn->type1, endpoint1.type,
-					EP_OBJ_TYPE_MAX_LEN);
+					EP_OBJ_TYPE_MAX_LEN - 1);
+				curr_conn->type1[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 				strncpy(curr_conn->type2, endpoint2.type,
-					EP_OBJ_TYPE_MAX_LEN);
-				curr_conn->type1[EP_OBJ_TYPE_MAX_LEN] = '\0';
-				curr_conn->type2[EP_OBJ_TYPE_MAX_LEN] = '\0';
+					EP_OBJ_TYPE_MAX_LEN - 1);
+				curr_conn->type2[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 				curr_conn->id1 = endpoint1.id;
 				curr_conn->id2 = endpoint2.id;
 				if (strcmp(curr_obj->type, "dpni") == 0)
