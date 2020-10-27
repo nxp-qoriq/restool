@@ -110,14 +110,14 @@ static struct option dpni_info_options[] = {
 		.name = "help",
 		.has_arg = 0,
 		.flag = NULL,
-		.val = 'h',
+		.val = 0,
 	},
 
 	[INFO_OPT_VERBOSE] = {
 		.name = "verbose",
 		.has_arg = 0,
 		.flag = NULL,
-		.val = 'v',
+		.val = 0,
 	},
 
 	{ 0 },
