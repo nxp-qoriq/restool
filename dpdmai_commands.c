@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -80,6 +80,7 @@ enum dpdmai_create_options {
 	CREATE_OPT_PRIORITIES,
 	CREATE_OPT_PARENT_DPRC,
 	CREATE_OPT_NUM_QUEUES,
+	CREATE_OPT_OPTIONS,
 };
 
 static struct option dpdmai_create_options[] = {
@@ -111,10 +112,24 @@ static struct option dpdmai_create_options[] = {
 		.val = 0,
 	},
 
+	[CREATE_OPT_OPTIONS] = {
+		.name = "options",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
 	{ 0 },
 };
 
 C_ASSERT(ARRAY_SIZE(dpdmai_create_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+static struct option_entry options_map[] = {
+	OPTION_MAP_ENTRY(DPDMAI_OPT_CG_PER_PRIORITY),
+};
+static unsigned int options_num = ARRAY_SIZE(options_map);
+
+#define ALL_DPDMAI_OPTS (			\
+	DPDMAI_OPT_CG_PER_PRIORITY)
 
 /**
  * dpdmai destroy command options
@@ -222,6 +237,17 @@ out:
 	return error;
 }
 
+static void print_dpdmai_options(uint32_t options)
+{
+	if ((options & ~ALL_DPDMAI_OPTS) != 0) {
+		printf("\tUnrecognized options found...\n");
+		return;
+	}
+
+	if (options & DPDMAI_OPT_CG_PER_PRIORITY)
+		printf("\tDPDMAI_OPT_CG_PER_PRIORITY\n");
+}
+
 static int print_dpdmai_attr_v10(uint32_t dpdmai_id,
 				 struct dprc_obj_desc *target_obj_desc)
 {
@@ -273,6 +299,10 @@ static int print_dpdmai_attr_v10(uint32_t dpdmai_id,
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf("number of priorities: %u\n", dpdmai_attr.num_of_priorities);
 	printf("number of queues: %u\n", dpdmai_attr.num_of_queues);
+	printf("dpdmai.options value is: %#llx\n",
+	       (unsigned long long)dpdmai_attr.options);
+	print_dpdmai_options(dpdmai_attr.options);
+
 	print_obj_label(target_obj_desc);
 
 	error = 0;
@@ -458,6 +488,7 @@ static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
 {
 	uint32_t dpdmai_id, dprc_id;
 	uint16_t dprc_handle;
+	uint64_t options;
 	bool dprc_opened;
 	long value;
 	int error;
@@ -489,6 +520,22 @@ static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
 		if (error)
 			return error;
 		dpdmai_cfg->num_queues = (uint8_t)value;
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+		error = parse_generic_create_options(
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
+				&options,
+				options_map,
+				options_num);
+		if (error < 0) {
+			DEBUG_PRINTF(
+				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
+				error);
+			return error;
+		}
+		dpdmai_cfg->adv.options = (uint32_t)options;
 	}
 
 	error = dpdmai_create_v10(&restool.mc_io, dprc_handle, 0,
@@ -598,6 +645,9 @@ static int cmd_dpdmai_create_v10(void)
 		"   Valid values for <priorityN> are 1-8.\n"
 		"--num-queues=<number>\n"
 		"   Valid values are [1, #num-cores]\n"
+		"--options=<options-mask>\n"
+		"   Where <options-mask> is a comma separated list of DPDMAI options:\n"
+		"	DPDMAI_OPT_CG_PER_PRIORITY\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"

@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -144,6 +144,7 @@ int dpdmai_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->num_queues = cfg->num_queues;
 	cmd_params->priorities[0] = cfg->priorities[0];
 	cmd_params->priorities[1] = cfg->priorities[1];
+	cmd_params->options = cpu_to_le32(cfg->adv.options);
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -309,6 +310,7 @@ int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,
 	attr->id = le32_to_cpu(rsp_params->id);
 	attr->num_of_priorities = rsp_params->num_of_priorities;
 	attr->num_of_queues = rsp_params->num_of_queues;
+	attr->options = le32_to_cpu(rsp_params->options);
 
 	return 0;
 }

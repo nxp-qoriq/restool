@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2020 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -51,6 +51,12 @@ int dpdmai_close_v10(struct fsl_mc_io *mc_io,
 		     uint16_t token);
 
 /**
+ * Enable individual Congestion Groups usage per each priority queue
+ * If this option is not enabled then only one CG is used for all priority queues
+ */
+#define DPDMAI_OPT_CG_PER_PRIORITY             0x00000001
+
+/**
  * struct dpdmai_cfg_v10 - Structure representing DPDMAI configuration
  * @priorities: Priorities for the DMA hardware processing; valid priorities are
  *	configured with values 1-8; the entry following last valid entry
@@ -59,6 +65,9 @@ int dpdmai_close_v10(struct fsl_mc_io *mc_io,
 struct dpdmai_cfg_v10 {
 	uint8_t num_queues;
 	uint8_t priorities[DPDMAI_PRIO_NUM];
+	struct {
+		uint32_t options;
+	} adv;
 };
 
 int dpdmai_create_v10(struct fsl_mc_io *mc_io,
@@ -88,11 +97,13 @@ int dpdmai_get_irq_status_v10(struct fsl_mc_io *mc_io,
  * struct dpdmai_attr_v10 - Structure representing DPDMAI attributes
  * @id: DPDMAI object ID
  * @num_of_priorities: number of priorities
+ * @options: dpdmai options
  */
 struct dpdmai_attr_v10 {
 	int id;
 	uint8_t num_of_priorities;
 	uint8_t num_of_queues;
+	uint32_t options;
 };
 
 int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,
