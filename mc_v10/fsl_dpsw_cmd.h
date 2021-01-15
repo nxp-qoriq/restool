@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -39,9 +39,11 @@
 
 /* Command versioning */
 #define DPSW_CMD_BASE_VERSION	1
+#define DPSW_CMD_VERSION_2	2
 #define DPSW_CMD_ID_OFFSET	4
 
 #define DPSW_CMD(id)	((id << DPSW_CMD_ID_OFFSET) | DPSW_CMD_BASE_VERSION)
+#define DPSW_CMD_V2(id)	(((id) << DPSW_CMD_ID_OFFSET) | DPSW_CMD_VERSION_2)
 
 /* Command IDs */
 #define DPSW_CMDID_CLOSE                        DPSW_CMD(0x800)
@@ -55,6 +57,8 @@
 
 #define DPSW_CMDID_IF_SET_TAILDROP		DPSW_CMD(0x0A8)
 #define DPSW_CMDID_IF_GET_TAILDROP		DPSW_CMD(0x0A9)
+
+#define DPSW_CMDID_IF_GET_COUNTER               DPSW_CMD_V2(0x034)
 
 /* Macros for accessing command fields smaller than 1byte */
 #define DPSW_MASK(field)        \
@@ -178,6 +182,20 @@ struct dpsw_rsp_get_taildrop {
 	uint8_t units;
 	uint8_t pad4;
 	uint32_t threshold;
+};
+
+#define DPSW_COUNTER_TYPE_SHIFT		0
+#define DPSW_COUNTER_TYPE_SIZE		5
+
+struct dpsw_cmd_if_get_counter {
+	uint16_t if_id;
+	/* from LSB: type:5 */
+	uint8_t type;
+};
+
+struct dpsw_rsp_if_get_counter {
+	uint64_t pad;
+	uint64_t counter;
 };
 
 #pragma pack(pop)

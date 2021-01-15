@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -433,3 +433,45 @@ int dpsw_if_get_taildrop(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t t
 	return err;
 }
 
+/**
+ * dpsw_if_get_counter() - Get specific counter of particular interface
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @if_id:	Interface Identifier
+ * @type:	Counter type
+ * @counter:	return value
+ *
+ * Return:	Completion status. '0' on Success; Error code otherwise.
+ */
+int dpsw_if_get_counter(struct fsl_mc_io *mc_io,
+			uint32_t cmd_flags,
+			uint16_t token,
+			uint16_t if_id,
+			enum dpsw_counter type,
+			uint64_t *counter)
+{
+	struct mc_command cmd = { 0 };
+	struct dpsw_cmd_if_get_counter *cmd_params;
+	struct dpsw_rsp_if_get_counter *rsp_params;
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_GET_COUNTER,
+					  cmd_flags,
+					  token);
+	cmd_params = (struct dpsw_cmd_if_get_counter *)cmd.params;
+	cmd_params->if_id = cpu_to_le16(if_id);
+	dpsw_set_field(cmd_params->type, COUNTER_TYPE, type);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dpsw_rsp_if_get_counter *)cmd.params;
+	*counter = le64_to_cpu(rsp_params->counter);
+
+	return 0;
+}

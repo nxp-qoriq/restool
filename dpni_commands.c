@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2020 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -433,14 +433,14 @@ static const char *dpni_stats_v10[][DPNI_STATS_PER_PAGE_V10] = {
 	"ingress_multicast_frames",
 	"ingress_multicast_bytes",
 	"ingress_broadcast_frames",
-	"ingress_broadcast_bytes",
+	"ingress_broadcast_bytes"
 	}, {
 	"egress_all_frames",
 	"egress_all_bytes",
 	"egress_multicast_frames",
 	"egress_multicast_bytes",
 	"egress_broadcast_frames",
-	"egress_broadcast_bytes",
+	"egress_broadcast_bytes"
 	}, {
 	"ingress_filtered_frames",
 	"ingress_discarded_frames",
@@ -448,7 +448,27 @@ static const char *dpni_stats_v10[][DPNI_STATS_PER_PAGE_V10] = {
 	"egress_discarded_frames",
 	"egress_confirmed_frames",
 	""
-	},
+	}, {
+	"ceetm_dequeue_bytes",
+	"ceetm_dequeue_frames",
+	"ceetm_reject_bytes",
+	"ceetm_reject_frames",
+	""
+	}, {
+	"cgr_reject_frames",
+	"cgr_reject_bytes",
+	""
+	}, {
+	"policer_cnt_red",
+	"policer_cnt_yellow",
+	"policer_cnt_green",
+	"policer_cnt_re_red",
+	"policer_cnt_re_yellow",
+	""
+	}, {
+	"tx_pending_frames_cnt",
+	""
+	}
 };
 
 static int cmd_dpni_help(void)
@@ -884,7 +904,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	printf("qos_key_size: %u\n", (uint32_t)dpni_attr.qos_key_size);
 	printf("fs_key_size: %u\n", (uint32_t)dpni_attr.fs_key_size);
 
-	for (page = 0; page < 3; page++) {
+	for (page = 0; page < 7; page++) {
 		error = dpni_get_statistics_v10(&restool.mc_io, 0,
 						dpni_handle, page, 0, &dpni_stats);
 		dpni_print_stats(dpni_stats_v10[page], dpni_stats);

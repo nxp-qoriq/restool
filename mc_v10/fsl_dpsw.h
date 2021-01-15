@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -184,5 +184,55 @@ int dpsw_if_set_taildrop(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t t
 
 int dpsw_if_get_taildrop(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
 			 uint16_t if_id, uint8_t tc, struct dpsw_taildrop_cfg *cfg);
+
+/**
+ * enum dpsw_counter  - Counters types
+ * @DPSW_CNT_ING_FRAME: Counts ingress frames
+ * @DPSW_CNT_ING_BYTE: Counts ingress bytes
+ * @DPSW_CNT_ING_FLTR_FRAME: Counts filtered ingress frames
+ * @DPSW_CNT_ING_FRAME_DISCARD: Counts discarded ingress frame
+ * @DPSW_CNT_ING_MCAST_FRAME: Counts ingress multicast frames
+ * @DPSW_CNT_ING_MCAST_BYTE: Counts ingress multicast bytes
+ * @DPSW_CNT_ING_BCAST_FRAME: Counts ingress broadcast frames
+ * @DPSW_CNT_ING_BCAST_BYTES: Counts ingress broadcast bytes
+ * @DPSW_CNT_EGR_FRAME: Counts egress frames
+ * @DPSW_CNT_EGR_BYTE: Counts eEgress bytes
+ * @DPSW_CNT_EGR_FRAME_DISCARD: Counts discarded egress frames
+ * @DPSW_CNT_EGR_STP_FRAME_DISCARD: Counts egress STP discarded frames
+ * @DPSW_CNT_ING_NO_BUFFER_DISCARD: Counts ingress no buffer discarded frames
+ */
+enum dpsw_counter {
+	DPSW_CNT_ING_FRAME = 0x0,
+	DPSW_CNT_ING_BYTE = 0x1,
+	DPSW_CNT_ING_FLTR_FRAME = 0x2,
+	DPSW_CNT_ING_FRAME_DISCARD = 0x3,
+	DPSW_CNT_ING_MCAST_FRAME = 0x4,
+	DPSW_CNT_ING_MCAST_BYTE = 0x5,
+	DPSW_CNT_ING_BCAST_FRAME = 0x6,
+	DPSW_CNT_ING_BCAST_BYTES = 0x7,
+	DPSW_CNT_EGR_FRAME = 0x8,
+	DPSW_CNT_EGR_BYTE = 0x9,
+	DPSW_CNT_EGR_FRAME_DISCARD = 0xa,
+	DPSW_CNT_EGR_STP_FRAME_DISCARD = 0xb,
+	DPSW_CNT_ING_NO_BUFFER_DISCARD = 0xc,
+};
+
+/**
+ * dpsw_if_get_counter() - Get specific counter of particular interface
+ * @mc_io:	Pointer to MC portal's I/O object
+ * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:	Token of DPSW object
+ * @if_id:	Interface Identifier
+ * @type:	Counter type
+ * @counter:	return value
+ *
+ * Return:	Completion status. '0' on Success; Error code otherwise.
+ */
+int dpsw_if_get_counter(struct fsl_mc_io *mc_io,
+			uint32_t cmd_flags,
+			uint16_t token,
+			uint16_t if_id,
+			enum dpsw_counter type,
+			uint64_t *counter);
 
 #endif /* __FSL_DPSW_H */

@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -80,6 +80,22 @@ static struct option dpsw_info_options[] = {
 };
 
 C_ASSERT(ARRAY_SIZE(dpsw_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+
+static const char *const dpsw_counter_stats[] = {
+	"dpsw_cnt_ing_frame",
+	"dpsw_cnt_ing_byte",
+	"dpsw_cnt_ing_fltr_frame",
+	"dpsw_cnt_ing_frame_discard",
+	"dpsw_cnt_ing_mcast_frame",
+	"dpsw_cnt_ing_mcast_byte",
+	"dpsw_cnt_ing_bcast_frame",
+	"dpsw_cnt_ing_bcast_bytes",
+	"dpsw_cnt_egr_frame",
+	"dpsw_cnt_egr_byte",
+	"dpsw_cnt_egr_frame_discard",
+	"dpsw_cnt_egr_stp_frame_discard",
+	"dpsw_cnt_ing_no_buffer_discard"
+};
 
 /**
  * dpsw create command options
@@ -296,7 +312,8 @@ static void print_dpsw_options(uint64_t options)
 		printf("\tDPSW_OPT_LAG_DIS\n");
 }
 
-static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs)
+static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs,
+			       uint16_t token)
 {
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
@@ -305,19 +322,12 @@ static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs)
 	int error = 0;
 	int k;
 	uint32_t dpsw_id;
-	uint16_t dpsw_handle;
+	int counter_iterator;
+	uint64_t counter;
 
 	error = parse_object_name(restool.obj_name, "dpsw", &dpsw_id);
 	if (error)
 		return error;
-
-	error = dpsw_open(&restool.mc_io, 0, dpsw_id, &dpsw_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
 
 	printf("endpoints:\n");
 	for (k = 0; k < num_ifs; ++k) {
@@ -361,7 +371,7 @@ static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs)
 		}
 		if (error == 0) {
 			error = dpsw_if_get_taildrop(&restool.mc_io,
-					0, dpsw_handle, endpoint1.if_id,
+					0, token, endpoint1.if_id,
 					0, &cfg);
 			if (error)
 				return error;
@@ -384,9 +394,22 @@ static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs)
 			}
 			printf("\tTaildrop threshold: %d\n", cfg.threshold);
 		}
-	}
 
-	dpsw_close(&restool.mc_io, 0, dpsw_handle);
+		// print the interface stats
+		for (counter_iterator = DPSW_CNT_ING_FRAME;
+		     counter_iterator <= DPSW_CNT_ING_NO_BUFFER_DISCARD;
+		     counter_iterator++) {
+			error = dpsw_if_get_counter(&restool.mc_io, 0,
+					token, k, counter_iterator,
+					&counter);
+			if (error)
+				return error;
+
+			printf("\t%s: %ld\n",
+				dpsw_counter_stats[counter_iterator],
+				counter);
+		}
+	}
 	return 0;
 }
 
@@ -430,7 +453,7 @@ static int print_dpsw_attr_v9(uint32_t dpsw_id,
 	printf("dpsw id: %d\n", dpsw_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpsw_endpoint(dpsw_id, dpsw_attr.num_ifs);
+	print_dpsw_endpoint(dpsw_id, dpsw_attr.num_ifs, dpsw_handle);
 	printf("dpsw_attr.options value is: %#llx\n",
 	       (unsigned long long)dpsw_attr.options);
 	print_dpsw_options(dpsw_attr.options);
@@ -510,7 +533,7 @@ static int print_dpsw_attr_v10(uint32_t dpsw_id,
 	printf("dpsw id: %d\n", dpsw_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpsw_endpoint(dpsw_id, dpsw_attr.num_ifs);
+	print_dpsw_endpoint(dpsw_id, dpsw_attr.num_ifs, dpsw_handle);
 	printf("dpsw_attr.options value is: %#llx\n",
 	       (unsigned long long)dpsw_attr.options);
 	print_dpsw_options(dpsw_attr.options);
