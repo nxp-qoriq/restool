@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -51,6 +51,36 @@ int dpdmux_close_v10(struct fsl_mc_io *mc_io,
 		     uint16_t token);
 
 #define DPDMUX_OPT_CLS_MASK_SUPPORT		0x0000000000000020ULL
+
+/**
+ * enum dpdmux_counter_type - Counter types
+ * @DPDMUX_CNT_ING_FRAME: Counts ingress frames
+ * @DPDMUX_CNT_ING_BYTE: Counts ingress bytes
+ * @DPDMUX_CNT_ING_FLTR_FRAME: Counts filtered ingress frames
+ * @DPDMUX_CNT_ING_FRAME_DISCARD: Counts discarded ingress frames
+ * @DPDMUX_CNT_ING_MCAST_FRAME: Counts ingress multicast frames
+ * @DPDMUX_CNT_ING_MCAST_BYTE: Counts ingress multicast bytes
+ * @DPDMUX_CNT_ING_BCAST_FRAME: Counts ingress broadcast frames
+ * @DPDMUX_CNT_ING_BCAST_BYTES: Counts ingress broadcast bytes
+ * @DPDMUX_CNT_EGR_FRAME: Counts egress frames
+ * @DPDMUX_CNT_EGR_BYTE: Counts egress bytes
+ * @DPDMUX_CNT_EGR_FRAME_DISCARD: Counts discarded egress frames
+ * @DPDMUX_CNT_ING_NO_BUFFER_DISCARD: Counts ingress no buffer discard frames
+ */
+enum dpdmux_counter_type {
+	DPDMUX_CNT_ING_FRAME = 0x0,
+	DPDMUX_CNT_ING_BYTE = 0x1,
+	DPDMUX_CNT_ING_FLTR_FRAME = 0x2,
+	DPDMUX_CNT_ING_FRAME_DISCARD = 0x3,
+	DPDMUX_CNT_ING_MCAST_FRAME = 0x4,
+	DPDMUX_CNT_ING_MCAST_BYTE = 0x5,
+	DPDMUX_CNT_ING_BCAST_FRAME = 0x6,
+	DPDMUX_CNT_ING_BCAST_BYTES = 0x7,
+	DPDMUX_CNT_EGR_FRAME = 0x8,
+	DPDMUX_CNT_EGR_BYTE = 0x9,
+	DPDMUX_CNT_EGR_FRAME_DISCARD = 0xa,
+	DPDMUX_CNT_ING_NO_BUFFER_DISCARD = 0xb,
+};
 
 /**
  * struct dpdmux_cfg_v10 - DPDMUX configuration parameters
@@ -137,5 +167,12 @@ int dpdmux_get_api_version_v10(struct fsl_mc_io *mc_io,
 			       uint32_t cmd_flags,
 			       uint16_t *major_ver,
 			       uint16_t *minor_ver);
+
+int dpdmux_if_get_counter(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  uint16_t if_id,
+			  enum dpdmux_counter_type counter_type,
+			  uint64_t *counter);
 
 #endif /* __FSL_DPDMUX_H */

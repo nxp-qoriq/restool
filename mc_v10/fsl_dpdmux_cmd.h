@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -56,6 +56,8 @@
 #define DPDMUX_CMDID_GET_IRQ_MASK		DPDMUX_CMD(0x015)
 #define DPDMUX_CMDID_GET_IRQ_STATUS		DPDMUX_CMD(0x016)
 
+#define DPDMUX_CMDID_IF_GET_COUNTER		DPDMUX_CMD(0x0b2)
+
 #define DPDMUX_MASK(field)        \
 	GENMASK(DPDMUX_##field##_SHIFT + DPDMUX_##field##_SIZE - 1, \
 		DPDMUX_##field##_SHIFT)
@@ -65,6 +67,17 @@
 	(((var) & DPDMUX_MASK(field)) >> DPDMUX_##field##_SHIFT)
 
 #pragma pack(push, 1)
+
+struct dpdmux_cmd_if_get_counter {
+	uint16_t if_id;
+	uint8_t counter_type;
+};
+
+struct dpdmux_rsp_if_get_counter {
+	uint64_t pad;
+	uint64_t counter;
+};
+
 struct dpdmux_cmd_open {
 	uint32_t dpdmux_id;
 };
@@ -128,3 +141,4 @@ struct dpdmux_rsp_get_api_version {
 
 #pragma pack(pop)
 #endif /* _FSL_DPDMUX_CMD_H */
+

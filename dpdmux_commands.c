@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -288,13 +288,30 @@ static int cmd_dpdmux_help(void)
 	return 0;
 }
 
-static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs)
+static const char * const dpdmux_counters[] = {
+	"ingress_all_frames",
+	"ingress_all_bytes",
+	"ingress_filtered_frames",
+	"ingress_discarded_frames",
+	"ingress_multicast_frames",
+	"ingress_multicast_bytes",
+	"ingress_broadcast_frames",
+	"ingress_broadcast_bytes",
+	"egress_all_frames",
+	"egress_all_bytes",
+	"egress_discarded_frames",
+	"ingress_nobuffer_discards"
+	};
+
+static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs,
+				uint16_t token)
 {
 	struct dprc_endpoint endpoint1;
 	struct dprc_endpoint endpoint2;
 	int state;
 	int error = 0;
 	int k;
+	uint64_t count = 0;
 
 	printf("endpoints:\n");
 	for (k = 0; k < num_ifs; ++k) {
@@ -314,6 +331,9 @@ static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs)
 		if (error == 0 && state == -1) {
 			printf("\tconnection: none\n");
 			printf("\tlink state: n/a\n");
+			// Show interface 0's stats only if uplink is connected
+			if (k == 0)
+				continue;
 		} else if (error == 0) {
 			if (strcmp(endpoint2.type, "dpsw") == 0 ||
 			    strcmp(endpoint2.type, "dpdmux") == 0) {
@@ -336,9 +356,12 @@ static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs)
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
 				mc_status_to_string(mc_status), mc_status);
 		}
-
+		for (uint32_t i = 0; i < ARRAY_SIZE(dpdmux_counters); ++i) {
+			dpdmux_if_get_counter(&restool.mc_io, 0,
+					token, k, i, &count);
+			printf("\t%s: %lu\n", dpdmux_counters[i], count);
+		}
 	}
-
 	return 0;
 }
 
@@ -434,7 +457,8 @@ static int print_dpdmux_attr_v9(uint32_t dpdmux_id,
 	printf("dpdmux id: %d\n", dpdmux_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpdmux_endpoint(dpdmux_id, dpdmux_attr.num_ifs + 1);
+	print_dpdmux_endpoint(dpdmux_id, dpdmux_attr.num_ifs + 1,
+				dpdmux_handle);
 	printf("dpdmux_attr.options value is: %#llx\n",
 	       (unsigned long long)dpdmux_attr.options);
 	print_dpdmux_options(dpdmux_attr.options);
@@ -514,7 +538,7 @@ static int print_dpdmux_attr_v10(uint32_t dpdmux_id,
 	printf("dpdmux id: %d\n", dpdmux_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpdmux_endpoint(dpdmux_id, dpdmux_attr.num_ifs + 1);
+	print_dpdmux_endpoint(dpdmux_id, dpdmux_attr.num_ifs + 1, dpdmux_handle);
 	printf("dpdmux_attr.options value is: %#llx\n",
 	       (unsigned long long)dpdmux_attr.options);
 	print_dpdmux_options(dpdmux_attr.options);

@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -352,6 +352,49 @@ int dpdmux_get_api_version_v10(struct fsl_mc_io *mc_io,
 	rsp_params = (struct dpdmux_rsp_get_api_version *)cmd.params;
 	*major_ver = le16_to_cpu(rsp_params->major);
 	*minor_ver = le16_to_cpu(rsp_params->minor);
+
+	return 0;
+}
+
+/**
+ * dpdmux_if_get_counter() - Functions obtains specific counter of an interface
+ * @mc_io: Pointer to MC portal's I/O object
+ * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token: Token of DPDMUX object
+ * @if_id:  Interface Id
+ * @counter_type: counter type
+ * @counter: Returned specific counter information
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpdmux_if_get_counter(struct fsl_mc_io *mc_io,
+			  uint32_t cmd_flags,
+			  uint16_t token,
+			  uint16_t if_id,
+			  enum dpdmux_counter_type counter_type,
+			  uint64_t *counter)
+{
+	struct mc_command cmd = { 0 };
+	struct dpdmux_cmd_if_get_counter *cmd_params;
+	struct dpdmux_rsp_if_get_counter *rsp_params;
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_GET_COUNTER,
+					  cmd_flags,
+					  token);
+	cmd_params = (struct dpdmux_cmd_if_get_counter *)cmd.params;
+	cmd_params->if_id = cpu_to_le16(if_id);
+	cmd_params->counter_type = counter_type;
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dpdmux_rsp_if_get_counter *)cmd.params;
+	*counter = le64_to_cpu(rsp_params->counter);
 
 	return 0;
 }
