@@ -29,6 +29,7 @@ override CFLAGS += -DVERSION=\"${VERSION}\"
 prefix ?= /usr/local
 exec_prefix ?= ${prefix}
 bindir ?= ${exec_prefix}/bin
+bindir_completion ?= /usr/share/bash-completion/completions
 
 all: restool
 
@@ -39,12 +40,13 @@ restool: $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-install: restool scripts/ls-main scripts/ls-append-dpl scripts/ls-debug
+install: restool scripts/ls-main scripts/ls-append-dpl scripts/ls-debug scripts/restool_completion.sh
 	install -D -m 755 restool $(DESTDIR)$(bindir)/restool
 	install -D -m 755 scripts/ls-main $(DESTDIR)$(bindir)/ls-main
 	install -D -m 755 scripts/ls-append-dpl $(DESTDIR)$(bindir)/ls-append-dpl
 	install -D -m 755 scripts/ls-debug $(DESTDIR)$(bindir)/ls-debug
 	$(foreach symlink, $(RESTOOL_SCRIPT_SYMLINKS), sh -c "cd $(DESTDIR)$(bindir) && ln -sf ls-main $(symlink)" ;)
+	install -D -m 755 scripts/restool_completion.sh $(DESTDIR)$(bindir_completion)/restool
 
 clean:
 	rm -f $(OBJ) \
