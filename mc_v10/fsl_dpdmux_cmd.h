@@ -58,6 +58,8 @@
 
 #define DPDMUX_CMDID_IF_GET_COUNTER		DPDMUX_CMD(0x0b2)
 
+#define DPDMUX_CMDID_GET_MAX_FRAME_LENGTH	DPDMUX_CMD(0x0a2)
+
 #define DPDMUX_MASK(field)        \
 	GENMASK(DPDMUX_##field##_SHIFT + DPDMUX_##field##_SIZE - 1, \
 		DPDMUX_##field##_SHIFT)
@@ -137,6 +139,14 @@ struct dpdmux_rsp_get_attr {
 struct dpdmux_rsp_get_api_version {
 	uint16_t major;
 	uint16_t minor;
+};
+
+struct dpdmux_cmd_get_max_frame_len {
+	uint16_t if_id;
+};
+
+struct dpdmux_rsp_get_max_frame_len {
+	uint16_t max_len;
 };
 
 #pragma pack(pop)

@@ -820,6 +820,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	int error = 0;
 	int error2;
 	unsigned int page;
+	uint16_t max_frame_length;
 
 	error = dpni_open_v10(&restool.mc_io, 0, dpni_id, &dpni_handle);
 	if (error < 0) {
@@ -886,6 +887,12 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	link_state.up == 1 ? printf("up\n") : printf("error state\n");
 
 	print_mac_address(mac_addr);
+
+	error = dpni_get_max_frame_length(&restool.mc_io, 0, dpni_handle,
+					  &max_frame_length);
+	if (error)
+		return error;
+	printf("max frame length: %hu\n", max_frame_length);
 
 	printf("dpni_attr.options value is: %#lx\n",
 	       (unsigned long)dpni_attr.options);

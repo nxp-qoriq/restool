@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -517,3 +517,38 @@ int dpni_get_irq_status_v10(struct fsl_mc_io *mc_io,
 	return 0;
 }
 
+/**
+ * dpni_get_max_frame_length() - Get the maximum received frame length.
+ * @mc_io:		Pointer to MC portal's I/O object
+ * @cmd_flags:		Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPNI object
+ * @max_frame_length:	Maximum received frame length (in bytes);
+ *			frame is discarded if its length exceeds this value
+ *
+ * Return:	'0' on Success; Error code otherwise.
+ */
+int dpni_get_max_frame_length(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      uint16_t *max_frame_length)
+{
+	struct mc_command cmd = { 0 };
+	struct dpni_rsp_get_max_frame_length *rsp_params;
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_MAX_FRAME_LENGTH,
+					  cmd_flags,
+					  token);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	/* retrieve response parameters */
+	rsp_params = (struct dpni_rsp_get_max_frame_length *)cmd.params;
+	*max_frame_length = le16_to_cpu(rsp_params->max_frame_length);
+
+	return 0;
+}

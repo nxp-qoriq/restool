@@ -217,22 +217,17 @@ enum dpsw_counter {
 	DPSW_CNT_ING_NO_BUFFER_DISCARD = 0xc,
 };
 
-/**
- * dpsw_if_get_counter() - Get specific counter of particular interface
- * @mc_io:	Pointer to MC portal's I/O object
- * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:	Token of DPSW object
- * @if_id:	Interface Identifier
- * @type:	Counter type
- * @counter:	return value
- *
- * Return:	Completion status. '0' on Success; Error code otherwise.
- */
 int dpsw_if_get_counter(struct fsl_mc_io *mc_io,
 			uint32_t cmd_flags,
 			uint16_t token,
 			uint16_t if_id,
 			enum dpsw_counter type,
 			uint64_t *counter);
+
+int dpsw_if_get_max_frame_length(struct fsl_mc_io *mc_io,
+				 uint32_t cmd_flags,
+				 uint16_t token,
+				 uint16_t if_id,
+				 uint16_t *frame_length);
 
 #endif /* __FSL_DPSW_H */

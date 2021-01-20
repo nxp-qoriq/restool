@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -61,6 +61,8 @@
 #define DPNI_CMDID_GET_LINK_STATE		DPNI_CMD_V2(0x215)
 #define DPNI_CMDID_GET_IRQ_MASK			DPNI_CMD(0x015)
 #define DPNI_CMDID_GET_IRQ_STATUS		DPNI_CMD(0x016)
+
+#define DPNI_CMDID_GET_MAX_FRAME_LENGTH		DPNI_CMD(0x217)
 
 /* Macros for accessing command fields smaller than 1byte */
 #define DPNI_MASK(field)	\
@@ -176,6 +178,10 @@ struct dpni_cmd_get_irq_status {
 
 struct dpni_rsp_get_irq_status {
 	uint32_t status;
+};
+
+struct dpni_rsp_get_max_frame_length {
+	uint16_t max_frame_length;
 };
 
 #pragma pack(pop)

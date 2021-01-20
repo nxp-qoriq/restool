@@ -475,3 +475,42 @@ int dpsw_if_get_counter(struct fsl_mc_io *mc_io,
 
 	return 0;
 }
+
+/**
+ * dpsw_if_get_max_frame_length() - Get Maximum Receive frame length.
+ * @mc_io:		Pointer to MC portal's I/O object
+ * @cmd_flags:		Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token:		Token of DPSW object
+ * @if_id:		Interface Identifier
+ * @frame_length:	Returned maximum Frame Length
+ *
+ * Return:	Completion status. '0' on Success; Error code otherwise.
+ */
+int dpsw_if_get_max_frame_length(struct fsl_mc_io *mc_io,
+				 uint32_t cmd_flags,
+				 uint16_t token,
+				 uint16_t if_id,
+				 uint16_t *frame_length)
+{
+	struct mc_command cmd = { 0 };
+	struct dpsw_cmd_if_get_max_frame_length *cmd_params;
+	struct dpsw_rsp_if_get_max_frame_length *rsp_params;
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPSW_CMDID_IF_GET_MAX_FRAME_LENGTH,
+					  cmd_flags,
+					  token);
+	cmd_params = (struct dpsw_cmd_if_get_max_frame_length *)cmd.params;
+	cmd_params->if_id = cpu_to_le16(if_id);
+
+	/* send command to mc*/
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	rsp_params = (struct dpsw_rsp_if_get_max_frame_length *)cmd.params;
+	*frame_length = le16_to_cpu(rsp_params->frame_length);
+
+	return 0;
+}

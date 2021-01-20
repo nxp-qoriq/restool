@@ -324,6 +324,7 @@ static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs,
 	uint32_t dpsw_id;
 	int counter_iterator;
 	uint64_t counter;
+	uint16_t max_frame_length;
 
 	error = parse_object_name(restool.obj_name, "dpsw", &dpsw_id);
 	if (error)
@@ -394,6 +395,12 @@ static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs,
 			}
 			printf("\tTaildrop threshold: %d\n", cfg.threshold);
 		}
+
+		error = dpsw_if_get_max_frame_length(&restool.mc_io, 0, token,
+						     k, &max_frame_length);
+		if (error)
+			return error;
+		printf("\tmax frame length: %hu\n", max_frame_length);
 
 		// print the interface stats
 		for (counter_iterator = DPSW_CNT_ING_FRAME;

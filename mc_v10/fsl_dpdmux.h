@@ -175,4 +175,10 @@ int dpdmux_if_get_counter(struct fsl_mc_io *mc_io,
 			  enum dpdmux_counter_type counter_type,
 			  uint64_t *counter);
 
+int dpdmux_get_max_frame_length(struct fsl_mc_io *mc_io,
+				uint32_t cmd_flags,
+				uint16_t token,
+				uint16_t if_id,
+				uint16_t *max_frame_length);
+
 #endif /* __FSL_DPDMUX_H */

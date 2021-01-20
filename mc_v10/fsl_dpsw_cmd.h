@@ -59,6 +59,7 @@
 #define DPSW_CMDID_IF_GET_TAILDROP		DPSW_CMD(0x0A9)
 
 #define DPSW_CMDID_IF_GET_COUNTER               DPSW_CMD_V2(0x034)
+#define DPSW_CMDID_IF_GET_MAX_FRAME_LENGTH      DPSW_CMD(0x045)
 
 /* Macros for accessing command fields smaller than 1byte */
 #define DPSW_MASK(field)        \
@@ -196,6 +197,15 @@ struct dpsw_cmd_if_get_counter {
 struct dpsw_rsp_if_get_counter {
 	uint64_t pad;
 	uint64_t counter;
+};
+
+struct dpsw_cmd_if_get_max_frame_length {
+	uint16_t if_id;
+};
+
+struct dpsw_rsp_if_get_max_frame_length {
+	uint16_t pad;
+	uint16_t frame_length;
 };
 
 #pragma pack(pop)

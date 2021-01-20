@@ -312,6 +312,7 @@ static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs,
 	int error = 0;
 	int k;
 	uint64_t count = 0;
+	uint16_t max_frame_length;
 
 	printf("endpoints:\n");
 	for (k = 0; k < num_ifs; ++k) {
@@ -356,6 +357,13 @@ static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs,
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
 				mc_status_to_string(mc_status), mc_status);
 		}
+
+		error = dpdmux_get_max_frame_length(&restool.mc_io, 0, token,
+						    k, &max_frame_length);
+		if (error)
+			return error;
+		printf("\tmax frame length: %hu\n", max_frame_length);
+
 		for (uint32_t i = 0; i < ARRAY_SIZE(dpdmux_counters); ++i) {
 			dpdmux_if_get_counter(&restool.mc_io, 0,
 					token, k, i, &count);

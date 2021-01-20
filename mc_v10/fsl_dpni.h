@@ -425,4 +425,9 @@ int dpni_get_irq_status_v10(struct fsl_mc_io *mc_io,
 			    uint8_t irq_index,
 			    uint32_t *status);
 
+int dpni_get_max_frame_length(struct fsl_mc_io *mc_io,
+			      uint32_t cmd_flags,
+			      uint16_t token,
+			      uint16_t *max_frame_length);
+
 #endif /* __FSL_DPNI_v10_H */
