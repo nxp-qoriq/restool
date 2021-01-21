@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2020 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -366,6 +366,9 @@ union dpni_statistics_v10 {
 		uint64_t policer_cnt_re_red;
 		uint64_t policer_cnt_re_yellow;
 	} page_5;
+	struct {
+		uint64_t tx_pending_frames_cnt;
+	} page_6;
 	struct {
 		uint64_t counter[DPNI_STATISTICS_CNT];
 	} raw;
