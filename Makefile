@@ -4,7 +4,7 @@ endif
 
 SRC = $(shell find . -name "*.c")
 OBJ = $(patsubst %.c, %.o, $(SRC))
-
+MANPAGE = restool.1
 RESTOOL_SCRIPT_SYMLINKS = ls-addmux ls-addsw ls-addni ls-listni ls-listmac ls-delete
 
 CFLAGS = ${EXTRA_CFLAGS} \
@@ -30,6 +30,13 @@ prefix ?= /usr/local
 exec_prefix ?= ${prefix}
 bindir ?= ${exec_prefix}/bin
 bindir_completion ?= /usr/share/bash-completion/completions
+datarootdir ?= ${prefix}/share
+mandir ?= ${datarootdir}/man
+
+get_man_section = $(lastword $(subst ., ,$1))
+get_manpage_destination = $(join $(DESTDIR)${mandir}/man, \
+			  $(join $(call get_man_section,$1)/, \
+                          $(subst docs/man/,,$1)))
 
 all: restool
 
@@ -40,15 +47,19 @@ restool: $(OBJ)
 %.o: %.c
 	$(CC) $(CFLAGS) -c $^ -o $@
 
-install: restool scripts/ls-main scripts/ls-append-dpl scripts/ls-debug scripts/restool_completion.sh
+%.1: %.md
+	pandoc --standalone --to man $^ -o $@
+
+install: restool scripts/ls-main scripts/ls-append-dpl scripts/ls-debug scripts/restool_completion.sh $(MANPAGE)
 	install -D -m 755 restool $(DESTDIR)$(bindir)/restool
 	install -D -m 755 scripts/ls-main $(DESTDIR)$(bindir)/ls-main
 	install -D -m 755 scripts/ls-append-dpl $(DESTDIR)$(bindir)/ls-append-dpl
 	install -D -m 755 scripts/ls-debug $(DESTDIR)$(bindir)/ls-debug
 	$(foreach symlink, $(RESTOOL_SCRIPT_SYMLINKS), sh -c "cd $(DESTDIR)$(bindir) && ln -sf ls-main $(symlink)" ;)
 	install -D -m 755 scripts/restool_completion.sh $(DESTDIR)$(bindir_completion)/restool
+	install -m 0644 -D $(MANPAGE) $(call get_manpage_destination,$(MANPAGE))
 
 clean:
-	rm -f $(OBJ) \
+	rm -f $(OBJ) $(MANPAGE) \
 	      restool
 
