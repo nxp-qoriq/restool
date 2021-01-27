@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2020 NXP
+ * Copyright 2017-2021 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -121,7 +121,8 @@ struct dpni_config {
 /* dpdmux stuff */
 #define ALL_DPDMUX_OPTS (		\
 	DPDMUX_OPT_BRIDGE_EN |		\
-	DPDMUX_OPT_CLS_MASK_SUPPORT)
+	DPDMUX_OPT_CLS_MASK_SUPPORT |	\
+	DPDMUX_OPT_AUTO_MAX_FRAME_LEN)
 
 /* dpsw stuff */
 #define ALL_DPSW_OPTS (			\
@@ -2092,6 +2093,11 @@ static void parse_dpdmux_options(FILE *fp, uint64_t options)
 	if (options & DPDMUX_OPT_CLS_MASK_SUPPORT) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPDMUX_OPT_CLS_MASK_SUPPORT\", ");
+	}
+
+	if (options & DPDMUX_OPT_AUTO_MAX_FRAME_LEN) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPDMUX_OPT_AUTO_MAX_FRAME_LEN\", ");
 	}
 
 	len = strlen(buf);

@@ -297,6 +297,7 @@ The options are:
 	-v, --vepa					MUX is configured as a VEPA. Default is VEB.
 	-o, --options=<options-mask>			Where <options-mask> is a comma separated list of DPSW options:
 								DPDMUX_OPT_CLS_MASK_SUPPORT
+								DPDMUX_OPT_AUTO_MAX_FRAME_LEN
 	-m, --method					Traffic steering method. One of: DPDMUX_METHOD_NONE,
 							DPDMUX_METHOD_C_VLAN_MAC, DPDMUX_METHOD_MAC,
 							DPDMUX_METHOD_C_VLAN, DPDMUX_METHOD_CUSTOM.

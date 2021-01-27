@@ -39,15 +39,19 @@
 
 #define DPDMUX_CMD_BASE_VERSION		1
 #define DPDMUX_CMD_VERSION_2		2
+#define DPDMUX_CMD_VERSION_3		3
+#define DPDMUX_CMD_VERSION_4		4
 #define DPDMUX_CMD_ID_OFFSET		4
 
 #define DPDMUX_CMD(id)	((id << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_BASE_VERSION)
 #define DPDMUX_CMD_V2(id)	(((id) << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_VERSION_2)
+#define DPDMUX_CMD_V3(id)       (((id) << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_VERSION_3)
+#define DPDMUX_CMD_V4(id)       (((id) << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_VERSION_4)
 
 /* Command IDs */
 #define DPDMUX_CMDID_CLOSE			DPDMUX_CMD(0x800)
 #define DPDMUX_CMDID_OPEN			DPDMUX_CMD(0x806)
-#define DPDMUX_CMDID_CREATE			DPDMUX_CMD_V2(0x906)
+#define DPDMUX_CMDID_CREATE			DPDMUX_CMD_V4(0x906)
 #define DPDMUX_CMDID_DESTROY			DPDMUX_CMD(0x986)
 #define DPDMUX_CMDID_GET_API_VERSION		DPDMUX_CMD(0xa06)
 
@@ -94,7 +98,7 @@ struct dpdmux_cmd_create {
 	uint16_t adv_max_dmat_entries;
 	uint16_t adv_max_mc_groups;
 	uint16_t adv_max_vlan_ids;
-	uint16_t pad1;
+	uint16_t mem_size;
 
 	uint64_t options;
 };

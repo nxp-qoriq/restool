@@ -45,7 +45,8 @@
 
 #define ALL_DPDMUX_OPTS (		\
 	DPDMUX_OPT_BRIDGE_EN |		\
-	DPDMUX_OPT_CLS_MASK_SUPPORT)
+	DPDMUX_OPT_CLS_MASK_SUPPORT |	\
+	DPDMUX_OPT_AUTO_MAX_FRAME_LEN)
 
 static enum mc_cmd_status mc_status;
 
@@ -261,6 +262,7 @@ C_ASSERT(ARRAY_SIZE(dpdmux_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPDMUX_OPT_BRIDGE_EN),
 	OPTION_MAP_ENTRY(DPDMUX_OPT_CLS_MASK_SUPPORT),
+	OPTION_MAP_ENTRY(DPDMUX_OPT_AUTO_MAX_FRAME_LEN),
 };
 static unsigned options_num = ARRAY_SIZE(options_map);
 
@@ -384,7 +386,8 @@ static void print_dpdmux_options(uint64_t options)
 		printf("\tDPDMUX_OPT_BRIDGE_EN\n");
 	if (options & DPDMUX_OPT_CLS_MASK_SUPPORT)
 		printf("\tDPDMUX_OPT_CLS_MASK_SUPPORT\n");
-
+	if (options & DPDMUX_OPT_AUTO_MAX_FRAME_LEN)
+		printf("\tDPDMUX_OPT_AUTO_MAX_FRAME_LEN\n");
 }
 
 static void print_dpdmux_method(enum dpdmux_method method)
@@ -1085,6 +1088,7 @@ static int cmd_dpdmux_create_v10(void)
 		"   Where <options-mask> is a comma separated list of DPDMUX options:\n"
 		"	DPDMUX_OPT_BRIDGE_EN\n"
 		"	DPDMUX_OPT_CLS_MASK_SUPPORT\n"
+		"	DPDMUX_OPT_AUTO_MAX_FRAME_LEN\n"
 		"   Default is 0\n"
 		"--default-if=<if-id-number>\n"
 		"   Desired default interface ID. Default is 0 (no default interface). Maximum num_ifs.\n"

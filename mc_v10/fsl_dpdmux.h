@@ -50,7 +50,16 @@ int dpdmux_close_v10(struct fsl_mc_io *mc_io,
 		     uint32_t cmd_flags,
 		     uint16_t token);
 
+/*
+ * DPDMUX options
+ */
+
 #define DPDMUX_OPT_CLS_MASK_SUPPORT		0x0000000000000020ULL
+/**
+ * Automatic max frame length - maximum frame length for spdmux interface will
+ * be changed automatically by connected dpni objects.
+ */
+#define DPDMUX_OPT_AUTO_MAX_FRAME_LEN		0x0000000000000040ULL
 
 /**
  * enum dpdmux_counter_type - Counter types
@@ -112,6 +121,7 @@ struct dpdmux_cfg_v10 {
 		uint16_t max_dmat_entries;
 		uint16_t max_mc_groups;
 		uint16_t max_vlan_ids;
+		uint16_t mem_size;
 	} adv;
 };
 
