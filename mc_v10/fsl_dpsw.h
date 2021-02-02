@@ -64,6 +64,36 @@ int dpsw_close_v10(struct fsl_mc_io *mc_io,
 #define DPSW_OPT_BP_PER_IF		0x0000000000000080ULL
 
 /**
+ *  enum dpsw_flooding_cfg - flooding configuration requested
+ * @DPSW_FLOODING_PER_VLAN: Flooding replicators are allocated per VLAN and
+ * interfaces present in each of them can be configured using
+ * dpsw_vlan_add_if_flooding()/dpsw_vlan_remove_if_flooding().
+ * This is the default configuration.
+ *
+ * @DPSW_FLOODING_PER_FDB: Flooring replicators are allocated per FDB and
+ * interfaces present in each of them can be configured using
+ * dpsw_set_egress_flood().
+ */
+enum dpsw_flooding_cfg {
+	DPSW_FLOODING_PER_VLAN = 0,
+	DPSW_FLOODING_PER_FDB,
+};
+
+/**
+ * enum dpsw_broadcast_cfg - broadcast configuration requested
+ * @DPSW_BROADCAST_PER_OBJECT: There is only one broadcast replicator per DPSW
+ * object. This is the default configuration.
+ * @DPSW_BROADCAST_PER_FDB: Broadcast replicators are allocated per FDB and
+ * interfaces present in each of them can be configured using
+ * dpsw_set_egress_flood().
+ */
+enum dpsw_broadcast_cfg {
+	DPSW_BROADCAST_PER_OBJECT = 0,
+	DPSW_BROADCAST_PER_FDB,
+};
+
+
+/**
  * struct dpsw_cfg - DPSW configuration
  * @num_ifs: Number of external and internal interfaces
  * @adv: Advanced parameters; default is all zeros;
@@ -98,6 +128,8 @@ struct dpsw_cfg_v10 {
 		uint16_t max_fdb_mc_groups;
 		uint16_t mem_size;
 		enum dpsw_component_type component_type;
+		enum dpsw_flooding_cfg flooding_cfg;
+		enum dpsw_broadcast_cfg broadcast_cfg;
 	} adv;
 };
 
@@ -142,6 +174,8 @@ int dpsw_get_irq_status_v10(struct fsl_mc_io *mc_io,
  * @num_vlans: Current number of VLANs
  * @num_fdbs: Current number of FDBs
  * @component_type: Component type of this bridge
+ * @adv.flooding_cfg: Flooding configuration (PER_VLAN - default, PER_FDB)
+ * @adv.broadcast_cfg: Broadcast configuration (PER_OBJECT - default, PER_FDB)
  */
 struct dpsw_attr_v10 {
 	int id;
@@ -157,6 +191,8 @@ struct dpsw_attr_v10 {
 	uint16_t num_vlans;
 	uint8_t num_fdbs;
 	enum dpsw_component_type component_type;
+	enum dpsw_flooding_cfg flooding_cfg;
+	enum dpsw_broadcast_cfg broadcast_cfg;
 };
 
 int dpsw_get_attributes_v10(struct fsl_mc_io *mc_io,

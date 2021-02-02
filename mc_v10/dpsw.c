@@ -154,6 +154,12 @@ int dpsw_create_v10(struct fsl_mc_io *mc_io,
 	dpsw_set_field(cmd_params->component_type,
 		       COMPONENT_TYPE,
 		       cfg->adv.component_type);
+	dpsw_set_field(cmd_params->repl_cfg,
+		       FLOODING_CFG,
+		       cfg->adv.flooding_cfg);
+	dpsw_set_field(cmd_params->repl_cfg,
+		       BROADCAST_CFG,
+		       cfg->adv.broadcast_cfg);
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -330,7 +336,8 @@ int dpsw_get_attributes_v10(struct fsl_mc_io *mc_io,
 	attr->options = le64_to_cpu(rsp_params->options);
 	attr->component_type = dpsw_get_field(rsp_params->component_type,
 					      COMPONENT_TYPE);
-
+	attr->flooding_cfg = dpsw_get_field(rsp_params->repl_cfg, FLOODING_CFG);
+	attr->broadcast_cfg = dpsw_get_field(rsp_params->repl_cfg, BROADCAST_CFG);
 	return 0;
 }
 

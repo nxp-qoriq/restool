@@ -512,6 +512,12 @@ The options are:
 								DPSW_COMPONENT_TYPE_C_VLAN
 								DPSW_COMPONENT_TYPE_S_VLAN
 							Default is DPSW_COMPONENT_TYPE_C_VLAN.
+	--flooding-cfg=<option>				Where <option> is one of the following:
+								DPSW_FLOODING_PER_VLAN
+								DPSW_FLOODING_PER_FDB
+	--broadcast-cfg=<option>			Where <option> is one of the following:
+								DPSW_BROADCAST_PER_OBJECT
+								DPSW_BROADCAST_PER_FDB
 	<endpoint>            				Is a list of the following:
 								dpmac.X - X is the index of the dpmac object
 								dpni.Y  - Y is the index of the dpni object
@@ -526,6 +532,7 @@ Usage examples:
 	ls-addsw
 	ls-addsw dpni.1 dpni.2 dpni.3 dpmac.1
 	ls-addsw -v=8 -a=100 -o=DPSW_OPT_CTRL_IF_DIS -l=myETHSW -i=5 dpni.1 dpni.2 dpni.3 dpmac.1 dpmac.2
+	ls-addsw --flooding-cfg=DPSW_FLOODING_PER_FDB --broadcast-cfg=DPSW_BROADCAST_PER_FDB dpni.1 dpni.2 dpni.3 dpni.4
 "
 }
 
@@ -549,6 +556,8 @@ create_dpsw() {
 		--container="$container"				\
 		--component-type="$component_type"				\
 		--mem-size="$mem_size"					\
+		--flooding-cfg="$flooding_cfg"				\
+		--broadcast-cfg="$broadcast_cfg"			\
 	)
 	if [ -z "$dpsw" ]; then
 		echo "Error: dpsw object was not created!"
@@ -585,8 +594,8 @@ process_addsw() {
 	options=""
 	# Maximum number of VLANs. Default is 16.
 	max_vlans=16
-	# Maximum Number of FDBs. Default is 16.
-	max_fdbs=1
+	# Maximum Number of FDBs.
+	max_fdbs=0
 	# Number of FDB entries. Default is 1024.
 	max_fdb_entries=1024
 	# Default FDB aging time in seconds. Default is 300 seconds.
@@ -598,6 +607,10 @@ process_addsw() {
 	# Size of the memory used for internal buffers expressed as number of
 	# 256byte buffers.
 	mem_size=0
+	# Flooding configuration. Default is _PER_VLAN.
+	flooding_cfg="DPSW_FLOODING_PER_VLAN"
+	# Broadcast configuration. Default is _PER_OBJECT.
+	broadcast_cfg="DPSW_BROADCAST_PER_OBJECT"
 	# dpsw object label
 	label=
 	# Endpoint objects provided as argument
@@ -637,6 +650,12 @@ process_addsw() {
 			-l=* | --label=*)
 				label="${i#*=}"
 				;;
+			--flooding-cfg=*)
+				flooding_cfg="${i#*=}"
+				;;
+			--broadcast-cfg=*)
+				broadcast_cfg="${i#*=}"
+				;;
 			-c=* | --container=*)
 				container="${i#*=}"
 				;;
@@ -672,6 +691,11 @@ process_addsw() {
 		echo "Error: there are more endpoints provided than the number of the interfaces"
 		usage_addsw
 		exit 1
+	fi
+
+	# By default, create the dpsw with the same number of FDBs as the number of interfaces
+	if [ $max_fdbs -eq 0 ]; then
+		max_fdbs=$num_ifs
 	fi
 
 	# Delete first empty line from the endpoint string

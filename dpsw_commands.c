@@ -113,6 +113,8 @@ enum dpsw_create_options {
 	CREATE_OPT_PARENT_DPRC,
 	CREATE_OPT_COMPONENT_TYPE,
 	CREATE_OPT_MEM_SIZE,
+	CREATE_OPT_FLOODING_CFG,
+	CREATE_OPT_BROADCAST_CFG,
 };
 
 static struct option dpsw_create_options[] = {
@@ -186,8 +188,22 @@ static struct option dpsw_create_options[] = {
 		.val = 0,
 	},
 
+	[CREATE_OPT_FLOODING_CFG] = {
+		.name = "flooding-cfg",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
 	[CREATE_OPT_MEM_SIZE] = {
 		.name = "mem-size",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_BROADCAST_CFG] = {
+		.name = "broadcast-cfg",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -291,6 +307,18 @@ static struct option_entry component_type_map[] = {
 	OPTION_MAP_ENTRY(DPSW_COMPONENT_TYPE_S_VLAN),
 };
 static unsigned int component_type_num = ARRAY_SIZE(component_type_map);
+
+static struct option_entry flooding_map[] = {
+	OPTION_MAP_ENTRY(DPSW_FLOODING_PER_VLAN),
+	OPTION_MAP_ENTRY(DPSW_FLOODING_PER_FDB),
+};
+static unsigned int flooding_num = ARRAY_SIZE(flooding_map);
+
+static struct option_entry broadcast_map[] = {
+	OPTION_MAP_ENTRY(DPSW_BROADCAST_PER_OBJECT),
+	OPTION_MAP_ENTRY(DPSW_BROADCAST_PER_FDB),
+};
+static unsigned int broadcast_num = ARRAY_SIZE(broadcast_map);
 
 static int cmd_dpsw_help(void)
 {
@@ -585,6 +613,10 @@ static int print_dpsw_attr_v10(uint32_t dpsw_id,
 	       dpsw_attr.component_type == DPSW_COMPONENT_TYPE_C_VLAN ?
 	       "DPSW_COMPONENT_TYPE_C_VLAN" : "DPSW_COMPONENT_TYPE_S_VLAN");
 	print_obj_label(target_obj_desc);
+	printf("flooding cfg: %s\n", dpsw_attr.flooding_cfg == DPSW_FLOODING_PER_FDB ?
+			"DPSW_FLOODING_PER_FDB" : "DPSW_FLOODING_PER_VLAN");
+	printf("broadcast cfg: %s\n", dpsw_attr.broadcast_cfg == DPSW_BROADCAST_PER_FDB ?
+			"DPSW_BRODCAST_PER_FDB" : "DPSW_BROADCAST_PER_OBJECT");
 
 	error = 0;
 
@@ -892,6 +924,40 @@ static int dpsw_parse_component_type(char *options_str,
 	return -EINVAL;
 }
 
+static int dpsw_parse_flooding(char *options_str, enum dpsw_flooding_cfg *flooding_cfg,
+			       struct option_entry options_map[],
+			       unsigned int num_options)
+{
+	unsigned int i;
+
+	for (i = 0; i < num_options; ++i) {
+		if (strcmp(options_str, options_map[i].str) == 0) {
+			*flooding_cfg = options_map[i].value;
+			return 0;
+		}
+	}
+
+	ERROR_PRINTF("Invalid configuration: '%s'\n", options_str);
+	return -EINVAL;
+}
+
+static int dpsw_parse_broadcast(char *options_str, enum dpsw_broadcast_cfg *broadcast_cfg,
+				struct option_entry options_map[],
+				unsigned int num_options)
+{
+	unsigned int i;
+
+	for (i = 0; i < num_options; ++i) {
+		if (strcmp(options_str, options_map[i].str) == 0) {
+			*broadcast_cfg = options_map[i].value;
+			return 0;
+		}
+	}
+
+	ERROR_PRINTF("Invalid configuration: '%s'\n", options_str);
+	return -EINVAL;
+}
+
 static int create_dpsw_v10(const char *usage_msg)
 {
 	struct dpsw_cfg_v10 dpsw_cfg = {0};
@@ -1046,6 +1112,32 @@ static int create_dpsw_v10(const char *usage_msg)
 		dpsw_cfg.adv.component_type = 0;
 	}
 
+	if (restool.cmd_option_mask &
+	    ONE_BIT_MASK(CREATE_OPT_FLOODING_CFG)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_FLOODING_CFG);
+		error = dpsw_parse_flooding(restool.cmd_option_args[CREATE_OPT_FLOODING_CFG],
+					    &dpsw_cfg.adv.flooding_cfg,
+					    flooding_map, flooding_num);
+		if (error)
+			return error;
+	} else {
+		dpsw_cfg.adv.flooding_cfg = 0;
+	}
+
+	if (restool.cmd_option_mask &
+	    ONE_BIT_MASK(CREATE_OPT_BROADCAST_CFG)) {
+		restool.cmd_option_mask &=
+			~ONE_BIT_MASK(CREATE_OPT_BROADCAST_CFG);
+		error = dpsw_parse_broadcast(restool.cmd_option_args[CREATE_OPT_BROADCAST_CFG],
+					     &dpsw_cfg.adv.broadcast_cfg,
+					     broadcast_map, broadcast_num);
+		if (error)
+			return error;
+	} else {
+		dpsw_cfg.adv.broadcast_cfg = 0;
+	}
+
 	error = dpsw_create_v10(&restool.mc_io, dprc_handle, 0,
 				&dpsw_cfg, &dpsw_id);
 	if (error) {
@@ -1095,6 +1187,14 @@ static int cmd_dpsw_create_v10(void)
 		"	Default FDB aging time in seconds. Default is 300 seconds.\n"
 		"--max-fdb-mc-groups=<number>\n"
 		"	Number of multicast groups in each FDB table. Default is 32.\n"
+		"--flooding-cfg=<flooding configuration>\n"
+		"   Where <flooding configuration> is one of the following:\n"
+		"	DPSW_FLOODING_PER_VLAN\n"
+		"	DPSW_FLOODING_PER_FDB\n"
+		"--broadcast-cfg=<broadcast configuration>\n"
+		"   Where <broadcast configuration> is one of the following:\n"
+		"	DPSW_BROADCAST_PER_OBJECT\n"
+		"	DPSW_BROADCAST_PER_FDB\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"

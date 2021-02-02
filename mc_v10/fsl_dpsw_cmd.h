@@ -40,18 +40,20 @@
 /* Command versioning */
 #define DPSW_CMD_BASE_VERSION	1
 #define DPSW_CMD_VERSION_2	2
+#define DPSW_CMD_VERSION_3	3
 #define DPSW_CMD_ID_OFFSET	4
 
 #define DPSW_CMD(id)	((id << DPSW_CMD_ID_OFFSET) | DPSW_CMD_BASE_VERSION)
 #define DPSW_CMD_V2(id)	(((id) << DPSW_CMD_ID_OFFSET) | DPSW_CMD_VERSION_2)
+#define DPSW_CMD_V3(id)	(((id) << DPSW_CMD_ID_OFFSET) | DPSW_CMD_VERSION_3)
 
 /* Command IDs */
 #define DPSW_CMDID_CLOSE                        DPSW_CMD(0x800)
 #define DPSW_CMDID_OPEN                         DPSW_CMD(0x802)
-#define DPSW_CMDID_CREATE                       DPSW_CMD_V2(0x902)
+#define DPSW_CMDID_CREATE                       DPSW_CMD_V3(0x902)
 #define DPSW_CMDID_DESTROY                      DPSW_CMD(0x982)
 #define DPSW_CMDID_GET_API_VERSION              DPSW_CMD(0xa02)
-#define DPSW_CMDID_GET_ATTR                     DPSW_CMD(0x004)
+#define DPSW_CMDID_GET_ATTR                     DPSW_CMD_V2(0x004)
 #define DPSW_CMDID_GET_IRQ_MASK                 DPSW_CMD(0x015)
 #define DPSW_CMDID_GET_IRQ_STATUS               DPSW_CMD(0x016)
 
@@ -82,6 +84,12 @@ struct dpsw_cmd_open {
 #define DPSW_COMPONENT_TYPE_SHIFT	0
 #define DPSW_COMPONENT_TYPE_SIZE	4
 
+#define DPSW_FLOODING_CFG_SHIFT		0
+#define DPSW_FLOODING_CFG_SIZE		4
+
+#define DPSW_BROADCAST_CFG_SHIFT	4
+#define DPSW_BROADCAST_CFG_SIZE		4
+
 struct dpsw_cmd_create {
 	/* cmd word 0 */
 	uint16_t num_ifs;
@@ -89,7 +97,10 @@ struct dpsw_cmd_create {
 	uint8_t max_meters_per_if;
 	/* from LSB: only the first 4 bits */
 	uint8_t component_type;
-	uint8_t pad;
+	/* [0:3] - flooding configuration
+	 * [4:7] - broadcast configuration
+	 */
+	uint8_t repl_cfg;
 	uint16_t mem_size;
 	/* cmd word 1 */
 	uint16_t max_vlans;
@@ -145,7 +156,11 @@ struct dpsw_rsp_get_attr {
 	uint8_t max_meters_per_if;
 	/* from LSB only the ffirst 4 bits */
 	uint8_t component_type;
-	uint16_t pad;
+	/* [0:3] flooding cfg
+	 * [4:7] broadcast cfg
+	 */
+	uint8_t repl_cfg;
+	uint8_t pad;
 	/* cmd word 3 */
 	uint64_t options;
 };
