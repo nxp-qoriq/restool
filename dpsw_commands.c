@@ -110,6 +110,7 @@ enum dpsw_create_options {
 	CREATE_OPT_FDB_AGING_TIME,
 	CREATE_OPT_MAX_FDB_MC_GROUPS,
 	CREATE_OPT_PARENT_DPRC,
+	CREATE_OPT_COMPONENT_TYPE
 };
 
 static struct option dpsw_create_options[] = {
@@ -171,6 +172,13 @@ static struct option dpsw_create_options[] = {
 
 	[CREATE_OPT_PARENT_DPRC] = {
 		.name = "container",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_COMPONENT_TYPE] = {
+		.name = "component-type",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -267,6 +275,12 @@ static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPSW_OPT_LAG_DIS),
 };
 static unsigned int options_num = ARRAY_SIZE(options_map);
+
+static struct option_entry component_type_map[] = {
+	OPTION_MAP_ENTRY(DPSW_COMPONENT_TYPE_C_VLAN),
+	OPTION_MAP_ENTRY(DPSW_COMPONENT_TYPE_S_VLAN),
+};
+static unsigned int component_type_num = ARRAY_SIZE(component_type_map);
 
 static int cmd_dpsw_help(void)
 {
@@ -554,6 +568,9 @@ static int print_dpsw_attr_v10(uint32_t dpsw_id,
 	printf("number of interfaces: %u\n", (uint32_t)dpsw_attr.num_ifs);
 	printf("current number of VLANs: %u\n", (uint32_t)dpsw_attr.num_vlans);
 	printf("current number of FDBs: %u\n", (uint32_t)dpsw_attr.num_fdbs);
+	printf("component_type: %s\n",
+	       dpsw_attr.component_type == DPSW_COMPONENT_TYPE_C_VLAN ?
+	       "DPSW_COMPONENT_TYPE_C_VLAN" : "DPSW_COMPONENT_TYPE_S_VLAN");
 	print_obj_label(target_obj_desc);
 
 	error = 0;
@@ -844,6 +861,24 @@ static int cmd_dpsw_create_v9(void)
 	return create_dpsw_v9(usage_msg);
 }
 
+static int dpsw_parse_component_type(char *options_str,
+				     enum dpsw_component_type *component_type,
+				     struct option_entry options_map[],
+				     unsigned int component_type_num)
+{
+	unsigned int i;
+
+	for (i = 0; i < component_type_num; ++i) {
+		if (strcmp(options_str, options_map[i].str) == 0) {
+			*component_type = options_map[i].value;
+			return 0;
+		}
+	}
+
+	ERROR_PRINTF("Invalid configuration: '%s'\n", options_str);
+	return -EINVAL;
+}
+
 static int create_dpsw_v10(const char *usage_msg)
 {
 	struct dpsw_cfg_v10 dpsw_cfg = {0};
@@ -977,6 +1012,18 @@ static int create_dpsw_v10(const char *usage_msg)
 		}
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_COMPONENT_TYPE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_COMPONENT_TYPE);
+		error = dpsw_parse_component_type(
+				restool.cmd_option_args[CREATE_OPT_COMPONENT_TYPE],
+				&dpsw_cfg.adv.component_type,
+				component_type_map, component_type_num);
+		if (error)
+			return error;
+	} else {
+		dpsw_cfg.adv.component_type = 0;
+	}
+
 	error = dpsw_create_v10(&restool.mc_io, dprc_handle, 0,
 				&dpsw_cfg, &dpsw_id);
 	if (error) {
@@ -1028,6 +1075,11 @@ static int cmd_dpsw_create_v10(void)
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"--component-type=<option_type>\n"
+		"	Where <option_type> is one of the following:\n"
+		"		DPSW_COMPONENT_TYPE_C_VLAN\n"
+		"		DPSW_COMPONENT_TYPE_S_VLAN\n"
+		"	Default is DPSW_COMPONENT_TYPE_C_VLAN.\n"
 		"\n"
 		"EXAMPLE:\n"
 		"Create a DPSW object with all default options:\n"

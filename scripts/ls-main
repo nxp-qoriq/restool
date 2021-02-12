@@ -498,6 +498,10 @@ The options are:
 	-e, --max-fdb-entries=<number>			Number of FDB entries. Default is 1024.
 	-a, --fdb-aging-time=<number>			Default FDB aging time in seconds. Default is 300 seconds.
 	-g, --max-fdb-mc-groups=<number>		Number of multicast groups in each FDB table. Default is 32.
+	--component-type=<option>			Where <option> is one of the following:
+								DPSW_COMPONENT_TYPE_C_VLAN
+								DPSW_COMPONENT_TYPE_S_VLAN
+							Default is DPSW_COMPONENT_TYPE_C_VLAN.
 	<endpoint>            				Is a list of the following:
 								dpmac.X - X is the index of the dpmac object
 								dpni.Y  - Y is the index of the dpni object
@@ -531,6 +535,7 @@ create_dpsw() {
 		--max-fdb-mc-groups="$max_fdb_mc_groups"		\
 		--options="$options"					\
 		--container="$container"				\
+		--component-type="$component_type"				\
 	)
 	if [ -z "$dpsw" ]; then
 		echo "Error: dpsw object was not created!"
@@ -575,6 +580,8 @@ process_addsw() {
 	fdb_aging_time=300
 	# Number of multicast groups in each FDB table. Default is 32.
 	max_fdb_mc_groups=32
+	# Component type configuration. Default is _C_VLAN.
+	component_type="DPSW_COMPONENT_TYPE_C_VLAN"
 	# dpsw object label
 	label=
 	# Endpoint objects provided as argument
@@ -616,6 +623,9 @@ process_addsw() {
 				;;
 			-c=* | --container=*)
 				container="${i#*=}"
+				;;
+			--component-type=*)
+				component_type="${i#*=}"
 				;;
 			*)
 				arg_dpmac="$(echo $i | grep -x -E "dpmac.[0-9]+" || true )"
