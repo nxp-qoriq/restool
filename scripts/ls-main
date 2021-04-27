@@ -1059,7 +1059,11 @@ Usage examples:
 }
 
 object_has_other_consumers() {
-	ls /sys/bus/fsl-mc/devices/$1/ | grep consumer:dp | cut -d':' -f2
+	local consumers="$(ls /sys/bus/fsl-mc/devices/$1/ | grep consumer:dp | cut -d':' -f2)"
+	if [ "$consumers" = "" ]; then
+		local consumers="$(ls /sys/bus/fsl-mc/devices/$1/ | grep consumer:fsl-mc:dp | cut -d':' -f3)"
+	fi
+	echo $consumers
 }
 
 delete_object() {
@@ -1086,7 +1090,11 @@ delete_object() {
 		return
 	fi
 
+	# Depending on the kernel version, these sysfs links are named differently: supplier:dpxx.Y vs supplier:fsl-mc:dpxx.Y
 	local suppliers="$(ls /sys/bus/fsl-mc/devices/$object/ | grep supplier:dp | cut -d':' -f2)"
+	if [ "$suppliers" = "" ]; then
+		local suppliers="$(ls /sys/bus/fsl-mc/devices/$object/ | grep supplier:fsl-mc:dp | cut -d':' -f3)"
+	fi
 	local driver="$(realpath /sys/bus/fsl-mc/devices/$object/driver)"
 	local type="$(echo $object | cut -d '.' -f 1 )"
 
