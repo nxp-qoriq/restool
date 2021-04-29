@@ -19,9 +19,12 @@ CFLAGS = ${EXTRA_CFLAGS} \
           -Wundef \
           -Icommon/
 
-VERSION=$(shell test -d .git && git describe)
-ifeq ($(VERSION),)
-VERSION=v2.1
+VERSION_STATIC=v2.1
+VERSION_COMMIT=$(shell test -d .git && git describe)
+ifeq ($(VERSION_COMMIT),)
+VERSION='$(VERSION_STATIC)'
+else
+VERSION='$(VERSION_STATIC) (commit $(VERSION_COMMIT))'
 endif
 
 override CFLAGS += -DVERSION=\"${VERSION}\"
