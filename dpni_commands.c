@@ -153,6 +153,7 @@ enum dpni_create_options {
 	CREATE_OPT_VLAN_FILTER_ENTRIES,
 	CREATE_OPT_NUM_CGS,
 	CREATE_OPT_DIST_KEY_SIZE,
+	CREATE_OPT_NUM_CHANNELS,
 };
 
 static struct option dpni_create_options[] = {
@@ -319,6 +320,13 @@ static struct option dpni_create_options[] = {
 
 	[CREATE_OPT_DIST_KEY_SIZE] = {
 		.name = "dist-key-size",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_NUM_CHANNELS] = {
+		.name = "num-channels",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -910,6 +918,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	printf("fs_entries: %u\n", (uint32_t)dpni_attr.fs_entries);
 	printf("qos_key_size: %u\n", (uint32_t)dpni_attr.qos_key_size);
 	printf("fs_key_size: %u\n", (uint32_t)dpni_attr.fs_key_size);
+	printf("num_channels: %u\n", (uint32_t)dpni_attr.num_ceetm_ch);
 
 	for (page = 0; page < 7; page++) {
 		memset(&dpni_stats, 0, sizeof(dpni_stats));
@@ -1516,6 +1525,16 @@ static int create_dpni_v10(const char *usage_msg)
 		dpni_cfg.num_queues = (uint8_t)value;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_CHANNELS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_CHANNELS);
+		error = get_option_value(CREATE_OPT_NUM_CHANNELS, &value,
+				     "Invalid num-channels value\n", 1, 32);
+		if (error)
+			return error;
+
+		dpni_cfg.num_ceetm_ch = (uint8_t)value;
+	}
+
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_TCS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_TCS);
 		error = get_option_value(CREATE_OPT_NUM_TCS, &value,
@@ -1729,8 +1748,11 @@ static int cmd_dpni_create_v10(void)
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"--dist-key-size=<number>\n"
-		"       maximum key size for the distribution;\n"
-		"       '0' will be treated as '24' which enough for IPv4 5-tuple\n"
+		"   maximum key size for the distribution;\n"
+		"   '0' will be treated as '24' which enough for IPv4 5-tuple\n"
+		"--num-channels=<number>\n"
+		"   Number of egress channels used by this dpni object.\n"
+		"   If not specified the dpni object will use a single CEETM channel\n"
 		"\n";
 
 	if (restool.mc_fw_version.minor == 0)

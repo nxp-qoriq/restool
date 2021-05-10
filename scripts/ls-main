@@ -746,6 +746,8 @@ The options are:
 	-d, --dist-key-size=KEY_SIZE			Maximum key size for the distribution.
 							Valid range [1-56]. Defaults to 56.
 	-c, --container <dprc.X>                        Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
+	--num-channels=NUM_CHANNELS				Valid range [1-32]. Defaults to 1.
+							Number of egress channels used by this dpni object.
 
 <endpoint> is one of the following:
 	dpmac.X 					X is the index of the dpmac object
@@ -805,6 +807,7 @@ process_addni() {
 	options=
 	label=
 	dpni=
+	num_channels=1
 
 	for i in "$@"
 	do
@@ -903,6 +906,10 @@ process_addni() {
 				;;
 			-o=* | --options=*)
 				options="${i#*=}"
+				;;
+			--num-channels=*)
+				num_channels="${i#*=}"
+				dpni_args=$dpni_args" --num-channels="$num_channels
 				;;
 			*)
 				arg_dpmac="$(echo $i | grep -x -E "(dprc.[0-9]+/)*dpmac.[0-9]+" || true )"

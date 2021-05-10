@@ -155,6 +155,7 @@ int dpni_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->num_cgs = cfg->num_cgs;
 	cmd_params->num_opr = cpu_to_le16(cfg->num_opr);
 	cmd_params->dist_key_size = cfg->dist_key_size;
+	cmd_params->num_ceetm_ch = cfg->num_ceetm_ch;
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -245,6 +246,7 @@ int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
 	attr->fs_key_size = rsp_params->fs_key_size;
 	attr->wriop_version = le16_to_cpu(rsp_params->wriop_version);
 	attr->num_cgs = rsp_params->num_cgs;
+	attr->num_ceetm_ch = rsp_params->num_ceetm_ch;
 
 	return 0;
 }

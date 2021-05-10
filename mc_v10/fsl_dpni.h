@@ -209,6 +209,7 @@ struct dpni_cfg_v10 {
 	uint8_t  num_cgs;
 	uint16_t num_opr;
 	uint8_t	 dist_key_size;
+	uint8_t  num_ceetm_ch;
 };
 
 int dpni_create_v10(struct fsl_mc_io *mc_io,
@@ -267,6 +268,8 @@ int dpni_close_v10(struct fsl_mc_io *mc_io,
  *			variants.
  *			- 0xC00 - WRIOP version 3.0.0, used on LX2160 and
  *			variants.
+ * @num_ceetm_ch: Number of egress channels used by this dpni object. If
+ * 			not specified the dpni object will use a single CEETM channel.
  */
 struct dpni_attr_v10 {
 	uint32_t options;
@@ -281,6 +284,7 @@ struct dpni_attr_v10 {
 	uint8_t  fs_key_size;
 	uint16_t wriop_version;
 	uint8_t  num_cgs;
+	uint8_t  num_ceetm_ch;
 };
 
 int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,

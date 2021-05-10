@@ -497,6 +497,12 @@ Usage: restool dpni `<command> [--help] [ARGS...]`, where `<command>` can be:
 
 >>> `'0'` will be treated as `'24'` which enough for IPv4 5-tuple.
 
+>> `--num-channels=<number>`
+
+>>> Where `<number>` is the number of egress channels used by this dpni object.
+
+>>> Valid range is [1-32]. Defaults to 1.
+
 **destroy**
 : destroys a child DPNI under the root DPRC.
 
