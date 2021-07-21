@@ -2489,6 +2489,12 @@ static int parse_dpsw_v10(FILE *fp, struct obj_list *curr)
 		(uint32_t)dpsw_attr.max_fdb_mc_groups);
 	fprintf(fp, "\t\t\tmax_meters_per_if = <%#x>;\n",
 		(uint32_t)dpsw_attr.max_meters_per_if);
+	fprintf(fp, "\t\t\tflooding_cfg = \"%s\";\n",
+		dpsw_attr.flooding_cfg == DPSW_FLOODING_PER_VLAN ?
+		"DPSW_FLOODING_PER_VLAN" : "DPSW_FLOODING_PER_FDB");
+	fprintf(fp, "\t\t\tbroadcast_cfg = \"%s\";\n",
+		dpsw_attr.broadcast_cfg == DPSW_BROADCAST_PER_OBJECT ?
+		"DPSW_BROADCAST_PER_OBJECT" : "DPSW_BROADCAST_PER_FDB");
 
 	error = 0;
 
