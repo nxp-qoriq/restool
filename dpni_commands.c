@@ -922,9 +922,29 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 
 	for (page = 0; page < 7; page++) {
 		memset(&dpni_stats, 0, sizeof(dpni_stats));
-		error = dpni_get_statistics_v10(&restool.mc_io, 0,
-						dpni_handle, page, 0, &dpni_stats);
-		dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+
+		if (page == 3) {
+			int ch;
+
+			for (ch = 0; ch < dpni_attr.num_ceetm_ch; ch++) {
+				int tc;
+
+				for (tc = 0; tc < dpni_attr.num_tx_tcs; tc++) {
+					uint16_t param = (ch << 8) | tc;
+
+					memset(&dpni_stats, 0, sizeof(dpni_stats));
+					error = dpni_get_statistics_v10(&restool.mc_io, 0,
+								dpni_handle, page, param, &dpni_stats);
+					printf("ceetm stats channel %d, TC %d\n", ch, tc);
+					dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+				}
+			}
+		} else {
+				error = dpni_get_statistics_v10(&restool.mc_io, 0,
+								dpni_handle, page,
+								0, &dpni_stats);
+				dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+		}
 	}
 
 	print_obj_label(target_obj_desc);
