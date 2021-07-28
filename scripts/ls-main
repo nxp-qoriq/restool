@@ -390,7 +390,7 @@ process_addmux() {
 	max_mc_groups=32
 	# Size of the memory used for internal buffers expressed as number of
 	# 256byte buffers.
-	mem_size=32
+	mem_size=0
 	#Endpoint object provided as argument
 	endpoint=
 	# default parent container is the root container
