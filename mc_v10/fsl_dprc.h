@@ -57,6 +57,8 @@ struct fsl_mc_io;
  */
 #define DPRC_GET_PORTAL_ID_FROM_POOL	(int)(~(0))
 
+#define MEM_PAGE_MAX_ENTRIES			5
+
 int dprc_open(struct fsl_mc_io *mc_io,
 	      uint32_t cmd_flags,
 	      int container_id,
@@ -401,6 +403,36 @@ int dprc_set_locked(struct fsl_mc_io *mc_io,
 			 uint16_t token,
 			 uint8_t locked,
 			 int child_container_id);
+
+enum memory_partition_id {
+	/* Packet-Express_buffer memory partition */
+	MEM_PART_PEB = 7
+};
+
+struct dprc_get_mem_page {
+	/* number of valid entries in this response */
+	uint8_t num_entries;
+	uint16_t total_page_count;
+	/* current page data */
+	uint32_t offset0;
+	uint32_t size0;
+	uint32_t offset1;
+	uint32_t size1;
+	uint32_t offset2;
+	uint32_t size2;
+	uint32_t offset3;
+	uint32_t size3;
+	uint32_t offset4;
+	uint32_t size4;
+};
+
+int dprc_get_mem(struct fsl_mc_io *mc_io,
+		 uint32_t cmd_flags,
+		 uint16_t token,
+		 uint8_t partition_id,
+		 uint8_t flags,
+		 uint16_t page,
+		 struct dprc_get_mem_page *mem);
 
 #endif /* _FSL_DPRC_H */
 

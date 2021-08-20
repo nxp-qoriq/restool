@@ -279,6 +279,24 @@ static struct option dprc_set_locked_options[] = {
 	{ 0 },
 };
 
+enum dprc_dump_mem_options {
+	DUMP_MEM_OPT_HELP = 0,
+	DUMP_MEM_OPT_PART,
+};
+
+static struct option dprc_dump_mem_options[] = {
+	[DUMP_MEM_OPT_HELP] = {
+		.name = "help",
+	},
+
+	[DUMP_MEM_OPT_PART] = {
+		.name = "partition_id",
+		.has_arg = 1,
+	},
+
+	{ 0 },
+};
+
 C_ASSERT(ARRAY_SIZE(dprc_set_locked_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 /**
@@ -404,6 +422,7 @@ static int cmd_dprc_help(void)
 		"   disconnect   - removes the link between two objects. Either endpoint can\n"
 		"                  be specified as the target of the operation.\n"
 		"   generate-dpl - generate DPL syntax for the specified container\n"
+		"   dump-mem     - dump the free memory blocks of a partition\n"
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
 		"\n";
@@ -2266,6 +2285,118 @@ static int cmd_dpl_generate(void)
 	return error;
 }
 
+static void print_mem_struct(struct dprc_get_mem_page *mem)
+{
+	printf("num_entries = %u\n", mem->num_entries);
+	printf("total_page_count = %u\n", mem->total_page_count);
+	printf("offset0 = %u\n", mem->offset0);
+	printf("size0 = %u\n", mem->size0);
+	printf("offset1 = %u\n", mem->offset1);
+	printf("size1 = %u\n", mem->size1);
+	printf("offset2 = %u\n", mem->offset2);
+	printf("size2 = %u\n", mem->size2);
+	printf("offset3 = %u\n", mem->offset3);
+	printf("size3 = %u\n", mem->size3);
+	printf("offset4 = %u\n", mem->offset4);
+	printf("size4 = %u\n", mem->size4);
+}
+
+static int cmd_dprc_dump_mem(void)
+{
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dprc dump-mem <container> --partition_id=<number>\n"
+		"\n"
+		"  --partition_id=<number>\n"
+		"		MEM_PART_PEB - Packet-Express-Buffer memory partition\n"
+		"\n"
+		"EXAMPLE:\n"
+		"To dump the free memory blocks of PEB partition:\n"
+		"  $ restool dprc dump-mem dprc.1 --partition_id=MEM_PART_PEB\n"
+		"\n";
+	uint16_t dprc_handle, total_page_cnt, page = 0;
+	struct dprc_get_mem_page mem = {0};
+	uint32_t current_dprc_id;
+	bool dprc_opened;
+	int err;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(DUMP_MEM_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(DUMP_MEM_OPT_HELP);
+		err = 0;
+		goto out;
+	}
+
+	if (restool.obj_name == NULL) {
+		ERROR_PRINTF("<parent-container> argument missing\n");
+		puts(usage_msg);
+		err = -EINVAL;
+		goto out;
+	}
+
+	err = parse_object_name(restool.obj_name,
+				  "dprc", &current_dprc_id);
+	if (err < 0)
+		goto out;
+
+	if (current_dprc_id != restool.root_dprc_id) {
+		err = open_dprc(current_dprc_id, &dprc_handle);
+		if (err < 0)
+			goto out;
+
+		dprc_opened = true;
+	} else {
+		dprc_handle = restool.root_dprc_handle;
+	}
+
+	if (!(restool.cmd_option_mask & ONE_BIT_MASK(DUMP_MEM_OPT_PART))) {
+		ERROR_PRINTF("--partition_id option missing\n");
+		puts(usage_msg);
+		err = -EINVAL;
+		goto out;
+	}
+
+	restool.cmd_option_mask &= ~ONE_BIT_MASK(DUMP_MEM_OPT_PART);
+	assert(restool.cmd_option_args[DUMP_MEM_OPT_PART] != NULL);
+
+	if (!strcmp(restool.cmd_option_args[CONNECT_OPT_ENDPOINT1],
+				"MEM_PART_PEB")) {
+		do {
+			printf("Calling with page %u\n", page);
+			err = dprc_get_mem(&restool.mc_io, 0, dprc_handle,
+					   MEM_PART_PEB, 1, page, &mem);
+			total_page_cnt = mem.total_page_count;
+
+			if (err) {
+				ERROR_PRINTF("Error while getting page\n");
+				goto out;
+			}
+
+			print_mem_struct(&mem);
+			memset(&mem, 0, sizeof(struct dprc_get_mem_page));
+			printf("Finished printing page number %d\n\n", page);
+		} while (++page != total_page_cnt);
+	} else {
+		ERROR_PRINTF("This command is currently only supported"
+			     "for MEM_PART_PEB\n");
+	}
+out:
+	if (dprc_opened) {
+		int err2;
+
+		err2 = dprc_close(&restool.mc_io, 0, dprc_handle);
+		if (err2 < 0) {
+			mc_status = flib_error_to_mc_status(err2);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			if (!err)
+				err = err2;
+		}
+	}
+
+	return err;
+}
+
 /**
  * DPRC command table
  */
@@ -2325,6 +2456,10 @@ struct object_command dprc_commands[] = {
 	{ .cmd_name = "generate-dpl",
 	  .options = dpl_generate_options,
 	  .cmd_func = cmd_dpl_generate },
+
+	{ .cmd_name = "dump-mem",
+	  .options = dprc_dump_mem_options,
+	  .cmd_func = cmd_dprc_dump_mem },
 
 	{ .cmd_name = NULL },
 };

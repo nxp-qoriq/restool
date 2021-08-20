@@ -72,6 +72,8 @@
 
 #define DPRC_CMDID_GET_CONNECTION               DPRC_CMD(0x16C)
 
+#define DPRC_CMDID_GET_MEM			DPRC_CMD(0x16D)
+
 /* Macros for accessing command fields smaller than 1byte */
 #define DPRC_MASK(field)        \
 	GENMASK(DPRC_##field##_SHIFT + DPRC_##field##_SIZE - 1, \
@@ -274,5 +276,38 @@ struct dprc_rsp_get_api_version {
 	uint16_t major;
 	uint16_t minor;
 };
+
+struct dprc_cmd_get_memory {
+	/* partition ID, only PEB works for now, otherwise return error */
+	uint8_t partition_id;
+	/* bit 0 - REFRESH - signals if the command will parse again the
+	 * partition or will return a page from previous read.
+	 * 1 rereads again the partition
+	 * 0 returns from data read in previous call
+	 */
+	uint8_t flags;
+	/* result page to be returned, each page has  */
+	uint16_t page;
+};
+
+struct dprc_rsp_get_memory {
+	/* number of valid entries in this response*/
+	uint8_t     num_entries;
+	uint8_t     pad0;
+	uint16_t    total_page_count;
+	uint32_t    pad1;
+	/* current page data */
+	uint32_t    offset0;
+	uint32_t    size0;
+	uint32_t    offset1;
+	uint32_t    size1;
+	uint32_t    offset2;
+	uint32_t    size2;
+	uint32_t    offset3;
+	uint32_t    size3;
+	uint32_t    offset4;
+	uint32_t    size4;
+};
+
 #pragma pack(pop)
 #endif /* _FSL_DPRC_CMD_H */

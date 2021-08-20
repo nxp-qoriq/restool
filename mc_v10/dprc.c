@@ -949,3 +949,56 @@ int dprc_get_container_id(struct fsl_mc_io *mc_io,
 
 	return 0;
 }
+
+/**
+ * dprc_get_mem() - Get memory partition offsets and sizes
+ * @mc_io - Pointer to MC portal's I/O object
+ * @cmd_flags - Command flags; one or more of 'MC_CMD_FLAG_'
+ * @token - Token of DPRC object
+ * @partition_id - Memory partition ID
+ * @flags - Flag that has to be set when reread is required
+ * @page - Page required (each page has 5 offsets and 5 sizes)
+ * @mem - Struct in which sizes and offsets are going to be stored
+ *
+ * Return:     '0' on Success; -ENAVAIL if connection does not exist.
+ */
+int dprc_get_mem(struct fsl_mc_io *mc_io,
+		 uint32_t cmd_flags,
+		 uint16_t token,
+		 uint8_t partition_id,
+		 uint8_t flags,
+		 uint16_t page,
+		 struct dprc_get_mem_page *mem)
+{
+	struct dprc_cmd_get_memory *cmd_params;
+	struct dprc_rsp_get_memory *rsp_params;
+	struct mc_command cmd = {0};
+	int err;
+
+	/* prepare command */
+	cmd.header = mc_encode_cmd_header(DPRC_CMDID_GET_MEM, cmd_flags, token);
+	cmd_params = (struct dprc_cmd_get_memory *) cmd.params;
+	cmd_params->flags = flags;
+	cmd_params->partition_id = partition_id;
+	cmd_params->page = cpu_to_le16(page);
+
+	err = mc_send_command(mc_io, &cmd);
+	if (err)
+		return err;
+
+	rsp_params = (struct dprc_rsp_get_memory *)cmd.params;
+	mem->num_entries = rsp_params->num_entries;
+	mem->total_page_count = le16_to_cpu(rsp_params->total_page_count);
+	mem->offset0 = le32_to_cpu(rsp_params->offset0);
+	mem->size0 = le32_to_cpu(rsp_params->size0);
+	mem->offset1 = le32_to_cpu(rsp_params->offset1);
+	mem->size1 = le32_to_cpu(rsp_params->size1);
+	mem->offset2 = le32_to_cpu(rsp_params->offset2);
+	mem->size2 = le32_to_cpu(rsp_params->size2);
+	mem->offset3 = le32_to_cpu(rsp_params->offset3);
+	mem->size3 = le32_to_cpu(rsp_params->size3);
+	mem->offset4 = le32_to_cpu(rsp_params->offset4);
+	mem->size4 = le32_to_cpu(rsp_params->size4);
+
+	return err;
+}
