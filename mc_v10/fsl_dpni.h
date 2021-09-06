@@ -176,7 +176,7 @@ struct dpni_cfg_v10 {
 	 *		(logical FQs, all associated with a single CEETM queue),
 	 *		Rx queues and Tx confirmation queues, if applicable.
 	 *		Value 0 defaults to one queue. Maximum supported value
-	 *		is 8.
+	 *		is 32.
 	 * @num_tcs: Number of traffic classes (TCs), reserved for the DPNI.
 	 *		TCs can have different priority levels for the purpose
 	 *		of Tx scheduling (see DPNI_SET_TX_SELECTION), different

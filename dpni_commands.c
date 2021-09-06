@@ -1539,7 +1539,7 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_QUEUES);
 		error = get_option_value(CREATE_OPT_NUM_QUEUES, &value,
-				     "Invalid num-queues value\n", 1, 16);
+				     "Invalid num-queues value\n", 1, 32);
 		if (error)
 			return error;
 		dpni_cfg.num_queues = (uint8_t)value;
@@ -1691,7 +1691,7 @@ static int cmd_dpni_create_v10(void)
 		"--num-queues=<number>\n"
 		"   Number of TX/RX queues use for traffic distribution.\n"
 		"   Used to distribute traffic to multiple GPP cores,\n"
-		"   Defaults to one queue. Maximim supported value is 8\n"
+		"   Defaults to one queue. Maximim supported value is 32\n"
 		"--num-tcs=<number>\n"
 		"   Number of traffic classes (TCs), reserved for the DPNI.\n"
 		"   Defaults to one TC. Maximum supported value is 8\n"
@@ -1738,7 +1738,7 @@ static int cmd_dpni_create_v10(void)
 		"--num-queues=<number>\n"
 		"   Number of TX/RX queues use for traffic distribution.\n"
 		"   Used to distribute traffic to multiple GPP cores,\n"
-		"   Defaults to one queue. Maximim supported value is 16\n"
+		"   Defaults to one queue. Maximim supported value is 32\n"
 		"--num-tcs=<number>\n"
 		"   Number of traffic classes (TCs), reserved for the DPNI.\n"
 		"   Defaults to one TC. Maximum supported value is 16.\n"
