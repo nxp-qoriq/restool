@@ -843,6 +843,12 @@ process_addni() {
 					echo "Invalid num_queues=$num_queues. Valid range is [1-32]."
 					exit 1
 				fi
+				if [ "$(($num_queues))" -gt "$((2 * $(grep -c ^processor /proc/cpuinfo)))" ]; then
+					echo "Invalid num_queues=$num_queues."		\
+					     "Valid range is [1-2*no_cores]."		\
+					     "Defaulting to num_queues=no_cores"
+					num_queues=$(grep -c ^processor /proc/cpuinfo)
+				fi
 				dpni_args=$dpni_args" --num-queues="$num_queues
 				;;
 			-t=* | --num-tcs=*)
