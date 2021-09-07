@@ -854,7 +854,7 @@ process_addni() {
 			-t=* | --num-tcs=*)
 				num_tcs="${i#*=}"
 				if [ "$(($num_tcs))" -gt 8 ] || [ "$(($num_tcs))" -lt 1 ]; then
-					echo "Invalid num_tcs=$num_queues. Valid range is [1-8]."
+					echo "Invalid num_tcs=$num_tcs. Valid range is [1-8]."
 					exit 1
 				fi
 				dpni_args=$dpni_args" --num-tcs="$num_tcs
