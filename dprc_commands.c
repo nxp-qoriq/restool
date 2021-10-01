@@ -261,7 +261,7 @@ C_ASSERT(ARRAY_SIZE(dprc_set_label_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 /**
  * dprc set-locked command options
  */
-enum dprc_set_loced_options {
+enum dprc_set_locked_options {
 	SET_LOCKED_OPT_HELP = 0,
 	SET_LOCKED_OPT_LOCKED,
 };
