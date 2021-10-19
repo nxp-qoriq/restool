@@ -17,6 +17,7 @@ CFLAGS = ${EXTRA_CFLAGS} \
           -Winline \
           -Werror \
           -Wundef \
+          -Wno-date-time \
           -Icommon/
 
 VERSION_STATIC=v2.3
