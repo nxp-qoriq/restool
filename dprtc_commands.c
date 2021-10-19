@@ -444,7 +444,7 @@ static int create_dprtc_v10(struct dprtc_cfg *dprtc_cfg)
 static int create_dprtc(int mc_fw_version, const char *usage_msg)
 {
 	int error;
-	struct dprtc_cfg dprtc_cfg;
+	struct dprtc_cfg dprtc_cfg = { 0 };
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);

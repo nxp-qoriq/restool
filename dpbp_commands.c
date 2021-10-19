@@ -445,7 +445,7 @@ static int create_dpbp_v10(struct dpbp_cfg_v10 *dpbp_cfg)
 static int create_dpbp(int mc_fw_version, const char *usage_msg)
 {
 	int error;
-	struct dpbp_cfg dpbp_cfg;
+	struct dpbp_cfg dpbp_cfg = { 0 };
 	struct dpbp_cfg_v10 dpbp_cfg_v10;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
