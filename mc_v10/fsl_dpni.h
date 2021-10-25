@@ -122,6 +122,10 @@ struct fsl_mc_io;
  */
 #define DPNI_OPT_CUSTOM_CG				0x000200
 /**
+ * Define a custom number of order point records
+ */
+#define DPNI_OPT_CUSTOM_OPR				0x000400
+/**
  * Hash key is shared between all traffic classes
  */
 #define DPNI_OPT_SHARED_HASH_KEY			0x000800

@@ -70,6 +70,7 @@
 	DPNI_OPT_OPR_PER_TC |				\
 	DPNI_OPT_SINGLE_SENDER |			\
 	DPNI_OPT_CUSTOM_CG |				\
+	DPNI_OPT_CUSTOM_OPR |				\
 	DPNI_OPT_SHARED_HASH_KEY |			\
 	DPNI_OPT_SHARED_FS)
 
@@ -427,6 +428,7 @@ static struct option_entry options_map_v10_1[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_OPR_PER_TC),
 	OPTION_MAP_ENTRY(DPNI_OPT_SINGLE_SENDER),
 	OPTION_MAP_ENTRY(DPNI_OPT_CUSTOM_CG),
+	OPTION_MAP_ENTRY(DPNI_OPT_CUSTOM_OPR),
 	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_HASH_KEY),
 	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_FS),
 };
@@ -598,6 +600,9 @@ static void print_dpni_options_v10(uint32_t options)
 
 	if (options & DPNI_OPT_CUSTOM_CG)
 		printf("\tDPNI_OPT_CUSTOM_CG\n");
+
+	if (options & DPNI_OPT_CUSTOM_OPR)
+		printf("\tDPNI_OPT_CUSTOM_OPR\n");
 
 	if (options & DPNI_OPT_SHARED_HASH_KEY)
 		printf("\tDPNI_OPT_SHARED_HASH_KEY\n");
@@ -1733,6 +1738,7 @@ static int cmd_dpni_create_v10(void)
 		"	DPNI_OPT_OPR_PER_TC\n"
 		"	DPNI_OPT_SINGLE_SENDER\n"
 		"	DPNI_OPT_CUSTOM_CG\n"
+		"	DPNI_OPT_CUSTOM_OPR\n"
 		"	DPNI_OPT_SHARED_HASH_KEY\n"
 		"	DPNI_OPT_SHARED_FS\n"
 		"--num-queues=<number>\n"
