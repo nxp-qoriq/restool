@@ -102,8 +102,13 @@
 	DPNI_OPT_SHARED_CONGESTION |			\
 	DPNI_OPT_HAS_KEY_MASKING |			\
 	DPNI_OPT_NO_FS |				\
+	DPNI_OPT_HAS_OPR |				\
+	DPNI_OPT_OPR_PER_TC |				\
+	DPNI_OPT_SINGLE_SENDER |			\
+	DPNI_OPT_CUSTOM_CG |				\
 	DPNI_OPT_FS_MASK_SUPPORT |			\
 	DPNI_OPT_SHARED_FS	|			\
+	DPNI_OPT_SHARED_HASH_KEY |			\
 	DPNI_OPT_CUSTOM_OPR)
 
 struct dpni_config {
@@ -1743,6 +1748,26 @@ static void parse_dpni_options_v10(FILE *fp, uint32_t options)
 	if (options & DPNI_OPT_SHARED_HASH_KEY) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPNI_OPT_SHARED_HASH_KEY\", ");
+	}
+
+	if (options & DPNI_OPT_HAS_OPR) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_HAS_OPR\", ");
+	}
+
+	if (options & DPNI_OPT_OPR_PER_TC) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_OPR_PER_TC\", ");
+	}
+
+	if (options & DPNI_OPT_SINGLE_SENDER) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_SINGLE_SENDER\", ");
+	}
+
+	if (options & DPNI_OPT_CUSTOM_CG) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_CUSTOM_CG\", ");
 	}
 
 	if (options & DPNI_OPT_CUSTOM_OPR) {
