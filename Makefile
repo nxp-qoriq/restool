@@ -20,8 +20,8 @@ CFLAGS = ${EXTRA_CFLAGS} \
           -Wno-date-time \
           -Icommon/
 
-MC_VERSION_COMPATIBLE='10.29.1'
-VERSION_STATIC=v2.3
+MC_VERSION_COMPATIBLE='10.30.0'
+VERSION_STATIC=v2.4
 VERSION_COMMIT=$(shell test -d .git && git describe)
 ifeq ($(VERSION_COMMIT),)
 VERSION='$(VERSION_STATIC) ($(MC_VERSION_COMPATIBLE) compatible)'
