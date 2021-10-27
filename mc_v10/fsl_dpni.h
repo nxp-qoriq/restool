@@ -46,6 +46,10 @@ struct fsl_mc_io;
 /** General DPNI macros */
 
 /**
+ * Maximum number of OPR(order point record)
+ */
+#define DPNI_MAX_OPR 16 * 8
+/**
  * Maximum number of traffic classes
  */
 #define DPNI_MAX_TC				8
@@ -274,6 +278,8 @@ int dpni_close_v10(struct fsl_mc_io *mc_io,
  *			variants.
  * @num_ceetm_ch: Number of egress channels used by this dpni object. If
  * 			not specified the dpni object will use a single CEETM channel.
+ * @num_opr: Number of desired custom number of order point
+ * 			records when DPNI_OPT_CUSTOM_OPR is set.
  */
 struct dpni_attr_v10 {
 	uint32_t options;
@@ -289,6 +295,7 @@ struct dpni_attr_v10 {
 	uint16_t wriop_version;
 	uint8_t  num_cgs;
 	uint8_t  num_ceetm_ch;
+	uint16_t num_opr;
 };
 
 int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,

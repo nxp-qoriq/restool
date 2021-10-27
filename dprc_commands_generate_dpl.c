@@ -2091,6 +2091,7 @@ static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
 	fprintf(fp, "\t\t\tqos_entries = <%u>;\n", dpni_attr.qos_entries);
 	fprintf(fp, "\t\t\tdist_key_size = <%u>;\n", dpni_attr.fs_key_size);
 	fprintf(fp, "\t\t\tnum_channels= <%u>;\n", dpni_attr.num_ceetm_ch);
+	fprintf(fp, "\t\t\tnum_opr = <%u>;\n", dpni_attr.num_opr);
 
 out:
 	if (dpni_opened) {

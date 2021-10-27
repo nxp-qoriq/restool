@@ -247,6 +247,7 @@ int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
 	attr->wriop_version = le16_to_cpu(rsp_params->wriop_version);
 	attr->num_cgs = rsp_params->num_cgs;
 	attr->num_ceetm_ch = rsp_params->num_ceetm_ch;
+	attr->num_opr = le16_to_cpu(rsp_params->num_opr);
 
 	return 0;
 }

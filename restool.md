@@ -503,6 +503,12 @@ Usage: restool dpni `<command> [--help] [ARGS...]`, where `<command>` can be:
 
 >>> Valid range is [1-32]. Defaults to 1.
 
+>> `--num-opr=<number>`
+
+>>> Where `<number>` is the desired custom number of order point records when DPNI_OPT_CUSTOM_OPR is set.
+
+>>> Maximum supported value is num_tcs * num_queues, which is also the default value.
+
 **destroy**
 : destroys a child DPNI under the root DPRC.
 

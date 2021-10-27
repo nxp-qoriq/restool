@@ -772,9 +772,12 @@ The options are:
 							Valid range [1-128]. Defaults to one per TC.
 	-d, --dist-key-size=KEY_SIZE			Maximum key size for the distribution.
 							Valid range [1-56]. Defaults to 56.
-	-c, --container <dprc.X>				Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
-	--num-channels=NUM_CHANNELS				Valid range [1-32]. Defaults to 1.
+	-c, --container <dprc.X>			Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
+	--num-channels=NUM_CHANNELS			Valid range [1-32]. Defaults to 1.
 							Number of egress channels used by this dpni object.
+	--num-opr=NUM_OPR				Number of desired custom number of order point
+							records when DPNI_OPT_CUSTOM_OPR is set.
+							Valid range [1-num_tcs * num_queues]. Defaults to maximum value.
 
 <endpoint> is one of the following:
 	dpmac.X 					X is the index of the dpmac object
@@ -840,6 +843,7 @@ process_addni() {
 	label=
 	dpni=
 	num_channels=1
+	num_opr=1
 
 	for i in "$@"
 	do
@@ -948,6 +952,10 @@ process_addni() {
 			--num-channels=*)
 				num_channels="${i#*=}"
 				dpni_args=$dpni_args" --num-channels="$num_channels
+				;;
+			--num-opr=*)
+				num_opr="${i#*=}"
+				dpni_args=$dpni_args" --num-opr="$num_opr
 				;;
 			*)
 				arg_dpmac="$(echo $i | grep -x -E "(dprc.[0-9]+/)*dpmac.[0-9]+" || true )"

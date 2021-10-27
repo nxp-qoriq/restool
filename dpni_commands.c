@@ -155,6 +155,7 @@ enum dpni_create_options {
 	CREATE_OPT_NUM_CGS,
 	CREATE_OPT_DIST_KEY_SIZE,
 	CREATE_OPT_NUM_CHANNELS,
+	CREATE_OPT_NUM_OPR,
 };
 
 static struct option dpni_create_options[] = {
@@ -328,6 +329,13 @@ static struct option dpni_create_options[] = {
 
 	[CREATE_OPT_NUM_CHANNELS] = {
 		.name = "num-channels",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_NUM_OPR] = {
+		.name = "num-opr",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -924,6 +932,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	printf("qos_key_size: %u\n", (uint32_t)dpni_attr.qos_key_size);
 	printf("fs_key_size: %u\n", (uint32_t)dpni_attr.fs_key_size);
 	printf("num_channels: %u\n", (uint32_t)dpni_attr.num_ceetm_ch);
+	printf("num_opr: %u\n", (uint32_t)dpni_attr.num_opr);
 
 	for (page = 0; page < 7; page++) {
 		memset(&dpni_stats, 0, sizeof(dpni_stats));
@@ -1569,6 +1578,17 @@ static int create_dpni_v10(const char *usage_msg)
 		dpni_cfg.num_tcs = (uint8_t)value;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_OPR)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_NUM_OPR);
+		error = get_option_value(CREATE_OPT_NUM_OPR, &value,
+					"Invalid num-opr value\n", 1,
+					DPNI_MAX_OPR);
+		if (error)
+			return error;
+
+		dpni_cfg.num_opr = (uint16_t)value;
+	}
+
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ENTRIES)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ENTRIES);
 		error = get_option_value(CREATE_OPT_MAC_ENTRIES, &value,
@@ -1779,6 +1799,11 @@ static int cmd_dpni_create_v10(void)
 		"--num-channels=<number>\n"
 		"   Number of egress channels used by this dpni object.\n"
 		"   If not specified the dpni object will use a single CEETM channel\n"
+		"--num-opr=<number>\n"
+		"   Number of desired custom number of order point records when\n"
+		"   DPNI_OPT_CUSTOM_OPR is set.\n"
+		"   Maximum supported value is num_tcs * num_queues.\n"
+		"   Defaults to num_tcs * num_queues.\n"
 		"\n";
 
 	if (restool.mc_fw_version.minor == 0)
