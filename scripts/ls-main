@@ -753,8 +753,9 @@ The options are:
 	-o, --options=OPTIONS				Comma separated options. Supported values are:
 							DPNI_OPT_TX_FRM_RELEASE, DPNI_OPT_NO_MAC_FILTER,
 							DPNI_OPT_HAS_POLICING, DPNI_OPT_SHARED_CONGESTION,
-							DPNI_OPT_HAS_KEY_MASKING, DPNI_OPT_NO_FS, DPNI_OPT_CUSTOM_CG,
-							DPNI_OPT_SHARED_HASH_KEY, DPNI_OPT_SHARED_FS.
+							DPNI_OPT_HAS_KEY_MASKING, DPNI_OPT_NO_FS, DPNI_OPT_HAS_OPR,
+							DPNI_OPT_OPR_PER_TC, DPNI_OPT_SINGLE_SENDER, DPNI_OPT_CUSTOM_CG,
+							DPNI_OPT_CUSTOM_OPR, DPNI_OPT_SHARED_HASH_KEY, DPNI_OPT_SHARED_FS.
 	-nq, --num-queues=NUM_QUEUES			Number of TX/RX queues use for traffic distribution.
 							Valid range [1-32]. Default value is number of cores.
 	-t, --num-tcs=NUM_TCS				Number of traffic classes (TCs) reserved for the DPNI.
