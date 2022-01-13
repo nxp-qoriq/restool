@@ -773,7 +773,7 @@ The options are:
 							Valid range [1-128]. Defaults to one per TC.
 	-d, --dist-key-size=KEY_SIZE			Maximum key size for the distribution.
 							Valid range [1-56]. Defaults to 56.
-	-c, --container <dprc.X>			Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
+	-c, --container=<dprc.X>			Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
 	--num-channels=NUM_CHANNELS			Valid range [1-32]. Defaults to 1.
 							Number of egress channels used by this dpni object.
 	--num-opr=NUM_OPR				Number of desired custom number of order point
