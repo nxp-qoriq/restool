@@ -42,6 +42,8 @@
 
 struct fsl_mc_io;
 
+#define DPMCP_OPT_HIGH_PRIO_CMD_DIS			0x00000001
+
 int dpmcp_open_v10(struct fsl_mc_io *mc_io,
 		   uint32_t cmd_flags,
 		   int dpmcp_id,
@@ -54,10 +56,22 @@ int dpmcp_close_v10(struct fsl_mc_io *mc_io,
 		    uint32_t cmd_flags,
 		    uint16_t token);
 
+/**
+ * struct dpmcp_cfg_v10 - Structure representing DPMCP configuration
+ * @portal_id:	Portal ID; 'DPMCP_GET_PORTAL_ID_FROM_POOL' to get the portal ID
+ *		from pool
+ * @options: Any combination of the following options:
+ *		DPMCP_OPT_HIGH_PRIO_CMD_DIS
+ */
+struct dpmcp_cfg_v10 {
+	int portal_id;
+	uint32_t options;
+};
+
 int dpmcp_create_v10(struct fsl_mc_io *mc_io,
 		     uint16_t dprc_token,
 		     uint32_t cmd_flags,
-		     const struct dpmcp_cfg *cfg,
+		     const struct dpmcp_cfg_v10 *cfg,
 		     uint32_t *obj_id);
 
 int dpmcp_destroy_v10(struct fsl_mc_io *mc_io,
@@ -80,9 +94,11 @@ int dpmcp_get_irq_status_v10(struct fsl_mc_io *mc_io,
 /**
  * struct dpmcp_attr_v10 - Structure representing DPMCP attributes
  * @id:		DPMCP object ID
+ * @options:	DPMCP object options
  */
 struct dpmcp_attr_v10 {
 	int id;
+	uint32_t options;
 };
 
 int dpmcp_get_attributes_v10(struct fsl_mc_io *mc_io,

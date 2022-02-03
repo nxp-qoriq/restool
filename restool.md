@@ -917,6 +917,12 @@ Usage: restool dpmcp `<command> [--help] [ARGS...]`, where `<command>` can be:
 
 > OPTIONS:
 
+>> DPMCP_OPT_HIGH_PRIO_CMD_DIS
+
+>>> Disable High-Priority commands on this portal.
+
+>>> Any request for HP command will be sent as Low-Priority.
+
 >> if options are not specified, create DPMCP by default options
 
 >> `--container=<container-name>`

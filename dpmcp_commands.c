@@ -43,6 +43,9 @@
 #include "mc_v9/fsl_dpmcp.h"
 #include "mc_v10/fsl_dpmcp.h"
 
+#define ALL_DPMCP_OPTS_V10 (		\
+	DPMCP_OPT_HIGH_PRIO_CMD_DIS)
+
 static enum mc_cmd_status mc_status;
 
 /**
@@ -78,6 +81,7 @@ C_ASSERT(ARRAY_SIZE(dpmcp_info_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
  */
 enum dpmcp_create_options {
 	CREATE_OPT_HELP = 0,
+	CREATE_OPT_OPTIONS,
 	CREATE_OPT_PARENT_DPRC,
 };
 
@@ -85,6 +89,13 @@ static struct option dpmcp_create_options[] = {
 	[CREATE_OPT_HELP] = {
 		.name = "help",
 		.has_arg = 0,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_OPTIONS] = {
+		.name = "options",
+		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
 	},
@@ -128,6 +139,11 @@ const struct flib_ops dpmcp_ops = {
 	.obj_get_irq_status = dpmcp_get_irq_status_v10,
 };
 
+static struct option_entry options_map_v10[] = {
+	OPTION_MAP_ENTRY(DPMCP_OPT_HIGH_PRIO_CMD_DIS),
+};
+static unsigned int options_num_v10 = ARRAY_SIZE(options_map_v10);
+
 static int cmd_dpmcp_help(void)
 {
 	static const char help_msg[] =
@@ -143,6 +159,17 @@ static int cmd_dpmcp_help(void)
 
 	printf(help_msg);
 	return 0;
+}
+
+static void print_dpmcp_options_v10(uint32_t options)
+{
+	if ((options & ~ALL_DPMCP_OPTS_V10) != 0) {
+		printf("\tUnrecognized options found...\n");
+		return;
+	}
+
+	if (options & DPMCP_OPT_HIGH_PRIO_CMD_DIS)
+		printf("\tDPMCP_OPT_HIGH_PRIO_CMD_DIS\n");
 }
 
 static int print_dpmcp_attr_v9(uint32_t dpmcp_id,
@@ -256,6 +283,9 @@ static int print_dpmcp_attr_v10(uint32_t dpmcp_id,
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	print_obj_label(target_obj_desc);
+	printf("dpmcp_attr.options value is: %#lx\n",
+			(unsigned long) dpmcp_attr.options);
+	print_dpmcp_options_v10(dpmcp_attr.options);
 
 	error = 0;
 
@@ -400,7 +430,7 @@ static int create_dpmcp_v9(struct dpmcp_cfg *dpmcp_cfg)
 	return 0;
 }
 
-static int create_dpmcp_v10(struct dpmcp_cfg *dpmcp_cfg)
+static int create_dpmcp_v10(struct dpmcp_cfg_v10 *dpmcp_cfg)
 {
 	uint32_t dpmcp_id, dprc_id;
 	uint16_t dprc_handle;
@@ -422,6 +452,22 @@ static int create_dpmcp_v10(struct dpmcp_cfg *dpmcp_cfg)
 			if (error)
 				return error;
 			dprc_opened = true;
+		}
+	}
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
+
+		error = parse_generic_create_options(
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
+				(uint64_t *) &dpmcp_cfg->options,
+				options_map_v10,
+				options_num_v10);
+
+		if (error) {
+			DEBUG_PRINTF("parse_generic_create_options() = %d\n",
+				     error);
+			return error;
 		}
 	}
 
@@ -447,7 +493,7 @@ static int create_dpmcp_v10(struct dpmcp_cfg *dpmcp_cfg)
 
 static int create_dpmcp(int mc_fw_version, const char *usage_msg)
 {
-	struct dpmcp_cfg dpmcp_cfg = {0};
+	struct dpmcp_cfg_v10 dpmcp_cfg = {0};
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -466,7 +512,7 @@ static int create_dpmcp(int mc_fw_version, const char *usage_msg)
 	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
 
 	if (mc_fw_version == MC_FW_VERSION_9)
-		error = create_dpmcp_v9(&dpmcp_cfg);
+		error = create_dpmcp_v9((struct dpmcp_cfg *) &dpmcp_cfg);
 	else if (mc_fw_version == MC_FW_VERSION_10)
 		error = create_dpmcp_v10(&dpmcp_cfg);
 	else
@@ -492,7 +538,10 @@ static int cmd_dpmcp_create_v10(void)
 		"Usage: restool dpmcp create [OPTIONS]\n"
 		"\n"
 		"OPTIONS:\n"
-		"if options are not specified, create DPMCP by default options\n"
+		"--options=<option-mask>\n"
+		"   Where <option-mask> is a comma or space separated list of DPMCP options:\n"
+		"	DPMCP_OPT_HIGH_PRIO_CMD_DIS\n"
+		"   If it is not specified, the new object will be created with no options.\n"
 		"--container=<container-name>\n"
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"

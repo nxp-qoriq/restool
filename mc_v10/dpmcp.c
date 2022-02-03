@@ -127,7 +127,7 @@ int dpmcp_close_v10(struct fsl_mc_io *mc_io,
 int dpmcp_create_v10(struct fsl_mc_io *mc_io,
 		     uint16_t dprc_token,
 		     uint32_t cmd_flags,
-		     const struct dpmcp_cfg *cfg,
+		     const struct dpmcp_cfg_v10 *cfg,
 		     uint32_t *obj_id)
 {
 	struct mc_command cmd = { 0 };
@@ -140,6 +140,7 @@ int dpmcp_create_v10(struct fsl_mc_io *mc_io,
 					  cmd_flags, dprc_token);
 	cmd_params = (struct dpmcp_cmd_create *)cmd.params;
 	cmd_params->portal_id = cpu_to_le32(cfg->portal_id);
+	cmd_params->options = cpu_to_le32(cfg->options);
 
 	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
@@ -296,6 +297,7 @@ int dpmcp_get_attributes_v10(struct fsl_mc_io *mc_io,
 	/* retrieve response parameters */
 	rsp_params = (struct dpmcp_rsp_get_attributes *)cmd.params;
 	attr->id = le32_to_cpu(rsp_params->id);
+	attr->options = le32_to_cpu(rsp_params->options);
 
 	return 0;
 }
