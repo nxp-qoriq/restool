@@ -151,11 +151,6 @@ process_debug() {
 		exit 0
 	fi
 
-	exist=$(exist_dpdbg)
-	if [ $exist -eq 0 ] && [ $1 != "--help" ] && [ $1 != "-h" ]; then
-		create_dpdbg
-	fi
-
 	for i in $@;
 	do
 		case $i in
@@ -164,6 +159,10 @@ process_debug() {
 				exit 0
 				;;
 			-c=* | --console=*)
+				exist=$(exist_dpdbg)
+				if [ $exist -eq 0 ]; then
+					create_dpdbg
+				fi
 				state="${i#*=}"
 				case $state in
 					ON | on | 1)
@@ -181,6 +180,10 @@ process_debug() {
 				esac
 				;;
 			-l=* | --log=*)
+				exist=$(exist_dpdbg)
+                                if [ $exist -eq 0 ]; then
+                                        create_dpdbg
+                                fi
 				state="${i#*=}"
                                 case $state in
                                         ON | on | 1)
@@ -198,6 +201,10 @@ process_debug() {
                                 esac
                                 ;;
 			-ts=* | --timestamp=*)
+				exist=$(exist_dpdbg)
+                                if [ $exist -eq 0 ]; then
+                                        create_dpdbg
+                                fi
 				state="${i#*=}"
                                 case $state in
                                         ON | on | 1)
@@ -215,6 +222,10 @@ process_debug() {
                                 esac
                                 ;;
 			-ll=* | --level=*)
+				exist=$(exist_dpdbg)
+                                if [ $exist -eq 0 ]; then
+                                        create_dpdbg
+                                fi
 				state="${i#*=}"
                                 case $state in
                                         0 | 1 | 2 | 3 | 4 | 5)
@@ -228,6 +239,10 @@ process_debug() {
                                 esac
                                 ;;
 			-u=* | --uart=*)
+				exist=$(exist_dpdbg)
+                                if [ $exist -eq 0 ]; then
+                                        create_dpdbg
+                                fi
 				state="${i#*=}"
                                 case $state in
                                         0 | 1 | 2 | 3 | 4)
@@ -241,10 +256,18 @@ process_debug() {
                                 esac
                                 ;;
 			-m | mem | --memory)
+				exist=$(exist_dpdbg)
+                                if [ $exist -eq 0 ]; then
+                                        create_dpdbg
+                                fi
 				restool dpdbg dump --memory
 				echo "Memory dumped information available in MC log/console"
 				;;
 			dpaiop.* | dpbp.* | dpci.* | dpcon.* | dpdcei.* | dpdmai.* | dpdmux.* | dpio.* | dpmac.* | dpmcp.* | dpni.* | dprc.* | dprtc.* | dpseci.* | dpsw.*)
+				exist=$(exist_dpdbg)
+                                if [ $exist -eq 0 ]; then
+                                        create_dpdbg
+                                fi
 				state="${i#*.}"
 				case $state in
 					''|*[!0-9]*)
