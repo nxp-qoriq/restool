@@ -137,6 +137,11 @@ struct fsl_mc_io;
  * Flow steering table is shared between all traffic classes
  */
 #define DPNI_OPT_SHARED_FS				0x001000
+/*
+ * Fq frame data, context and annotations stashing disable.
+ * The stashing is enabled by default.
+ */
+#define DPNI_OPT_STASHING_DIS				0x002000
 /**
  * struct dpni_cfg_v10 - Structure representing DPNI configuration
  * @mac_addr:	Primary MAC address
@@ -152,8 +157,14 @@ struct dpni_cfg_v10 {
 	 *		DPNI_OPT_SHARED_CONGESTION
 	 *		DPNI_OPT_HAS_KEY_MASKING
 	 *		DPNI_OPT_NO_FS
+	 *		DPNI_OPT_HAS_OPR
+	 *		DPNI_OPT_OPR_PER_TC
 	 *		DPNI_OPT_SINGLE_SENDER
 	 *		DPNI_OPT_CUSTOM_CG
+	 *		DPNI_OPT_CUSTOM_OPR
+	 *		DPNI_OPT_SHARED_HASH_KEY
+	 *		DPNI_OPT_SHARED_FS
+	 *		DPNI_OPT_STASHING_DIS
 	 * @fs_entries: Number of entries in the flow steering table.
 	 *		This table is used to select the ingress queue for
 	 *		ingress traffic, targeting a GPP core or another.
@@ -249,6 +260,14 @@ int dpni_close_v10(struct fsl_mc_io *mc_io,
  *		DPNI_OPT_SHARED_CONGESTION
  *		DPNI_OPT_HAS_KEY_MASKING
  *		DPNI_OPT_NO_FS
+ *		DPNI_OPT_HAS_OPR
+ *		DPNI_OPT_OPR_PER_TC
+ *		DPNI_OPT_SINGLE_SENDER
+ *		DPNI_OPT_CUSTOM_CG
+ *		DPNI_OPT_CUSTOM_OPR
+ *		DPNI_OPT_SHARED_HASH_KEY
+ *		DPNI_OPT_SHARED_FS
+ *		DPNI_OPT_STASHING_DIS
  * @num_queues: Number of Tx and Rx queues used for traffic distribution.
  * @num_rx_tcs: Number of RX traffic classes (TCs), reserved for the DPNI.
  * @num_tx_tcs: Number of TX traffic classes (TCs), reserved for the DPNI.

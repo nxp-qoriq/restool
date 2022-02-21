@@ -427,6 +427,8 @@ Usage: restool dpni `<command> [--help] [ARGS...]`, where `<command>` can be:
 
 >>>> DPNI_OPT_SHARED_FS
 
+>>>> DPNI_OPT_STASHING_DIS
+
 >> `--num-queues=<number>`
 
 >>> Where `<number>` is the number of TX/RX queues use for traffic distribution.
