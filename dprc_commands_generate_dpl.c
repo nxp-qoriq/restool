@@ -48,11 +48,9 @@
 #include "mc_v9/fsl_dpdbg.h"
 #include "mc_v9/fsl_dpdcei.h"
 #include "mc_v9/fsl_dpdmai.h"
-#include "mc_v10/fsl_dpdmux.h"
 #include "mc_v9/fsl_dpio.h"
 #include "mc_v9/fsl_dpmac.h"
 #include "mc_v9/fsl_dpmcp.h"
-#include "mc_v10/fsl_dprc.h"
 #include "mc_v9/fsl_dprtc.h"
 #include "mc_v9/fsl_dpseci.h"
 #include "mc_v9/fsl_dpni.h"
@@ -67,6 +65,7 @@
 #include "mc_v10/fsl_dpdmux.h"
 #include "mc_v10/fsl_dpsw.h"
 #include "mc_v10/fsl_dpmcp.h"
+#include "mc_v10/fsl_dprc.h"
 
 /* dprc stuff */
 #define ALL_DPRC_OPTS_DPL (                     \
