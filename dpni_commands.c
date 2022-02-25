@@ -878,15 +878,6 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 		goto out;
 	}
 
-	error = dpni_get_primary_mac_addr_v10(&restool.mc_io, 0,
-					      dpni_handle, mac_addr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
 	memset(&link_state, 0, sizeof(link_state));
 	error = dpni_get_link_state_v10(&restool.mc_io, 0, dpni_handle,
 					&link_state);
@@ -907,7 +898,20 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	link_state.up == 0 ? printf("down\n") :
 	link_state.up == 1 ? printf("up\n") : printf("error state\n");
 
-	print_mac_address(mac_addr);
+	if (!(dpni_attr.options & DPNI_OPT_NO_MAC_FILTER)) {
+		error = dpni_get_primary_mac_addr_v10(&restool.mc_io, 0,
+						      dpni_handle, mac_addr);
+		if (error < 0) {
+			mc_status = flib_error_to_mc_status(error);
+			ERROR_PRINTF("MC error: %s (status %#x)\n",
+				     mc_status_to_string(mc_status), mc_status);
+			goto out;
+		}
+
+		print_mac_address(mac_addr);
+	} else {
+		printf("DPNI running in promisc mode (DPNI_OPT_NO_MAC_FILTER)\n");
+	}
 
 	error = dpni_get_max_frame_length(&restool.mc_io, 0, dpni_handle,
 					  &max_frame_length);
@@ -1965,6 +1969,7 @@ static int cmd_dpni_destroy_v10(void)
 
 static int update_dpni_v10(const char *usage_msg)
 {
+	struct dpni_attr_v10 dpni_attr = {0};
 	uint8_t mac_addr[6];
 	uint16_t dpni_handle;
 	uint32_t dpni_id;
@@ -2002,14 +2007,27 @@ static int update_dpni_v10(const char *usage_msg)
 				restool.cmd_option_args[UPDATE_MAC_ADDR],
 				mac_addr);
 
+		minimal_options = true;
+
+		error = dpni_get_attributes_v10(&restool.mc_io, 0,
+						dpni_handle, &dpni_attr);
+		if (error < 0) {
+			ERROR_PRINTF("dpni_get_attributes_v10() = %d\n", error);
+			goto dpni_close;
+		}
+
+		if (dpni_attr.options & DPNI_OPT_NO_MAC_FILTER) {
+			ERROR_PRINTF("Cannot set MAC address when DPNI_OPT_NO_MAC_FILTER is set!\n");
+			goto dpni_close;
+		}
+
 		error = dpni_set_primary_mac_addr_v10(&restool.mc_io, 0,
 						      dpni_handle, mac_addr);
 		if (error)
 			ERROR_PRINTF("dpni_set_primary_mac_addr_v10() = %d\n", error);
-
-		minimal_options = true;
 	}
 
+dpni_close:
 	dpni_close_v10(&restool.mc_io, 0, dpni_handle);
 out:
 
