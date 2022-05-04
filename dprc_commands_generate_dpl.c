@@ -611,7 +611,7 @@ static int write_containers(void)
 	struct container_list *curr_cont;
 	struct obj_list *curr_obj;
 	struct obj_list *prev_obj;
-	char curr_obj_type[OBJ_TYPE_MAX_LENGTH];
+	char curr_obj_type[OBJ_TYPE_MAX_LENGTH + 1];
 	int remain, error;
 	int obj_num = 99;
 	int base = 100;
@@ -630,7 +630,7 @@ static int write_containers(void)
 		obj_num = 99;
 		prev_obj = NULL;
 		curr_obj = curr_cont->obj;
-		memset(curr_obj_type, 0, OBJ_TYPE_MAX_LENGTH);
+		memset(curr_obj_type, 0, OBJ_TYPE_MAX_LENGTH + 1);
 
 		fprintf(fp, "\n");
 		fprintf(fp, "\t\tdprc@%d {\n", curr_cont->id);
