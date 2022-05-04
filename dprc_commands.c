@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2019 NXP
+ * Copyright 2017-2022 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -2317,7 +2317,7 @@ static int cmd_dprc_dump_mem(void)
 	uint16_t dprc_handle, total_page_cnt, page = 0;
 	struct dprc_get_mem_page mem = {0};
 	uint32_t current_dprc_id;
-	bool dprc_opened;
+	bool dprc_opened = false;
 	int err;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DUMP_MEM_OPT_HELP)) {
