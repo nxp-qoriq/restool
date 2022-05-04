@@ -558,7 +558,7 @@ static char *to_upper(char *string)
 	char *upper_string;
 
 	length = strlen(string);
-	upper_string = malloc(length * sizeof(char));
+	upper_string = malloc(length * sizeof(char) + 1);
 	if (!upper_string) {
 		ERROR_PRINTF("Could not alloc memory!");
 		return NULL;
