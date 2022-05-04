@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2022 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -581,6 +581,7 @@ static int create_dpseci_v9(const char *usage_msg)
 static int create_dpseci_v10(const char *usage_msg)
 {
 	struct dpseci_cfg_v10 dpseci_cfg = { 0 };
+	uint64_t dpseci_cfg_options;
 	uint32_t dpseci_id, dprc_id;
 	uint16_t dprc_handle;
 	bool dprc_opened;
@@ -605,9 +606,15 @@ static int create_dpseci_v10(const char *usage_msg)
 			restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 			error = parse_generic_create_options(
 					restool.cmd_option_args[CREATE_OPT_OPTIONS],
-					(uint64_t *)&dpseci_cfg.options,
+					&dpseci_cfg_options,
 					options_map_v10_1,
 					options_num_v10_1);
+
+			dpseci_cfg.options = (uint32_t)dpseci_cfg_options;
+			if (dpseci_cfg_options > UINT32_MAX)
+				DEBUG_PRINTF(
+					"parse_generic_create_options() produces overflow while getting options-mask\n");
+
 			if (error < 0) {
 				DEBUG_PRINTF(
 					"parse_generic_create_options failed with error %d, cannot get options-mask\n",
