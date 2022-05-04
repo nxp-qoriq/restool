@@ -289,7 +289,9 @@ static int find_all_obj_desc(uint32_t dprc_id,
 	int error = 0;
 	static enum mc_cmd_status mc_status;
 	struct container_list *prev_cont;
-	struct container_list *curr_cont;
+	struct container_list *curr_cont = NULL;
+	struct obj_list *curr_obj2 = NULL;
+	struct obj_list *curr_obj = NULL;
 	struct dprc_attributes dprc_attr;
 
 	if (prev)
@@ -325,7 +327,7 @@ static int find_all_obj_desc(uint32_t dprc_id,
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out;
+		goto free_cont;
 	}
 	curr_cont->options = dprc_attr.options;
 	container_count++;
@@ -336,13 +338,16 @@ static int find_all_obj_desc(uint32_t dprc_id,
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
 			     mc_status_to_string(mc_status), mc_status);
-		goto out;
+		goto free_cont;
 	}
 
 	for (int i = 0; i < num_child_devices; i++) {
 		struct dprc_obj_desc obj_desc;
 		uint16_t child_dprc_handle;
 		int error2;
+
+		curr_obj = NULL;
+		curr_obj2 = NULL;
 
 		error = dprc_get_obj(
 				&restool.mc_io, 0,
@@ -353,7 +358,7 @@ static int find_all_obj_desc(uint32_t dprc_id,
 			DEBUG_PRINTF(
 				"dprc_get_object(%u) failed with error %d\n",
 				i, error);
-			goto out;
+			goto free_cont;
 		}
 
 		DEBUG_PRINTF("it is %s.%u\n", obj_desc.type, obj_desc.id);
@@ -362,7 +367,7 @@ static int find_all_obj_desc(uint32_t dprc_id,
 
 			error = open_dprc(obj_desc.id, &child_dprc_handle);
 			if (error < 0)
-				goto out;
+				goto free_cont;
 
 			DEBUG_PRINTF("entering %s.%u\n", obj_desc.type,
 					obj_desc.id);
@@ -383,18 +388,17 @@ static int find_all_obj_desc(uint32_t dprc_id,
 				if (error == 0)
 					error = error2;
 
-				goto out;
+				goto free_cont;
 			}
 
 			DEBUG_PRINTF("exiting %s.%u\n", obj_desc.type,
 					obj_desc.id);
 		} else {
-			struct obj_list *curr_obj =
-				malloc(sizeof(struct obj_list));
+			curr_obj = malloc(sizeof(struct obj_list));
 			if (curr_obj == NULL) {
 				ERROR_PRINTF("malloc failed\n");
 				error = -errno;
-				goto out;
+				goto free_cont;
 			}
 
 			curr_obj->next = NULL;
@@ -404,12 +408,11 @@ static int find_all_obj_desc(uint32_t dprc_id,
 			strncpy(curr_obj->label, obj_desc.label, EP_OBJ_TYPE_MAX_LEN - 1);
 			curr_obj->label[EP_OBJ_TYPE_MAX_LEN - 1] = '\0';
 
-			struct obj_list *curr_obj2 =
-				malloc(sizeof(struct obj_list));
+			curr_obj2 = malloc(sizeof(struct obj_list));
 			if (curr_obj2 == NULL) {
 				ERROR_PRINTF("malloc failed\n");
 				error = -errno;
-				goto out;
+				goto free_curr_obj;
 			}
 
 			curr_obj2->next = NULL;
@@ -421,13 +424,22 @@ static int find_all_obj_desc(uint32_t dprc_id,
 
 			error = compare_insert_obj(&obj_head, curr_obj);
 			if (error)
-				goto out;
+				goto free_curr_obj2;
+
 			error = compare_insert_obj(&curr_cont->obj, curr_obj2);
 			if (error)
-				goto out;
+				goto free_curr_obj2;
 		}
 	}
 
+	return 0;
+
+free_curr_obj2:
+	free(curr_obj2);
+free_curr_obj:
+	free(curr_obj);
+free_cont:
+	free(curr_cont);
 out:
 	return error;
 }
