@@ -1206,6 +1206,7 @@ static int create_dpni_v9(const char *usage_msg)
 	struct dpni_extended_cfg dpni_extended_cfg;
 	struct dpni_attr_v9 dpni_attr;
 	struct dpni_cfg_v9 dpni_cfg;
+	uint64_t dpni_cfg_options;
 	uint16_t dpni_handle;
 	int error;
 	long val;
@@ -1230,7 +1231,7 @@ static int create_dpni_v9(const char *usage_msg)
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				(uint64_t *)&dpni_cfg.adv.options,
+				&dpni_cfg_options,
 				options_map_v9,
 				options_num_v9);
 		if (error < 0) {
@@ -1238,6 +1239,12 @@ static int create_dpni_v9(const char *usage_msg)
 				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
 				error);
 			return error;
+		}
+
+		dpni_cfg.adv.options = (uint32_t)dpni_cfg_options;
+		if (dpni_cfg_options > UINT32_MAX) {
+			DEBUG_PRINTF(
+				"parse_generic_create_options() produces overflow while getting options-mask\n");
 		}
 	} else {
 		dpni_cfg.adv.options = DPNI_OPT_UNICAST_FILTER |
@@ -1500,6 +1507,7 @@ static int create_dpni_v10(const char *usage_msg)
 {
 	struct dpni_cfg_v10 dpni_cfg;
 	uint32_t dpni_id, dprc_id;
+	uint64_t dpni_cfg_options;
 	uint16_t dprc_handle;
 	bool dprc_opened;
 	long value;
@@ -1542,15 +1550,20 @@ static int create_dpni_v10(const char *usage_msg)
 		if (restool.mc_fw_version.minor == 0)
 			error = parse_generic_create_options(
 					restool.cmd_option_args[CREATE_OPT_OPTIONS],
-					(uint64_t *)&dpni_cfg.options,
+					&dpni_cfg_options,
 					options_map_v10_0,
 					options_num_v10_0);
 		else
 			error = parse_generic_create_options(
 					restool.cmd_option_args[CREATE_OPT_OPTIONS],
-					(uint64_t *)&dpni_cfg.options,
+					&dpni_cfg_options,
 					options_map_v10_1,
 					options_num_v10_1);
+
+		dpni_cfg.options = (uint32_t)dpni_cfg_options;
+		if (dpni_cfg_options > UINT32_MAX)
+			DEBUG_PRINTF(
+				"parse_generic_create_options() produces overflow while getting options-mask\n");
 
 		if (error) {
 			DEBUG_PRINTF("parse_generic_create_options() = %d\n",
