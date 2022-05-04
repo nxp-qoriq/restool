@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2022 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -370,7 +370,8 @@ const char *mc_status_to_string(enum mc_cmd_status status);
 enum mc_cmd_status flib_error_to_mc_status(int error);
 
 void print_unexpected_options_error(uint32_t option_mask,
-				    const struct option *options);
+				    const struct option *options,
+				    unsigned int num_options);
 
 void print_obj_label(struct dprc_obj_desc *target_obj_desc);
 

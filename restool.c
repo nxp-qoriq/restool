@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2022 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -629,10 +629,11 @@ void print_new_obj(char *type, int id, const char *parent)
 }
 
 void print_unexpected_options_error(uint32_t option_mask,
-				    const struct option *options)
+				    const struct option *options,
+				    unsigned int num_options)
 {
 	ERROR_PRINTF("Invalid options:\n");
-	for (unsigned int i = 0; i < MAX_NUM_CMD_LINE_OPTIONS; i++) {
+	for (unsigned int i = 0; (i < MAX_NUM_CMD_LINE_OPTIONS) && (i < num_options); i++) {
 		if (option_mask & ONE_BIT_MASK(i))
 			fprintf(stderr, "\t--%s\n", options[i].name);
 
@@ -1184,7 +1185,7 @@ static int parse_obj_command(const char *obj_type,
 		goto out;
 	if (restool.cmd_option_mask != 0) {
 		print_unexpected_options_error(restool.cmd_option_mask,
-					       obj_cmd->options);
+					       obj_cmd->options, MAX_NUM_CMD_LINE_OPTIONS);
 		error = -EINVAL;
 	}
 out:
@@ -1455,7 +1456,7 @@ int main(int argc, char *argv[])
 		if (restool.global_option_mask != 0) {
 			print_unexpected_options_error(
 				restool.global_option_mask,
-				global_options);
+				global_options, ARRAY_SIZE(global_options));
 			error = -EINVAL;
 		}
 	} else {
@@ -1492,7 +1493,7 @@ int main(int argc, char *argv[])
 		if (restool.global_option_mask != 0) {
 			print_unexpected_options_error(
 				restool.global_option_mask,
-				global_options);
+				global_options, ARRAY_SIZE(global_options));
 			print_try_help();
 			error = -EINVAL;
 			goto out;
