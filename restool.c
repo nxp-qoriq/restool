@@ -491,7 +491,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 {
 	uint16_t obj_handle;
 	uint32_t irq_mask;
-	uint32_t irq_status;
+	uint32_t irq_status = 0;
 	static enum mc_cmd_status mc_status;
 	int error = 0;
 
@@ -538,6 +538,7 @@ int print_obj_verbose(struct dprc_obj_desc *target_obj_desc,
 		ops->obj_get_irq_mask(&restool.mc_io, 0, obj_handle, j,
 					&irq_mask);
 		printf("interrupt[%d] mask: %#x\n", j, irq_mask);
+		irq_status = 0;
 		ops->obj_get_irq_status(&restool.mc_io, 0, obj_handle, j,
 					&irq_status);
 		printf("interrupt[%d] status: %#x\n", j, irq_status);
