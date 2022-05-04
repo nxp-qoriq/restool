@@ -285,14 +285,14 @@ static int find_all_obj_desc(uint32_t dprc_id,
 			     uint32_t parent_id)
 {
 
-	int num_child_devices;
-	int error = 0;
-	static enum mc_cmd_status mc_status;
-	struct container_list *prev_cont;
+	struct container_list *prev_cont = NULL;
 	struct container_list *curr_cont = NULL;
+	static enum mc_cmd_status mc_status;
 	struct obj_list *curr_obj2 = NULL;
 	struct obj_list *curr_obj = NULL;
 	struct dprc_attributes dprc_attr;
+	int num_child_devices;
+	int error = 0;
 
 	if (prev)
 		prev_cont = *prev;
@@ -308,6 +308,11 @@ static int find_all_obj_desc(uint32_t dprc_id,
 		DEBUG_PRINTF("This is the main dprc.\n");
 		container_head = curr_cont;
 	} else {
+		if (!prev_cont) {
+			error = -EINVAL;
+			goto free_cont;
+		}
+
 		DEBUG_PRINTF("This is child dprc.\n");
 		prev_cont->next = curr_cont;
 	}
