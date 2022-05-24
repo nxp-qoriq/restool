@@ -433,6 +433,7 @@ static int create_dpmcp_v9(struct dpmcp_cfg *dpmcp_cfg)
 static int create_dpmcp_v10(struct dpmcp_cfg_v10 *dpmcp_cfg)
 {
 	uint32_t dpmcp_id, dprc_id;
+	uint64_t dpmcp_cfg_options;
 	uint16_t dprc_handle;
 	bool dprc_opened;
 	int error;
@@ -460,7 +461,7 @@ static int create_dpmcp_v10(struct dpmcp_cfg_v10 *dpmcp_cfg)
 
 		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				(uint64_t *) &dpmcp_cfg->options,
+				&dpmcp_cfg_options,
 				options_map_v10,
 				options_num_v10);
 
@@ -469,6 +470,10 @@ static int create_dpmcp_v10(struct dpmcp_cfg_v10 *dpmcp_cfg)
 				     error);
 			return error;
 		}
+
+		dpmcp_cfg->options = (uint32_t)dpmcp_cfg_options;
+		if (dpmcp_cfg_options > UINT32_MAX)
+			DEBUG_PRINTF("parse_generic_create_options() produces overflow while getting options-mask\n");
 	}
 
 	error = dpmcp_create_v10(&restool.mc_io, dprc_handle, 0,
