@@ -1791,11 +1791,6 @@ static void parse_dpni_options(FILE *fp, uint32_t options)
 		snprintf(buf+len, 50, "\"DPNI_OPT_FS_MASK_SUPPORT\", ");
 	}
 
-	if (options & DPNI_OPT_SHARED_FS) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_SHARED_FS\", ");
-	}
-
 	len = strlen(buf);
 	if (13 == len)
 		return;
@@ -1878,6 +1873,11 @@ static void parse_dpni_options_v10(FILE *fp, uint32_t options)
 	if (options & DPNI_OPT_STASHING_DIS) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPNI_OPT_STASHING_DIS\", ");
+	}
+
+	if (options & DPNI_OPT_SHARED_FS) {
+		len = strlen(buf);
+		snprintf(buf+len, 50, "\"DPNI_OPT_SHARED_FS\", ");
 	}
 
 	len = strlen(buf);
