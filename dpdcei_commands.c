@@ -520,13 +520,13 @@ static int create_dpdcei(int mc_fw_version, const char *usage_msg)
 		error = parse_dpdcei_engine(
 			restool.cmd_option_args[CREATE_OPT_ENGINE],
 			&dpdcei_cfg.engine);
-		dpdcei_cfg_v10.engine = dpdcei_cfg.engine;
 		if (error < 0) {
 			DEBUG_PRINTF(
 				"parse_dpdcei_engine() failed with error %d, cannot get dpdcei engine\n",
 				error);
 			return error;
 		}
+		dpdcei_cfg_v10.engine = dpdcei_cfg.engine;
 	} else {
 		ERROR_PRINTF("--engine option missing\n");
 		puts(usage_msg);
