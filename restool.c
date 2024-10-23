@@ -920,7 +920,8 @@ static int parse_global_options(int argc, char *argv[],
 				return str_len;
 			}
 
-			size_buff = sprintf(restool.specified_dev_file, "%s", optarg);
+			size_buff = snprintf(restool.specified_dev_file, USR_DEV_FILE_SIZE,
+					     "%s", optarg);
 			if (size_buff != str_len) {
 				ERROR_PRINTF("sprintf failed\n");
 				return -1;
