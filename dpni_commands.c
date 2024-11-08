@@ -946,7 +946,8 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	for (page = 0; page < 7; page++) {
 		memset(&dpni_stats, 0, sizeof(dpni_stats));
 
-		if (page == 3) {
+		switch (page) {
+		case 3:
 			int ch;
 
 			for (ch = 0; ch < dpni_attr.num_ceetm_ch; ch++) {
@@ -962,11 +963,29 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 					dpni_print_stats(dpni_stats_v10[page], dpni_stats);
 				}
 			}
-		} else {
-				error = dpni_get_statistics_v10(&restool.mc_io, 0,
-								dpni_handle, page,
-								0, &dpni_stats);
-				dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+			break;
+		case 5:
+			int tc;
+
+			for (tc = 0; tc < dpni_attr.num_rx_tcs; tc++) {
+				uint16_t param = tc;
+
+				memset(&dpni_stats, 0, sizeof(dpni_stats));
+				error = dpni_get_statistics_v10(&restool.mc_io, 0, dpni_handle,
+								page, param, &dpni_stats);
+				if (!error) {
+					printf("+ Policer stats for TC %d\n", tc);
+					dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+				}
+			}
+
+			break;
+		default:
+			error = dpni_get_statistics_v10(&restool.mc_io, 0,
+							dpni_handle, page,
+							0, &dpni_stats);
+			dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+			break;
 		}
 	}
 
