@@ -958,8 +958,10 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 					memset(&dpni_stats, 0, sizeof(dpni_stats));
 					error = dpni_get_statistics_v10(&restool.mc_io, 0,
 								dpni_handle, page, param, &dpni_stats);
-					printf("ceetm stats channel %d, TC %d\n", ch, tc);
-					dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+					if (!error) {
+						printf("+ CEETM stats Tx channel %d, TC %d\n", ch, tc);
+						dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+					}
 				}
 			}
 			break;
