@@ -843,6 +843,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	struct dpni_link_state_v10 link_state;
 	bool dpni_opened = false;
 	uint8_t mac_addr[6];
+	int tc, q, ch;
 	int error = 0;
 	int error2;
 	unsigned int page;
@@ -948,8 +949,6 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 
 		switch (page) {
 		case 3:
-			int ch;
-
 			for (ch = 0; ch < dpni_attr.num_ceetm_ch; ch++) {
 				int tc;
 
@@ -964,9 +963,37 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 				}
 			}
 			break;
-		case 5:
-			int tc;
+		case 4:
+			if (dpni_attr.options & DPNI_OPT_CUSTOM_CG) {
+				for (q = 0; q < dpni_attr.num_queues; q++) {
+					for (tc = 0; tc < dpni_attr.num_rx_tcs; tc++) {
+						uint16_t param = (q << 8 ) | tc;
 
+						memset(&dpni_stats, 0, sizeof(dpni_stats));
+						error = dpni_get_statistics_v10(&restool.mc_io, 0, dpni_handle,
+										page, param, &dpni_stats);
+						if (!error) {
+							printf("+ Congestion stats for Queue %d, Rx TC %d\n", q, tc);
+							dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+						}
+					}
+				}
+			} else {
+				for (tc = 0; tc < dpni_attr.num_rx_tcs; tc++) {
+					uint16_t param = tc;
+
+					memset(&dpni_stats, 0, sizeof(dpni_stats));
+					error = dpni_get_statistics_v10(&restool.mc_io, 0, dpni_handle,
+									page, param, &dpni_stats);
+					if (!error) {
+						printf("+ Congestion stats for Rx TC %d\n", tc);
+						dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+					}
+				}
+			}
+
+			break;
+		case 5:
 			for (tc = 0; tc < dpni_attr.num_rx_tcs; tc++) {
 				uint16_t param = tc;
 
