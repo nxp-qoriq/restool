@@ -4,7 +4,7 @@ endif
 
 SRC = $(shell find . -name "*.c")
 OBJ = $(patsubst %.c, %.o, $(SRC))
-MANPAGE = restool.1
+MANPAGE ?= restool.1
 RESTOOL_SCRIPT_SYMLINKS = ls-addmux ls-addsw ls-addni ls-listni ls-listmac ls-delete
 
 CFLAGS = ${EXTRA_CFLAGS} \
@@ -62,7 +62,9 @@ install: restool scripts/ls-main scripts/ls-append-dpl scripts/ls-debug scripts/
 	install -D -m 755 scripts/ls-debug $(DESTDIR)$(bindir)/ls-debug
 	$(foreach symlink, $(RESTOOL_SCRIPT_SYMLINKS), sh -c "cd $(DESTDIR)$(bindir) && ln -sf ls-main $(symlink)" ;)
 	install -D -m 755 scripts/restool_completion.sh $(DESTDIR)$(bindir_completion)/restool
+ifneq ($(MANPAGE),)
 	install -m 0644 -D $(MANPAGE) $(call get_manpage_destination,$(MANPAGE))
+endif
 
 clean:
 	rm -f $(OBJ) $(MANPAGE) \
