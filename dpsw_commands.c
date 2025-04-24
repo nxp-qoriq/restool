@@ -30,6 +30,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -467,7 +468,7 @@ static int print_dpsw_endpoint(uint32_t target_id, uint16_t num_ifs,
 			if (error)
 				return error;
 
-			printf("\t%s: %ld\n",
+			printf("\t%s: %" PRIu64 "\n",
 				dpsw_counter_stats[counter_iterator],
 				counter);
 		}

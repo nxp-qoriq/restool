@@ -30,6 +30,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -327,7 +328,7 @@ static int print_dpmac_counters(struct fsl_mc_io *mc_io, uint16_t token)
 			return error;
 		}
 
-		printf("%s: %lu\n", dpaa2_mac_counters[i].name, counter_value);
+		printf("%s: %" PRIu64 "\n", dpaa2_mac_counters[i].name, counter_value);
 	}
 
 	return 0;

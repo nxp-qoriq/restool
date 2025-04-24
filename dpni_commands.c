@@ -30,6 +30,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -829,7 +830,7 @@ static void dpni_print_stats(const char *strings[],
 	for (i = 0; i < DPNI_STATS_PER_PAGE_V10; i++) {
 		if (strcmp(strings[i], "\0") == 0)
 			break;
-		printf("%s: %lu\n", strings[i], *stat);
+		printf("%s: %" PRIu64 "\n", strings[i], *stat);
 		stat++;
 	}
 }

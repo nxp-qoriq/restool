@@ -30,6 +30,7 @@
  * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
  * POSSIBILITY OF SUCH DAMAGE.
  */
+#include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -301,7 +302,7 @@ static int print_dpdmux_endpoint(uint32_t target_id, uint16_t num_ifs,
 		for (uint32_t i = 0; i < ARRAY_SIZE(dpdmux_counters); ++i) {
 			dpdmux_if_get_counter(&restool.mc_io, 0,
 					token, k, i, &count);
-			printf("\t%s: %lu\n", dpdmux_counters[i], count);
+			printf("\t%s: %" PRIu64 "\n", dpdmux_counters[i], count);
 		}
 	}
 	return 0;
