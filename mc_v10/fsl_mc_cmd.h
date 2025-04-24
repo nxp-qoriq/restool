@@ -51,9 +51,13 @@
 #define le32_to_cpu	le32toh
 #define le16_to_cpu	le16toh
 
-#define BITS_PER_LONG			64
+#ifndef BITS_PER_LONG
+#define BITS_PER_LONG __WORDSIZE
+#endif
+
 #define GENMASK(h, l) \
-		(((~0UL) << (l)) & (~0UL >> (BITS_PER_LONG - 1 - (h))))
+	(((~(unsigned long)0) - ((unsigned long)1 << (l)) + 1) & \
+	 (~(unsigned long)0 >> (BITS_PER_LONG - 1 - (h))))
 
 struct mc_cmd_header {
 	union {
