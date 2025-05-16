@@ -44,10 +44,6 @@
 #define DPSECI_CMDID_DESTROY		0x900
 
 #define DPSECI_CMDID_GET_ATTR		0x004
-
-#define DPSECI_CMDID_GET_IRQ_MASK	0x015
-#define DPSECI_CMDID_GET_IRQ_STATUS	0x016
-
 #define DPSECI_CMDID_GET_TX_QUEUE	0x197
 
 /*                cmd, param, offset, width, type, arg_name */
@@ -68,25 +64,6 @@ do { \
 	MC_CMD_OP(cmd, 1, 0,  8,  uint8_t,  cfg->num_tx_queues);\
 	MC_CMD_OP(cmd, 1, 8,  8,  uint8_t,  cfg->num_rx_queues);\
 } while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_CMD_GET_IRQ_MASK(cmd, irq_index) \
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_RSP_GET_IRQ_MASK(cmd, mask) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, mask)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_CMD_GET_IRQ_STATUS(cmd, irq_index, status) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, status);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSECI_RSP_GET_IRQ_STATUS(cmd, status) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t,  status)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSECI_RSP_GET_ATTR(cmd, attr) \

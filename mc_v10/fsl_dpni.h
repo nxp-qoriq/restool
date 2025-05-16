@@ -33,7 +33,6 @@
 #ifndef __FSL_DPNI__v10_H
 #define __FSL_DPNI__v10_H
 
-#include "../mc_v9/fsl_dpkg.h"
 #include "../mc_v9/fsl_dpni.h"
 
 struct fsl_mc_io;

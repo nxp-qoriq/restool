@@ -33,8 +33,6 @@
 #ifndef _FSL_DPDBG_CMD_H
 #define _FSL_DPDBG_CMD_H
 
-#include "fsl_dpkg.h"
-
 /* DPDBG Version */
 #define DPDBG_VER_MAJOR				1
 #define DPDBG_VER_MINOR				0
@@ -54,9 +52,6 @@
 #define DPDBG_CMDID_GET_ATTR			DPDBG_CMD(0x004)
 #define DPDBG_CMDID_DUMP                DPDBG_CMD(0x130)
 #define DPDBG_CMDID_SET                 DPDBG_CMD(0x140)
-
-#define DPDBG_CMDID_SET_CTLU_PROFILING		DPDBG_CMD(0x152)
-#define DPDBG_CMDID_GET_CTLU_PROFILING		DPDBG_CMD(0x153)
 
 /* Macros for accessing command fields smaller than 1byte */
 #define DPDBG_MASK(field)        \
@@ -102,43 +97,6 @@ struct dpdbg_rsp_get_api_version {
 	uint16_t major;
 	uint16_t minor;
 };
-
-#define DPDBG_CTLU_TYPE_SHIFT	0
-#define DPDBG_CTLU_TYPE_SIZE	3
-#define DPDBG_OPT_ENABLE_PROF_SHIFT	6
-#define DPDBG_OPT_ENABLE_PROF_SIZE	1
-#define DPDBG_OPT_ENABLE_PROF_TID_SHIFT	7
-#define DPDBG_OPT_ENABLE_PROF_TID_SIZE	1
-
-struct dpdbg_cmd_set_ctlu_profiling_counters {
-	/* from LSB: only the last 3 bits */
-	uint8_t ctlu_type;
-	/* from LSB: only the last 1 bit */
-	uint8_t opt_enable_prof_ctrs;
-	/* from LSB: only the last 1 bits,
-	 * valid if opt_enable_prof_ctrs == true
-	 */
-	uint8_t opt_enable_prof_for_tid;
-	/* valid only if opt_enable_prof_for_tid && opt_enable_prof_ctrs */
-	uint16_t table_id;
-};
-
-struct dpdbg_cmd_get_ctlu_profiling_counters {
-	/* from LSB: only the last 3 bits */
-	uint8_t ctlu_type;
-};
-
-struct dpdbg_rsp_get_ctlu_profiling_counters {
-	uint32_t rule_lookups;
-	uint32_t rule_hits;
-	uint32_t entry_lookups;
-	uint32_t entry_hits;
-	uint32_t cache_accesses;
-	uint32_t cache_hits;
-	uint32_t cache_updates;
-	uint32_t memory_accesses;
-};
-
 #pragma pack(pop)
 
 #endif /* _FSL_DPDBG_CMD_H */

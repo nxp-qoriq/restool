@@ -34,7 +34,6 @@
 #define __FSL_DPDBG_H
 
 #include "fsl_dpdbg_cmd.h"
-#include "fsl_dpkg.h"
 #include "fsl_dpmac.h"
 #include "fsl_dpni.h"
 
@@ -104,40 +103,4 @@ int dpdbg_get_api_version_v10(struct fsl_mc_io *mc_io,
 			   uint32_t cmd_flags,
 			   uint16_t *major_ver,
 			   uint16_t *minor_ver);
-
-#define DBG_CTLU_EIOP_EGRESS 0 /*!< CTLU for EIOP Egress */
-#define DBG_CTLU_EIOP_INGRESS 1 /*!< CTLU for EIOP Ingress */
-#define DBG_CTLU_AIOP 2 /*!< CTLU for AIOP */
-#define DBG_CTLU_AIOP_MFLU 3 /*!< MFLU for AIOP */
-
-/* CTLU profiling counters */
-struct ctlu_profiling_counters {
-	uint32_t rule_lookups;
-	uint32_t rule_hits;
-	uint32_t entry_lookups;
-	uint32_t entry_hits;
-	uint32_t cache_accesses;
-	uint32_t cache_hits;
-	uint32_t cache_updates;
-	uint32_t memory_accesses;
-};
-
-int dpdbg_get_ctlu_profiling_counters(struct fsl_mc_io *mc_io,
-			uint32_t cmd_flags,
-			uint16_t token,
-			uint8_t ctlu_type,
-			struct ctlu_profiling_counters *counters);
-
-struct ctlu_profiling_options {
-	uint8_t enable_profiling_counters; /* enable/disable CTLU profiling */
-	uint8_t enable_profiling_for_tid; /* set profiling for a table id */
-	uint16_t table_id; /* valid iff enable_profiling_for_tid is 'true' */
-};
-
-int dpdbg_set_ctlu_profiling_counters(struct fsl_mc_io *mc_io,
-			uint32_t cmd_flags,
-			uint16_t token,
-			uint8_t ctlu_type,
-			struct ctlu_profiling_options *options);
-
 #endif /* __FSL_DPDBG_H */

@@ -45,11 +45,6 @@
 
 #define DPMAC_CMDID_GET_ATTR			0x004
 
-#define DPMAC_CMDID_GET_IRQ_MASK		0x015
-#define DPMAC_CMDID_GET_IRQ_STATUS		0x016
-
-#define DPMAC_CMDID_GET_COUNTER			0x0c4
-
 /*                cmd, param, offset, width, type, arg_name */
 #define DPMAC_CMD_CREATE(cmd, cfg) \
 	MC_CMD_OP(cmd, 0, 0,  32, int,      cfg->mac_id)
@@ -57,25 +52,6 @@
 /*                cmd, param, offset, width, type, arg_name */
 #define DPMAC_CMD_OPEN(cmd, dpmac_id) \
 	MC_CMD_OP(cmd, 0, 0,  32, int,	    dpmac_id)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPMAC_CMD_GET_IRQ_MASK(cmd, irq_index) \
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPMAC_RSP_GET_IRQ_MASK(cmd, mask) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, mask)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPMAC_CMD_GET_IRQ_STATUS(cmd, irq_index, status) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, status);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPMAC_RSP_GET_IRQ_STATUS(cmd, status) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, status)
 
 /*                cmd, param, offset, width, type,	arg_name */
 #define DPMAC_RSP_GET_ATTRIBUTES(cmd, attr) \
@@ -88,13 +64,5 @@ do { \
 	MC_RSP_OP(cmd, 1, 40,  8, enum dpmac_eth_if,	attr->eth_if);\
 	MC_RSP_OP(cmd, 2, 0,  32, uint32_t,		attr->max_rate);\
 } while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPMAC_CMD_GET_COUNTER(cmd, type) \
-	MC_CMD_OP(cmd, 0, 0,  8, enum dpmac_counter, type)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPMAC_RSP_GET_COUNTER(cmd, counter) \
-	MC_RSP_OP(cmd, 1, 0, 64, uint64_t, counter)
 
 #endif /* _FSL_DPMAC_CMD_H */

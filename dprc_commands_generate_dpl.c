@@ -45,7 +45,6 @@
 #include "mc_v9/fsl_dpbp.h"
 #include "mc_v9/fsl_dpci.h"
 #include "mc_v9/fsl_dpcon.h"
-#include "mc_v9/fsl_dpdbg.h"
 #include "mc_v9/fsl_dpdcei.h"
 #include "mc_v9/fsl_dpdmai.h"
 #include "mc_v9/fsl_dpio.h"

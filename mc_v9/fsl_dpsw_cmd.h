@@ -44,8 +44,6 @@
 #define DPSW_CMDID_DESTROY			0x900
 
 #define DPSW_CMDID_GET_ATTR			0x004
-#define DPSW_CMDID_GET_IRQ_MASK			0x015
-#define DPSW_CMDID_GET_IRQ_STATUS		0x016
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_CMD_OPEN(cmd, dpsw_id) \
@@ -65,25 +63,6 @@ do { \
 	MC_CMD_OP(cmd, 1, 48, 16, uint16_t, cfg->adv.max_fdb_mc_groups);\
 	MC_CMD_OP(cmd, 2, 0,  64, uint64_t, cfg->adv.options);\
 } while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_GET_IRQ_MASK(cmd, irq_index) \
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_RSP_GET_IRQ_MASK(cmd, mask) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, mask)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_CMD_GET_IRQ_STATUS(cmd, irq_index, status) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, status);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPSW_RSP_GET_IRQ_STATUS(cmd, status) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, status)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPSW_RSP_GET_ATTR_V9(cmd, attr) \

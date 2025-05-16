@@ -45,9 +45,6 @@
 
 #define DPAIOP_CMDID_GET_ATTR			0x004
 
-#define DPAIOP_CMDID_GET_IRQ_MASK		0x015
-#define DPAIOP_CMDID_GET_IRQ_STATUS		0x016
-
 #define DPAIOP_CMDID_GET_SL_VERSION		0x282
 #define DPAIOP_CMDID_GET_STATE			0x283
 
@@ -61,25 +58,6 @@ do { \
 	MC_CMD_OP(cmd, 0, 0,  32, int,	    cfg->aiop_id);\
 	MC_CMD_OP(cmd, 0, 32, 32, int,	    cfg->aiop_container_id);\
 } while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPAIOP_CMD_GET_IRQ_MASK(cmd, irq_index) \
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPAIOP_RSP_GET_IRQ_MASK(cmd, mask) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, mask)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPAIOP_CMD_GET_IRQ_STATUS(cmd, irq_index, status) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, status);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPAIOP_RSP_GET_IRQ_STATUS(cmd, status) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, status)
 
 /*                cmd, param, offset, width, type,	arg_name */
 #define DPAIOP_RSP_GET_ATTRIBUTES(cmd, attr) \

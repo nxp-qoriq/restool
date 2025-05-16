@@ -76,26 +76,6 @@ int dpni_close(struct fsl_mc_io *mc_io,
 	return mc_send_command(mc_io, &cmd);
 }
 
-int dpni_prepare_extended_cfg(const struct dpni_extended_cfg	*cfg,
-			      uint8_t			*ext_cfg_buf)
-{
-	uint64_t *ext_params = (uint64_t *)ext_cfg_buf;
-
-	DPNI_PREP_EXTENDED_CFG(ext_params, cfg);
-
-	return 0;
-}
-
-int dpni_extract_extended_cfg(struct dpni_extended_cfg	*cfg,
-			      const uint8_t		*ext_cfg_buf)
-{
-	uint64_t *ext_params = (uint64_t *)ext_cfg_buf;
-
-	DPNI_EXT_EXTENDED_CFG(ext_params, cfg);
-
-	return 0;
-}
-
 int dpni_create_v9(struct fsl_mc_io *mc_io,
 		   uint32_t cmd_flags,
 		   const struct dpni_cfg_v9 *cfg,
@@ -149,32 +129,6 @@ int dpni_destroy(struct fsl_mc_io *mc_io,
 
 	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
-}
-
-int dpni_get_irq_status_v9(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t token,
-			   uint8_t irq_index,
-			   uint32_t *status)
-{
-	struct mc_command cmd = { 0 };
-	int err;
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_IRQ_STATUS,
-					  cmd_flags,
-					  token);
-	DPNI_CMD_GET_IRQ_STATUS(cmd, irq_index, *status);
-
-	/* send command to mc*/
-	err = mc_send_command(mc_io, &cmd);
-	if (err)
-		return err;
-
-	/* retrieve response parameters */
-	DPNI_RSP_GET_IRQ_STATUS(cmd, *status);
-
-	return 0;
 }
 
 int dpni_get_attributes_v9(struct fsl_mc_io *mc_io,
@@ -269,56 +223,3 @@ int dpni_get_link_state(struct fsl_mc_io *mc_io,
 
 	return 0;
 }
-
-int dpni_get_irq_mask(struct fsl_mc_io *mc_io,
-		      uint32_t cmd_flags,
-		      uint16_t token,
-		      uint8_t irq_index,
-		      uint32_t *mask)
-{
-	struct mc_command cmd = { 0 };
-	int err;
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_IRQ_MASK,
-					  cmd_flags,
-					  token);
-	DPNI_CMD_GET_IRQ_MASK(cmd, irq_index);
-
-	/* send command to mc*/
-	err = mc_send_command(mc_io, &cmd);
-	if (err)
-		return err;
-
-	/* retrieve response parameters */
-	DPNI_RSP_GET_IRQ_MASK(cmd, *mask);
-
-	return 0;
-}
-
-int dpni_get_irq_status(struct fsl_mc_io *mc_io,
-			uint32_t cmd_flags,
-			uint16_t token,
-			uint8_t irq_index,
-			uint32_t *status)
-{
-	struct mc_command cmd = { 0 };
-	int err;
-
-	/* prepare command */
-	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_IRQ_STATUS,
-					  cmd_flags,
-					  token);
-	DPNI_CMD_GET_IRQ_STATUS(cmd, irq_index, *status);
-
-	/* send command to mc*/
-	err = mc_send_command(mc_io, &cmd);
-	if (err)
-		return err;
-
-	/* retrieve response parameters */
-	DPNI_RSP_GET_IRQ_STATUS(cmd, *status);
-
-	return 0;
-}
-

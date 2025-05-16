@@ -143,43 +143,6 @@ int dpdcei_destroy(struct fsl_mc_io	*mc_io,
 		   uint16_t		token);
 
 /**
- * dpdcei_get_irq_mask() - Get interrupt mask.
- * @mc_io: Pointer to MC portal's I/O object
- * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPDCEI object
- * @irq_index:	The interrupt index to configure
- * @mask:		Returned event mask to trigger interrupt
- *
- * Every interrupt can have up to 32 causes and the interrupt model supports
- * masking/unmasking each cause independently
- *
- * Return:	'0' on Success; Error code otherwise.
- */
-int dpdcei_get_irq_mask(struct fsl_mc_io	*mc_io,
-			uint32_t		cmd_flags,
-			uint16_t		token,
-			uint8_t		irq_index,
-			uint32_t		*mask);
-
-/**
- * dpdcei_get_irq_status() - Get the current status of any pending interrupts
- * @mc_io: Pointer to MC portal's I/O object
- * @cmd_flags: Command flags; one or more of 'MC_CMD_FLAG_'
- * @token:		Token of DPDCEI object
- * @irq_index:	The interrupt index to configure
- * @status:		Returned interrupts status - one bit per cause:
- *					0 = no interrupt pending
- *					1 = interrupt pending
- *
- * Return:	'0' on Success; Error code otherwise.
- */
-int dpdcei_get_irq_status(struct fsl_mc_io	*mc_io,
-			  uint32_t		cmd_flags,
-			  uint16_t		token,
-			  uint8_t		irq_index,
-			  uint32_t		*status);
-
-/**
  * struct dpdcei_attr - Structure representing DPDCEI attributes
  * @id: DPDCEI object ID
  * @engine: DCE engine block

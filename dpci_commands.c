@@ -142,7 +142,7 @@ const struct flib_ops dpci_ops = {
 	.obj_open = dpci_open_v10,
 	.obj_close = dpci_close_v10,
 	.obj_get_irq_mask = dpci_get_irq_mask_v10,
-	.obj_get_irq_status = dpci_get_irq_status,
+	.obj_get_irq_status = dpci_get_irq_status_v10,
 };
 
 static struct option_entry options_map_v10[] = {

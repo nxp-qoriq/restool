@@ -45,9 +45,6 @@
 
 #define DPCON_CMDID_GET_ATTR			0x004
 
-#define DPCON_CMDID_GET_IRQ_MASK		0x015
-#define DPCON_CMDID_GET_IRQ_STATUS		0x016
-
 /*                cmd, param, offset, width, type, arg_name */
 #define DPCON_CMD_OPEN(cmd, dpcon_id) \
 	MC_CMD_OP(cmd, 0, 0,  32, int,      dpcon_id)
@@ -55,25 +52,6 @@
 /*                cmd, param, offset, width, type, arg_name */
 #define DPCON_CMD_CREATE(cmd, cfg) \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->num_priorities)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPCON_CMD_GET_IRQ_MASK(cmd, irq_index) \
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPCON_RSP_GET_IRQ_MASK(cmd, mask) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, mask)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPCON_CMD_GET_IRQ_STATUS(cmd, irq_index, status) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, status);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index);\
-} while (0)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPCON_RSP_GET_IRQ_STATUS(cmd, status) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, status)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPCON_RSP_GET_ATTR(cmd, attr) \

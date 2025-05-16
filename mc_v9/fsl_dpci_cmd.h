@@ -45,9 +45,6 @@
 
 #define DPCI_CMDID_GET_ATTR				0x004
 
-#define DPCI_CMDID_GET_IRQ_MASK				0x015
-#define DPCI_CMDID_GET_IRQ_STATUS			0x016
-
 #define DPCI_CMDID_GET_LINK_STATE			0x0e1
 #define DPCI_CMDID_GET_PEER_ATTR			0x0e2
 
@@ -58,24 +55,6 @@
 /*                cmd, param, offset, width, type, arg_name */
 #define DPCI_CMD_CREATE(cmd, cfg) \
 	MC_CMD_OP(cmd, 0, 0,  8,  uint8_t,  cfg->num_of_priorities)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPCI_CMD_GET_IRQ_MASK(cmd, irq_index) \
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPCI_RSP_GET_IRQ_MASK(cmd, mask) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, mask)
-
-/*                cmd, param, offset, width, type, arg_name */
-#define DPCI_CMD_GET_IRQ_STATUS(cmd, irq_index, status) \
-do { \
-	MC_CMD_OP(cmd, 0, 0,  32, uint32_t, status);\
-	MC_CMD_OP(cmd, 0, 32, 8,  uint8_t,  irq_index);\
-} while (0)
-/*                cmd, param, offset, width, type, arg_name */
-#define DPCI_RSP_GET_IRQ_STATUS(cmd, status) \
-	MC_RSP_OP(cmd, 0, 0,  32, uint32_t, status)
 
 /*                cmd, param, offset, width, type, arg_name */
 #define DPCI_RSP_GET_ATTR(cmd, attr) \
