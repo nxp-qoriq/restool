@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -41,7 +41,6 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v9/fsl_dpaiop.h"
 #include "mc_v10/fsl_dpaiop.h"
 
 static enum mc_cmd_status mc_status;
@@ -131,10 +130,10 @@ static struct option dpaiop_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpaiop_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 const struct flib_ops dpaiop_ops = {
-	.obj_open = dpaiop_open_v10,
-	.obj_close = dpaiop_close_v10,
-	.obj_get_irq_mask = dpaiop_get_irq_mask_v10,
-	.obj_get_irq_status = dpaiop_get_irq_status_v10,
+	.obj_open = dpaiop_open,
+	.obj_close = dpaiop_close,
+	.obj_get_irq_mask = dpaiop_get_irq_mask,
+	.obj_get_irq_status = dpaiop_get_irq_status,
 };
 
 static int cmd_dpaiop_help(void)
@@ -188,104 +187,17 @@ static void print_dpaiop_state(uint32_t state)
 	}
 }
 
-static int print_dpaiop_attr(uint32_t dpaiop_id,
-			struct dprc_obj_desc *target_obj_desc)
+static int print_dpaiop_attr(uint32_t dpaiop_id, struct dprc_obj_desc *target_obj_desc)
 {
-	uint16_t dpaiop_handle;
-	int error;
-	struct dpaiop_attr dpaiop_attr;
 	struct dpaiop_sl_version dpaiop_sl_version;
-	uint32_t state;
-	bool dpaiop_opened = false;
-
-	error = dpaiop_open(&restool.mc_io, 0, dpaiop_id, &dpaiop_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpaiop_opened = true;
-	if (0 == dpaiop_handle) {
-		DEBUG_PRINTF(
-			"dpaiop_open() returned invalid handle (auth 0) for dpaiop.%u\n",
-			dpaiop_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpaiop_attr, 0, sizeof(dpaiop_attr));
-	error = dpaiop_get_attributes(&restool.mc_io, 0, dpaiop_handle,
-					&dpaiop_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpaiop_id == (uint32_t)dpaiop_attr.id);
-
-	printf("dpaiop version: %u.%u\n", dpaiop_attr.version.major,
-	       dpaiop_attr.version.minor);
-	printf("dpaiop id: %d\n", dpaiop_attr.id);
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-
-	memset(&dpaiop_sl_version, 0, sizeof(dpaiop_sl_version));
-	error = dpaiop_get_sl_version(&restool.mc_io, 0, dpaiop_handle,
-					&dpaiop_sl_version);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	printf("dpaiop server layer version: %u.%u.%u\n",
-		dpaiop_sl_version.major,
-		dpaiop_sl_version.minor,
-		dpaiop_sl_version.revision);
-
-	error = dpaiop_get_state(&restool.mc_io, 0, dpaiop_handle, &state);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	print_dpaiop_state(state);
-	print_obj_label(target_obj_desc);
-
-	error = 0;
-
-out:
-	if (dpaiop_opened) {
-		int error2;
-
-		error2 = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
-			struct dprc_obj_desc *target_obj_desc)
-{
-	struct dpaiop_sl_version_v10 dpaiop_sl_version;
-	struct dpaiop_attr_v10 dpaiop_attr;
+	struct dpaiop_attr dpaiop_attr;
 	uint16_t obj_major, obj_minor;
 	bool dpaiop_opened = false;
 	uint16_t dpaiop_token;
 	uint32_t state;
 	int error;
 
-	error = dpaiop_open_v10(&restool.mc_io, 0, dpaiop_id, &dpaiop_token);
+	error = dpaiop_open(&restool.mc_io, 0, dpaiop_id, &dpaiop_token);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -303,8 +215,7 @@ static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
 
 	/* get object attributes */
 	memset(&dpaiop_attr, 0, sizeof(dpaiop_attr));
-	error = dpaiop_get_attributes_v10(&restool.mc_io, 0,
-					  dpaiop_token, &dpaiop_attr);
+	error = dpaiop_get_attributes(&restool.mc_io, 0, dpaiop_token, &dpaiop_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -315,8 +226,7 @@ static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
 	printf("dpaiop id: %d\n", dpaiop_attr.id);
 
 	/* get object version */
-	error = dpaiop_get_api_version_v10(&restool.mc_io, 0,
-				       &obj_major, &obj_minor);
+	error = dpaiop_get_api_version(&restool.mc_io, 0, &obj_major, &obj_minor);
 	printf("dpaiop version: %u.%u\n", obj_major, obj_minor);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
@@ -331,8 +241,7 @@ static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
 
 	/* get object server layer */
 	memset(&dpaiop_sl_version, 0, sizeof(dpaiop_sl_version));
-	error = dpaiop_get_sl_version_v10(&restool.mc_io, 0, dpaiop_token,
-					&dpaiop_sl_version);
+	error = dpaiop_get_sl_version(&restool.mc_io, 0, dpaiop_token, &dpaiop_sl_version);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -344,7 +253,7 @@ static int print_dpaiop_attr_v10(uint32_t dpaiop_id,
 		dpaiop_sl_version.minor,
 		dpaiop_sl_version.revision);
 
-	error = dpaiop_get_state_v10(&restool.mc_io, 0, dpaiop_token, &state);
+	error = dpaiop_get_state(&restool.mc_io, 0, dpaiop_token, &state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -360,7 +269,7 @@ out:
 	if (dpaiop_opened) {
 		int error2;
 
-		error2 = dpaiop_close_v10(&restool.mc_io, 0, dpaiop_token);
+		error2 = dpaiop_close(&restool.mc_io, 0, dpaiop_token);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -373,7 +282,7 @@ out:
 	return error;
 }
 
-static int print_dpaiop_info(uint32_t dpaiop_id, int mc_fw_version)
+static int print_dpaiop_info(uint32_t dpaiop_id)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
@@ -393,10 +302,7 @@ static int print_dpaiop_info(uint32_t dpaiop_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpaiop_attr(dpaiop_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = print_dpaiop_attr_v10(dpaiop_id, &target_obj_desc);
+	error = print_dpaiop_attr(dpaiop_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -409,7 +315,7 @@ out:
 	return error;
 }
 
-static int info_dpaiop(int mc_fw_version)
+static int info_dpaiop(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -445,58 +351,17 @@ static int info_dpaiop(int mc_fw_version)
 	if (error < 0)
 		goto out;
 
-	error = print_dpaiop_info(obj_id, mc_fw_version);
+	error = print_dpaiop_info(obj_id);
 out:
 	return error;
 }
 
 static int cmd_dpaiop_info(void)
 {
-	return info_dpaiop(MC_FW_VERSION_9);
+	return info_dpaiop();
 }
 
-static int cmd_dpaiop_info_v10(void)
-{
-	return info_dpaiop(MC_FW_VERSION_10);
-}
-
-static int create_dpaiop_v9(struct dpaiop_cfg *dpaiop_cfg)
-{
-	struct dpaiop_attr dpaiop_attr;
-	uint16_t dpaiop_handle;
-	int error;
-
-	error = dpaiop_create(&restool.mc_io, 0, dpaiop_cfg, &dpaiop_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpaiop_attr, 0, sizeof(struct dpaiop_attr));
-	error = dpaiop_get_attributes(&restool.mc_io, 0, dpaiop_handle,
-					&dpaiop_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpaiop", dpaiop_attr.id, NULL);
-
-	error = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
-}
-
-static int create_dpaiop_v10(struct dpaiop_cfg_v10 *dpaiop_cfg)
+static int create_dpaiop(struct dpaiop_cfg *dpaiop_cfg)
 {
 	uint32_t dpaiop_id, dprc_id;
 	uint16_t dprc_handle;
@@ -521,8 +386,7 @@ static int create_dpaiop_v10(struct dpaiop_cfg_v10 *dpaiop_cfg)
 		}
 	}
 
-	error = dpaiop_create_v10(&restool.mc_io, dprc_handle, 0,
-				  dpaiop_cfg, &dpaiop_id);
+	error = dpaiop_create(&restool.mc_io, dprc_handle, 0, dpaiop_cfg, &dpaiop_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -542,12 +406,27 @@ static int create_dpaiop_v10(struct dpaiop_cfg_v10 *dpaiop_cfg)
 	return 0;
 }
 
-static int create_dpaiop(int mc_fw_version, const char *usage_msg)
+static int cmd_dpaiop_create(void)
 {
-	int error;
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpaiop create --aiop-container=<container-name> [OPTIONS]\n"
+		"   --aiop-container=<container-name>\n"
+		"      Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPAIOP by default options\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"create a DPAIOP\n"
+		"   $ restool dpaiop create --aiop-container=dprc.3\n"
+		"\n";
 	struct dpaiop_cfg dpaiop_cfg;
-	struct dpaiop_cfg_v10 dpaiop_cfg_v10;
 	uint32_t obj_id;
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -575,7 +454,6 @@ static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 		}
 
 		dpaiop_cfg.aiop_container_id = obj_id;
-		dpaiop_cfg_v10.aiop_container_id = obj_id;
 	} else {
 		ERROR_PRINTF("--aiop-container option missing\n");
 		puts(usage_msg);
@@ -584,104 +462,11 @@ static int create_dpaiop(int mc_fw_version, const char *usage_msg)
 
 	/* make sure that aiop_id is set to 0 */
 	dpaiop_cfg.aiop_id = 0;
-	dpaiop_cfg_v10.aiop_id = 0;
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = create_dpaiop_v9(&dpaiop_cfg);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpaiop_v10(&dpaiop_cfg_v10);
-	else
-		return -EINVAL;
-
-	return error;
+	return create_dpaiop(&dpaiop_cfg);
 }
 
-static int cmd_dpaiop_create(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpaiop create --aiop-container=<container-name>\n"
-		"   --aiop-container=<container-name>\n"
-		"      Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
-		"\n"
-		"EXAMPLE:\n"
-		"create a DPAIOP\n"
-		"   $ restool dpaiop create --aiop-container=dprc.3\n"
-		"\n";
-
-	return create_dpaiop(MC_FW_VERSION_9, usage_msg);
-}
-
-static int cmd_dpaiop_create_v10(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpaiop create --aiop-container=<container-name> [OPTIONS]\n"
-		"   --aiop-container=<container-name>\n"
-		"      Specifies the AIOP container name, e.g. dprc.3, dprc.4, etc.\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPAIOP by default options\n"
-		"--container=<container-name>\n"
-		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
-		"   If it is not specified, the new object will be created under the default dprc.\n"
-		"\n"
-		"EXAMPLE:\n"
-		"create a DPAIOP\n"
-		"   $ restool dpaiop create --aiop-container=dprc.3\n"
-		"\n";
-
-	return create_dpaiop(MC_FW_VERSION_10, usage_msg);
-}
-
-static int destroy_dpaiop_v9(uint32_t dpaiop_id)
-{
-	bool dpaiop_opened = false;
-	uint16_t dpaiop_handle;
-	int error, error2;
-
-	error = dpaiop_open(&restool.mc_io, 0, dpaiop_id, &dpaiop_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpaiop_opened = true;
-	if (0 == dpaiop_handle) {
-		DEBUG_PRINTF(
-			"dpaiop_open() returned invalid handle (auth 0) for dpaiop.%u\n",
-			dpaiop_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	error = dpaiop_destroy(&restool.mc_io, 0, dpaiop_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpaiop_opened = false;
-	printf("dpaiop.%u is destroyed\n", dpaiop_id);
-
-out:
-	if (dpaiop_opened) {
-		error2 = dpaiop_close(&restool.mc_io, 0, dpaiop_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int destroy_dpaiop_v10(uint32_t dpaiop_id)
+static int destroy_dpaiop(uint32_t dpaiop_id)
 {
 	uint16_t dprc_handle;
 	uint32_t dprc_id;
@@ -699,8 +484,7 @@ static int destroy_dpaiop_v10(uint32_t dpaiop_id)
 			return error;
 	}
 
-	error = dpaiop_destroy_v10(&restool.mc_io, dprc_handle,
-				   0, dpaiop_id);
+	error = dpaiop_destroy(&restool.mc_io, dprc_handle, 0, dpaiop_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -716,7 +500,7 @@ out:
 	return error;
 }
 
-static int destroy_dpaiop(int mc_fw_version)
+static int cmd_dpaiop_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -753,28 +537,12 @@ static int destroy_dpaiop(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpaiop_v9(dpaiop_id);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = destroy_dpaiop_v10(dpaiop_id);
-	else
-		return -EINVAL;
-
+	return destroy_dpaiop(dpaiop_id);
 out:
 	return error;
 }
 
-static int cmd_dpaiop_destroy(void)
-{
-	return destroy_dpaiop(MC_FW_VERSION_9);
-}
-
-static int cmd_dpaiop_destroy_v10(void)
-{
-	return destroy_dpaiop(MC_FW_VERSION_10);
-}
-
-struct object_command dpaiop_commands_v9[] = {
+struct object_command dpaiop_commands_v10[] = {
 	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpaiop_help },
@@ -793,24 +561,3 @@ struct object_command dpaiop_commands_v9[] = {
 
 	{ .cmd_name = NULL },
 };
-
-struct object_command dpaiop_commands_v10[] = {
-	{ .cmd_name = "--help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpaiop_help },
-
-	{ .cmd_name = "info",
-	  .options = dpaiop_info_options,
-	  .cmd_func = cmd_dpaiop_info_v10 },
-
-	{ .cmd_name = "create",
-	  .options = dpaiop_create_options,
-	  .cmd_func = cmd_dpaiop_create_v10 },
-
-	{ .cmd_name = "destroy",
-	  .options = dpaiop_destroy_options,
-	  .cmd_func = cmd_dpaiop_destroy_v10 },
-
-	{ .cmd_name = NULL },
-};
-

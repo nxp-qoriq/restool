@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -39,59 +39,42 @@ struct fsl_mc_io;
  * Contains initialization APIs and runtime control APIs for DPAIOP
  */
 
-int dpaiop_open_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    int dpaiop_id,
-		    uint16_t *token);
+int dpaiop_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpaiop_id, uint16_t *token);
 
-int dpaiop_close_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token);
+int dpaiop_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
- * struct dpaiop_cfg_v10 - Structure representing DPAIOP configuration
+ * struct dpaiop_cfg - Structure representing DPAIOP configuration
  * @aiop_id:		AIOP ID
  * @aiop_container_id:	AIOP container ID
  */
-struct dpaiop_cfg_v10 {
+struct dpaiop_cfg {
 	int aiop_id;
 	int aiop_container_id;
 };
 
-int dpaiop_create_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      const struct dpaiop_cfg_v10 *cfg,
-		      uint32_t *obj_id);
+int dpaiop_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  const struct dpaiop_cfg *cfg, uint32_t *obj_id);
 
-int dpaiop_destroy_v10(struct fsl_mc_io *mc_io,
-		       uint16_t dprc_token,
-		       uint32_t cmd_flags,
-		       uint32_t object_id);
+int dpaiop_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		   uint32_t object_id);
 
-int dpaiop_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *mask);
+int dpaiop_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *mask);
 
-int dpaiop_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      uint8_t irq_index,
-			      uint32_t *status);
+int dpaiop_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  uint8_t irq_index, uint32_t *status);
+
 /**
- * struct dpaiop_attr_v10 - Structure representing DPAIOP attributes
+ * struct dpaiop_attr - Structure representing DPAIOP attributes
  * @id:	AIOP ID
  */
-struct dpaiop_attr_v10 {
+struct dpaiop_attr {
 	int id;
 };
 
-int dpaiop_get_attributes_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      struct dpaiop_attr_v10 *attr);
+int dpaiop_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			      struct dpaiop_attr *attr);
 
 /**
  * struct dpaiop_sl_version - AIOP SL (Service Layer) version
@@ -99,16 +82,14 @@ int dpaiop_get_attributes_v10(struct fsl_mc_io *mc_io,
  * @minor:	AIOP SL minor version number
  * @revision:	AIOP SL revision number
  */
-struct dpaiop_sl_version_v10 {
+struct dpaiop_sl_version {
 	uint32_t major;
 	uint32_t minor;
 	uint32_t revision;
 };
 
-int dpaiop_get_sl_version_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      struct dpaiop_sl_version_v10 *version);
+int dpaiop_get_sl_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  struct dpaiop_sl_version *version);
 
 /**
  * AIOP states
@@ -152,14 +133,10 @@ int dpaiop_get_sl_version_v10(struct fsl_mc_io *mc_io,
 #define DPAIOP_STATE_RUNNING		0x00000040
 /** @} */
 
-int dpaiop_get_state_v10(struct fsl_mc_io *mc_io,
-			 uint32_t cmd_flags,
-			 uint16_t token,
-			 uint32_t *state);
+int dpaiop_get_state(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		     uint32_t *state);
 
-int dpaiop_get_api_version_v10(struct fsl_mc_io *mc_io,
-			       uint32_t cmd_flags,
-			       uint16_t *major_ver,
-			       uint16_t *minor_ver);
+int dpaiop_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			   uint16_t *major_ver, uint16_t *minor_ver);
 
 #endif /* __FSL_DPAIOP_V10_H */
