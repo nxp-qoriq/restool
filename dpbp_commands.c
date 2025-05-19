@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -40,7 +40,6 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v9/fsl_dpbp.h"
 #include "mc_v10/fsl_dpbp.h"
 
 static enum mc_cmd_status mc_status;
@@ -122,10 +121,10 @@ static struct option dpbp_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpbp_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 const struct flib_ops dpbp_ops = {
-	.obj_open = dpbp_open_v10,
-	.obj_close = dpbp_close_v10,
-	.obj_get_irq_mask = dpbp_get_irq_mask_v10,
-	.obj_get_irq_status = dpbp_get_irq_status_v10,
+	.obj_open = dpbp_open,
+	.obj_close = dpbp_close,
+	.obj_get_irq_mask = dpbp_get_irq_mask,
+	.obj_get_irq_status = dpbp_get_irq_status,
 };
 
 static int cmd_dpbp_help(void)
@@ -145,13 +144,13 @@ static int cmd_dpbp_help(void)
 	return 0;
 }
 
-static int print_dpbp_attr_v9(uint32_t dpbp_id,
-			      struct dprc_obj_desc *target_obj_desc)
+static int print_dpbp_attr(uint32_t dpbp_id, struct dprc_obj_desc *target_obj_desc)
 {
-	uint16_t dpbp_handle;
-	int error;
+	uint16_t obj_major, obj_minor;
 	struct dpbp_attr dpbp_attr;
 	bool dpbp_opened = false;
+	uint16_t dpbp_handle;
+	int error;
 
 	error = dpbp_open(&restool.mc_io, 0, dpbp_id, &dpbp_handle);
 	if (error < 0) {
@@ -169,6 +168,7 @@ static int print_dpbp_attr_v9(uint32_t dpbp_id,
 		goto out;
 	}
 
+	/* read object attributes */
 	memset(&dpbp_attr, 0, sizeof(dpbp_attr));
 	error = dpbp_get_attributes(&restool.mc_io, 0, dpbp_handle, &dpbp_attr);
 	if (error < 0) {
@@ -178,10 +178,17 @@ static int print_dpbp_attr_v9(uint32_t dpbp_id,
 		goto out;
 	}
 	assert(dpbp_id == (uint32_t)dpbp_attr.id);
-
-	printf("dpbp version: %u.%u\n", dpbp_attr.version.major,
-	       dpbp_attr.version.minor);
 	printf("dpbp id: %d\n", dpbp_attr.id);
+
+	error = dpbp_get_api_version(&restool.mc_io, 0, &obj_major, &obj_minor);
+	printf("dpbp version: %u.%u\n", obj_major, obj_minor);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	printf("buffer pool id: %u\n", (unsigned int)dpbp_attr.bpid);
@@ -205,77 +212,7 @@ out:
 	return error;
 }
 
-static int print_dpbp_attr_v10(uint32_t dpbp_id,
-			struct dprc_obj_desc *target_obj_desc)
-{
-	struct dpbp_attr_v10 dpbp_attr;
-	uint16_t obj_major, obj_minor;
-	bool dpbp_opened = false;
-	uint16_t dpbp_handle;
-	int error;
-
-	error = dpbp_open_v10(&restool.mc_io, 0, dpbp_id, &dpbp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpbp_opened = true;
-	if (0 == dpbp_handle) {
-		DEBUG_PRINTF(
-			"dpbp_open() returned invalid handle (auth 0) for dpbp.%u\n",
-			dpbp_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	/* read object attributes */
-	memset(&dpbp_attr, 0, sizeof(dpbp_attr));
-	error = dpbp_get_attributes_v10(&restool.mc_io, 0,
-					dpbp_handle, &dpbp_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpbp_id == (uint32_t)dpbp_attr.id);
-	printf("dpbp id: %d\n", dpbp_attr.id);
-
-	error = dpbp_get_api_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
-	printf("dpbp version: %u.%u\n", obj_major, obj_minor);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	printf("buffer pool id: %u\n", (unsigned int)dpbp_attr.bpid);
-	print_obj_label(target_obj_desc);
-
-	error = 0;
-out:
-	if (dpbp_opened) {
-		int error2;
-
-		error2 = dpbp_close_v10(&restool.mc_io, 0, dpbp_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int print_dpbp_info(uint32_t dpbp_id, int mc_fw_version)
+static int print_dpbp_info(uint32_t dpbp_id)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
@@ -295,10 +232,7 @@ static int print_dpbp_info(uint32_t dpbp_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpbp_attr_v9(dpbp_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = print_dpbp_attr_v10(dpbp_id, &target_obj_desc);
+	error = print_dpbp_attr(dpbp_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -311,7 +245,7 @@ out:
 	return error;
 }
 
-static int info_dpbp(int mc_fw_version)
+static int cmd_dpbp_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -347,57 +281,12 @@ static int info_dpbp(int mc_fw_version)
 	if (error < 0)
 		goto out;
 
-	error = print_dpbp_info(obj_id, mc_fw_version);
+	error = print_dpbp_info(obj_id);
 out:
 	return error;
 }
 
-static int cmd_dpbp_info_v9(void)
-{
-	return info_dpbp(MC_FW_VERSION_9);
-}
-
-static int cmd_dpbp_info_v10(void)
-{
-	return info_dpbp(MC_FW_VERSION_10);
-}
-
-static int create_dpbp_v9(struct dpbp_cfg *dpbp_cfg)
-{
-	struct dpbp_attr dpbp_attr;
-	uint16_t dpbp_handle;
-	int error;
-
-	error = dpbp_create(&restool.mc_io, 0, dpbp_cfg, &dpbp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpbp_attr, 0, sizeof(struct dpbp_attr));
-	error = dpbp_get_attributes(&restool.mc_io, 0, dpbp_handle, &dpbp_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpbp", dpbp_attr.id, NULL);
-
-	error = dpbp_close(&restool.mc_io, 0, dpbp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
-}
-
-static int create_dpbp_v10(struct dpbp_cfg_v10 *dpbp_cfg)
+static int create_dpbp(struct dpbp_cfg *dpbp_cfg)
 {
 	uint32_t dpbp_id, dprc_id;
 	uint16_t dprc_handle;
@@ -422,8 +311,7 @@ static int create_dpbp_v10(struct dpbp_cfg_v10 *dpbp_cfg)
 		}
 	}
 
-	error = dpbp_create_v10(&restool.mc_io, dprc_handle,
-				0, dpbp_cfg, &dpbp_id);
+	error = dpbp_create(&restool.mc_io, dprc_handle, 0, dpbp_cfg, &dpbp_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -442,11 +330,19 @@ static int create_dpbp_v10(struct dpbp_cfg_v10 *dpbp_cfg)
 	return 0;
 }
 
-static int create_dpbp(int mc_fw_version, const char *usage_msg)
+static int cmd_dpbp_create(void)
 {
-	int error;
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpbp create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPBP by default options\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"\n";
 	struct dpbp_cfg dpbp_cfg = { 0 };
-	struct dpbp_cfg_v10 dpbp_cfg_v10;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -461,90 +357,10 @@ static int create_dpbp(int mc_fw_version, const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = create_dpbp_v9(&dpbp_cfg);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpbp_v10(&dpbp_cfg_v10);
-	else
-		return -EINVAL;
-
-	return error;
+	return create_dpbp(&dpbp_cfg);
 }
 
-static int cmd_dpbp_create_v9(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpbp create\n"
-		"\n";
-
-	return create_dpbp(MC_FW_VERSION_9, usage_msg);
-}
-
-static int cmd_dpbp_create_v10(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpbp create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPBP by default options\n"
-		"--container=<container-name>\n"
-		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
-		"   If it is not specified, the new object will be created under the default dprc.\n"
-		"\n";
-
-	return create_dpbp(MC_FW_VERSION_10, usage_msg);
-}
-
-static int destroy_dpbp_v9(uint32_t dpbp_id)
-{
-	bool dpbp_opened = false;
-	uint16_t dpbp_handle;
-	int error, error2;
-
-	error = dpbp_open(&restool.mc_io, 0, dpbp_id, &dpbp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpbp_opened = true;
-	if (0 == dpbp_handle) {
-		DEBUG_PRINTF(
-			"dpbp_open() returned invalid handle (auth 0) for dpbp.%u\n",
-			dpbp_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	error = dpbp_destroy(&restool.mc_io, 0, dpbp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpbp_opened = false;
-	printf("dpbp.%u is destroyed\n", dpbp_id);
-
-out:
-	if (dpbp_opened) {
-		error2 = dpbp_close(&restool.mc_io, 0, dpbp_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int destroy_dpbp_v10(uint32_t dpbp_id)
+static int destroy_dpbp(uint32_t dpbp_id)
 {
 	uint16_t dprc_handle;
 	uint32_t dprc_id;
@@ -562,8 +378,7 @@ static int destroy_dpbp_v10(uint32_t dpbp_id)
 			return error;
 	}
 
-	error = dpbp_destroy_v10(&restool.mc_io, dprc_handle,
-				 0, dpbp_id);
+	error = dpbp_destroy(&restool.mc_io, dprc_handle, 0, dpbp_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -579,7 +394,7 @@ out:
 	return error;
 }
 
-static int destroy_dpbp(int mc_fw_version)
+static int cmd_dpbp_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -617,46 +432,10 @@ static int destroy_dpbp(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpbp_v9(dpbp_id);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = destroy_dpbp_v10(dpbp_id);
-	else
-		return -EINVAL;
-
+	return destroy_dpbp(dpbp_id);
 out:
 	return error;
 }
-
-static int cmd_dpbp_destroy_v9(void)
-{
-	return destroy_dpbp(MC_FW_VERSION_9);
-}
-
-static int cmd_dpbp_destroy_v10(void)
-{
-	return destroy_dpbp(MC_FW_VERSION_10);
-}
-
-struct object_command dpbp_commands_v9[] = {
-	{ .cmd_name = "--help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpbp_help },
-
-	{ .cmd_name = "info",
-	  .options = dpbp_info_options,
-	  .cmd_func = cmd_dpbp_info_v9 },
-
-	{ .cmd_name = "create",
-	  .options = dpbp_create_options,
-	  .cmd_func = cmd_dpbp_create_v9 },
-
-	{ .cmd_name = "destroy",
-	  .options = dpbp_destroy_options,
-	  .cmd_func = cmd_dpbp_destroy_v9 },
-
-	{ .cmd_name = NULL },
-};
 
 struct object_command dpbp_commands_v10[] = {
 	{ .cmd_name = "--help",
@@ -665,15 +444,15 @@ struct object_command dpbp_commands_v10[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpbp_info_options,
-	  .cmd_func = cmd_dpbp_info_v10 },
+	  .cmd_func = cmd_dpbp_info },
 
 	{ .cmd_name = "create",
 	  .options = dpbp_create_options,
-	  .cmd_func = cmd_dpbp_create_v10 },
+	  .cmd_func = cmd_dpbp_create },
 
 	{ .cmd_name = "destroy",
 	  .options = dpbp_destroy_options,
-	  .cmd_func = cmd_dpbp_destroy_v10 },
+	  .cmd_func = cmd_dpbp_destroy },
 
 	{ .cmd_name = NULL },
 };

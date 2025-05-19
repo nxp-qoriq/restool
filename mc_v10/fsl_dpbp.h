@@ -40,64 +40,46 @@
 
 struct fsl_mc_io;
 
-int dpbp_open_v10(struct fsl_mc_io *mc_io,
-		  uint32_t cmd_flags,
-		  int dpbp_id,
-		  uint16_t *token);
+int dpbp_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpbp_id,
+	      uint16_t *token);
 
-int dpbp_close_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   uint16_t token);
+int dpbp_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
  * struct dpbp_cfg - Structure representing DPBP configuration
  * @options:	place holder
  */
-struct dpbp_cfg_v10 {
+struct dpbp_cfg {
 	uint32_t options;
 };
 
-int dpbp_create_v10(struct fsl_mc_io *mc_io,
-		    uint16_t dprc_token,
-		    uint32_t cmd_flags,
-		    const struct dpbp_cfg_v10 *cfg,
-		    uint32_t *obj_id);
+int dpbp_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		    const struct dpbp_cfg *cfg, uint32_t *obj_id);
 
-int dpbp_destroy_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     uint32_t obj_id);
+int dpbp_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 uint32_t obj_id);
 
-int dpbp_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  uint8_t irq_index,
-			  uint32_t *mask);
+int dpbp_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		      uint8_t irq_index, uint32_t *mask);
 
-int dpbp_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *status);
+int dpbp_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *status);
+
 /**
  * struct dpbp_attr - Structure representing DPBP attributes
  * @id:		DPBP object ID
  * @bpid:	Hardware buffer pool ID; should be used as an argument in
  *		acquire/release operations on buffers
  */
-struct dpbp_attr_v10 {
+struct dpbp_attr {
 	int id;
 	uint16_t bpid;
 };
 
-int dpbp_get_attributes_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    struct dpbp_attr_v10 *attr);
+int dpbp_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			struct dpbp_attr *attr);
 
-int dpbp_get_api_version_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t *major_ver,
-			     uint16_t *minor_ver);
+int dpbp_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			 uint16_t *major_ver, uint16_t *minor_ver);
 
 #endif /* __FSL_DPBP_V10_H */

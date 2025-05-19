@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 #include "fsl_dpbp_cmd.h"
 
 /**
- * dpbp_open_v10() - Open a control session for the specified object.
+ * dpbp_open() - Open a control session for the specified object.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpbp_id:	DPBP unique ID
@@ -52,34 +52,29 @@
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_open_v10(struct fsl_mc_io *mc_io,
-		  uint32_t cmd_flags,
-		  int dpbp_id,
-		  uint16_t *token)
+int dpbp_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpbp_id,
+	      uint16_t *token)
 {
 	struct dpbp_cmd_open *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_OPEN,
 					  cmd_flags, 0);
 	cmd_params = (struct dpbp_cmd_open *)cmd.params;
 	cmd_params->dpbp_id = cpu_to_le32(dpbp_id);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*token = mc_cmd_hdr_read_token(&cmd);
 
 	return err;
 }
 
 /**
- * dpbp_close_v10() - Close the control session of the object
+ * dpbp_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPBP object
@@ -89,22 +84,18 @@ int dpbp_open_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_close_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   uint16_t token)
+int dpbp_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_CLOSE, cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpbp_create_v10() - Create the DPBP object.
+ * dpbp_create() - Create the DPBP object.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -121,34 +112,28 @@ int dpbp_close_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_create_v10(struct fsl_mc_io *mc_io,
-		    uint16_t dprc_token,
-		    uint32_t cmd_flags,
-		    const struct dpbp_cfg_v10 *cfg,
-		    uint32_t *obj_id)
+int dpbp_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		    const struct dpbp_cfg *cfg, uint32_t *obj_id)
 {
 	struct mc_command cmd = { 0 };
 	int err;
 
 	(void)(cfg); /* unused */
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_CREATE,
 					  cmd_flags, dprc_token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*obj_id = mc_cmd_read_object_id(&cmd);
 
 	return 0;
 }
 
 /**
- * dpbp_destroy_v10() - Destroy the DPBP object and release all its resources.
+ * dpbp_destroy() - Destroy the DPBP object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -156,27 +141,23 @@ int dpbp_create_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpbp_destroy_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     uint32_t obj_id)
+int dpbp_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 uint32_t obj_id)
 {
 	struct dpbp_cmd_destroy *cmd_params;
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_DESTROY,
 					  cmd_flags, dprc_token);
 
 	cmd_params = (struct dpbp_cmd_destroy *)cmd.params;
 	cmd_params->object_id = cpu_to_le32(obj_id);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpbp_get_irq_mask_v10() - Get interrupt mask.
+ * dpbp_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPBP object
@@ -188,29 +169,23 @@ int dpbp_destroy_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  uint8_t irq_index,
-			  uint32_t *mask)
+int dpbp_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		      uint8_t irq_index, uint32_t *mask)
 {
 	struct dpbp_cmd_get_irq_mask *cmd_params;
 	struct dpbp_rsp_get_irq_mask *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ_MASK,
 					  cmd_flags, token);
 	cmd_params = (struct dpbp_cmd_get_irq_mask *)cmd.params;
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpbp_rsp_get_irq_mask *)cmd.params;
 	*mask = le32_to_cpu(rsp_params->mask);
 
@@ -218,7 +193,7 @@ int dpbp_get_irq_mask_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpbp_get_irq_status_v10() - Get the current status of any pending interrupts.
+ * dpbp_get_irq_status() - Get the current status of any pending interrupts.
  *
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -230,30 +205,24 @@ int dpbp_get_irq_mask_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *status)
+int dpbp_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *status)
 {
 	struct dpbp_cmd_get_irq_status *cmd_params;
 	struct dpbp_rsp_get_irq_status *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_IRQ_STATUS,
 					  cmd_flags, token);
 	cmd_params = (struct dpbp_cmd_get_irq_status *)cmd.params;
 	cmd_params->status = cpu_to_le32(*status);
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpbp_rsp_get_irq_status *)cmd.params;
 	*status = le32_to_cpu(rsp_params->status);
 
@@ -261,7 +230,7 @@ int dpbp_get_irq_status_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpbp_get_attributes_v10 - Retrieve DPBP attributes.
+ * dpbp_get_attributes - Retrieve DPBP attributes.
  *
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -270,25 +239,20 @@ int dpbp_get_irq_status_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_get_attributes_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    struct dpbp_attr_v10 *attr)
+int dpbp_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			struct dpbp_attr *attr)
 {
 	struct dpbp_rsp_get_attributes *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_ATTR,
 					  cmd_flags, token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpbp_rsp_get_attributes *)cmd.params;
 	attr->bpid = le16_to_cpu(rsp_params->bpid);
 	attr->id = le32_to_cpu(rsp_params->id);
@@ -297,7 +261,7 @@ int dpbp_get_attributes_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpbp_get_api_version_v10() - Get Data Path Buffer Pool API version
+ * dpbp_get_api_version() - Get Data Path Buffer Pool API version
  * @mc_io:	Pointer to Mc portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @major_ver:	Major version of Buffer Pool API
@@ -305,25 +269,20 @@ int dpbp_get_attributes_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpbp_get_api_version_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t *major_ver,
-			     uint16_t *minor_ver)
+int dpbp_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			 uint16_t *major_ver, uint16_t *minor_ver)
 {
 	struct dpbp_rsp_get_api_version *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPBP_CMDID_GET_API_VERSION,
 					  cmd_flags, 0);
 
-	/* send command to mc */
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpbp_rsp_get_api_version *)cmd.params;
 	*major_ver = le16_to_cpu(rsp_params->major);
 	*minor_ver = le16_to_cpu(rsp_params->minor);
