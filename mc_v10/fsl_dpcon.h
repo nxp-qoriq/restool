@@ -46,66 +46,46 @@ struct fsl_mc_io;
  */
 #define DPCON_INVALID_DPIO_ID		(int)(-1)
 
-int dpcon_open_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   int dpcon_id,
-		   uint16_t *token);
+int dpcon_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpcon_id, uint16_t *token);
 
-int dpcon_close_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    uint16_t token);
+int dpcon_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
  * struct dpcon_cfg_v10 - Structure representing DPCON configuration
  * @num_priorities: Number of priorities for the DPCON channel (1-8)
  */
-struct dpcon_cfg_v10 {
+struct dpcon_cfg {
 	uint8_t num_priorities;
 };
 
-int dpcon_create_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     const struct dpcon_cfg_v10 *cfg,
-		     uint32_t *obj_id);
+int dpcon_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 const struct dpcon_cfg *cfg, uint32_t *obj_id);
 
-int dpcon_destroy_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      uint32_t obj_id);
+int dpcon_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  uint32_t obj_id);
 
-int dpcon_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t token,
-			   uint8_t irq_index,
-			   uint32_t *mask);
+int dpcon_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		       uint8_t irq_index, uint32_t *mask);
 
-int dpcon_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     uint8_t irq_index,
-			     uint32_t *status);
+int dpcon_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint8_t irq_index, uint32_t *status);
 
 /**
- * struct dpcon_attr_v10 - Structure representing DPCON attributes
+ * struct dpcon_attr - Structure representing DPCON attributes
  * @id:			DPCON object ID
  * @qbman_ch_id:	Channel ID to be used by dequeue operation
  * @num_priorities:	Number of priorities for the DPCON channel (1-8)
  */
-struct dpcon_attr_v10 {
+struct dpcon_attr {
 	int id;
 	uint16_t qbman_ch_id;
 	uint8_t num_priorities;
 };
 
-int dpcon_get_attributes_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     struct dpcon_attr_v10 *attr);
+int dpcon_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 struct dpcon_attr *attr);
 
-int dpcon_get_api_version_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t *major_ver,
-			      uint16_t *minor_ver);
+int dpcon_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			  uint16_t *major_ver, uint16_t *minor_ver);
 
 #endif /* __FSL_DPCON_V10_H */

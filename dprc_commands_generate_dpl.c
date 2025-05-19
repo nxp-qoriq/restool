@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpcon.h"
 #include "mc_v9/fsl_dpdcei.h"
 #include "mc_v9/fsl_dpdmai.h"
 #include "mc_v9/fsl_dpio.h"
@@ -799,14 +798,14 @@ static int parse_dpaiop(FILE *fp, struct obj_list *curr)
 	return 0;
 }
 
-static int parse_dpcon_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpcon(FILE *fp, struct obj_list *curr)
 {
-	uint16_t dpcon_handle;
-	int error;
 	struct dpcon_attr dpcon_attr;
 	bool dpcon_opened = false;
+	uint16_t dpcon_handle;
+	int error;
 
-	error = dpcon_open_v10(&restool.mc_io, 0, curr->id, &dpcon_handle);
+	error = dpcon_open(&restool.mc_io, 0, curr->id, &dpcon_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -823,8 +822,7 @@ static int parse_dpcon_v9(FILE *fp, struct obj_list *curr)
 	}
 
 	memset(&dpcon_attr, 0, sizeof(dpcon_attr));
-	error = dpcon_get_attributes(&restool.mc_io, 0, dpcon_handle,
-					&dpcon_attr);
+	error = dpcon_get_attributes(&restool.mc_io, 0, dpcon_handle, &dpcon_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -843,63 +841,6 @@ out:
 		int error2;
 
 		error2 = dpcon_close(&restool.mc_io, 0, dpcon_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-
-static int parse_dpcon_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpcon_attr_v10 dpcon_attr;
-	bool dpcon_opened = false;
-	uint16_t dpcon_handle;
-	int error;
-
-	error = dpcon_open_v10(&restool.mc_io, 0, curr->id, &dpcon_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpcon_opened = true;
-	if (0 == dpcon_handle) {
-		DEBUG_PRINTF(
-			"dpcon_open() returned invalid handle (auth 0) for dpcon.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpcon_attr, 0, sizeof(dpcon_attr));
-	error = dpcon_get_attributes_v10(&restool.mc_io, 0, dpcon_handle,
-					 &dpcon_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpcon_attr.id);
-
-	fprintf(fp, "\t\t\tnum_priorities = <%#x>;\n",
-		dpcon_attr.num_priorities);
-
-	error = 0;
-
-out:
-	if (dpcon_opened) {
-		int error2;
-
-		error2 = dpcon_close_v10(&restool.mc_io, 0, dpcon_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2566,10 +2507,7 @@ static int write_objects(void)
 			parse_dpaiop(fp, curr_obj);
 
 		if (strcmp(curr_obj->type, "dpcon") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpcon_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpcon_v10(fp, curr_obj);
+			parse_dpcon(fp, curr_obj);
 		}
 
 		if (strcmp(curr_obj->type, "dpdcei") == 0) {

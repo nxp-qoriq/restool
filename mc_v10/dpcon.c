@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 #include "fsl_dpcon_cmd.h"
 
 /**
- * dpcon_open_v10() - Open a control session for the specified object
+ * dpcon_open() - Open a control session for the specified object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpcon_id:	DPCON unique ID
@@ -52,35 +52,29 @@
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpcon_open_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   int dpcon_id,
-		   uint16_t *token)
+int dpcon_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpcon_id, uint16_t *token)
 {
-	struct mc_command cmd = { 0 };
 	struct dpcon_cmd_open *dpcon_cmd;
+	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPCON_CMDID_OPEN,
 					  cmd_flags,
 					  0);
 	dpcon_cmd = (struct dpcon_cmd_open *)cmd.params;
 	dpcon_cmd->dpcon_id = cpu_to_le32(dpcon_id);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*token = mc_cmd_hdr_read_token(&cmd);
 
 	return 0;
 }
 
 /**
- * dpcon_close_v10() - Close the control session of the object
+ * dpcon_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCON object
@@ -90,23 +84,19 @@ int dpcon_open_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpcon_close_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    uint16_t token)
+int dpcon_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPCON_CMDID_CLOSE,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpcon_create_v10() - Create the DPCON object.
+ * dpcon_create() - Create the DPCON object.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -126,36 +116,30 @@ int dpcon_close_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpcon_create_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     const struct dpcon_cfg_v10 *cfg,
-		     uint32_t *obj_id)
+int dpcon_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 const struct dpcon_cfg *cfg, uint32_t *obj_id)
 {
 	struct dpcon_cmd_create *dpcon_cmd;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPCON_CMDID_CREATE,
 					  cmd_flags,
 					  dprc_token);
 	dpcon_cmd = (struct dpcon_cmd_create *)cmd.params;
 	dpcon_cmd->num_priorities = cfg->num_priorities;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*obj_id = mc_cmd_read_object_id(&cmd);
 
 	return 0;
 }
 
 /**
- * dpcon_destroy_v10() - Destroy the DPCON object and release all its resources.
+ * dpcon_destroy() - Destroy the DPCON object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -163,27 +147,23 @@ int dpcon_create_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpcon_destroy_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      uint32_t obj_id)
+int dpcon_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  uint32_t obj_id)
 {
 	struct dpcon_cmd_destroy *cmd_params;
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPCON_CMDID_DESTROY,
 					  cmd_flags,
 					  dprc_token);
 	cmd_params = (struct dpcon_cmd_destroy *)cmd.params;
 	cmd_params->object_id = cpu_to_le32(obj_id);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpcon_get_irq_mask_v10() - Get interrupt mask.
+ * dpcon_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCON object
@@ -195,30 +175,24 @@ int dpcon_destroy_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpcon_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t token,
-			   uint8_t irq_index,
-			   uint32_t *mask)
+int dpcon_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		       uint8_t irq_index, uint32_t *mask)
 {
 	struct dpcon_cmd_get_irq_mask *dpcon_cmd;
 	struct dpcon_rsp_get_irq_mask *dpcon_rsp;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPCON_CMDID_GET_IRQ_MASK,
 					  cmd_flags,
 					  token);
 	dpcon_cmd = (struct dpcon_cmd_get_irq_mask *)cmd.params;
 	dpcon_cmd->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	dpcon_rsp = (struct dpcon_rsp_get_irq_mask *)cmd.params;
 	*mask = le32_to_cpu(dpcon_rsp->mask);
 
@@ -226,7 +200,7 @@ int dpcon_get_irq_mask_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpcon_get_irq_status_v10() - Get the current status of any pending interrupts.
+ * dpcon_get_irq_status() - Get the current status of any pending interrupts.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCON object
@@ -237,18 +211,14 @@ int dpcon_get_irq_mask_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpcon_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     uint8_t irq_index,
-			     uint32_t *status)
+int dpcon_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint8_t irq_index, uint32_t *status)
 {
 	struct dpcon_cmd_get_irq_status *dpcon_cmd;
 	struct dpcon_rsp_get_irq_status *dpcon_rsp;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPCON_CMDID_GET_IRQ_STATUS,
 					  cmd_flags,
 					  token);
@@ -256,12 +226,10 @@ int dpcon_get_irq_status_v10(struct fsl_mc_io *mc_io,
 	dpcon_cmd->status = cpu_to_le32(*status);
 	dpcon_cmd->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	dpcon_rsp = (struct dpcon_rsp_get_irq_status *)cmd.params;
 	*status = le32_to_cpu(dpcon_rsp->status);
 
@@ -269,7 +237,7 @@ int dpcon_get_irq_status_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpcon_get_attributes_v10() - Retrieve DPCON attributes.
+ * dpcon_get_attributes() - Retrieve DPCON attributes.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPCON object
@@ -277,26 +245,21 @@ int dpcon_get_irq_status_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpcon_get_attributes_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     struct dpcon_attr_v10 *attr)
+int dpcon_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 struct dpcon_attr *attr)
 {
 	struct dpcon_rsp_get_attr *dpcon_rsp;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPCON_CMDID_GET_ATTR,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	dpcon_rsp = (struct dpcon_rsp_get_attr *)cmd.params;
 	attr->id = le32_to_cpu(dpcon_rsp->id);
 	attr->qbman_ch_id = le16_to_cpu(dpcon_rsp->qbman_ch_id);
@@ -306,7 +269,7 @@ int dpcon_get_attributes_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpcon_get_api_version_v10() - Get Data Path Concentrator API version
+ * dpcon_get_api_version() - Get Data Path Concentrator API version
  * @mc_io:	Pointer to MC portal's DPCON object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @major_ver:	Major version of DPCON API
@@ -314,29 +277,23 @@ int dpcon_get_attributes_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise
  */
-int dpcon_get_api_version_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t *major_ver,
-			      uint16_t *minor_ver)
+int dpcon_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			  uint16_t *major_ver, uint16_t *minor_ver)
 {
 	struct dpcon_rsp_get_api_version *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPCON_CMDID_GET_API_VERSION,
 					  cmd_flags, 0);
 
-	/* send command to mc */
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpcon_rsp_get_api_version *)cmd.params;
 	*major_ver = le16_to_cpu(rsp_params->major);
 	*minor_ver = le16_to_cpu(rsp_params->minor);
 
 	return 0;
 }
-
