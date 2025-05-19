@@ -297,6 +297,12 @@ static struct {
 	{DPMAC_CNT_ING_OVERSIZED,		"rx oversized"},
 	{DPMAC_CNT_ING_VALID_PAUSE_FRAME,	"rx pause"},
 	{DPMAC_CNT_ING_BYTE,			"rx bytes"},
+	{DPMAC_CNT_ING_ALL_BYTE,		"rx all bytes"},
+	{DPMAC_CNT_ING_FCS_ERR,			"rx fcs errors"},
+	{DPMAC_CNT_ING_VLAN_FRAME,		"rx vlan frames"},
+	{DPMAC_CNT_ING_UNDERSIZED,		"rx undersized"},
+	{DPMAC_CNT_ING_CONTROL_FRAME,		"rx control"},
+	{DPMAC_CNT_ING_FRAME_DISCARD_NOT_TRUNC,	"rx discards not trunc"},
 	{DPMAC_CNT_EGR_GOOD_FRAME,		"tx frames ok"},
 	{DPMAC_CNT_EGR_UCAST_FRAME,		"tx u-cast"},
 	{DPMAC_CNT_EGR_MCAST_FRAME,		"tx m-cast"},
@@ -305,7 +311,34 @@ static struct {
 	{DPMAC_CNT_EGR_UNDERSIZED,		"tx undersized"},
 	{DPMAC_CNT_EGR_VALID_PAUSE_FRAME,	"tx b-pause"},
 	{DPMAC_CNT_EGR_BYTE,			"tx bytes"},
-
+	{DPMAC_CNT_EGR_FRAME_64,		"tx 64 bytes"},
+	{DPMAC_CNT_EGR_FRAME_127,		"tx 65-127 bytes"},
+	{DPMAC_CNT_EGR_FRAME_255,		"tx 128-255 bytes"},
+	{DPMAC_CNT_EGR_FRAME_511,		"tx 256-511 bytes"},
+	{DPMAC_CNT_EGR_FRAME_1023,		"tx 512-1023 bytes"},
+	{DPMAC_CNT_EGR_FRAME_1518,		"tx 1024-1519 bytes"},
+	{DPMAC_CNT_EGR_FRAME_1519_MAX,		"tx 1519-max bytes"},
+	{DPMAC_CNT_EGR_ALL_BYTE,		"tx all bytes"},
+	{DPMAC_CNT_EGR_FCS_ERR,			"tx fcs error"},
+	{DPMAC_CNT_EGR_VLAN_FRAME,		"tx vlan frames"},
+	{DPMAC_CNT_EGR_ALL_FRAME,		"tx all frames"},
+	{DPMAC_CNT_EGR_CONTROL_FRAME,		"tx control"},
+	{DPMAC_CNT_ING_PFC0,			"rx pfc0"},
+	{DPMAC_CNT_ING_PFC1,			"rx pfc1"},
+	{DPMAC_CNT_ING_PFC2,			"rx pfc2"},
+	{DPMAC_CNT_ING_PFC3,			"rx pfc3"},
+	{DPMAC_CNT_ING_PFC4,			"rx pfc4"},
+	{DPMAC_CNT_ING_PFC5,			"rx pfc5"},
+	{DPMAC_CNT_ING_PFC6,			"rx pfc6"},
+	{DPMAC_CNT_ING_PFC7,			"rx pfc7"},
+	{DPMAC_CNT_EGR_PFC0,			"tx pfc0"},
+	{DPMAC_CNT_EGR_PFC1,			"tx pfc1"},
+	{DPMAC_CNT_EGR_PFC2,			"tx pfc2"},
+	{DPMAC_CNT_EGR_PFC3,			"tx pfc3"},
+	{DPMAC_CNT_EGR_PFC4,			"tx pfc4"},
+	{DPMAC_CNT_EGR_PFC5,			"tx pfc5"},
+	{DPMAC_CNT_EGR_PFC6,			"tx pfc6"},
+	{DPMAC_CNT_EGR_PFC7,			"tx pfc7"},
 };
 
 static int print_dpmac_counters(struct fsl_mc_io *mc_io, uint16_t token)
@@ -318,12 +351,13 @@ static int print_dpmac_counters(struct fsl_mc_io *mc_io, uint16_t token)
 	for (i = 0; i < ARRAY_SIZE(dpaa2_mac_counters); i++) {
 		error = dpmac_get_counter(mc_io, 0, token, dpaa2_mac_counters[i].id,
 					  &counter_value);
-		if (error < 0) {
-			mc_status = flib_error_to_mc_status(error);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			return error;
-		}
+		/* Skip this counter in case we get an error. Most of the MAC
+		 * counters were exported in MC versions > 10.39.0, there is no
+		 * point restricting access to the other counters when we
+		 * encounter an MC which is older.
+		 */
+		if (error < 0)
+			continue;
 
 		printf("%s: %" PRIu64 "\n", dpaa2_mac_counters[i].name, counter_value);
 	}
