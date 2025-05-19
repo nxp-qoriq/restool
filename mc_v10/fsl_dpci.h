@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -56,14 +56,9 @@ struct fsl_mc_io;
  */
 #define DPCI_ALL_QUEUES		(uint8_t)(-1)
 
-int dpci_open_v10(struct fsl_mc_io *mc_io,
-		  uint32_t cmd_flags,
-		  int dpci_id,
-		  uint16_t *token);
+int dpci_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpci_id, uint16_t *token);
 
-int dpci_close_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   uint16_t token);
+int dpci_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
  * Enable the Order Restoration support
@@ -85,49 +80,35 @@ int dpci_close_v10(struct fsl_mc_io *mc_io,
  *			is determined by the number of receive priorities of
  *			the peer DPCI object
  */
-struct dpci_cfg_v10 {
+struct dpci_cfg {
 	uint32_t options;
 	uint8_t num_of_priorities;
 };
 
-int dpci_create_v10(struct fsl_mc_io *mc_io,
-		    uint16_t dprc_token,
-		    uint32_t cmd_flags,
-		    const struct dpci_cfg_v10 *cfg,
-		    uint32_t *obj_id);
+int dpci_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		const struct dpci_cfg *cfg, uint32_t *obj_id);
 
-int dpci_destroy_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     uint32_t object_id);
+int dpci_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 uint32_t object_id);
 
+int dpci_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		      uint8_t irq_index, uint32_t *mask);
 
-int dpci_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  uint8_t irq_index,
-			  uint32_t *mask);
-
-int dpci_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *status);
+int dpci_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *status);
 
 /**
  * struct dpci_attr - Structure representing DPCI attributes
  * @id:			DPCI object ID
  * @num_of_priorities:	Number of receive priorities
  */
-struct dpci_attr_v10 {
+struct dpci_attr {
 	int id;
 	uint8_t num_of_priorities;
 };
 
-int dpci_get_attributes_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    struct dpci_attr_v10 *attr);
+int dpci_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			struct dpci_attr *attr);
 
 /**
  * struct dpci_peer_attr - Structure representing the peer DPCI attributes
@@ -135,23 +116,17 @@ int dpci_get_attributes_v10(struct fsl_mc_io *mc_io,
  * @num_of_priorities:	The pper's number of receive priorities; determines the
  *			number of transmit priorities for the local DPCI object
  */
-struct dpci_peer_attr_v10 {
+struct dpci_peer_attr {
 	int peer_id;
 	uint8_t num_of_priorities;
 };
 
-int dpci_get_peer_attributes_v10(struct fsl_mc_io *mc_io,
-				 uint32_t cmd_flags,
-				 uint16_t token,
-				 struct dpci_peer_attr_v10 *attr);
+int dpci_get_peer_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			     struct dpci_peer_attr *attr);
 
-int dpci_get_link_state_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    int *up);
+int dpci_get_link_state(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token, int *up);
 
-int dpci_get_api_version_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t *major_ver,
-			     uint16_t *minor_ver);
+int dpci_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			 uint16_t *major_ver, uint16_t *minor_ver);
+
 #endif /* __FSL_DPCI_V10_H */

@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpci.h"
 #include "mc_v9/fsl_dpcon.h"
 #include "mc_v9/fsl_dpdcei.h"
 #include "mc_v9/fsl_dpdmai.h"
@@ -1524,16 +1523,14 @@ out:
 	return 0;
 }
 
-/* following objects have possible connections*/
-static int parse_dpci_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpci(FILE *fp, struct obj_list *curr)
 {
+	struct dpci_peer_attr dpci_peer_attr;
+	struct dpci_attr dpci_attr;
+	struct conn_list *curr_conn;
+	bool dpci_opened = false;
 	uint16_t dpci_handle;
 	int error;
-	struct dpci_attr dpci_attr;
-	struct dpci_peer_attr dpci_peer_attr;
-	bool dpci_opened = false;
-	struct conn_list *curr_conn;
-
 
 	error = dpci_open(&restool.mc_io, 0, curr->id, &dpci_handle);
 	if (error < 0) {
@@ -1561,8 +1558,7 @@ static int parse_dpci_v9(FILE *fp, struct obj_list *curr)
 	}
 	assert(curr->id == dpci_attr.id);
 
-	error = dpci_get_peer_attributes(&restool.mc_io, 0, dpci_handle,
-					 &dpci_peer_attr);
+	error = dpci_get_peer_attributes(&restool.mc_io, 0, dpci_handle, &dpci_peer_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1603,95 +1599,6 @@ out:
 		int error2;
 
 		error2 = dpci_close(&restool.mc_io, 0, dpci_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int parse_dpci_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpci_peer_attr_v10 dpci_peer_attr;
-	struct dpci_attr_v10 dpci_attr;
-	struct conn_list *curr_conn;
-	bool dpci_opened = false;
-	uint16_t dpci_handle;
-	int error;
-
-	error = dpci_open_v10(&restool.mc_io, 0, curr->id, &dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpci_opened = true;
-	if (0 == dpci_handle) {
-		DEBUG_PRINTF(
-			"dpci_open() returned invalid handle (auth 0) for dpci.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpci_attr, 0, sizeof(dpci_attr));
-	error = dpci_get_attributes_v10(&restool.mc_io, 0, dpci_handle, &dpci_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpci_attr.id);
-
-	error = dpci_get_peer_attributes_v10(&restool.mc_io, 0, dpci_handle,
-					 &dpci_peer_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	fprintf(fp, "\t\t\tnum_of_priorities = <%#x>;\n",
-	       (unsigned int)dpci_attr.num_of_priorities);
-
-	if (-1 == dpci_peer_attr.peer_id) {
-		DEBUG_PRINTF("no peer\n");
-	} else {
-		/* dpci has connection */
-		curr_conn = malloc(sizeof(struct conn_list));
-		if (curr_conn == NULL) {
-			ERROR_PRINTF("malloc failed\n");
-			error = -errno;
-			goto out;
-		}
-		curr_conn->next = NULL;
-		strcpy(curr_conn->type1, "dpci");
-		strcpy(curr_conn->type2, "dpci");
-		curr_conn->id1 = dpci_attr.id;
-		curr_conn->id2 = dpci_peer_attr.peer_id;
-		curr_conn->if_id1 = -1;	/* -1 means no interface */
-		curr_conn->if_id2 = -1;
-
-		error = compare_insert_connection(&conn_head, curr_conn);
-		if (error)
-			goto out;
-	}
-
-	error = 0;
-
-out:
-	if (dpci_opened) {
-		int error2;
-
-		error2 = dpci_close_v10(&restool.mc_io, 0, dpci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2701,12 +2608,8 @@ static int write_objects(void)
 		}
 
 		/* following objects have possible connections */
-		if (strcmp(curr_obj->type, "dpci") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpci_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpci_v10(fp, curr_obj);
-		}
+		if (strcmp(curr_obj->type, "dpci") == 0)
+			parse_dpci(fp, curr_obj);
 
 		if (strcmp(curr_obj->type, "dpmac") == 0)
 			parse_dpmac(fp, curr_obj);

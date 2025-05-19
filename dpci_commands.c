@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2022 NXP
+ * Copyright 2017-2022, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -41,7 +41,6 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v9/fsl_dpci.h"
 #include "mc_v10/fsl_dpci.h"
 
 static enum mc_cmd_status mc_status;
@@ -139,17 +138,17 @@ static struct option dpci_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpci_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 const struct flib_ops dpci_ops = {
-	.obj_open = dpci_open_v10,
-	.obj_close = dpci_close_v10,
-	.obj_get_irq_mask = dpci_get_irq_mask_v10,
-	.obj_get_irq_status = dpci_get_irq_status_v10,
+	.obj_open = dpci_open,
+	.obj_close = dpci_close,
+	.obj_get_irq_mask = dpci_get_irq_mask,
+	.obj_get_irq_status = dpci_get_irq_status,
 };
 
-static struct option_entry options_map_v10[] = {
+static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPCI_OPT_HAS_OPR),
 	OPTION_MAP_ENTRY(DPCI_OPT_OPR_SHARED),
 };
-static unsigned int options_num_v10 = ARRAY_SIZE(options_map_v10);
+static unsigned int options_num = ARRAY_SIZE(options_map);
 
 static int cmd_dpci_help(void)
 {
@@ -168,111 +167,17 @@ static int cmd_dpci_help(void)
 	return 0;
 }
 
-static int print_dpci_attr_v9(uint32_t dpci_id,
-			      struct dprc_obj_desc *target_obj_desc)
+static int print_dpci_attr(uint32_t dpci_id, struct dprc_obj_desc *target_obj_desc)
 {
-	uint16_t dpci_handle;
-	int error;
-	struct dpci_attr dpci_attr;
 	struct dpci_peer_attr dpci_peer_attr;
-	bool dpci_opened = false;
-	int link_state;
-
-	error = dpci_open(&restool.mc_io, 0, dpci_id, &dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpci_opened = true;
-	if (0 == dpci_handle) {
-		DEBUG_PRINTF(
-			"dpci_open() returned invalid handle (auth 0) for dpci.%u\n",
-			dpci_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpci_attr, 0, sizeof(dpci_attr));
-	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpci_id == (uint32_t)dpci_attr.id);
-
-	error = dpci_get_peer_attributes(&restool.mc_io, 0, dpci_handle,
-					 &dpci_peer_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	error = dpci_get_link_state(&restool.mc_io, 0, dpci_handle,
-					&link_state);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	printf("dpci version: %u.%u\n", dpci_attr.version.major,
-	       dpci_attr.version.minor);
-	printf("dpci id: %d\n", dpci_attr.id);
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	printf("num_of_priorities: %u\n",
-	       (unsigned int)dpci_attr.num_of_priorities);
-	printf("connected peer: ");
-	if (-1 == dpci_peer_attr.peer_id) {
-		printf("no peer\n");
-	} else {
-		printf("dpci.%d\n", dpci_peer_attr.peer_id);
-		printf("peer's num_of_priorities: %u\n",
-		       (unsigned int)dpci_peer_attr.num_of_priorities);
-	}
-	printf("link status: %d - ", link_state);
-	link_state == 0 ? printf("down\n") :
-	link_state == 1 ? printf("up\n") : printf("error state\n");
-	print_obj_label(target_obj_desc);
-
-	error = 0;
-
-out:
-	if (dpci_opened) {
-		int error2;
-
-		error2 = dpci_close(&restool.mc_io, 0, dpci_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int print_dpci_attr_v10(uint32_t dpci_id,
-			       struct dprc_obj_desc *target_obj_desc)
-{
-	struct dpci_peer_attr_v10 dpci_peer_attr;
-	struct dpci_attr_v10 dpci_attr;
 	uint16_t obj_major, obj_minor;
-	uint16_t dpci_handle;
+	struct dpci_attr dpci_attr;
 	bool dpci_opened = false;
+	uint16_t dpci_handle;
 	int error, error2;
 	int link_state;
 
-	error = dpci_open_v10(&restool.mc_io, 0, dpci_id, &dpci_handle);
+	error = dpci_open(&restool.mc_io, 0, dpci_id, &dpci_handle);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -290,8 +195,7 @@ static int print_dpci_attr_v10(uint32_t dpci_id,
 	}
 
 	memset(&dpci_attr, 0, sizeof(dpci_attr));
-	error = dpci_get_attributes_v10(&restool.mc_io, 0,
-					dpci_handle, &dpci_attr);
+	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -300,8 +204,7 @@ static int print_dpci_attr_v10(uint32_t dpci_id,
 	}
 	assert(dpci_id == (uint32_t)dpci_attr.id);
 
-	error = dpci_get_peer_attributes_v10(&restool.mc_io, 0, dpci_handle,
-					     &dpci_peer_attr);
+	error = dpci_get_peer_attributes(&restool.mc_io, 0, dpci_handle, &dpci_peer_attr);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -309,8 +212,7 @@ static int print_dpci_attr_v10(uint32_t dpci_id,
 		goto out;
 	}
 
-	error = dpci_get_link_state_v10(&restool.mc_io, 0, dpci_handle,
-					&link_state);
+	error = dpci_get_link_state(&restool.mc_io, 0, dpci_handle, &link_state);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -318,7 +220,7 @@ static int print_dpci_attr_v10(uint32_t dpci_id,
 		goto out;
 	}
 
-	error = dpci_get_api_version_v10(&restool.mc_io, 0, &obj_major, &obj_minor);
+	error = dpci_get_api_version(&restool.mc_io, 0, &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -348,7 +250,7 @@ static int print_dpci_attr_v10(uint32_t dpci_id,
 	error = 0;
 out:
 	if (dpci_opened) {
-		error2 = dpci_close_v10(&restool.mc_io, 0, dpci_handle);
+		error2 = dpci_close(&restool.mc_io, 0, dpci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -361,7 +263,7 @@ out:
 	return error;
 }
 
-static int print_dpci_info(uint32_t dpci_id, int mc_fw_version)
+static int print_dpci_info(uint32_t dpci_id)
 {
 	int error;
 	struct dprc_obj_desc target_obj_desc;
@@ -381,10 +283,7 @@ static int print_dpci_info(uint32_t dpci_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpci_attr_v9(dpci_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = print_dpci_attr_v10(dpci_id, &target_obj_desc);
+	error = print_dpci_attr(dpci_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -397,7 +296,7 @@ out:
 	return error;
 }
 
-static int info_dpci(int mc_fw_version)
+static int cmd_dpci_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -411,7 +310,6 @@ static int info_dpci(int mc_fw_version)
 		"Display information about dpci.5:\n"
 		"   $ restool dpci info dpci.5\n"
 		"\n";
-
 	uint32_t obj_id;
 	int error;
 
@@ -433,90 +331,16 @@ static int info_dpci(int mc_fw_version)
 	if (error < 0)
 		goto out;
 
-	error = print_dpci_info(obj_id, mc_fw_version);
+	error = print_dpci_info(obj_id);
 out:
 	return error;
 }
 
-static int cmd_dpci_info_v9(void)
+static int create_dpci(const char *usage_msg)
 {
-	return info_dpci(MC_FW_VERSION_9);
-}
-
-static int cmd_dpci_info_v10(void)
-{
-	return info_dpci(MC_FW_VERSION_10);
-}
-
-static int create_dpci_v9(const char *usage_msg)
-{
-	struct dpci_attr dpci_attr;
-	struct dpci_cfg dpci_cfg;
-	uint16_t dpci_handle;
-	int error;
-	long val;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name != NULL) {
-		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     restool.obj_name);
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_NUM_PRIORITIES);
-		error = get_option_value(CREATE_OPT_NUM_PRIORITIES, &val,
-					 "Invalid value: num-priorities option",
-					 1, 2);
-		if (error)
-			return -EINVAL;
-
-		dpci_cfg.num_of_priorities = (uint8_t)val;
-	} else {
-		dpci_cfg.num_of_priorities = 1;
-	}
-
-	error = dpci_create(&restool.mc_io, 0, &dpci_cfg, &dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpci_attr, 0, sizeof(struct dpci_attr));
-	error = dpci_get_attributes(&restool.mc_io, 0, dpci_handle, &dpci_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpci", dpci_attr.id, NULL);
-
-	error = dpci_close(&restool.mc_io, 0, dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
-}
-
-static int create_dpci_v10(const char *usage_msg)
-{
-	struct dpci_cfg_v10 dpci_cfg;
 	uint64_t dpci_cfg_options;
 	uint32_t dpci_id, dprc_id;
+	struct dpci_cfg dpci_cfg;
 	uint16_t dprc_handle;
 	bool dprc_opened;
 	int error;
@@ -540,8 +364,7 @@ static int create_dpci_v10(const char *usage_msg)
 		error = parse_generic_create_options(
 				restool.cmd_option_args[CREATE_OPT_OPTIONS],
 				&dpci_cfg_options,
-				options_map_v10,
-				options_num_v10);
+				options_map, options_num);
 		if (error < 0) {
 			DEBUG_PRINTF(
 				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
@@ -588,7 +411,7 @@ static int create_dpci_v10(const char *usage_msg)
 		}
 	}
 
-	error = dpci_create_v10(&restool.mc_io, dprc_handle, 0, &dpci_cfg, &dpci_id);
+	error = dpci_create(&restool.mc_io, dprc_handle, 0, &dpci_cfg, &dpci_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -608,30 +431,7 @@ static int create_dpci_v10(const char *usage_msg)
 	return 0;
 }
 
-static int cmd_dpci_create_v9(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpci create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPCI by default options\n"
-		"--num-priorities=<number>\n"
-		"   specifies the number of priorities\n"
-		"   valid values are 1-2\n"
-		"   Default value is 1\n"
-		"\n"
-		"EXAMPLES:\n"
-		"Create a DPCI object with all default options:\n"
-		"   $ restool dpci create\n"
-		"Create a DPCI object with 2 priorities:\n"
-		"   $ restool dpci create --num-priorities=2\n"
-		"\n";
-
-	return create_dpci_v9(usage_msg);
-}
-
-static int cmd_dpci_create_v10(void)
+static int cmd_dpci_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -658,59 +458,10 @@ static int cmd_dpci_create_v10(void)
 		"   $ restool dpci create --num-priorities=2\n"
 		"\n";
 
-	return create_dpci_v10(usage_msg);
-
-	return -EINVAL;
+	return create_dpci(usage_msg);
 }
 
-static int destroy_dpci_v9(uint32_t dpci_id)
-{
-	bool dpci_opened = false;
-	uint16_t dpci_handle;
-	int error, error2;
-
-	error = dpci_open(&restool.mc_io, 0, dpci_id, &dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpci_opened = true;
-	if (0 == dpci_handle) {
-		DEBUG_PRINTF(
-			"dpci_open() returned invalid handle (auth 0) for dpci.%u\n",
-			dpci_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	error = dpci_destroy(&restool.mc_io, 0, dpci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpci_opened = false;
-	printf("dpci.%u is destroyed\n", dpci_id);
-
-out:
-	if (dpci_opened) {
-		error2 = dpci_close(&restool.mc_io, 0, dpci_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int destroy_dpci_v10(uint32_t dpci_id)
+static int destroy_dpci(uint32_t dpci_id)
 {
 	uint16_t dprc_handle;
 	uint32_t dprc_id;
@@ -728,8 +479,7 @@ static int destroy_dpci_v10(uint32_t dpci_id)
 			return error;
 	}
 
-	error = dpci_destroy_v10(&restool.mc_io, dprc_handle,
-				 0, dpci_id);
+	error = dpci_destroy(&restool.mc_io, dprc_handle, 0, dpci_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -745,16 +495,15 @@ out:
 	return error;
 }
 
-static int destroy_dpci(int mc_fw_version)
+static int cmd_dpci_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpci destroy <dpci-object>\n"
 		"   e.g. restool dpci destroy dpci.3\n"
 		"\n";
-
-	int error;
 	uint32_t dpci_id;
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		puts(usage_msg);
@@ -783,46 +532,11 @@ static int destroy_dpci(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpci_v9(dpci_id);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = destroy_dpci_v10(dpci_id);
-	else
-		return -EINVAL;
-
+	return destroy_dpci(dpci_id);
 out:
 	return error;
+
 }
-
-static int cmd_dpci_destroy_v9(void)
-{
-	return destroy_dpci(MC_FW_VERSION_9);
-}
-
-static int cmd_dpci_destroy_v10(void)
-{
-	return destroy_dpci(MC_FW_VERSION_10);
-}
-
-struct object_command dpci_commands_v9[] = {
-	{ .cmd_name = "--help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpci_help },
-
-	{ .cmd_name = "info",
-	  .options = dpci_info_options,
-	  .cmd_func = cmd_dpci_info_v9 },
-
-	{ .cmd_name = "create",
-	  .options = dpci_create_options,
-	  .cmd_func = cmd_dpci_create_v9 },
-
-	{ .cmd_name = "destroy",
-	  .options = dpci_destroy_options,
-	  .cmd_func = cmd_dpci_destroy_v9 },
-
-	{ .cmd_name = NULL },
-};
 
 struct object_command dpci_commands_v10[] = {
 	{ .cmd_name = "--help",
@@ -831,15 +545,15 @@ struct object_command dpci_commands_v10[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpci_info_options,
-	  .cmd_func = cmd_dpci_info_v10 },
+	  .cmd_func = cmd_dpci_info },
 
 	{ .cmd_name = "create",
 	  .options = dpci_create_options,
-	  .cmd_func = cmd_dpci_create_v10 },
+	  .cmd_func = cmd_dpci_create },
 
 	{ .cmd_name = "destroy",
 	  .options = dpci_destroy_options,
-	  .cmd_func = cmd_dpci_destroy_v10 },
+	  .cmd_func = cmd_dpci_destroy },
 
 	{ .cmd_name = NULL },
 };

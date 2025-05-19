@@ -108,7 +108,6 @@ static const struct obj_command_versions dpsw_command_versions[] = {
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpci_command_versions[] = {
-	{ .version = 2, .obj_commands = dpci_commands_v9 },
 	{ .version = 3, .obj_commands = dpci_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
