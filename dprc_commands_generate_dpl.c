@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpmcp.h"
 #include "mc_v9/fsl_dprtc.h"
 #include "mc_v9/fsl_dpseci.h"
 #include "mc_v9/fsl_dpni.h"
@@ -968,7 +967,7 @@ out:
 	return error;
 }
 
-static void parse_dpmcp_options_v10(FILE *fp, uint32_t options)
+static void parse_dpmcp_options(FILE *fp, uint32_t options)
 {
 	char buf[500];
 	int len;
@@ -993,21 +992,14 @@ static void parse_dpmcp_options_v10(FILE *fp, uint32_t options)
 	fprintf(fp, "%s\n", buf);
 }
 
-static int parse_dpmcp_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpmcp(FILE *fp, struct obj_list *curr)
 {
-	(void)fp;
-	(void)curr;
-	return 0;
-}
-
-static int parse_dpmcp_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpmcp_attr_v10 dpmcp_attr;
+	struct dpmcp_attr dpmcp_attr;
 	bool dpmcp_opened = false;
 	uint16_t dpmcp_handle;
 	int error;
 
-	error = dpmcp_open_v10(&restool.mc_io, 0, curr->id, &dpmcp_handle);
+	error = dpmcp_open(&restool.mc_io, 0, curr->id, &dpmcp_handle);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1024,7 +1016,7 @@ static int parse_dpmcp_v10(FILE *fp, struct obj_list *curr)
 	}
 
 	memset(&dpmcp_attr, 0, sizeof(dpmcp_attr));
-	error = dpmcp_get_attributes_v10(&restool.mc_io, 0, dpmcp_handle, &dpmcp_attr);
+	error = dpmcp_get_attributes(&restool.mc_io, 0, dpmcp_handle, &dpmcp_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1033,7 +1025,7 @@ static int parse_dpmcp_v10(FILE *fp, struct obj_list *curr)
 	}
 	assert(curr->id == dpmcp_attr.id);
 
-	parse_dpmcp_options_v10(fp, dpmcp_attr.options);
+	parse_dpmcp_options(fp, dpmcp_attr.options);
 
 	error = 0;
 
@@ -1041,7 +1033,7 @@ out:
 	if (dpmcp_opened) {
 		int error2;
 
-		error2 = dpmcp_close_v10(&restool.mc_io, 0, dpmcp_handle);
+		error2 = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2256,12 +2248,8 @@ static int write_objects(void)
 		if (strcmp(curr_obj->type, "dpdmai") == 0)
 			parse_dpdmai(fp, curr_obj);
 
-		if (strcmp(curr_obj->type, "dpmcp") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpmcp_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpmcp_v10(fp, curr_obj);
-		}
+		if (strcmp(curr_obj->type, "dpmcp") == 0)
+			parse_dpmcp(fp, curr_obj);
 
 		if (strcmp(curr_obj->type, "dpio") == 0)
 			parse_dpio(fp, curr_obj);

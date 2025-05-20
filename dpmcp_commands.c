@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2022 NXP
+ * Copyright 2017-2022, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -40,10 +40,9 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v9/fsl_dpmcp.h"
 #include "mc_v10/fsl_dpmcp.h"
 
-#define ALL_DPMCP_OPTS_V10 (		\
+#define ALL_DPMCP_OPTS (		\
 	DPMCP_OPT_HIGH_PRIO_CMD_DIS)
 
 static enum mc_cmd_status mc_status;
@@ -133,16 +132,16 @@ static struct option dpmcp_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpmcp_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 const struct flib_ops dpmcp_ops = {
-	.obj_open = dpmcp_open_v10,
-	.obj_close = dpmcp_close_v10,
-	.obj_get_irq_mask = dpmcp_get_irq_mask_v10,
-	.obj_get_irq_status = dpmcp_get_irq_status_v10,
+	.obj_open = dpmcp_open,
+	.obj_close = dpmcp_close,
+	.obj_get_irq_mask = dpmcp_get_irq_mask,
+	.obj_get_irq_status = dpmcp_get_irq_status,
 };
 
-static struct option_entry options_map_v10[] = {
+static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPMCP_OPT_HIGH_PRIO_CMD_DIS),
 };
-static unsigned int options_num_v10 = ARRAY_SIZE(options_map_v10);
+static unsigned int options_num = ARRAY_SIZE(options_map);
 
 static int cmd_dpmcp_help(void)
 {
@@ -161,9 +160,9 @@ static int cmd_dpmcp_help(void)
 	return 0;
 }
 
-static void print_dpmcp_options_v10(uint32_t options)
+static void print_dpmcp_options(uint32_t options)
 {
-	if ((options & ~ALL_DPMCP_OPTS_V10) != 0) {
+	if ((options & ~ALL_DPMCP_OPTS) != 0) {
 		printf("\tUnrecognized options found...\n");
 		return;
 	}
@@ -172,13 +171,13 @@ static void print_dpmcp_options_v10(uint32_t options)
 		printf("\tDPMCP_OPT_HIGH_PRIO_CMD_DIS\n");
 }
 
-static int print_dpmcp_attr_v9(uint32_t dpmcp_id,
-			       struct dprc_obj_desc *target_obj_desc)
+static int print_dpmcp_attr(uint32_t dpmcp_id, struct dprc_obj_desc *target_obj_desc)
 {
-	uint16_t dpmcp_handle;
-	int error;
+	uint16_t obj_major, obj_minor;
 	struct dpmcp_attr dpmcp_attr;
 	bool dpmcp_opened = false;
+	uint16_t dpmcp_handle;
+	int error;
 
 	error = dpmcp_open(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
 	if (error < 0) {
@@ -197,8 +196,7 @@ static int print_dpmcp_attr_v9(uint32_t dpmcp_id,
 	}
 
 	memset(&dpmcp_attr, 0, sizeof(dpmcp_attr));
-	error = dpmcp_get_attributes(&restool.mc_io, 0, dpmcp_handle,
-					&dpmcp_attr);
+	error = dpmcp_get_attributes(&restool.mc_io, 0, dpmcp_handle, &dpmcp_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -207,12 +205,22 @@ static int print_dpmcp_attr_v9(uint32_t dpmcp_id,
 	}
 	assert(dpmcp_id == (uint32_t)dpmcp_attr.id);
 
-	printf("dpmcp version: %u.%u\n", dpmcp_attr.version.major,
-	       dpmcp_attr.version.minor);
+	error = dpmcp_get_api_version(&restool.mc_io, 0, &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+
+	printf("dpmcp version: %u.%u\n", obj_major, obj_minor);
 	printf("dpmcp object id/portal id: %d\n", dpmcp_attr.id);
 	printf("plugged state: %splugged\n",
 		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
 	print_obj_label(target_obj_desc);
+	printf("dpmcp_attr.options value is: %#lx\n",
+			(unsigned long) dpmcp_attr.options);
+	print_dpmcp_options(dpmcp_attr.options);
 
 	error = 0;
 
@@ -233,116 +241,7 @@ out:
 	return error;
 }
 
-static int print_dpmcp_attr_v10(uint32_t dpmcp_id,
-			struct dprc_obj_desc *target_obj_desc)
-{
-	struct dpmcp_attr_v10 dpmcp_attr;
-	uint16_t obj_major, obj_minor;
-	bool dpmcp_opened = false;
-	uint16_t dpmcp_handle;
-	int error;
-
-	error = dpmcp_open_v10(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpmcp_opened = true;
-	if (0 == dpmcp_handle) {
-		DEBUG_PRINTF(
-			"dpmcp_open() returned invalid handle (auth 0) for dpmcp.%u\n",
-			dpmcp_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpmcp_attr, 0, sizeof(dpmcp_attr));
-	error = dpmcp_get_attributes_v10(&restool.mc_io, 0, dpmcp_handle,
-					&dpmcp_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpmcp_id == (uint32_t)dpmcp_attr.id);
-
-	error = dpmcp_get_api_version_v10(&restool.mc_io, 0,
-				      &obj_major, &obj_minor);
-	if (error) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	printf("dpmcp version: %u.%u\n", obj_major, obj_minor);
-	printf("dpmcp object id/portal id: %d\n", dpmcp_attr.id);
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_obj_label(target_obj_desc);
-	printf("dpmcp_attr.options value is: %#lx\n",
-			(unsigned long) dpmcp_attr.options);
-	print_dpmcp_options_v10(dpmcp_attr.options);
-
-	error = 0;
-
-out:
-	if (dpmcp_opened) {
-		int error2;
-
-		error2 = dpmcp_close_v10(&restool.mc_io, 0, dpmcp_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int print_dpmcp_info(uint32_t dpmcp_id, int mc_fw_version)
-{
-	int error;
-	struct dprc_obj_desc target_obj_desc;
-	uint32_t target_parent_dprc_id;
-	bool found = false;
-
-	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_id,
-				restool.root_dprc_handle, 0, dpmcp_id,
-				"dpmcp", &target_obj_desc,
-				&target_parent_dprc_id, &found);
-	if (error < 0)
-		goto out;
-
-	if (strcmp(target_obj_desc.type, "dpmcp")) {
-		printf("dpmcp.%d does not exist\n", dpmcp_id);
-		return -EINVAL;
-	}
-
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpmcp_attr_v9(dpmcp_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = print_dpmcp_attr_v10(dpmcp_id, &target_obj_desc);
-	if (error < 0)
-		goto out;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_obj_verbose(&target_obj_desc, &dpmcp_ops);
-	}
-
-out:
-	return error;
-}
-
-static int info_dpmcp(int mc_fw_version)
+static int cmd_dpmcp_info(void)
 {
 	static const char usage_msg[] =
 	"\n"
@@ -356,8 +255,10 @@ static int info_dpmcp(int mc_fw_version)
 		"Display information about dpmcp.5:\n"
 		"   $ restool dpmcp info dpmcp.5\n"
 		"\n";
-
-	uint32_t obj_id;
+	struct dprc_obj_desc target_obj_desc;
+	uint32_t target_parent_dprc_id;
+	bool found = false;
+	uint32_t dpmcp_id;
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
@@ -374,63 +275,37 @@ static int info_dpmcp(int mc_fw_version)
 		goto out;
 	}
 
-	error = parse_object_name(restool.obj_name, "dpmcp", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpmcp", &dpmcp_id);
 	if (error < 0)
 		goto out;
 
-	error = print_dpmcp_info(obj_id, mc_fw_version);
+	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0, dpmcp_id,
+				"dpmcp", &target_obj_desc,
+				&target_parent_dprc_id, &found);
+	if (error < 0)
+		goto out;
+
+	if (strcmp(target_obj_desc.type, "dpmcp")) {
+		printf("dpmcp.%d does not exist\n", dpmcp_id);
+		return -EINVAL;
+	}
+
+	error = print_dpmcp_attr(dpmcp_id, &target_obj_desc);
+	if (error < 0)
+		goto out;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+		error = print_obj_verbose(&target_obj_desc, &dpmcp_ops);
+	}
+
 out:
 	return error;
 }
 
-static int cmd_dpmcp_info_v9(void)
-{
-	return info_dpmcp(MC_FW_VERSION_9);
-}
-
-static int cmd_dpmcp_info_v10(void)
-{
-	return info_dpmcp(MC_FW_VERSION_10);
-}
-
-
-static int create_dpmcp_v9(struct dpmcp_cfg *dpmcp_cfg)
-{
-	struct dpmcp_attr dpmcp_attr;
-	uint16_t dpmcp_handle;
-	int error;
-
-	error = dpmcp_create(&restool.mc_io, 0, dpmcp_cfg, &dpmcp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpmcp_attr, 0, sizeof(struct dpmcp_attr));
-	error = dpmcp_get_attributes(&restool.mc_io, 0, dpmcp_handle,
-					&dpmcp_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpmcp", dpmcp_attr.id, NULL);
-
-	error = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
-}
-
-static int create_dpmcp_v10(struct dpmcp_cfg_v10 *dpmcp_cfg)
+static int create_dpmcp(struct dpmcp_cfg *dpmcp_cfg)
 {
 	uint32_t dpmcp_id, dprc_id;
 	uint64_t dpmcp_cfg_options;
@@ -459,11 +334,8 @@ static int create_dpmcp_v10(struct dpmcp_cfg_v10 *dpmcp_cfg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 
-		error = parse_generic_create_options(
-				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpmcp_cfg_options,
-				options_map_v10,
-				options_num_v10);
+		error = parse_generic_create_options(restool.cmd_option_args[CREATE_OPT_OPTIONS],
+						     &dpmcp_cfg_options, options_map, options_num);
 
 		if (error) {
 			DEBUG_PRINTF("parse_generic_create_options() = %d\n",
@@ -476,8 +348,7 @@ static int create_dpmcp_v10(struct dpmcp_cfg_v10 *dpmcp_cfg)
 			DEBUG_PRINTF("parse_generic_create_options() produces overflow while getting options-mask\n");
 	}
 
-	error = dpmcp_create_v10(&restool.mc_io, dprc_handle, 0,
-				 dpmcp_cfg, &dpmcp_id);
+	error = dpmcp_create(&restool.mc_io, dprc_handle, 0, dpmcp_cfg, &dpmcp_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -496,47 +367,7 @@ static int create_dpmcp_v10(struct dpmcp_cfg_v10 *dpmcp_cfg)
 	return 0;
 }
 
-static int create_dpmcp(int mc_fw_version, const char *usage_msg)
-{
-	struct dpmcp_cfg_v10 dpmcp_cfg = {0};
-	int error;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name != NULL) {
-		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     restool.obj_name);
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
-
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = create_dpmcp_v9((struct dpmcp_cfg *) &dpmcp_cfg);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpmcp_v10(&dpmcp_cfg);
-	else
-		return -EINVAL;
-
-	return error;
-}
-
-static int cmd_dpmcp_create_v9(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpmcp create\n"
-		"\n";
-
-	return create_dpmcp(MC_FW_VERSION_9, usage_msg);
-}
-
-static int cmd_dpmcp_create_v10(void)
+static int cmd_dpmcp_create(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -551,58 +382,26 @@ static int cmd_dpmcp_create_v10(void)
 		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
 		"   If it is not specified, the new object will be created under the default dprc.\n"
 		"\n";
+	struct dpmcp_cfg dpmcp_cfg = {0};
 
-	return create_dpmcp(MC_FW_VERSION_10, usage_msg);
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
+		puts(usage_msg);
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
+		return 0;
+	}
+
+	if (restool.obj_name != NULL) {
+		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n", restool.obj_name);
+		puts(usage_msg);
+		return -EINVAL;
+	}
+
+	dpmcp_cfg.portal_id = DPMCP_GET_PORTAL_ID_FROM_POOL;
+
+	return create_dpmcp(&dpmcp_cfg);
 }
 
-static int destroy_dpmcp_v9(uint32_t dpmcp_id)
-{
-	bool dpmcp_opened = false;
-	uint16_t dpmcp_handle;
-	int error, error2;
-
-	error = dpmcp_open(&restool.mc_io, 0, dpmcp_id, &dpmcp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out_v9;
-	}
-	dpmcp_opened = true;
-	if (0 == dpmcp_handle) {
-		DEBUG_PRINTF(
-			"dpmcp_open() returned invalid handle (auth 0) for dpmcp.%u\n",
-			dpmcp_id);
-		error = -ENOENT;
-		goto out_v9;
-	}
-
-	error = dpmcp_destroy(&restool.mc_io, 0, dpmcp_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out_v9;
-	}
-	dpmcp_opened = false;
-	printf("dpmcp.%u is destroyed\n", dpmcp_id);
-
-out_v9:
-	if (dpmcp_opened) {
-		error2 = dpmcp_close(&restool.mc_io, 0, dpmcp_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int destroy_dpmcp_v10(uint32_t dpmcp_id)
+static int destroy_dpmcp(uint32_t dpmcp_id)
 {
 	uint16_t dprc_handle;
 	uint32_t dprc_id;
@@ -620,8 +419,7 @@ static int destroy_dpmcp_v10(uint32_t dpmcp_id)
 			return error;
 	}
 
-	error = dpmcp_destroy_v10(&restool.mc_io, dprc_handle,
-				 0, dpmcp_id);
+	error = dpmcp_destroy(&restool.mc_io, dprc_handle, 0, dpmcp_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -637,7 +435,7 @@ out:
 	return error;
 }
 
-static int destroy_dpmcp(int mc_fw_version)
+static int cmd_dpmcp_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -645,8 +443,8 @@ static int destroy_dpmcp(int mc_fw_version)
 		"   e.g. restool dpmcp destroy dpmcp.9\n"
 		"\n";
 
-	int error;
 	uint32_t dpmcp_id;
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		puts(usage_msg);
@@ -675,46 +473,12 @@ static int destroy_dpmcp(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpmcp_v9(dpmcp_id);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = destroy_dpmcp_v10(dpmcp_id);
-	else
-		return -EINVAL;
+	error = destroy_dpmcp(dpmcp_id);
 
 out:
 	return error;
+
 }
-
-static int cmd_dpmcp_destroy_v9(void)
-{
-	return destroy_dpmcp(MC_FW_VERSION_9);
-}
-
-static int cmd_dpmcp_destroy_v10(void)
-{
-	return destroy_dpmcp(MC_FW_VERSION_10);
-}
-
-struct object_command dpmcp_commands_v9[] = {
-	{ .cmd_name = "--help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpmcp_help },
-
-	{ .cmd_name = "info",
-	  .options = dpmcp_info_options,
-	  .cmd_func = cmd_dpmcp_info_v9 },
-
-	{ .cmd_name = "create",
-	  .options = dpmcp_create_options,
-	  .cmd_func = cmd_dpmcp_create_v9 },
-
-	{ .cmd_name = "destroy",
-	  .options = dpmcp_destroy_options,
-	  .cmd_func = cmd_dpmcp_destroy_v9 },
-
-	{ .cmd_name = NULL },
-};
 
 struct object_command dpmcp_commands_v10[] = {
 	{ .cmd_name = "--help",
@@ -723,16 +487,15 @@ struct object_command dpmcp_commands_v10[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpmcp_info_options,
-	  .cmd_func = cmd_dpmcp_info_v10 },
+	  .cmd_func = cmd_dpmcp_info },
 
 	{ .cmd_name = "create",
 	  .options = dpmcp_create_options,
-	  .cmd_func = cmd_dpmcp_create_v10 },
+	  .cmd_func = cmd_dpmcp_create },
 
 	{ .cmd_name = "destroy",
 	  .options = dpmcp_destroy_options,
-	  .cmd_func = cmd_dpmcp_destroy_v10 },
+	  .cmd_func = cmd_dpmcp_destroy },
 
 	{ .cmd_name = NULL },
 };
-

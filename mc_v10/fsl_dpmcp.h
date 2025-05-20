@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2022 NXP
+ * Copyright 2017-2022, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -35,8 +35,6 @@
 #ifndef __FSL_DPMCP_V10_H
 #define __FSL_DPMCP_V10_H
 
-#include "../mc_v9/fsl_dpmcp.h"
-
 /*
  * Data Path Management Command Portal API
  * Contains initialization APIs and runtime control APIs for DPMCP
@@ -46,71 +44,51 @@ struct fsl_mc_io;
 
 #define DPMCP_OPT_HIGH_PRIO_CMD_DIS			0x00000001
 
-int dpmcp_open_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   int dpmcp_id,
-		   uint16_t *token);
+int dpmcp_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpmcp_id, uint16_t *token);
 
 /* Get portal ID from pool */
 #define DPMCP_GET_PORTAL_ID_FROM_POOL (-1)
 
-int dpmcp_close_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    uint16_t token);
+int dpmcp_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
- * struct dpmcp_cfg_v10 - Structure representing DPMCP configuration
+ * struct dpmcp_cfg - Structure representing DPMCP configuration
  * @portal_id:	Portal ID; 'DPMCP_GET_PORTAL_ID_FROM_POOL' to get the portal ID
  *		from pool
  * @options: Any combination of the following options:
  *		DPMCP_OPT_HIGH_PRIO_CMD_DIS
  */
-struct dpmcp_cfg_v10 {
+struct dpmcp_cfg {
 	int portal_id;
 	uint32_t options;
 };
 
-int dpmcp_create_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     const struct dpmcp_cfg_v10 *cfg,
-		     uint32_t *obj_id);
+int dpmcp_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 const struct dpmcp_cfg *cfg, uint32_t *obj_id);
 
-int dpmcp_destroy_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      uint32_t obj_id);
+int dpmcp_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  uint32_t obj_id);
 
-int dpmcp_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t token,
-			   uint8_t irq_index,
-			   uint32_t *mask);
+int dpmcp_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		       uint8_t irq_index, uint32_t *mask);
 
-int dpmcp_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     uint8_t irq_index,
-			     uint32_t *status);
+int dpmcp_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint8_t irq_index, uint32_t *status);
 
 /**
- * struct dpmcp_attr_v10 - Structure representing DPMCP attributes
+ * struct dpmcp_attr - Structure representing DPMCP attributes
  * @id:		DPMCP object ID
  * @options:	DPMCP object options
  */
-struct dpmcp_attr_v10 {
+struct dpmcp_attr {
 	int id;
 	uint32_t options;
 };
 
-int dpmcp_get_attributes_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     struct dpmcp_attr_v10 *attr);
+int dpmcp_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 struct dpmcp_attr *attr);
 
-int dpmcp_get_api_version_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t *major_ver,
-			      uint16_t *minor_ver);
+int dpmcp_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			  uint16_t *major_ver, uint16_t *minor_ver);
 
 #endif /* __FSL_DPMCP_H */
