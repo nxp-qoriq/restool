@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2021 NXP
+ * Copyright 2017-2021, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,26 +33,22 @@
 #ifndef __FSL_DPDMUX_V10_H
 #define __FSL_DPDMUX_V10_H
 
-#include "../mc_v9/fsl_dpdmux.h"
-
 struct fsl_mc_io;
 
 /* Data Path Demux API
  * Contains API for handling DPDMUX topology and functionality
  */
 
-int dpdmux_open_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    int  dpdmux_id,
-		    uint16_t *token);
+int dpdmux_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpdmux_id, uint16_t *token);
 
-int dpdmux_close_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token);
+int dpdmux_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /*
  * DPDMUX options
  */
+
+/* Enable bridging between internal interfaces */
+#define DPDMUX_OPT_BRIDGE_EN			0x0000000000000002ULL
 
 #define DPDMUX_OPT_CLS_MASK_SUPPORT		0x0000000000000020ULL
 /**
@@ -92,7 +88,34 @@ enum dpdmux_counter_type {
 };
 
 /**
- * struct dpdmux_cfg_v10 - DPDMUX configuration parameters
+ * enum dpdmux_manip - DPDMUX manipulation operations
+ * @DPDMUX_MANIP_NONE:	No manipulation on frames
+ * @DPDMUX_MANIP_ADD_REMOVE_S_VLAN: Add S-VLAN on egress, remove it on ingress
+ */
+enum dpdmux_manip {
+	DPDMUX_MANIP_NONE = 0x0,
+	DPDMUX_MANIP_ADD_REMOVE_S_VLAN = 0x1
+};
+
+/**
+ * enum dpdmux_method - DPDMUX method options
+ * @DPDMUX_METHOD_NONE: no DPDMUX method
+ * @DPDMUX_METHOD_C_VLAN_MAC: DPDMUX based on C-VLAN and MAC address
+ * @DPDMUX_METHOD_MAC: DPDMUX based on MAC address
+ * @DPDMUX_METHOD_C_VLAN: DPDMUX based on C-VLAN
+ * @DPDMUX_METHOD_S_VLAN: DPDMUX based on S-VLAN
+ */
+enum dpdmux_method {
+	DPDMUX_METHOD_NONE = 0x0,
+	DPDMUX_METHOD_C_VLAN_MAC = 0x1,
+	DPDMUX_METHOD_MAC = 0x2,
+	DPDMUX_METHOD_C_VLAN = 0x3,
+	DPDMUX_METHOD_S_VLAN = 0x4,
+	DPDMUX_METHOD_CUSTOM = 0x5,
+};
+
+/**
+ * struct dpdmux_cfg - DPDMUX configuration parameters
  * @method: Defines the operation method for the DPDMUX address table
  * @manip: Required manipulation operation
  * @num_ifs: Number of interfaces (excluding the uplink interface)
@@ -100,7 +123,7 @@ enum dpdmux_counter_type {
  * @adv: Advanced parameters; default is all zeros;
  *	 use this structure to change default settings
  */
-struct dpdmux_cfg_v10 {
+struct dpdmux_cfg {
 	enum dpdmux_method method;
 	enum dpdmux_manip manip;
 	uint16_t num_ifs;
@@ -127,31 +150,20 @@ struct dpdmux_cfg_v10 {
 	} adv;
 };
 
-int dpdmux_create_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      const struct dpdmux_cfg_v10 *cfg,
-		      uint32_t *obj_id);
+int dpdmux_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  const struct dpdmux_cfg *cfg, uint32_t *obj_id);
 
-int dpdmux_destroy_v10(struct fsl_mc_io *mc_io,
-		       uint16_t dprc_token,
-		       uint32_t cmd_flags,
-		       uint32_t object_id);
+int dpdmux_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		   uint32_t object_id);
 
-int dpdmux_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *mask);
+int dpdmux_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *mask);
 
-int dpdmux_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      uint8_t irq_index,
-			      uint32_t *status);
+int dpdmux_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  uint8_t irq_index, uint32_t *status);
 
 /**
- * struct dpdmux_attr_v10 - Structure representing DPDMUX attributes
+ * struct dpdmux_attr - Structure representing DPDMUX attributes
  * @id: DPDMUX object ID
  * @options: Configuration options (bitmap)
  * @method: DPDMUX address table method
@@ -160,7 +172,7 @@ int dpdmux_get_irq_status_v10(struct fsl_mc_io *mc_io,
  * @mem_size: DPDMUX frame storage memory size
  * @default_if: Default interface number (different from uplink, maximum value num_ifs)
  */
-struct dpdmux_attr_v10 {
+struct dpdmux_attr {
 	int id;
 	uint64_t options;
 	enum dpdmux_method method;
@@ -170,27 +182,17 @@ struct dpdmux_attr_v10 {
 	uint16_t default_if;
 };
 
-int dpdmux_get_attributes_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      struct dpdmux_attr_v10 *attr);
+int dpdmux_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  struct dpdmux_attr *attr);
 
-int dpdmux_get_api_version_v10(struct fsl_mc_io *mc_io,
-			       uint32_t cmd_flags,
-			       uint16_t *major_ver,
-			       uint16_t *minor_ver);
+int dpdmux_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			   uint16_t *major_ver, uint16_t *minor_ver);
 
-int dpdmux_if_get_counter(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  uint16_t if_id,
-			  enum dpdmux_counter_type counter_type,
+int dpdmux_if_get_counter(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  uint16_t if_id, enum dpdmux_counter_type counter_type,
 			  uint64_t *counter);
 
-int dpdmux_get_max_frame_length(struct fsl_mc_io *mc_io,
-				uint32_t cmd_flags,
-				uint16_t token,
-				uint16_t if_id,
-				uint16_t *max_frame_length);
+int dpdmux_get_max_frame_length(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+				uint16_t if_id, uint16_t *max_frame_length);
 
 #endif /* __FSL_DPDMUX_H */

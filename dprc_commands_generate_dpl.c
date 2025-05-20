@@ -1987,11 +1987,6 @@ static void parse_dpdmux_method(FILE *fp, enum dpdmux_method method)
 	case DPDMUX_METHOD_CUSTOM:
 		fprintf(fp, "\"DPDMUX_METHOD_CUSTOM\";\n");
 		break;
-#if 0 /* TODO: Enable when MC support added */
-	case DPDMUX_METHOD_S_VLAN:
-		fprintf(fp, "DPDMUX_METHOD_S_VLAN\n");
-		break;
-#endif
 	default:
 		assert(false);
 		break;
@@ -2005,23 +2000,18 @@ static void parse_dpdmux_manip(FILE *fp, enum dpdmux_manip manip)
 	case DPDMUX_MANIP_NONE:
 		fprintf(fp, "\"DPDMUX_MANIP_NONE\";\n");
 		break;
-#if 0 /* TODO: Enable when MC support added */
-	case DPDMUX_MANIP_ADD_REMOVE_S_VLAN:
-		fprintf(fp, "DPDMUX_MANIP_ADD_REMOVE_S_VLAN\n");
-		break;
-#endif
 	default:
 		assert(false);
 		break;
 	}
 }
 
-static int parse_dpdmux_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpdmux(FILE *fp, struct obj_list *curr)
 {
+	struct dpdmux_attr dpdmux_attr;
+	bool dpdmux_opened = false;
 	uint16_t dpdmux_handle;
 	int error;
-	struct dpdmux_attr_v9 dpdmux_attr;
-	bool dpdmux_opened = false;
 
 	error = dpdmux_open(&restool.mc_io, 0, curr->id, &dpdmux_handle);
 	if (error < 0) {
@@ -2040,8 +2030,7 @@ static int parse_dpdmux_v9(FILE *fp, struct obj_list *curr)
 	}
 
 	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes_v9(&restool.mc_io, 0, dpdmux_handle,
-					&dpdmux_attr);
+	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle, &dpdmux_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2074,68 +2063,6 @@ out:
 	}
 
 	return error;
-
-}
-
-static int parse_dpdmux_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpdmux_attr_v10 dpdmux_attr;
-	bool dpdmux_opened = false;
-	uint16_t dpdmux_handle;
-	int error;
-
-	error = dpdmux_open_v10(&restool.mc_io, 0, curr->id, &dpdmux_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpdmux_opened = true;
-	if (0 == dpdmux_handle) {
-		DEBUG_PRINTF(
-			"dpdmux_open() returned invalid handle (auth 0) for dpdmux.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes_v10(&restool.mc_io, 0, dpdmux_handle,
-					&dpdmux_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpdmux_attr.id);
-
-	parse_endpoint_dpl(curr, dpdmux_attr.num_ifs + 1);
-	parse_dpdmux_options(fp, dpdmux_attr.options);
-	parse_dpdmux_method(fp, dpdmux_attr.method);
-	parse_dpdmux_manip(fp, dpdmux_attr.manip);
-	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n",
-		(uint32_t)dpdmux_attr.num_ifs);
-
-	error = 0;
-
-out:
-	if (dpdmux_opened) {
-		int error2;
-
-		error2 = dpdmux_close_v10(&restool.mc_io, 0, dpdmux_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-
 }
 
 static void parse_dpsw_options(FILE *fp, uint64_t options)
@@ -2428,12 +2355,8 @@ static int write_objects(void)
 
 
 		/* following objects have possible connections and interface*/
-		if (strcmp(curr_obj->type, "dpdmux") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpdmux_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpdmux_v10(fp, curr_obj);
-		}
+		if (strcmp(curr_obj->type, "dpdmux") == 0)
+			parse_dpdmux(fp, curr_obj);
 
 		if (strcmp(curr_obj->type, "dpsw") == 0) {
 			if (restool.mc_fw_version.major == 9)

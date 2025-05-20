@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2021 NXP
+ * Copyright 2017-2021, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 #include "fsl_dpdmux_cmd.h"
 
 /**
- * dpdmux_open_v10() - Open a control session for the specified object
+ * dpdmux_open() - Open a control session for the specified object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpdmux_id:		DPDMUX unique ID
@@ -52,35 +52,29 @@
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_open_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    int dpdmux_id,
-		    uint16_t *token)
+int dpdmux_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpdmux_id, uint16_t *token)
 {
-	struct mc_command cmd = { 0 };
 	struct dpdmux_cmd_open *cmd_params;
+	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_OPEN,
 					  cmd_flags,
 					  0);
 	cmd_params = (struct dpdmux_cmd_open *)cmd.params;
 	cmd_params->dpdmux_id = cpu_to_le32(dpdmux_id);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*token = mc_cmd_hdr_read_token(&cmd);
 
 	return 0;
 }
 
 /**
- * dpdmux_close_v10() - Close the control session of the object
+ * dpdmux_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:		Token of DPDMUX object
@@ -90,23 +84,19 @@ int dpdmux_open_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_close_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token)
+int dpdmux_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_CLOSE,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpdmux_create_v10() - Create the DPDMUX object
+ * dpdmux_create() - Create the DPDMUX object
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -127,17 +117,13 @@ int dpdmux_close_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_create_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      const struct dpdmux_cfg_v10 *cfg,
-		      uint32_t *obj_id)
+int dpdmux_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  const struct dpdmux_cfg *cfg, uint32_t *obj_id)
 {
 	struct mc_command cmd = { 0 };
 	struct dpdmux_cmd_create *cmd_params;
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_CREATE,
 					  cmd_flags,
 					  dprc_token);
@@ -152,19 +138,17 @@ int dpdmux_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->mem_size = cpu_to_le16(cfg->adv.mem_size);
 	cmd_params->options = cpu_to_le64(cfg->adv.options);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*obj_id = mc_cmd_read_object_id(&cmd);
 
 	return 0;
 }
 
 /**
- * dpdmux_destroy_v10() - Destroy the DPDMUX object and release all its resources.
+ * dpdmux_destroy() - Destroy the DPDMUX object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token: Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -178,27 +162,23 @@ int dpdmux_create_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpdmux_destroy_v10(struct fsl_mc_io *mc_io,
-		       uint16_t dprc_token,
-		       uint32_t cmd_flags,
-		       uint32_t object_id)
+int dpdmux_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		   uint32_t object_id)
 {
 	struct mc_command cmd = { 0 };
 	struct dpdmux_cmd_destroy *cmd_params;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_DESTROY,
 					  cmd_flags,
 					  dprc_token);
 	cmd_params = (struct dpdmux_cmd_destroy *)cmd.params;
 	cmd_params->dpdmux_id = cpu_to_le32(object_id);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpdmux_get_irq_mask_v10() - Get interrupt mask.
+ * dpdmux_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
@@ -210,30 +190,24 @@ int dpdmux_destroy_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *mask)
+int dpdmux_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *mask)
 {
 	struct mc_command cmd = { 0 };
 	struct dpdmux_cmd_get_irq_mask *cmd_params;
 	struct dpdmux_rsp_get_irq_mask *rsp_params;
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_IRQ_MASK,
 					  cmd_flags,
 					  token);
 	cmd_params = (struct dpdmux_cmd_get_irq_mask *)cmd.params;
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpdmux_rsp_get_irq_mask *)cmd.params;
 	*mask = le32_to_cpu(rsp_params->mask);
 
@@ -241,7 +215,7 @@ int dpdmux_get_irq_mask_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpdmux_get_irq_status_v10() - Get the current status of any pending interrupts.
+ * dpdmux_get_irq_status() - Get the current status of any pending interrupts.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
@@ -252,18 +226,14 @@ int dpdmux_get_irq_mask_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      uint8_t irq_index,
-			      uint32_t *status)
+int dpdmux_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  uint8_t irq_index, uint32_t *status)
 {
 	struct mc_command cmd = { 0 };
 	struct dpdmux_cmd_get_irq_status *cmd_params;
 	struct dpdmux_rsp_get_irq_status *rsp_params;
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_IRQ_STATUS,
 					  cmd_flags,
 					  token);
@@ -271,12 +241,10 @@ int dpdmux_get_irq_status_v10(struct fsl_mc_io *mc_io,
 	cmd_params->status = cpu_to_le32(*status);
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpdmux_rsp_get_irq_status *)cmd.params;
 	*status = le32_to_cpu(rsp_params->status);
 
@@ -284,7 +252,7 @@ int dpdmux_get_irq_status_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpdmux_get_attributes_v10() - Retrieve DPDMUX attributes
+ * dpdmux_get_attributes() - Retrieve DPDMUX attributes
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMUX object
@@ -292,26 +260,21 @@ int dpdmux_get_irq_status_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_get_attributes_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      struct dpdmux_attr_v10 *attr)
+int dpdmux_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  struct dpdmux_attr *attr)
 {
 	struct mc_command cmd = { 0 };
 	struct dpdmux_rsp_get_attr *rsp_params;
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_ATTR,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpdmux_rsp_get_attr *)cmd.params;
 	attr->id = le32_to_cpu(rsp_params->id);
 	attr->options = le64_to_cpu(rsp_params->options);
@@ -325,7 +288,7 @@ int dpdmux_get_attributes_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpdmux_get_api_version_v10() - Get Data Path Demux API version
+ * dpdmux_get_api_version() - Get Data Path Demux API version
  * @mc_io:  Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @major_ver:	Major version of data path demux API
@@ -333,10 +296,8 @@ int dpdmux_get_attributes_v10(struct fsl_mc_io *mc_io,
  *
  * Return:  '0' on Success; Error code otherwise.
  */
-int dpdmux_get_api_version_v10(struct fsl_mc_io *mc_io,
-			       uint32_t cmd_flags,
-			       uint16_t *major_ver,
-			       uint16_t *minor_ver)
+int dpdmux_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			   uint16_t *major_ver, uint16_t *minor_ver)
 {
 	struct mc_command cmd = { 0 };
 	struct dpdmux_rsp_get_api_version *rsp_params;
@@ -368,19 +329,15 @@ int dpdmux_get_api_version_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_if_get_counter(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  uint16_t if_id,
-			  enum dpdmux_counter_type counter_type,
+int dpdmux_if_get_counter(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  uint16_t if_id, enum dpdmux_counter_type counter_type,
 			  uint64_t *counter)
 {
-	struct mc_command cmd = { 0 };
 	struct dpdmux_cmd_if_get_counter *cmd_params;
 	struct dpdmux_rsp_if_get_counter *rsp_params;
+	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_IF_GET_COUNTER,
 					  cmd_flags,
 					  token);
@@ -388,12 +345,10 @@ int dpdmux_if_get_counter(struct fsl_mc_io *mc_io,
 	cmd_params->if_id = cpu_to_le16(if_id);
 	cmd_params->counter_type = counter_type;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpdmux_rsp_if_get_counter *)cmd.params;
 	*counter = le64_to_cpu(rsp_params->counter);
 
@@ -414,18 +369,14 @@ int dpdmux_if_get_counter(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmux_get_max_frame_length(struct fsl_mc_io *mc_io,
-				uint32_t cmd_flags,
-				uint16_t token,
-				uint16_t if_id,
-				uint16_t *max_frame_length)
+int dpdmux_get_max_frame_length(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+				uint16_t if_id, uint16_t *max_frame_length)
 {
-	struct mc_command cmd = { 0 };
 	struct dpdmux_cmd_get_max_frame_len *cmd_params;
 	struct dpdmux_rsp_get_max_frame_len *rsp_params;
+	struct mc_command cmd = { 0 };
 	int err = 0;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_MAX_FRAME_LENGTH,
 					  cmd_flags,
 					  token);
@@ -439,6 +390,5 @@ int dpdmux_get_max_frame_length(struct fsl_mc_io *mc_io,
 	rsp_params = (struct dpdmux_rsp_get_max_frame_len *)cmd.params;
 	*max_frame_length = le16_to_cpu(rsp_params->max_len);
 
-	/* send command to mc*/
 	return err;
 }
