@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2020 NXP
+ * Copyright 2017-2020, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -39,7 +39,6 @@
 #include <getopt.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v9/fsl_dpdmai.h"
 #include "mc_v10/fsl_dpdmai.h"
 
 static enum mc_cmd_status mc_status;
@@ -152,10 +151,10 @@ static struct option dpdmai_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpdmai_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 const struct flib_ops dpdmai_ops = {
-	.obj_open = dpdmai_open_v10,
-	.obj_close = dpdmai_close_v10,
-	.obj_get_irq_mask = dpdmai_get_irq_mask_v10,
-	.obj_get_irq_status = dpdmai_get_irq_status_v10,
+	.obj_open = dpdmai_open,
+	.obj_close = dpdmai_close,
+	.obj_get_irq_mask = dpdmai_get_irq_mask,
+	.obj_get_irq_status = dpdmai_get_irq_status,
 };
 
 static int cmd_dpdmai_help(void)
@@ -175,13 +174,24 @@ static int cmd_dpdmai_help(void)
 	return 0;
 }
 
-static int print_dpdmai_attr_v9(uint32_t dpdmai_id,
-				struct dprc_obj_desc *target_obj_desc)
+static void print_dpdmai_options(uint32_t options)
 {
+	if ((options & ~ALL_DPDMAI_OPTS) != 0) {
+		printf("\tUnrecognized options found...\n");
+		return;
+	}
+
+	if (options & DPDMAI_OPT_CG_PER_PRIORITY)
+		printf("\tDPDMAI_OPT_CG_PER_PRIORITY\n");
+}
+
+static int print_dpdmai_attr(uint32_t dpdmai_id, struct dprc_obj_desc *target_obj_desc)
+{
+	struct dpdmai_attr dpdmai_attr;
+	uint16_t obj_major, obj_minor;
+	bool dpdmai_opened = false;
 	uint16_t dpdmai_handle;
 	int error;
-	struct dpdmai_attr dpdmai_attr;
-	bool dpdmai_opened = false;
 
 	error = dpdmai_open(&restool.mc_io, 0, dpdmai_id, &dpdmai_handle);
 	if (error < 0) {
@@ -200,8 +210,7 @@ static int print_dpdmai_attr_v9(uint32_t dpdmai_id,
 	}
 
 	memset(&dpdmai_attr, 0, sizeof(dpdmai_attr));
-	error = dpdmai_get_attributes(&restool.mc_io, 0, dpdmai_handle,
-					&dpdmai_attr);
+	error = dpdmai_get_attributes(&restool.mc_io, 0, dpdmai_handle, &dpdmai_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -210,82 +219,7 @@ static int print_dpdmai_attr_v9(uint32_t dpdmai_id,
 	}
 	assert(dpdmai_id == (uint32_t)dpdmai_attr.id);
 
-	printf("dpdmai version: %u.%u\n", dpdmai_attr.version.major,
-	       dpdmai_attr.version.minor);
-	printf("dpdmai id: %d\n", dpdmai_attr.id);
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	printf("number of priorities: %u\n", dpdmai_attr.num_of_priorities);
-	print_obj_label(target_obj_desc);
-
-	error = 0;
-
-out:
-	if (dpdmai_opened) {
-		int error2;
-
-		error2 = dpdmai_close(&restool.mc_io, 0, dpdmai_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static void print_dpdmai_options(uint32_t options)
-{
-	if ((options & ~ALL_DPDMAI_OPTS) != 0) {
-		printf("\tUnrecognized options found...\n");
-		return;
-	}
-
-	if (options & DPDMAI_OPT_CG_PER_PRIORITY)
-		printf("\tDPDMAI_OPT_CG_PER_PRIORITY\n");
-}
-
-static int print_dpdmai_attr_v10(uint32_t dpdmai_id,
-				 struct dprc_obj_desc *target_obj_desc)
-{
-	struct dpdmai_attr_v10 dpdmai_attr;
-	uint16_t obj_major, obj_minor;
-	bool dpdmai_opened = false;
-	uint16_t dpdmai_handle;
-	int error;
-
-	error = dpdmai_open_v10(&restool.mc_io, 0, dpdmai_id, &dpdmai_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpdmai_opened = true;
-	if (0 == dpdmai_handle) {
-		DEBUG_PRINTF(
-			"dpdmai_open() returned invalid handle (auth 0) for dpdmai.%u\n",
-			dpdmai_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpdmai_attr, 0, sizeof(dpdmai_attr));
-	error = dpdmai_get_attributes_v10(&restool.mc_io, 0, dpdmai_handle,
-					&dpdmai_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpdmai_id == (uint32_t)dpdmai_attr.id);
-
-	error = dpdmai_get_api_version_v10(&restool.mc_io, 0,
-				       &obj_major, &obj_minor);
+	error = dpdmai_get_api_version(&restool.mc_io, 0, &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -311,7 +245,7 @@ out:
 	if (dpdmai_opened) {
 		int error2;
 
-		error2 = dpdmai_close_v10(&restool.mc_io, 0, dpdmai_handle);
+		error2 = dpdmai_close(&restool.mc_io, 0, dpdmai_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -324,12 +258,12 @@ out:
 	return error;
 }
 
-static int print_dpdmai_info(uint32_t dpdmai_id, int mc_fw_version)
+static int print_dpdmai_info(uint32_t dpdmai_id)
 {
-	int error;
 	struct dprc_obj_desc target_obj_desc;
 	uint32_t target_parent_dprc_id;
 	bool found = false;
+	int error;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
 	error = find_target_obj_desc(restool.root_dprc_id,
@@ -344,10 +278,7 @@ static int print_dpdmai_info(uint32_t dpdmai_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpdmai_attr_v9(dpdmai_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = print_dpdmai_attr_v10(dpdmai_id, &target_obj_desc);
+	error = print_dpdmai_attr(dpdmai_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -360,7 +291,7 @@ out:
 	return error;
 }
 
-static int info_dpdmai(int mc_fw_version)
+static int cmd_dpdmai_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -374,7 +305,6 @@ static int info_dpdmai(int mc_fw_version)
 		"Display information about dpdmai.5:\n"
 		"   $ restool dpdmai info dpdmai.5\n"
 		"\n";
-
 	uint32_t obj_id;
 	int error;
 
@@ -396,19 +326,10 @@ static int info_dpdmai(int mc_fw_version)
 	if (error < 0)
 		goto out;
 
-	error = print_dpdmai_info(obj_id, mc_fw_version);
+	error = print_dpdmai_info(obj_id);
 out:
 	return error;
-}
 
-static int cmd_dpdmai_info_v9(void)
-{
-	return info_dpdmai(MC_FW_VERSION_9);
-}
-
-static int cmd_dpdmai_info_v10(void)
-{
-	return info_dpdmai(MC_FW_VERSION_10);
 }
 
 static int parse_dpdmai_priorities(char *priorities_str, uint8_t *priorities,
@@ -448,43 +369,7 @@ static int parse_dpdmai_priorities(char *priorities_str, uint8_t *priorities,
 	return 0;
 }
 
-static int create_dpdmai_v9(struct dpdmai_cfg *dpdmai_cfg)
-{
-	struct dpdmai_attr dpdmai_attr;
-	uint16_t dpdmai_handle;
-	int error;
-
-	error = dpdmai_create(&restool.mc_io, 0, dpdmai_cfg, &dpdmai_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpdmai_attr, 0, sizeof(struct dpdmai_attr));
-	error = dpdmai_get_attributes(&restool.mc_io, 0, dpdmai_handle,
-					&dpdmai_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpdmai", dpdmai_attr.id, NULL);
-
-	error = dpdmai_close(&restool.mc_io, 0, dpdmai_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
-}
-
-static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
+static int create_dpdmai(struct dpdmai_cfg *dpdmai_cfg)
 {
 	uint32_t dpdmai_id, dprc_id;
 	uint16_t dprc_handle;
@@ -538,8 +423,7 @@ static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
 		dpdmai_cfg->adv.options = (uint32_t)options;
 	}
 
-	error = dpdmai_create_v10(&restool.mc_io, dprc_handle, 0,
-				  dpdmai_cfg, &dpdmai_id);
+	error = dpdmai_create(&restool.mc_io, dprc_handle, 0, dpdmai_cfg, &dpdmai_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -558,10 +442,33 @@ static int create_dpdmai_v10(struct dpdmai_cfg_v10 *dpdmai_cfg)
 	return 0;
 }
 
-static int create_dpdmai(int mc_fw_version, const char *usage_msg)
+static int cmd_dpdmai_create(void)
 {
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpdmai create [OPTIONS]\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPDMAI by default options\n"
+		"default is: restool dpdmai create --priorities=1,2\n"
+		"--priorities=<priority1,priority2>\n"
+		"   Valid values for <priorityN> are 1-8.\n"
+		"--num-queues=<number>\n"
+		"   Valid values are [1, #num-cores]\n"
+		"--options=<options-mask>\n"
+		"   Where <options-mask> is a comma separated list of DPDMAI options:\n"
+		"	DPDMAI_OPT_CG_PER_PRIORITY\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"\n"
+		"EXAMPLES:\n"
+		"create a DPDMAI object with all default options:\n"
+		"   $ restool dpdmai create\n"
+		"create a DPDMAI with 2,4 priorities:\n"
+		"   $ restool dpdmai create --priorities=2,4\n"
+		"\n";
 	struct dpdmai_cfg dpdmai_cfg = { 0 };
-	struct dpdmai_cfg_v10 dpdmai_cfg_10 = { 0 };
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
@@ -590,126 +497,15 @@ static int create_dpdmai(int mc_fw_version, const char *usage_msg)
 				error);
 			return error;
 		}
-		dpdmai_cfg_10.priorities[0] = dpdmai_cfg.priorities[0];
-		dpdmai_cfg_10.priorities[1] = dpdmai_cfg.priorities[1];
 	} else {
 		dpdmai_cfg.priorities[0] = 1;
 		dpdmai_cfg.priorities[1] = 2;
-		dpdmai_cfg_10.priorities[0] = 1;
-		dpdmai_cfg_10.priorities[1] = 2;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = create_dpdmai_v9(&dpdmai_cfg);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpdmai_v10(&dpdmai_cfg_10);
-	else
-		return -EINVAL;
-
-	return error;
+	return create_dpdmai(&dpdmai_cfg);
 }
 
-static int cmd_dpdmai_create_v9(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpdmai create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPDMAI by default options\n"
-		"default is: restool dpdmai create --priorities=1,2\n"
-		"--priorities=<priority1,priority2>\n"
-		"   Valid values for <priorityN> are 1-8.\n"
-		"\n"
-		"EXAMPLES:\n"
-		"create a DPDMAI object with all default options:\n"
-		"   $ restool dpdmai create\n"
-		"create a DPDMAI with 2,4 priorities:\n"
-		"   $ restool dpdmai create --priorities=2,4\n"
-		"\n";
-
-
-	return create_dpdmai(MC_FW_VERSION_9, usage_msg);
-}
-
-static int cmd_dpdmai_create_v10(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpdmai create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPDMAI by default options\n"
-		"default is: restool dpdmai create --priorities=1,2\n"
-		"--priorities=<priority1,priority2>\n"
-		"   Valid values for <priorityN> are 1-8.\n"
-		"--num-queues=<number>\n"
-		"   Valid values are [1, #num-cores]\n"
-		"--options=<options-mask>\n"
-		"   Where <options-mask> is a comma separated list of DPDMAI options:\n"
-		"	DPDMAI_OPT_CG_PER_PRIORITY\n"
-		"--container=<container-name>\n"
-		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
-		"   If it is not specified, the new object will be created under the default dprc.\n"
-		"\n"
-		"EXAMPLES:\n"
-		"create a DPDMAI object with all default options:\n"
-		"   $ restool dpdmai create\n"
-		"create a DPDMAI with 2,4 priorities:\n"
-		"   $ restool dpdmai create --priorities=2,4\n"
-		"\n";
-
-	return create_dpdmai(MC_FW_VERSION_10, usage_msg);
-}
-
-static int destroy_dpdmai_v9(uint32_t dpdmai_id)
-{
-	bool dpdmai_opened = false;
-	uint16_t dpdmai_handle;
-	int error, error2;
-
-	error = dpdmai_open(&restool.mc_io, 0, dpdmai_id, &dpdmai_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpdmai_opened = true;
-	if (0 == dpdmai_handle) {
-		DEBUG_PRINTF(
-			"dpdmai_open() returned invalid handle (auth 0) for dpdmai.%u\n",
-			dpdmai_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	error = dpdmai_destroy(&restool.mc_io, 0, dpdmai_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpdmai_opened = false;
-	printf("dpdmai.%u is destroyed\n", dpdmai_id);
-
-out:
-	if (dpdmai_opened) {
-		error2 = dpdmai_close(&restool.mc_io, 0, dpdmai_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int destroy_dpdmai_v10(uint32_t dpdmai_id)
+static int destroy_dpdmai(uint32_t dpdmai_id)
 {
 	uint16_t dprc_handle;
 	uint32_t dprc_id;
@@ -727,8 +523,7 @@ static int destroy_dpdmai_v10(uint32_t dpdmai_id)
 			return error;
 	}
 
-	error = dpdmai_destroy_v10(&restool.mc_io, dprc_handle,
-				   0, dpdmai_id);
+	error = dpdmai_destroy(&restool.mc_io, dprc_handle, 0, dpdmai_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -744,16 +539,15 @@ out:
 	return error;
 }
 
-static int destroy_dpdmai(int mc_fw_version)
+static int cmd_dpdmai_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpdmai destroy <dpdmai-object>\n"
 		"   e.g. restool dpdmai destroy dpdmai.9\n"
 		"\n";
-
-	int error;
 	uint32_t dpdmai_id;
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		puts(usage_msg);
@@ -782,46 +576,11 @@ static int destroy_dpdmai(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpdmai_v9(dpdmai_id);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = destroy_dpdmai_v10(dpdmai_id);
-	else
-		return -EINVAL;
-
+	error = destroy_dpdmai(dpdmai_id);
 out:
 	return error;
+
 }
-
-static int cmd_dpdmai_destroy_v9(void)
-{
-	return destroy_dpdmai(MC_FW_VERSION_9);
-}
-
-static int cmd_dpdmai_destroy_v10(void)
-{
-	return destroy_dpdmai(MC_FW_VERSION_10);
-}
-
-struct object_command dpdmai_commands_v9[] = {
-	{ .cmd_name = "--help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpdmai_help },
-
-	{ .cmd_name = "info",
-	  .options = dpdmai_info_options,
-	  .cmd_func = cmd_dpdmai_info_v9 },
-
-	{ .cmd_name = "create",
-	  .options = dpdmai_create_options,
-	  .cmd_func = cmd_dpdmai_create_v9 },
-
-	{ .cmd_name = "destroy",
-	  .options = dpdmai_destroy_options,
-	  .cmd_func = cmd_dpdmai_destroy_v9 },
-
-	{ .cmd_name = NULL },
-};
 
 struct object_command dpdmai_commands_v10[] = {
 	{ .cmd_name = "--help",
@@ -830,16 +589,15 @@ struct object_command dpdmai_commands_v10[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpdmai_info_options,
-	  .cmd_func = cmd_dpdmai_info_v10 },
+	  .cmd_func = cmd_dpdmai_info },
 
 	{ .cmd_name = "create",
 	  .options = dpdmai_create_options,
-	  .cmd_func = cmd_dpdmai_create_v10 },
+	  .cmd_func = cmd_dpdmai_create },
 
 	{ .cmd_name = "destroy",
 	  .options = dpdmai_destroy_options,
-	  .cmd_func = cmd_dpdmai_destroy_v10 },
+	  .cmd_func = cmd_dpdmai_destroy },
 
 	{ .cmd_name = NULL },
 };
-

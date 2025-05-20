@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpdmai.h"
 #include "mc_v9/fsl_dpio.h"
 #include "mc_v9/fsl_dpmac.h"
 #include "mc_v9/fsl_dpmcp.h"
@@ -916,12 +915,12 @@ out:
 	return error;
 }
 
-static int parse_dpdmai_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpdmai(FILE *fp, struct obj_list *curr)
 {
-	uint16_t dpdmai_handle;
-	int error;
 	struct dpdmai_attr dpdmai_attr;
 	bool dpdmai_opened = false;
+	uint16_t dpdmai_handle;
+	int error;
 
 	error = dpdmai_open(&restool.mc_io, 0, curr->id, &dpdmai_handle);
 	if (error < 0) {
@@ -940,8 +939,7 @@ static int parse_dpdmai_v9(FILE *fp, struct obj_list *curr)
 	}
 
 	memset(&dpdmai_attr, 0, sizeof(dpdmai_attr));
-	error = dpdmai_get_attributes(&restool.mc_io, 0, dpdmai_handle,
-					&dpdmai_attr);
+	error = dpdmai_get_attributes(&restool.mc_io, 0, dpdmai_handle, &dpdmai_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -960,62 +958,6 @@ out:
 		int error2;
 
 		error2 = dpdmai_close(&restool.mc_io, 0, dpdmai_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int parse_dpdmai_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpdmai_attr_v10 dpdmai_attr;
-	bool dpdmai_opened = false;
-	uint16_t dpdmai_handle;
-	int error;
-
-	error = dpdmai_open_v10(&restool.mc_io, 0, curr->id, &dpdmai_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpdmai_opened = true;
-	if (0 == dpdmai_handle) {
-		DEBUG_PRINTF(
-			"dpdmai_open() returned invalid handle (auth 0) for dpdmai.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpdmai_attr, 0, sizeof(dpdmai_attr));
-	error = dpdmai_get_attributes_v10(&restool.mc_io, 0, dpdmai_handle,
-					  &dpdmai_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpdmai_attr.id);
-
-	fprintf(fp, "\t\t\tpriorities = <%#x>;\n",
-		dpdmai_attr.num_of_priorities);
-
-	error = 0;
-
-out:
-	if (dpdmai_opened) {
-		int error2;
-
-		error2 = dpdmai_close_v10(&restool.mc_io, 0, dpdmai_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2445,12 +2387,8 @@ static int write_objects(void)
 		if (strcmp(curr_obj->type, "dpdcei") == 0)
 			parse_dpdcei(fp, curr_obj);
 
-		if (strcmp(curr_obj->type, "dpdmai") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpdmai_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpdmai_v10(fp, curr_obj);
-		}
+		if (strcmp(curr_obj->type, "dpdmai") == 0)
+			parse_dpdmai(fp, curr_obj);
 
 		if (strcmp(curr_obj->type, "dpmcp") == 0) {
 			if (restool.mc_fw_version.major == 9)

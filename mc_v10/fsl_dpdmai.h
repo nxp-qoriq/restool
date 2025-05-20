@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2020 NXP
+ * Copyright 2017-2020, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,22 +33,20 @@
 #ifndef __FSL_DPDMAI_V10_H
 #define __FSL_DPDMAI_V10_H
 
-#include "../mc_v9/fsl_dpdmai.h"
-
 struct fsl_mc_io;
 
 /* Data Path DMA Interface API
  * Contains initialization APIs and runtime control APIs for DPDMAI
  */
 
-int dpdmai_open_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    int dpdmai_id,
-		    uint16_t *token);
+/**
+ * Maximum number of Tx/Rx priorities per DPDMAI object
+ */
+#define DPDMAI_PRIO_NUM		2
 
-int dpdmai_close_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token);
+int dpdmai_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpdmai_id, uint16_t *token);
+
+int dpdmai_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
  * Enable individual Congestion Groups usage per each priority queue
@@ -57,12 +55,12 @@ int dpdmai_close_v10(struct fsl_mc_io *mc_io,
 #define DPDMAI_OPT_CG_PER_PRIORITY             0x00000001
 
 /**
- * struct dpdmai_cfg_v10 - Structure representing DPDMAI configuration
+ * struct dpdmai_cfg - Structure representing DPDMAI configuration
  * @priorities: Priorities for the DMA hardware processing; valid priorities are
  *	configured with values 1-8; the entry following last valid entry
  *	should be configured with 0
  */
-struct dpdmai_cfg_v10 {
+struct dpdmai_cfg {
 	uint8_t num_queues;
 	uint8_t priorities[DPDMAI_PRIO_NUM];
 	struct {
@@ -70,50 +68,35 @@ struct dpdmai_cfg_v10 {
 	} adv;
 };
 
-int dpdmai_create_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      const struct dpdmai_cfg_v10 *cfg,
-		      uint32_t *obj_id);
+int dpdmai_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  const struct dpdmai_cfg *cfg, uint32_t *obj_id);
 
-int dpdmai_destroy_v10(struct fsl_mc_io *mc_io,
-		       uint16_t dprc_token,
-		       uint32_t cmd_flags,
-		       uint32_t object_id);
+int dpdmai_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		   uint32_t object_id);
 
-int dpdmai_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *mask);
+int dpdmai_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *mask);
 
-int dpdmai_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      uint8_t irq_index,
-			      uint32_t *status);
+int dpdmai_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  uint8_t irq_index, uint32_t *status);
 
 /**
- * struct dpdmai_attr_v10 - Structure representing DPDMAI attributes
+ * struct dpdmai_attr - Structure representing DPDMAI attributes
  * @id: DPDMAI object ID
  * @num_of_priorities: number of priorities
  * @options: dpdmai options
  */
-struct dpdmai_attr_v10 {
+struct dpdmai_attr {
 	int id;
 	uint8_t num_of_priorities;
 	uint8_t num_of_queues;
 	uint32_t options;
 };
 
-int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      struct dpdmai_attr_v10 *attr);
+int dpdmai_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  struct dpdmai_attr *attr);
 
-int dpdmai_get_api_version_v10(struct fsl_mc_io *mc_io,
-			       uint32_t cmd_flags,
-			       uint16_t *major_ver,
-			       uint16_t *minor_ver);
+int dpdmai_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			   uint16_t *major_ver, uint16_t *minor_ver);
 
 #endif /* __FSL_DPDMAI_H */

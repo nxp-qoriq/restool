@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2020 NXP
+ * Copyright 2017-2020, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 #include "fsl_dpdmai_cmd.h"
 
 /**
- * dpdmai_open_v10() - Open a control session for the specified object
+ * dpdmai_open() - Open a control session for the specified object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpdmai_id:	DPDMAI unique ID
@@ -52,35 +52,29 @@
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmai_open_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    int dpdmai_id,
-		    uint16_t *token)
+int dpdmai_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpdmai_id, uint16_t *token)
 {
 	struct dpdmai_cmd_open *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMAI_CMDID_OPEN,
 					  cmd_flags,
 					  0);
 	cmd_params = (struct dpdmai_cmd_open *)cmd.params;
 	cmd_params->dpdmai_id = cpu_to_le32(dpdmai_id);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*token = mc_cmd_hdr_read_token(&cmd);
 
 	return 0;
 }
 
 /**
- * dpdmai_close_v10() - Close the control session of the object
+ * dpdmai_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMAI object
@@ -90,22 +84,18 @@ int dpdmai_open_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmai_close_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token)
+int dpdmai_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMAI_CMDID_CLOSE,
 					  cmd_flags, token);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpdmai_create_v10() - Create the DPDMAI object
+ * dpdmai_create() - Create the DPDMAI object
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -126,17 +116,13 @@ int dpdmai_close_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmai_create_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      const struct dpdmai_cfg_v10 *cfg,
-		      uint32_t *obj_id)
+int dpdmai_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  const struct dpdmai_cfg *cfg, uint32_t *obj_id)
 {
 	struct dpdmai_cmd_create *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMAI_CMDID_CREATE,
 					  cmd_flags,
 					  dprc_token);
@@ -146,19 +132,17 @@ int dpdmai_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->priorities[1] = cfg->priorities[1];
 	cmd_params->options = cpu_to_le32(cfg->adv.options);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*obj_id = mc_cmd_read_object_id(&cmd);
 
 	return 0;
 }
 
 /**
- * dpdmai_destroy_v10() - Destroy the DPDMAI object and release all its resources.
+ * dpdmai_destroy() - Destroy the DPDMAI object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token: Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -172,27 +156,23 @@ int dpdmai_create_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpdmai_destroy_v10(struct fsl_mc_io *mc_io,
-		       uint16_t dprc_token,
-		       uint32_t cmd_flags,
-		       uint32_t object_id)
+int dpdmai_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		   uint32_t object_id)
 {
 	struct dpdmai_cmd_destroy *cmd_params;
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMAI_CMDID_DESTROY,
 					  cmd_flags,
 					  dprc_token);
 	cmd_params = (struct dpdmai_cmd_destroy *)cmd.params;
 	cmd_params->dpdmai_id = cpu_to_le32(object_id);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpdmai_get_irq_mask_v10() - Get interrupt mask.
+ * dpdmai_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMAI object
@@ -204,30 +184,24 @@ int dpdmai_destroy_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmai_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *mask)
+int dpdmai_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *mask)
 {
 	struct dpdmai_cmd_get_irq_mask *cmd_params;
 	struct dpdmai_rsp_get_irq_mask *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMAI_CMDID_GET_IRQ_MASK,
 					  cmd_flags,
 					  token);
 	cmd_params = (struct dpdmai_cmd_get_irq_mask *)cmd.params;
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpdmai_rsp_get_irq_mask *)cmd.params;
 	*mask = le32_to_cpu(rsp_params->mask);
 
@@ -235,7 +209,7 @@ int dpdmai_get_irq_mask_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpdmai_get_irq_status_v10() - Get the current status of any pending interrupts
+ * dpdmai_get_irq_status() - Get the current status of any pending interrupts
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMAI object
@@ -246,18 +220,14 @@ int dpdmai_get_irq_mask_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmai_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      uint8_t irq_index,
-			      uint32_t *status)
+int dpdmai_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  uint8_t irq_index, uint32_t *status)
 {
 	struct dpdmai_cmd_get_irq_status *cmd_params;
 	struct dpdmai_rsp_get_irq_status *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMAI_CMDID_GET_IRQ_STATUS,
 					  cmd_flags,
 					  token);
@@ -265,12 +235,10 @@ int dpdmai_get_irq_status_v10(struct fsl_mc_io *mc_io,
 	cmd_params->status = cpu_to_le32(*status);
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpdmai_rsp_get_irq_status *)cmd.params;
 	*status = le32_to_cpu(rsp_params->status);
 
@@ -278,7 +246,7 @@ int dpdmai_get_irq_status_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpdmai_get_attributes_v10() - Retrieve DPDMAI attributes.
+ * dpdmai_get_attributes() - Retrieve DPDMAI attributes.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPDMAI object
@@ -286,26 +254,21 @@ int dpdmai_get_irq_status_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      struct dpdmai_attr_v10 *attr)
+int dpdmai_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  struct dpdmai_attr *attr)
 {
 	struct dpdmai_rsp_get_attr *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPDMAI_CMDID_GET_ATTR,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpdmai_rsp_get_attr *)cmd.params;
 	attr->id = le32_to_cpu(rsp_params->id);
 	attr->num_of_priorities = rsp_params->num_of_priorities;
@@ -316,7 +279,7 @@ int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpdmai_get_api_version_v10() - Get Data Path DMA API version
+ * dpdmai_get_api_version() - Get Data Path DMA API version
  * @mc_io:  Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @major_ver:	Major version of data path dma API
@@ -324,10 +287,8 @@ int dpdmai_get_attributes_v10(struct fsl_mc_io *mc_io,
  *
  * Return:  '0' on Success; Error code otherwise.
  */
-int dpdmai_get_api_version_v10(struct fsl_mc_io *mc_io,
-			       uint32_t cmd_flags,
-			       uint16_t *major_ver,
-			       uint16_t *minor_ver)
+int dpdmai_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			   uint16_t *major_ver, uint16_t *minor_ver)
 {
 	struct dpdmai_rsp_get_api_version *rsp_params;
 	struct mc_command cmd = { 0 };
