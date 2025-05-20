@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpdcei.h"
 #include "mc_v9/fsl_dpdmai.h"
 #include "mc_v9/fsl_dpio.h"
 #include "mc_v9/fsl_dpmac.h"
@@ -853,13 +852,12 @@ out:
 	return error;
 }
 
-static int parse_dpdcei_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpdcei(FILE *fp, struct obj_list *curr)
 {
-	/* dpdcei_attr{} does not have a field called priority */
-	uint16_t dpdcei_handle;
-	int error;
 	struct dpdcei_attr dpdcei_attr;
 	bool dpdcei_opened = false;
+	uint16_t dpdcei_handle;
+	int error;
 
 	error = dpdcei_open(&restool.mc_io, 0, curr->id, &dpdcei_handle);
 	if (error < 0) {
@@ -878,8 +876,7 @@ static int parse_dpdcei_v9(FILE *fp, struct obj_list *curr)
 	}
 
 	memset(&dpdcei_attr, 0, sizeof(dpdcei_attr));
-	error = dpdcei_get_attributes(&restool.mc_io, 0, dpdcei_handle,
-					&dpdcei_attr);
+	error = dpdcei_get_attributes(&restool.mc_io, 0, dpdcei_handle, &dpdcei_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -907,71 +904,6 @@ out:
 		int error2;
 
 		error2 = dpdcei_close(&restool.mc_io, 0, dpdcei_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int parse_dpdcei_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpdcei_attr_v10 dpdcei_attr;
-	bool dpdcei_opened = false;
-	uint16_t dpdcei_handle;
-	int error;
-
-	error = dpdcei_open_v10(&restool.mc_io, 0, curr->id, &dpdcei_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpdcei_opened = true;
-	if (0 == dpdcei_handle) {
-		DEBUG_PRINTF(
-			"dpdcei_open() returned invalid handle (auth 0) for dpdcei.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpdcei_attr, 0, sizeof(dpdcei_attr));
-	error = dpdcei_get_attributes_v10(&restool.mc_io, 0, dpdcei_handle,
-					  &dpdcei_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpdcei_attr.id);
-
-	switch (dpdcei_attr.engine) {
-	case DPDCEI_ENGINE_COMPRESSION:
-		fprintf(fp, "\t\t\tengine = \"DPDCEI_ENGINE_COMPRESSION\";\n");
-		break;
-	case DPDCEI_ENGINE_DECOMPRESSION:
-		fprintf(fp, "\t\t\tengine = \"DPDCEI_ENGINE_DECOMPRESSION\";\n");
-		break;
-	default:
-		assert(false);
-		break;
-	}
-
-	error = 0;
-
-out:
-	if (dpdcei_opened) {
-		int error2;
-
-		error2 = dpdcei_close_v10(&restool.mc_io, 0, dpdcei_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2510,12 +2442,8 @@ static int write_objects(void)
 			parse_dpcon(fp, curr_obj);
 		}
 
-		if (strcmp(curr_obj->type, "dpdcei") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpdcei_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpdcei_v10(fp, curr_obj);
-		}
+		if (strcmp(curr_obj->type, "dpdcei") == 0)
+			parse_dpdcei(fp, curr_obj);
 
 		if (strcmp(curr_obj->type, "dpdmai") == 0) {
 			if (restool.mc_fw_version.major == 9)
