@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpmac.h"
 #include "mc_v9/fsl_dpmcp.h"
 #include "mc_v9/fsl_dprtc.h"
 #include "mc_v9/fsl_dpseci.h"

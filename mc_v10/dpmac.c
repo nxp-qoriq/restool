@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 #include "fsl_dpmac_cmd.h"
 
 /**
- * dpmac_open_v10() - Open a control session for the specified object.
+ * dpmac_open() - Open a control session for the specified object.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpmac_id:	DPMAC unique ID
@@ -52,35 +52,29 @@
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_open_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   int dpmac_id,
-		   uint16_t *token)
+int dpmac_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpmac_id, uint16_t *token)
 {
 	struct dpmac_cmd_open *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_OPEN,
 					  cmd_flags,
 					  0);
 	cmd_params = (struct dpmac_cmd_open *)cmd.params;
 	cmd_params->dpmac_id = cpu_to_le32(dpmac_id);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*token = mc_cmd_hdr_read_token(&cmd);
 
 	return err;
 }
 
 /**
- * dpmac_close_v10() - Close the control session of the object
+ * dpmac_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPMAC object
@@ -90,22 +84,18 @@ int dpmac_open_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_close_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    uint16_t token)
+int dpmac_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_CLOSE, cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpmac_create_v10() - Create the DPMAC object.
+ * dpmac_create() - Create the DPMAC object.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token: Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -123,36 +113,30 @@ int dpmac_close_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_create_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     const struct dpmac_cfg *cfg,
-		     uint32_t *obj_id)
+int dpmac_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 const struct dpmac_cfg *cfg, uint32_t *obj_id)
 {
 	struct dpmac_cmd_create *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_CREATE,
 					  cmd_flags,
 					  dprc_token);
 	cmd_params = (struct dpmac_cmd_create *)cmd.params;
 	cmd_params->mac_id = cpu_to_le32(cfg->mac_id);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*obj_id = mc_cmd_read_object_id(&cmd);
 
 	return 0;
 }
 
 /**
- * dpmac_destroy_v10() - Destroy the DPMAC object and release all its resources.
+ * dpmac_destroy() - Destroy the DPMAC object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token: Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -166,27 +150,23 @@ int dpmac_create_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpmac_destroy_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      uint32_t object_id)
+int dpmac_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  uint32_t object_id)
 {
 	struct dpmac_cmd_destroy *cmd_params;
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_DESTROY,
 					  cmd_flags,
 					  dprc_token);
 	cmd_params = (struct dpmac_cmd_destroy *)cmd.params;
 	cmd_params->dpmac_id = cpu_to_le32(object_id);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpmac_get_irq_mask_v10() - Get interrupt mask.
+ * dpmac_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPMAC object
@@ -198,30 +178,24 @@ int dpmac_destroy_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t token,
-			   uint8_t irq_index,
-			   uint32_t *mask)
+int dpmac_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		       uint8_t irq_index, uint32_t *mask)
 {
 	struct dpmac_cmd_get_irq_mask *cmd_params;
 	struct dpmac_rsp_get_irq_mask *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_GET_IRQ_MASK,
 					  cmd_flags,
 					  token);
 	cmd_params = (struct dpmac_cmd_get_irq_mask *)cmd.params;
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpmac_rsp_get_irq_mask *)cmd.params;
 	*mask = le32_to_cpu(rsp_params->mask);
 
@@ -229,7 +203,7 @@ int dpmac_get_irq_mask_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpmac_get_irq_status_v10() - Get the current status of any pending interrupts.
+ * dpmac_get_irq_status() - Get the current status of any pending interrupts.
  *
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -241,18 +215,14 @@ int dpmac_get_irq_mask_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     uint8_t irq_index,
-			     uint32_t *status)
+int dpmac_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint8_t irq_index, uint32_t *status)
 {
 	struct dpmac_cmd_get_irq_status *cmd_params;
 	struct dpmac_rsp_get_irq_status *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_GET_IRQ_STATUS,
 					  cmd_flags,
 					  token);
@@ -260,12 +230,10 @@ int dpmac_get_irq_status_v10(struct fsl_mc_io *mc_io,
 	cmd_params->status = cpu_to_le32(*status);
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpmac_rsp_get_irq_status *)cmd.params;
 	*status = le32_to_cpu(rsp_params->status);
 
@@ -273,7 +241,7 @@ int dpmac_get_irq_status_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpmac_get_attributes_v10 - Retrieve DPMAC attributes.
+ * dpmac_get_attributes() - Retrieve DPMAC attributes.
  *
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -282,26 +250,21 @@ int dpmac_get_irq_status_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_get_attributes_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     struct dpmac_attr_v10 *attr)
+int dpmac_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 struct dpmac_attr *attr)
 {
 	struct dpmac_rsp_get_attributes *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_GET_ATTR,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpmac_rsp_get_attributes *)cmd.params;
 	attr->eth_if = rsp_params->eth_if;
 	attr->link_type = rsp_params->link_type;
@@ -312,7 +275,7 @@ int dpmac_get_attributes_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpmac_get_counter_v10() - Read a specific DPMAC counter
+ * dpmac_get_counter() - Read a specific DPMAC counter
  * @mc_io:	Pointer to opaque I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPMAC object
@@ -321,25 +284,20 @@ int dpmac_get_attributes_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	The requested counter; '0' otherwise.
  */
-int dpmac_get_counter_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  enum dpmac_counter type,
-			  uint64_t *counter)
+int dpmac_get_counter(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		      enum dpmac_counter type, uint64_t *counter)
 {
 	struct dpmac_cmd_get_counter *dpmac_cmd;
 	struct dpmac_rsp_get_counter *dpmac_rsp;
 	struct mc_command cmd = { 0 };
 	int err = 0;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_GET_COUNTER,
 					  cmd_flags,
 					  token);
 	dpmac_cmd = (struct dpmac_cmd_get_counter *)cmd.params;
 	dpmac_cmd->type = type;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
@@ -351,7 +309,7 @@ int dpmac_get_counter_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpmac_get_api_version_v10() - Get Data Path MAC version
+ * dpmac_get_api_version() - Get Data Path MAC version
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @major_ver:	Major version of data path mac API
@@ -359,18 +317,14 @@ int dpmac_get_counter_v10(struct fsl_mc_io *mc_io,
  *
  * Return:  '0' on Success; Error code otherwise.
  */
-int dpmac_get_api_version_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t *major_ver,
-			      uint16_t *minor_ver)
+int dpmac_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			  uint16_t *major_ver, uint16_t *minor_ver)
 {
 	struct dpmac_rsp_get_api_version *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_GET_API_VERSION,
-					cmd_flags,
-					0);
+	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_GET_API_VERSION, cmd_flags, 0);
 
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
@@ -384,7 +338,7 @@ int dpmac_get_api_version_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpmac_get_mac_addr_v10() - Retrieve MAC address associated to the DPMAC
+ * dpmac_get_mac_addr() - Retrieve MAC address associated to the DPMAC
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPMAC object
@@ -392,30 +346,24 @@ int dpmac_get_api_version_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpmac_get_mac_addr_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t token,
-			   uint8_t mac_addr[6])
+int dpmac_get_mac_addr(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		       uint8_t mac_addr[6])
 {
-	struct mc_command cmd = { 0 };
 	struct dpmac_rsp_get_mac_addr *rsp_params;
+	struct mc_command cmd = { 0 };
 	int i, err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPMAC_CMDID_GET_MAC_ADDR,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpmac_rsp_get_mac_addr *)cmd.params;
 	for (i = 0; i < 6; i++)
 		mac_addr[5 - i] = rsp_params->mac_addr[i];
 
 	return 0;
 }
-

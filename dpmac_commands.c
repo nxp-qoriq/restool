@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -41,7 +41,6 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v9/fsl_dpmac.h"
 #include "mc_v10/fsl_dpmac.h"
 
 static enum mc_cmd_status mc_status;
@@ -131,10 +130,10 @@ static struct option dpmac_destroy_options[] = {
 C_ASSERT(ARRAY_SIZE(dpmac_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 const struct flib_ops dpmac_ops = {
-	.obj_open = dpmac_open_v10,
-	.obj_close = dpmac_close_v10,
-	.obj_get_irq_mask = dpmac_get_irq_mask_v10,
-	.obj_get_irq_status = dpmac_get_irq_status_v10,
+	.obj_open = dpmac_open,
+	.obj_close = dpmac_close,
+	.obj_get_irq_mask = dpmac_get_irq_mask,
+	.obj_get_irq_status = dpmac_get_irq_status,
 };
 
 static int cmd_dpmac_help(void)
@@ -298,7 +297,7 @@ static struct {
 	{DPMAC_CNT_ING_OVERSIZED,		"rx oversized"},
 	{DPMAC_CNT_ING_VALID_PAUSE_FRAME,	"rx pause"},
 	{DPMAC_CNT_ING_BYTE,			"rx bytes"},
-	{DPMAC_CNT_ENG_GOOD_FRAME,		"tx frames ok"},
+	{DPMAC_CNT_EGR_GOOD_FRAME,		"tx frames ok"},
 	{DPMAC_CNT_EGR_UCAST_FRAME,		"tx u-cast"},
 	{DPMAC_CNT_EGR_MCAST_FRAME,		"tx m-cast"},
 	{DPMAC_CNT_EGR_BCAST_FRAME,		"tx b-cast"},
@@ -317,10 +316,8 @@ static int print_dpmac_counters(struct fsl_mc_io *mc_io, uint16_t token)
 
 	printf("Counters: \n");
 	for (i = 0; i < ARRAY_SIZE(dpaa2_mac_counters); i++) {
-		error = dpmac_get_counter_v10(mc_io,
-					    0,
-					    token,
-					    dpaa2_mac_counters[i].id, &counter_value);
+		error = dpmac_get_counter(mc_io, 0, token, dpaa2_mac_counters[i].id,
+					  &counter_value);
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -346,13 +343,14 @@ static void print_dpmac_addr(uint8_t mac_addr[MAC_ADDR_LEN])
 	printf("%02x\n", (unsigned char) mac_addr[idx]);
 }
 
-static int print_dpmac_attr_v9(uint32_t dpmac_id,
-			       struct dprc_obj_desc *target_obj_desc)
+static int print_dpmac_attr(uint32_t dpmac_id, struct dprc_obj_desc *target_obj_desc)
 {
-	uint16_t dpmac_handle;
-	int error;
+	uint8_t dpmac_addr[MAC_ADDR_LEN];
+	uint16_t obj_major, obj_minor;
 	struct dpmac_attr dpmac_attr;
 	bool dpmac_opened = false;
+	uint16_t dpmac_handle;
+	int error;
 
 	error = dpmac_open(&restool.mc_io, 0, dpmac_id, &dpmac_handle);
 	if (error < 0) {
@@ -371,8 +369,7 @@ static int print_dpmac_attr_v9(uint32_t dpmac_id,
 	}
 
 	memset(&dpmac_attr, 0, sizeof(dpmac_attr));
-	error = dpmac_get_attributes(&restool.mc_io, 0,
-					dpmac_handle, &dpmac_attr);
+	error = dpmac_get_attributes(&restool.mc_io, 0, dpmac_handle, &dpmac_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -381,76 +378,7 @@ static int print_dpmac_attr_v9(uint32_t dpmac_id,
 	}
 	assert(dpmac_id == (uint32_t)dpmac_attr.id);
 
-	printf("dpmac version: %u.%u\n", dpmac_attr.version.major,
-	       dpmac_attr.version.minor);
-	printf("dpmac object id/portal id: %d\n", dpmac_attr.id);
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpmac_endpoint(dpmac_id);
-	print_dpmac_link_type(dpmac_attr.link_type);
-	print_dpmac_eth_if(dpmac_attr.eth_if);
-	printf("maximum supported rate %lu Mbps\n",
-			(unsigned long)dpmac_attr.max_rate);
-	print_obj_label(target_obj_desc);
-
-	error = 0;
-
-out:
-	if (dpmac_opened) {
-		int error2;
-
-		error2 = dpmac_close(&restool.mc_io, 0, dpmac_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int print_dpmac_attr_v10(uint32_t dpmac_id,
-			struct dprc_obj_desc *target_obj_desc)
-{
-	struct dpmac_attr_v10 dpmac_attr;
-	uint16_t obj_major, obj_minor;
-	bool dpmac_opened = false;
-	uint8_t dpmac_addr[MAC_ADDR_LEN];
-	uint16_t dpmac_handle;
-	int error;
-
-	error = dpmac_open_v10(&restool.mc_io, 0, dpmac_id, &dpmac_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpmac_opened = true;
-	if (0 == dpmac_handle) {
-		DEBUG_PRINTF(
-			"dpmac_open() returned invalid handle (auth 0) for dpmac.%u\n",
-			dpmac_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpmac_attr, 0, sizeof(dpmac_attr));
-	error = dpmac_get_attributes_v10(&restool.mc_io, 0,
-					 dpmac_handle, &dpmac_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpmac_id == (uint32_t)dpmac_attr.id);
-
-	error = dpmac_get_api_version_v10(&restool.mc_io, 0,
-				      &obj_major, &obj_minor);
+	error = dpmac_get_api_version(&restool.mc_io, 0, &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -458,8 +386,7 @@ static int print_dpmac_attr_v10(uint32_t dpmac_id,
 		goto out;
 	}
 
-	error = dpmac_get_mac_addr_v10(&restool.mc_io, 0,
-				dpmac_handle, dpmac_addr);
+	error = dpmac_get_mac_addr(&restool.mc_io, 0, dpmac_handle, dpmac_addr);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -486,7 +413,7 @@ out:
 	if (dpmac_opened) {
 		int error2;
 
-		error2 = dpmac_close_v10(&restool.mc_io, 0, dpmac_handle);
+		error2 = dpmac_close(&restool.mc_io, 0, dpmac_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -499,12 +426,12 @@ out:
 	return error;
 }
 
-static int print_dpmac_info(uint32_t dpmac_id, int mc_fw_version)
+static int print_dpmac_info(uint32_t dpmac_id)
 {
-	int error;
 	struct dprc_obj_desc target_obj_desc;
 	uint32_t target_parent_dprc_id;
 	bool found = false;
+	int error;
 
 	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
 	error = find_target_obj_desc(restool.root_dprc_id,
@@ -519,10 +446,7 @@ static int print_dpmac_info(uint32_t dpmac_id, int mc_fw_version)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpmac_attr_v9(dpmac_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = print_dpmac_attr_v10(dpmac_id, &target_obj_desc);
+	error = print_dpmac_attr(dpmac_id, &target_obj_desc);
 	if (error < 0)
 		goto out;
 
@@ -535,7 +459,7 @@ out:
 	return error;
 }
 
-static int info_dpmac(int mc_fw_version)
+static int cmd_dpmac_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -549,7 +473,6 @@ static int info_dpmac(int mc_fw_version)
 		"Display information about dpmac.5:\n"
 		"   $ restool dpmac info dpmac.5\n"
 		"\n";
-
 	uint32_t obj_id;
 	int error;
 
@@ -571,58 +494,12 @@ static int info_dpmac(int mc_fw_version)
 	if (error < 0)
 		goto out;
 
-	error = print_dpmac_info(obj_id, mc_fw_version);
+	error = print_dpmac_info(obj_id);
 out:
 	return error;
 }
 
-static int cmd_dpmac_info_v9(void)
-{
-	return info_dpmac(MC_FW_VERSION_9);
-}
-
-static int cmd_dpmac_info_v10(void)
-{
-	return info_dpmac(MC_FW_VERSION_10);
-}
-
-static int create_dpmac_v9(struct dpmac_cfg *dpmac_cfg)
-{
-	struct dpmac_attr dpmac_attr;
-	uint16_t dpmac_handle;
-	int error;
-
-	error = dpmac_create(&restool.mc_io, 0, dpmac_cfg, &dpmac_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	memset(&dpmac_attr, 0, sizeof(struct dpmac_attr));
-	error = dpmac_get_attributes(&restool.mc_io, 0, dpmac_handle,
-					&dpmac_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpmac", dpmac_attr.id, NULL);
-
-	error = dpmac_close(&restool.mc_io, 0, dpmac_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-	return 0;
-}
-
-static int create_dpmac_v10(struct dpmac_cfg *dpmac_cfg)
+static int create_dpmac(struct dpmac_cfg *dpmac_cfg)
 {
 	uint32_t dpmac_id, dprc_id;
 	uint16_t dprc_handle;
@@ -647,8 +524,7 @@ static int create_dpmac_v10(struct dpmac_cfg *dpmac_cfg)
 		}
 	}
 
-	error = dpmac_create_v10(&restool.mc_io, dprc_handle, 0,
-				 dpmac_cfg, &dpmac_id);
+	error = dpmac_create(&restool.mc_io, dprc_handle, 0, dpmac_cfg, &dpmac_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -667,11 +543,28 @@ static int create_dpmac_v10(struct dpmac_cfg *dpmac_cfg)
 	return 0;
 }
 
-static int create_dpmac(int mc_fw_version, const char *usage_msg)
+static int cmd_dpmac_create(void)
 {
+	static const char usage_msg[] =
+		"\n"
+		"Usage: restool dpmac create --mac-id=<number> [OPTIONS]\n"
+		"   --mac-id=<number>\n"
+		"      Where <number> specifies the id of the hardware MAC associated with\n"
+		"      the DPMAC object.\n"
+		"\n"
+		"OPTIONS:\n"
+		"if options are not specified, create DPMAC by default options\n"
+		"--container=<container-name>\n"
+		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
+		"   If it is not specified, the new object will be created under the default dprc.\n"
+		"\n"
+		"EXAMPLE:\n"
+		"create a DPMAC with specified mac id:\n"
+		"   $ restool dpmac create --mac-id=4\n"
+		"\n";
+	struct dpmac_cfg dpmac_cfg;
 	int error;
 	long val;
-	struct dpmac_cfg dpmac_cfg;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
 		puts(usage_msg);
@@ -701,104 +594,10 @@ static int create_dpmac(int mc_fw_version, const char *usage_msg)
 		return -EINVAL;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = create_dpmac_v9(&dpmac_cfg);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = create_dpmac_v10(&dpmac_cfg);
-	else
-		return -EINVAL;
-
-	return error;
+	return create_dpmac(&dpmac_cfg);
 }
 
-static int cmd_dpmac_create_v9(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpmac create --mac-id=<number>\n"
-		"   --mac-id=<number>\n"
-		"      Where <number> specifies the id of the hardware MAC associated with\n"
-		"      the DPMAC object.\n"
-		"\n"
-		"EXAMPLE:\n"
-		"create a DPMAC with specified mac id:\n"
-		"   $ restool dpmac create --mac-id=4\n"
-		"\n";
-
-	return create_dpmac(MC_FW_VERSION_9, usage_msg);
-}
-
-static int cmd_dpmac_create_v10(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpmac create --mac-id=<number> [OPTIONS]\n"
-		"   --mac-id=<number>\n"
-		"      Where <number> specifies the id of the hardware MAC associated with\n"
-		"      the DPMAC object.\n"
-		"\n"
-		"OPTIONS:\n"
-		"if options are not specified, create DPMAC by default options\n"
-		"--container=<container-name>\n"
-		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
-		"   If it is not specified, the new object will be created under the default dprc.\n"
-		"\n"
-		"EXAMPLE:\n"
-		"create a DPMAC with specified mac id:\n"
-		"   $ restool dpmac create --mac-id=4\n"
-		"\n";
-
-	return create_dpmac(MC_FW_VERSION_10, usage_msg);
-}
-
-static int destroy_dpmac_v9(uint32_t dpmac_id)
-{
-	bool dpmac_opened = false;
-	uint16_t dpmac_handle;
-	int error, error2;
-
-	error = dpmac_open(&restool.mc_io, 0, dpmac_id, &dpmac_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpmac_opened = true;
-	if (0 == dpmac_handle) {
-		DEBUG_PRINTF(
-			"dpmac_open() returned invalid handle (auth 0) for dpmac.%u\n",
-			dpmac_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	error = dpmac_destroy(&restool.mc_io, 0, dpmac_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpmac_opened = false;
-	printf("dpmac.%u is destroyed\n", dpmac_id);
-
-out:
-	if (dpmac_opened) {
-		error2 = dpmac_close(&restool.mc_io, 0, dpmac_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int destroy_dpmac_v10(uint32_t dpmac_id)
+static int destroy_dpmac(uint32_t dpmac_id)
 {
 	uint16_t dprc_handle;
 	uint32_t dprc_id;
@@ -816,8 +615,7 @@ static int destroy_dpmac_v10(uint32_t dpmac_id)
 			return error;
 	}
 
-	error = dpmac_destroy_v10(&restool.mc_io, dprc_handle,
-				 0, dpmac_id);
+	error = dpmac_destroy(&restool.mc_io, dprc_handle, 0, dpmac_id);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -833,16 +631,15 @@ out:
 	return error;
 }
 
-static int destroy_dpmac(int mc_fw_version)
+static int cmd_dpmac_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpmac destroy <dpmac-object>\n"
 		"   e.g. restool dpmac destroy dpmac.9\n"
 		"\n";
-
-	int error;
 	uint32_t dpmac_id;
+	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(DESTROY_OPT_HELP)) {
 		puts(usage_msg);
@@ -871,46 +668,11 @@ static int destroy_dpmac(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpmac_v9(dpmac_id);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = destroy_dpmac_v10(dpmac_id);
-	else
-		return -EINVAL;
+	error = destroy_dpmac(dpmac_id);
 
 out:
 	return error;
 }
-
-static int cmd_dpmac_destroy_v9(void)
-{
-	return destroy_dpmac(MC_FW_VERSION_9);
-}
-
-static int cmd_dpmac_destroy_v10(void)
-{
-	return destroy_dpmac(MC_FW_VERSION_10);
-}
-
-struct object_command dpmac_commands_v9[] = {
-	{ .cmd_name = "--help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpmac_help },
-
-	{ .cmd_name = "info",
-	  .options = dpmac_info_options,
-	  .cmd_func = cmd_dpmac_info_v9 },
-
-	{ .cmd_name = "create",
-	  .options = dpmac_create_options,
-	  .cmd_func = cmd_dpmac_create_v9 },
-
-	{ .cmd_name = "destroy",
-	  .options = dpmac_destroy_options,
-	  .cmd_func = cmd_dpmac_destroy_v9 },
-
-	{ .cmd_name = NULL },
-};
 
 struct object_command dpmac_commands_v10[] = {
 	{ .cmd_name = "--help",
@@ -919,15 +681,15 @@ struct object_command dpmac_commands_v10[] = {
 
 	{ .cmd_name = "info",
 	  .options = dpmac_info_options,
-	  .cmd_func = cmd_dpmac_info_v10 },
+	  .cmd_func = cmd_dpmac_info },
 
 	{ .cmd_name = "create",
 	  .options = dpmac_create_options,
-	  .cmd_func = cmd_dpmac_create_v10 },
+	  .cmd_func = cmd_dpmac_create },
 
 	{ .cmd_name = "destroy",
 	  .options = dpmac_destroy_options,
-	  .cmd_func = cmd_dpmac_destroy_v10 },
+	  .cmd_func = cmd_dpmac_destroy },
 
 	{ .cmd_name = NULL },
 };

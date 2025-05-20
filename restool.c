@@ -129,7 +129,6 @@ static const struct obj_command_versions dpmcp_command_versions[] = {
 	{ .version = 0, .obj_commands = NULL },
 };
 static const struct obj_command_versions dpmac_command_versions[] = {
-	{ .version = 3, .obj_commands = dpmac_commands_v9 },
 	{ .version = 4, .obj_commands = dpmac_commands_v10 },
 	{ .version = 0, .obj_commands = NULL },
 };
