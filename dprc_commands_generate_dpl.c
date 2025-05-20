@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpio.h"
 #include "mc_v9/fsl_dpmac.h"
 #include "mc_v9/fsl_dpmcp.h"
 #include "mc_v9/fsl_dprtc.h"
@@ -1056,12 +1055,12 @@ out:
 	return error;
 }
 
-static int parse_dpio_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpio(FILE *fp, struct obj_list *curr)
 {
-	uint16_t dpio_handle;
-	int error;
 	struct dpio_attr dpio_attr;
 	bool dpio_opened = false;
+	uint16_t dpio_handle;
+	int error;
 
 	error = dpio_open(&restool.mc_io, 0, curr->id, &dpio_handle);
 	if (error < 0) {
@@ -1103,65 +1102,6 @@ out:
 		int error2;
 
 		error2 = dpio_close(&restool.mc_io, 0, dpio_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int parse_dpio_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpio_attr_v10 dpio_attr;
-	bool dpio_opened = false;
-	uint16_t dpio_handle;
-	int error;
-
-	error = dpio_open_v10(&restool.mc_io, 0, curr->id, &dpio_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpio_opened = true;
-	if (0 == dpio_handle) {
-		DEBUG_PRINTF(
-			"dpio_open() returned invalid handle (auth 0) for dpio.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpio_attr, 0, sizeof(dpio_attr));
-	error = dpio_get_attributes_v10(&restool.mc_io, 0, dpio_handle, &dpio_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpio_attr.id);
-
-	fprintf(fp, "\t\t\tchannel_mode = ");
-	dpio_attr.channel_mode == 0 ? fprintf(fp, "\"DPIO_NO_CHANNEL\";\n") :
-	dpio_attr.channel_mode == 1 ? fprintf(fp, "\"DPIO_LOCAL_CHANNEL\";\n") :
-	fprintf(fp, "\"wrong mode\"\n");
-	fprintf(fp, "\t\t\tnum_priorities = <%#x>;\n",
-	       (unsigned int)dpio_attr.num_priorities);
-
-	error = 0;
-
-out:
-	if (dpio_opened) {
-		int error2;
-
-		error2 = dpio_close_v10(&restool.mc_io, 0, dpio_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2324,12 +2264,8 @@ static int write_objects(void)
 				parse_dpmcp_v10(fp, curr_obj);
 		}
 
-		if (strcmp(curr_obj->type, "dpio") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpio_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpio_v10(fp, curr_obj);
-		}
+		if (strcmp(curr_obj->type, "dpio") == 0)
+			parse_dpio(fp, curr_obj);
 
 		if (strcmp(curr_obj->type, "dpseci") == 0) {
 			if (restool.mc_fw_version.major == 9)
