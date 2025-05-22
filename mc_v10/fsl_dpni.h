@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2022 NXP
+ * Copyright 2017-2022, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -32,8 +32,6 @@
  */
 #ifndef __FSL_DPNI__v10_H
 #define __FSL_DPNI__v10_H
-
-#include "../mc_v9/fsl_dpni.h"
 
 struct fsl_mc_io;
 
@@ -141,13 +139,30 @@ struct fsl_mc_io;
  * The stashing is enabled by default.
  */
 #define DPNI_OPT_STASHING_DIS				0x002000
+
+#define ALL_DPNI_OPTS (					\
+	DPNI_OPT_TX_FRM_RELEASE |			\
+	DPNI_OPT_NO_MAC_FILTER |			\
+	DPNI_OPT_HAS_POLICING |				\
+	DPNI_OPT_SHARED_CONGESTION |			\
+	DPNI_OPT_HAS_KEY_MASKING |			\
+	DPNI_OPT_NO_FS |				\
+	DPNI_OPT_HAS_OPR |				\
+	DPNI_OPT_OPR_PER_TC |				\
+	DPNI_OPT_SINGLE_SENDER |			\
+	DPNI_OPT_CUSTOM_CG |				\
+	DPNI_OPT_CUSTOM_OPR |				\
+	DPNI_OPT_SHARED_HASH_KEY |			\
+	DPNI_OPT_SHARED_FS |				\
+	DPNI_OPT_STASHING_DIS)
+
 /**
- * struct dpni_cfg_v10 - Structure representing DPNI configuration
+ * struct dpni_cfg - Structure representing DPNI configuration
  * @mac_addr:	Primary MAC address
  * @adv:	Advanced parameters; default is all zeros;
  *		use this structure to change default settings
  */
-struct dpni_cfg_v10 {
+struct dpni_cfg {
 	/**
 	 * @options: Any combination of the following options:
 	 *		DPNI_OPT_TX_FRM_RELEASE
@@ -230,28 +245,19 @@ struct dpni_cfg_v10 {
 	uint8_t  num_ceetm_ch;
 };
 
-int dpni_create_v10(struct fsl_mc_io *mc_io,
-		    uint16_t dprc_token,
-		    uint32_t cmd_flags,
-		    const struct dpni_cfg_v10 *cfg,
-		    uint32_t *obj_id);
+int dpni_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		const struct dpni_cfg *cfg, uint32_t *obj_id);
 
-int dpni_destroy_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     uint32_t object_id);
+int dpni_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 uint32_t object_id);
 
-int dpni_open_v10(struct fsl_mc_io *mc_io,
-		  uint32_t cmd_flags,
-		  int dpni_id,
-		  uint16_t *token);
+int dpni_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpni_id, uint16_t *token);
 
-int dpni_close_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   uint16_t token);
+
+int dpni_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
- * struct dpni_attr_v10 - Structure representing DPNI attributes
+ * struct dpni_attr - Structure representing DPNI attributes
  * @options: Any combination of the following options:
  *		DPNI_OPT_TX_FRM_RELEASE
  *		DPNI_OPT_NO_MAC_FILTER
@@ -299,7 +305,7 @@ int dpni_close_v10(struct fsl_mc_io *mc_io,
  * @num_opr: Number of desired custom number of order point
  * 			records when DPNI_OPT_CUSTOM_OPR is set.
  */
-struct dpni_attr_v10 {
+struct dpni_attr {
 	uint32_t options;
 	uint8_t  num_queues;
 	uint8_t  num_rx_tcs;
@@ -316,14 +322,12 @@ struct dpni_attr_v10 {
 	uint16_t num_opr;
 };
 
-int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    struct dpni_attr_v10 *attr);
+int dpni_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			struct dpni_attr *attr);
 
 #define DPNI_STATISTICS_CNT		7
 
-union dpni_statistics_v10 {
+union dpni_statistics {
 	/**
 	 * struct page_0 - Page_0 statistics structure
 	 * @ingress_all_frames: Ingress frame count
@@ -407,27 +411,17 @@ union dpni_statistics_v10 {
 	} raw;
 };
 
-int dpni_get_api_version_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t *major_ver,
-			     uint16_t *minor_ver);
+int dpni_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			 uint16_t *major_ver, uint16_t *minor_ver);
 
-int dpni_get_statistics_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t page,
-			    uint16_t param,
-			    union dpni_statistics_v10 *stat);
+int dpni_get_statistics(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t page, uint16_t param, union dpni_statistics *stat);
 
-int dpni_get_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
-				  uint32_t cmd_flags,
-				  uint16_t token,
-				  uint8_t mac_addr[6]);
+int dpni_get_primary_mac_addr(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			      uint8_t mac_addr[6]);
 
-int dpni_set_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
-				  uint32_t cmd_flags,
-				  uint16_t token,
-				  const uint8_t mac_addr[6]);
+int dpni_set_primary_mac_addr(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			      const uint8_t mac_addr[6]);
 
 /**
  * struct dpni_link_state - Structure representing DPNI link state
@@ -435,32 +429,22 @@ int dpni_set_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
  * @options:	Mask of available options; use 'DPNI_LINK_OPT_<X>' values
  * @up:		Link state; '0' for down, '1' for up
  */
-struct dpni_link_state_v10 {
+struct dpni_link_state {
 	uint32_t rate;
 	uint64_t options;
 	int up;
 };
 
-int dpni_get_link_state_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    struct dpni_link_state_v10 *state);
+int dpni_get_link_state(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			struct dpni_link_state *state);
 
-int dpni_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  uint8_t irq_index,
-			  uint32_t *mask);
+int dpni_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		      uint8_t irq_index, uint32_t *mask);
 
-int dpni_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *status);
+int dpni_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *status);
 
-int dpni_get_max_frame_length(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
+int dpni_get_max_frame_length(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
 			      uint16_t *max_frame_length);
 
 #endif /* __FSL_DPNI_v10_H */

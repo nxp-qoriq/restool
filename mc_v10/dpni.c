@@ -37,7 +37,7 @@
 #include "fsl_dpni_cmd.h"
 
 /**
- * dpni_open_v10() - Open a control session for the specified object
+ * dpni_open() - Open a control session for the specified object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpni_id:	DPNI unique ID
@@ -53,36 +53,30 @@
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_open_v10(struct fsl_mc_io *mc_io,
-		  uint32_t cmd_flags,
-		  int dpni_id,
-		  uint16_t *token)
+int dpni_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpni_id, uint16_t *token)
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_cmd_open *cmd_params;
 
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_OPEN,
 					  cmd_flags,
 					  0);
 	cmd_params = (struct dpni_cmd_open *)cmd.params;
 	cmd_params->dpni_id = cpu_to_le32(dpni_id);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*token = mc_cmd_hdr_read_token(&cmd);
 
 	return 0;
 }
 
 /**
- * dpni_close_v10() - Close the control session of the object
+ * dpni_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
@@ -92,23 +86,19 @@ int dpni_open_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_close_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   uint16_t token)
+int dpni_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_CLOSE,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpni_create_v10() - Create the DPNI object
+ * dpni_create() - Create the DPNI object
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -129,17 +119,13 @@ int dpni_close_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_create_v10(struct fsl_mc_io *mc_io,
-		    uint16_t dprc_token,
-		    uint32_t cmd_flags,
-		    const struct dpni_cfg_v10 *cfg,
-		    uint32_t *obj_id)
+int dpni_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		const struct dpni_cfg *cfg, uint32_t *obj_id)
 {
 	struct dpni_cmd_create *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_CREATE,
 					  cmd_flags,
 					  dprc_token);
@@ -157,19 +143,17 @@ int dpni_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->dist_key_size = cfg->dist_key_size;
 	cmd_params->num_ceetm_ch = cfg->num_ceetm_ch;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*obj_id = mc_cmd_read_object_id(&cmd);
 
 	return 0;
 }
 
 /**
- * dpni_destroy_v10() - Destroy the DPNI object and release all its resources.
+ * dpni_destroy() - Destroy the DPNI object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token: Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -183,28 +167,23 @@ int dpni_create_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpni_destroy_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     uint32_t object_id)
+int dpni_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 uint32_t object_id)
 {
 	struct dpni_cmd_destroy *cmd_params;
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_DESTROY,
 					  cmd_flags,
 					  dprc_token);
-	/* set object id to destroy */
 	cmd_params = (struct dpni_cmd_destroy *)cmd.params;
 	cmd_params->dpsw_id = cpu_to_le32(object_id);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpni_get_attributes_v10() - Retrieve DPNI attributes.
+ * dpni_get_attributes() - Retrieve DPNI attributes.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
@@ -212,27 +191,22 @@ int dpni_destroy_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    struct dpni_attr_v10 *attr)
+int dpni_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			struct dpni_attr *attr)
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_rsp_get_attr *rsp_params;
 
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_ATTR,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpni_rsp_get_attr *)cmd.params;
 	attr->options = le32_to_cpu(rsp_params->options);
 	attr->num_queues = rsp_params->num_queues;
@@ -253,7 +227,7 @@ int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpni_get_api_version_v10() - Get Data Path Network Interface API version
+ * dpni_get_api_version() - Get Data Path Network Interface API version
  * @mc_io:  Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @major_ver:	Major version of data path network interface API
@@ -261,10 +235,8 @@ int dpni_get_attributes_v10(struct fsl_mc_io *mc_io,
  *
  * Return:  '0' on Success; Error code otherwise.
  */
-int dpni_get_api_version_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t *major_ver,
-			     uint16_t *minor_ver)
+int dpni_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			 uint16_t *major_ver, uint16_t *minor_ver)
 {
 	struct dpni_rsp_get_api_version *rsp_params;
 	struct mc_command cmd = { 0 };
@@ -286,7 +258,7 @@ int dpni_get_api_version_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpni_get_statistics_v10() - Get DPNI statistics
+ * dpni_get_statistics() - Get DPNI statistics
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
@@ -298,19 +270,14 @@ int dpni_get_api_version_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_get_statistics_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t page,
-			    uint16_t param,
-			    union dpni_statistics_v10 *stat)
+int dpni_get_statistics(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t page, uint16_t param, union dpni_statistics *stat)
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_cmd_get_statistics *cmd_params;
 	struct dpni_rsp_get_statistics *rsp_params;
 	int i, err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_STATISTICS,
 					  cmd_flags,
 					  token);
@@ -318,12 +285,10 @@ int dpni_get_statistics_v10(struct fsl_mc_io *mc_io,
 	cmd_params->page_number = page;
 	cmd_params->param = param;
 
-	/* send command to mc */
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpni_rsp_get_statistics *)cmd.params;
 	for (i = 0; i < DPNI_STATISTICS_CNT; i++)
 		stat->raw.counter[i] = le64_to_cpu(rsp_params->counter[i]);
@@ -332,7 +297,7 @@ int dpni_get_statistics_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpni_set_primary_mac_addr_v10() - Set the primary MAC address
+ * dpni_set_primary_mac_addr() - Set the primary MAC address
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
@@ -340,16 +305,13 @@ int dpni_get_statistics_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_set_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
-				  uint32_t cmd_flags,
-				  uint16_t token,
-				  const uint8_t mac_addr[6])
+int dpni_set_primary_mac_addr(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			      const uint8_t mac_addr[6])
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_cmd_set_primary_mac_addr *cmd_params;
 	int i;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_SET_PRIM_MAC,
 					  cmd_flags,
 					  token);
@@ -357,12 +319,11 @@ int dpni_set_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
 	for (i = 0; i < 6; i++)
 		cmd_params->mac_addr[i] = mac_addr[5 - i];
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpni_get_primary_mac_addr_v10() - Get the primary MAC address
+ * dpni_get_primary_mac_addr() - Get the primary MAC address
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
@@ -370,26 +331,21 @@ int dpni_set_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_get_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
-				  uint32_t cmd_flags,
-				  uint16_t token,
-				  uint8_t mac_addr[6])
+int dpni_get_primary_mac_addr(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			      uint8_t mac_addr[6])
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_rsp_get_primary_mac_addr *rsp_params;
 	int i, err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_PRIM_MAC,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpni_rsp_get_primary_mac_addr *)cmd.params;
 	for (i = 0; i < 6; i++)
 		mac_addr[5 - i] = rsp_params->mac_addr[i];
@@ -398,7 +354,7 @@ int dpni_get_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpni_get_link_state_v10() - Return the link state (either up or down)
+ * dpni_get_link_state() - Return the link state (either up or down)
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
@@ -406,26 +362,21 @@ int dpni_get_primary_mac_addr_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_get_link_state_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    struct dpni_link_state_v10 *state)
+int dpni_get_link_state(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			struct dpni_link_state *state)
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_rsp_get_link_state *rsp_params;
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_LINK_STATE,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpni_rsp_get_link_state *)cmd.params;
 	state->up = dpni_get_field(rsp_params->flags, LINK_STATE);
 	state->rate = le32_to_cpu(rsp_params->rate);
@@ -435,7 +386,7 @@ int dpni_get_link_state_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpni_get_irq_mask_v10() - Get interrupt mask.
+ * dpni_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
@@ -447,30 +398,24 @@ int dpni_get_link_state_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  uint8_t irq_index,
-			  uint32_t *mask)
+int dpni_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		      uint8_t irq_index, uint32_t *mask)
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_cmd_get_irq_mask *cmd_params;
 	struct dpni_rsp_get_irq_mask *rsp_params;
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_IRQ_MASK,
 					  cmd_flags,
 					  token);
 	cmd_params = (struct dpni_cmd_get_irq_mask *)cmd.params;
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpni_rsp_get_irq_mask *)cmd.params;
 	*mask = le32_to_cpu(rsp_params->mask);
 
@@ -478,7 +423,7 @@ int dpni_get_irq_mask_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpni_get_irq_status_v10() - Get the current status of any pending interrupts.
+ * dpni_get_irq_status() - Get the current status of any pending interrupts.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPNI object
@@ -489,18 +434,14 @@ int dpni_get_irq_mask_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *status)
+int dpni_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *status)
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_cmd_get_irq_status *cmd_params;
 	struct dpni_rsp_get_irq_status *rsp_params;
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_IRQ_STATUS,
 					  cmd_flags,
 					  token);
@@ -508,12 +449,10 @@ int dpni_get_irq_status_v10(struct fsl_mc_io *mc_io,
 	cmd_params->status = cpu_to_le32(*status);
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpni_rsp_get_irq_status *)cmd.params;
 	*status = le32_to_cpu(rsp_params->status);
 
@@ -530,26 +469,21 @@ int dpni_get_irq_status_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpni_get_max_frame_length(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
+int dpni_get_max_frame_length(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
 			      uint16_t *max_frame_length)
 {
 	struct mc_command cmd = { 0 };
 	struct dpni_rsp_get_max_frame_length *rsp_params;
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPNI_CMDID_GET_MAX_FRAME_LENGTH,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpni_rsp_get_max_frame_length *)cmd.params;
 	*max_frame_length = le16_to_cpu(rsp_params->max_frame_length);
 

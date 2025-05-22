@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2022 NXP
+ * Copyright 2017-2022, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -41,64 +41,9 @@
 #include <sys/ioctl.h>
 #include "restool.h"
 #include "utils.h"
-#include "mc_v9/fsl_dpni.h"
 #include "mc_v10/fsl_dpni.h"
 
-#define ALL_DPNI_OPTS (					\
-	DPNI_OPT_ALLOW_DIST_KEY_PER_TC |		\
-	DPNI_OPT_TX_CONF_DISABLED |			\
-	DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED |	\
-	DPNI_OPT_DIST_HASH |				\
-	DPNI_OPT_DIST_FS |				\
-	DPNI_OPT_UNICAST_FILTER	|			\
-	DPNI_OPT_MULTICAST_FILTER |			\
-	DPNI_OPT_VLAN_FILTER |				\
-	DPNI_OPT_IPR |					\
-	DPNI_OPT_IPF |					\
-	DPNI_OPT_VLAN_MANIPULATION |			\
-	DPNI_OPT_QOS_MASK_SUPPORT |			\
-	DPNI_OPT_FS_MASK_SUPPORT)
-
-
-#define ALL_DPNI_OPTS_V10 (				\
-	DPNI_OPT_TX_FRM_RELEASE |			\
-	DPNI_OPT_NO_MAC_FILTER |			\
-	DPNI_OPT_HAS_POLICING |				\
-	DPNI_OPT_SHARED_CONGESTION |			\
-	DPNI_OPT_HAS_KEY_MASKING |			\
-	DPNI_OPT_NO_FS |				\
-	DPNI_OPT_HAS_OPR |				\
-	DPNI_OPT_OPR_PER_TC |				\
-	DPNI_OPT_SINGLE_SENDER |			\
-	DPNI_OPT_CUSTOM_CG |				\
-	DPNI_OPT_CUSTOM_OPR |				\
-	DPNI_OPT_SHARED_HASH_KEY |			\
-	DPNI_OPT_SHARED_FS |				\
-	DPNI_OPT_STASHING_DIS)
-
 static enum mc_cmd_status mc_status;
-
-/**
- * max_dist: Maximum distribution size for Rx traffic class;
- * supported values: 1,2,3,4,6,7,8,12,14,16,24,28,32,48,56,64,96,
- * 112,128,192,224,256,384,448,512,768,896,1024;
- */
-#define MAX_DIST_SIZE	1024
-
-struct dpni_config {
-	struct dpni_extended_cfg dpni_extended_cfg;
-	struct dpni_cfg_v9 dpni_cfg;
-	struct dpni_attr_v9 dpni_attr;
-	uint16_t dpni_handle;
-};
-
-
-#define RESTOOL_DPNI_CREATE \
-	_IOWR(RESTOOL_IOCTL_TYPE, 0x5, struct dpni_config)
-
-#define RESTOOL_DPNI_GET_ATTRIBUTES \
-	_IOWR(RESTOOL_IOCTL_TYPE, 0x6, struct dpni_config)
-
 
 /**
  * dpni info command options
@@ -368,12 +313,12 @@ static struct option dpni_destroy_options[] = {
 
 C_ASSERT(ARRAY_SIZE(dpni_destroy_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
-enum dpni_update_options_v10 {
+enum dpni_update_options {
 	UPDATE_OPT_HELP = 0,
 	UPDATE_MAC_ADDR,
 };
 
-static struct option dpni_update_options_v10[] = {
+static struct option dpni_update_options[] = {
 	[UPDATE_OPT_HELP] = {
 		.name = "help",
 		.has_arg = 0,
@@ -391,43 +336,16 @@ static struct option dpni_update_options_v10[] = {
 	{ 0 },
 };
 
-C_ASSERT(ARRAY_SIZE(dpni_update_options_v10) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
+C_ASSERT(ARRAY_SIZE(dpni_update_options) <= MAX_NUM_CMD_LINE_OPTIONS + 1);
 
 const struct flib_ops dpni_ops = {
-	.obj_open = dpni_open_v10,
-	.obj_close = dpni_close_v10,
-	.obj_get_irq_mask = dpni_get_irq_mask_v10,
-	.obj_get_irq_status = dpni_get_irq_status_v10,
+	.obj_open = dpni_open,
+	.obj_close = dpni_close,
+	.obj_get_irq_mask = dpni_get_irq_mask,
+	.obj_get_irq_status = dpni_get_irq_status,
 };
 
-static struct option_entry options_map_v9[] = {
-	OPTION_MAP_ENTRY(DPNI_OPT_ALLOW_DIST_KEY_PER_TC),
-	OPTION_MAP_ENTRY(DPNI_OPT_TX_CONF_DISABLED),
-	OPTION_MAP_ENTRY(DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED),
-	OPTION_MAP_ENTRY(DPNI_OPT_DIST_HASH),
-	OPTION_MAP_ENTRY(DPNI_OPT_DIST_FS),
-	OPTION_MAP_ENTRY(DPNI_OPT_UNICAST_FILTER),
-	OPTION_MAP_ENTRY(DPNI_OPT_MULTICAST_FILTER),
-	OPTION_MAP_ENTRY(DPNI_OPT_VLAN_FILTER),
-	OPTION_MAP_ENTRY(DPNI_OPT_IPR),
-	OPTION_MAP_ENTRY(DPNI_OPT_IPF),
-	OPTION_MAP_ENTRY(DPNI_OPT_VLAN_MANIPULATION),
-	OPTION_MAP_ENTRY(DPNI_OPT_QOS_MASK_SUPPORT),
-	OPTION_MAP_ENTRY(DPNI_OPT_FS_MASK_SUPPORT),
-};
-static unsigned int options_num_v9 = ARRAY_SIZE(options_map_v9);
-
-static struct option_entry options_map_v10_0[] = {
-	OPTION_MAP_ENTRY(DPNI_OPT_TX_FRM_RELEASE),
-	OPTION_MAP_ENTRY(DPNI_OPT_NO_MAC_FILTER),
-	OPTION_MAP_ENTRY(DPNI_OPT_HAS_POLICING),
-	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_CONGESTION),
-	OPTION_MAP_ENTRY(DPNI_OPT_HAS_KEY_MASKING),
-	OPTION_MAP_ENTRY(DPNI_OPT_NO_FS),
-};
-static unsigned int options_num_v10_0 = ARRAY_SIZE(options_map_v10_0);
-
-static struct option_entry options_map_v10_1[] = {
+static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_TX_FRM_RELEASE),
 	OPTION_MAP_ENTRY(DPNI_OPT_NO_MAC_FILTER),
 	OPTION_MAP_ENTRY(DPNI_OPT_HAS_POLICING),
@@ -443,11 +361,11 @@ static struct option_entry options_map_v10_1[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_FS),
 	OPTION_MAP_ENTRY(DPNI_OPT_STASHING_DIS),
 };
-static unsigned int options_num_v10_1 = ARRAY_SIZE(options_map_v10_1);
+static unsigned int options_num = ARRAY_SIZE(options_map);
 
-#define DPNI_STATS_PER_PAGE_V10 6
+#define DPNI_STATS_PER_PAGE 6
 
-static const char *dpni_stats_v10[][DPNI_STATS_PER_PAGE_V10] = {
+static const char *dpni_stats_strings[][DPNI_STATS_PER_PAGE] = {
 	{
 	"ingress_all_frames",
 	"ingress_all_bytes",
@@ -501,23 +419,6 @@ static int cmd_dpni_help(void)
 		"   info - displays detailed information about a DPNI object.\n"
 		"   create - creates a new child DPNI under the root DPRC.\n"
 		"   destroy - destroys a child DPNI under the root DPRC.\n"
-		"\n"
-		"For command-specific help, use the --help option of each command.\n"
-		"\n";
-
-	printf(help_msg);
-	return 0;
-}
-
-static int cmd_dpni_help_v10(void)
-{
-	static const char help_msg[] =
-		"\n"
-		"Usage: restool dpni <command> [--help] [ARGS...]\n"
-		"Where <command> can be:\n"
-		"   info - displays detailed information about a DPNI object.\n"
-		"   create - creates a new child DPNI under the root DPRC.\n"
-		"   destroy - destroys a child DPNI under the root DPRC.\n"
 		"   update - update attributes of already created DPNI.\n"
 		"\n"
 		"For command-specific help, use the --help option of each command.\n"
@@ -527,57 +428,9 @@ static int cmd_dpni_help_v10(void)
 	return 0;
 }
 
-
 static void print_dpni_options(uint32_t options)
 {
 	if ((options & ~ALL_DPNI_OPTS) != 0) {
-		printf("\tUnrecognized options found...\n");
-		return;
-	}
-
-	if (options & DPNI_OPT_ALLOW_DIST_KEY_PER_TC)
-		printf("\tDPNI_OPT_ALLOW_DIST_KEY_PER_TC\n");
-
-	if (options & DPNI_OPT_TX_CONF_DISABLED)
-		printf("\tDPNI_OPT_TX_CONF_DISABLED\n");
-
-	if (options & DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED)
-		printf("\tDPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED\n");
-
-	if (options & DPNI_OPT_DIST_HASH)
-		printf("\tDPNI_OPT_DIST_HASH\n");
-
-	if (options & DPNI_OPT_DIST_FS)
-		printf("\tDPNI_OPT_DIST_FS\n");
-
-	if (options & DPNI_OPT_UNICAST_FILTER)
-		printf("\tDPNI_OPT_UNICAST_FILTER\n");
-
-	if (options & DPNI_OPT_MULTICAST_FILTER)
-		printf("\tDPNI_OPT_MULTICAST_FILTER\n");
-
-	if (options & DPNI_OPT_VLAN_FILTER)
-		printf("\tDPNI_OPT_VLAN_FILTER\n");
-
-	if (options & DPNI_OPT_IPR)
-		printf("\tDPNI_OPT_IPR\n");
-
-	if (options & DPNI_OPT_IPF)
-		printf("\tDPNI_OPT_IPF\n");
-
-	if (options & DPNI_OPT_VLAN_MANIPULATION)
-		printf("\tDPNI_OPT_VLAN_MANIPULATION\n");
-
-	if (options & DPNI_OPT_QOS_MASK_SUPPORT)
-		printf("\tDPNI_OPT_QOS_MASK_SUPPORT\n");
-
-	if (options & DPNI_OPT_FS_MASK_SUPPORT)
-		printf("\tDPNI_OPT_FS_MASK_SUPPORT\n");
-}
-
-static void print_dpni_options_v10(uint32_t options)
-{
-	if ((options & ~ALL_DPNI_OPTS_V10) != 0) {
 		printf("\tUnrecognized options found...\n");
 		return;
 	}
@@ -683,17 +536,34 @@ static void print_mac_address(uint8_t mac_addr[6])
 	printf("%02x\n", mac_addr[5]);
 }
 
-static int print_dpni_attr_v9(uint32_t dpni_id,
-			      struct dprc_obj_desc *target_obj_desc)
+static void dpni_print_stats(const char *strings[],
+			     union dpni_statistics dpni_stats)
 {
-	uint16_t dpni_handle;
-	int error;
+	uint64_t *stat;
 	int i;
-	struct dpni_attr_v9 dpni_attr;
-	struct dpni_extended_cfg ext_cfg;
-	uint8_t mac_addr[6];
-	bool dpni_opened = false;
+
+	stat = (uint64_t *)&dpni_stats.raw;
+	for (i = 0; i < DPNI_STATS_PER_PAGE; i++) {
+		if (strcmp(strings[i], "\0") == 0)
+			break;
+		printf("%s: %" PRIu64 "\n", strings[i], *stat);
+		stat++;
+	}
+}
+
+static int print_dpni_attr(uint32_t dpni_id, struct dprc_obj_desc *target_obj_desc)
+{
+	uint16_t dpni_handle, dpni_major, dpni_minor;
 	struct dpni_link_state link_state;
+	union dpni_statistics dpni_stats;
+	struct dpni_attr dpni_attr;
+	bool dpni_opened = false;
+	uint8_t mac_addr[6];
+	int tc, q, ch;
+	int error = 0;
+	int error2;
+	unsigned int page;
+	uint16_t max_frame_length;
 
 	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
 	if (error < 0) {
@@ -712,9 +582,7 @@ static int print_dpni_attr_v9(uint32_t dpni_id,
 	}
 
 	memset(&dpni_attr, 0, sizeof(dpni_attr));
-
-	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle,
-				       &dpni_attr, &ext_cfg);
+	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle, &dpni_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -722,162 +590,7 @@ static int print_dpni_attr_v9(uint32_t dpni_id,
 		goto out;
 	}
 
-	assert(dpni_id == (uint32_t)dpni_attr.id);
-	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
-
-	error = dpni_get_primary_mac_addr(&restool.mc_io, 0,
-					dpni_handle, mac_addr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	memset(&link_state, 0, sizeof(link_state));
-	error = dpni_get_link_state(&restool.mc_io, 0, dpni_handle,
-					&link_state);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	printf("dpni version: %u.%u\n", dpni_attr.version.major,
-	       dpni_attr.version.minor);
-	printf("dpni id: %d\n", dpni_attr.id);
-	printf("plugged state: %splugged\n",
-		(target_obj_desc->state & DPRC_OBJ_STATE_PLUGGED) ? "" : "un");
-	print_dpni_endpoint(dpni_id);
-	printf("link status: %d - ", link_state.up);
-	link_state.up == 0 ? printf("down\n") :
-	link_state.up == 1 ? printf("up\n") : printf("error state\n");
-	print_mac_address(mac_addr);
-	printf("dpni_attr.options value is: %#lx\n",
-	       (unsigned long)dpni_attr.options);
-	print_dpni_options(dpni_attr.options);
-	printf("max senders: %u\n", (uint32_t)dpni_attr.max_senders);
-	printf("max traffic classes: %u\n", (uint32_t)dpni_attr.max_tcs);
-	for (i = 0; i < dpni_attr.max_tcs; i++)
-		printf("\ttc[%d]: max_dist=%d, max_fs_entries=%d\n",
-			i,
-			ext_cfg.tc_cfg[i].max_dist,
-			dpni_attr.options & DPNI_OPT_DIST_FS ?
-				ext_cfg.tc_cfg[i].max_fs_entries : 0);
-	printf("max unicast filters: %u\n",
-	       (uint32_t)dpni_attr.max_unicast_filters);
-	printf("max multicast filters: %u\n",
-	       (uint32_t)dpni_attr.max_multicast_filters);
-	printf("max vlan filters: %u\n", (uint32_t)dpni_attr.max_vlan_filters);
-	printf("max QoS entries: %u\n", (uint32_t)dpni_attr.max_qos_entries);
-	printf("max QoS key size: %u\n", (uint32_t)dpni_attr.max_qos_key_size);
-	printf("max distribution key size: %u\n",
-	       (uint32_t)dpni_attr.max_dist_key_size);
-	printf("max policers: %u\n", (uint32_t)dpni_attr.max_policers);
-	printf("max congestion control: %u\n",
-		(uint32_t)dpni_attr.max_congestion_ctrl);
-
-	printf("max_dist per RX traffic class:\n");
-	for (int k = 0; k < dpni_attr.max_tcs; ++k)
-		printf("\tclass %d's max_dist: %u\n", k,
-		       (uint32_t)ext_cfg.tc_cfg[k].max_dist);
-
-	printf("max_fs_entries per RX traffic class:\n");
-	for (int m = 0; m < dpni_attr.max_tcs; ++m)
-		printf("\tclass %d's max_fs_entries: %u\n", m,
-		       (uint32_t)ext_cfg.tc_cfg[m].max_fs_entries);
-
-	printf("max_reass_frm_size: %u\n",
-		(uint32_t)ext_cfg.ipr_cfg.max_reass_frm_size);
-	printf("min_frag_size_ipv4: %u\n",
-		(uint32_t)ext_cfg.ipr_cfg.min_frag_size_ipv4);
-	printf("min_frag_size_ipv6: %u\n",
-		(uint32_t)ext_cfg.ipr_cfg.min_frag_size_ipv6);
-	printf("max_open_frames_ipv4: %u\n",
-		(uint32_t)ext_cfg.ipr_cfg.max_open_frames_ipv4);
-	printf("max_open_frames_ipv6: %u\n",
-		(uint32_t)ext_cfg.ipr_cfg.max_open_frames_ipv6);
-
-	print_obj_label(target_obj_desc);
-
-	error = 0;
-
-out:
-	if (dpni_opened) {
-		int error2;
-
-		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static void dpni_print_stats(const char *strings[],
-			     union dpni_statistics_v10 dpni_stats)
-{
-	uint64_t *stat;
-	int i;
-
-	stat = (uint64_t *)&dpni_stats.raw;
-	for (i = 0; i < DPNI_STATS_PER_PAGE_V10; i++) {
-		if (strcmp(strings[i], "\0") == 0)
-			break;
-		printf("%s: %" PRIu64 "\n", strings[i], *stat);
-		stat++;
-	}
-}
-
-static int print_dpni_attr_v10(uint32_t dpni_id,
-			      struct dprc_obj_desc *target_obj_desc)
-{
-	struct dpni_attr_v10 dpni_attr;
-	union dpni_statistics_v10 dpni_stats;
-	uint16_t dpni_handle, dpni_major, dpni_minor;
-	struct dpni_link_state_v10 link_state;
-	bool dpni_opened = false;
-	uint8_t mac_addr[6];
-	int tc, q, ch;
-	int error = 0;
-	int error2;
-	unsigned int page;
-	uint16_t max_frame_length;
-
-	error = dpni_open_v10(&restool.mc_io, 0, dpni_id, &dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpni_opened = true;
-	if (0 == dpni_handle) {
-		DEBUG_PRINTF(
-			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
-			dpni_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpni_attr, 0, sizeof(dpni_attr));
-	error = dpni_get_attributes_v10(&restool.mc_io, 0,
-					dpni_handle, &dpni_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	error = dpni_get_api_version_v10(&restool.mc_io, 0,
-					 &dpni_major, &dpni_minor);
+	error = dpni_get_api_version(&restool.mc_io, 0, &dpni_major, &dpni_minor);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -886,8 +599,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	}
 
 	memset(&link_state, 0, sizeof(link_state));
-	error = dpni_get_link_state_v10(&restool.mc_io, 0, dpni_handle,
-					&link_state);
+	error = dpni_get_link_state(&restool.mc_io, 0, dpni_handle, &link_state);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -906,8 +618,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 	link_state.up == 1 ? printf("up\n") : printf("error state\n");
 
 	if (!(dpni_attr.options & DPNI_OPT_NO_MAC_FILTER)) {
-		error = dpni_get_primary_mac_addr_v10(&restool.mc_io, 0,
-						      dpni_handle, mac_addr);
+		error = dpni_get_primary_mac_addr(&restool.mc_io, 0, dpni_handle, mac_addr);
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -928,7 +639,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 
 	printf("dpni_attr.options value is: %#lx\n",
 	       (unsigned long)dpni_attr.options);
-	print_dpni_options_v10(dpni_attr.options);
+	print_dpni_options(dpni_attr.options);
 
 	printf("num_queues: %u\n", (uint32_t)dpni_attr.num_queues);
 	printf("num_cgs: %u\n", (uint32_t)dpni_attr.num_cgs);
@@ -957,11 +668,12 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 					uint16_t param = (ch << 8) | tc;
 
 					memset(&dpni_stats, 0, sizeof(dpni_stats));
-					error = dpni_get_statistics_v10(&restool.mc_io, 0,
-								dpni_handle, page, param, &dpni_stats);
+					error = dpni_get_statistics(&restool.mc_io, 0,
+								    dpni_handle, page, param,
+								    &dpni_stats);
 					if (!error) {
 						printf("+ CEETM stats Tx channel %d, TC %d\n", ch, tc);
-						dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+						dpni_print_stats(dpni_stats_strings[page], dpni_stats);
 					}
 				}
 			}
@@ -973,11 +685,11 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 						uint16_t param = (q << 8 ) | tc;
 
 						memset(&dpni_stats, 0, sizeof(dpni_stats));
-						error = dpni_get_statistics_v10(&restool.mc_io, 0, dpni_handle,
-										page, param, &dpni_stats);
+						error = dpni_get_statistics(&restool.mc_io, 0, dpni_handle,
+									    page, param, &dpni_stats);
 						if (!error) {
 							printf("+ Congestion stats for Queue %d, Rx TC %d\n", q, tc);
-							dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+							dpni_print_stats(dpni_stats_strings[page], dpni_stats);
 						}
 					}
 				}
@@ -986,11 +698,11 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 					uint16_t param = tc;
 
 					memset(&dpni_stats, 0, sizeof(dpni_stats));
-					error = dpni_get_statistics_v10(&restool.mc_io, 0, dpni_handle,
-									page, param, &dpni_stats);
+					error = dpni_get_statistics(&restool.mc_io, 0, dpni_handle,
+								    page, param, &dpni_stats);
 					if (!error) {
 						printf("+ Congestion stats for Rx TC %d\n", tc);
-						dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+						dpni_print_stats(dpni_stats_strings[page], dpni_stats);
 					}
 				}
 			}
@@ -1001,20 +713,20 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 				uint16_t param = tc;
 
 				memset(&dpni_stats, 0, sizeof(dpni_stats));
-				error = dpni_get_statistics_v10(&restool.mc_io, 0, dpni_handle,
-								page, param, &dpni_stats);
+				error = dpni_get_statistics(&restool.mc_io, 0, dpni_handle,
+							    page, param, &dpni_stats);
 				if (!error) {
 					printf("+ Policer stats for TC %d\n", tc);
-					dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+					dpni_print_stats(dpni_stats_strings[page], dpni_stats);
 				}
 			}
 
 			break;
 		default:
-			error = dpni_get_statistics_v10(&restool.mc_io, 0,
-							dpni_handle, page,
-							0, &dpni_stats);
-			dpni_print_stats(dpni_stats_v10[page], dpni_stats);
+			error = dpni_get_statistics(&restool.mc_io, 0,
+						    dpni_handle, page,
+						    0, &dpni_stats);
+			dpni_print_stats(dpni_stats_strings[page], dpni_stats);
 			break;
 		}
 	}
@@ -1024,7 +736,7 @@ static int print_dpni_attr_v10(uint32_t dpni_id,
 out:
 	if (dpni_opened) {
 
-		error2 = dpni_close_v10(&restool.mc_io, 0, dpni_handle);
+		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1037,43 +749,7 @@ out:
 	return error;
 }
 
-static int print_dpni_info(uint32_t dpni_id, int mc_fw_version)
-{
-	int error;
-	struct dprc_obj_desc target_obj_desc;
-	uint32_t target_parent_dprc_id;
-	bool found = false;
-
-	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
-	error = find_target_obj_desc(restool.root_dprc_id,
-				restool.root_dprc_handle, 0, dpni_id,
-				"dpni", &target_obj_desc,
-				&target_parent_dprc_id, &found);
-	if (error < 0)
-		goto out;
-
-	if (strcmp(target_obj_desc.type, "dpni")) {
-		printf("dpni.%d does not exist\n", dpni_id);
-		return -EINVAL;
-	}
-
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = print_dpni_attr_v9(dpni_id, &target_obj_desc);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = print_dpni_attr_v10(dpni_id, &target_obj_desc);
-	if (error < 0)
-		goto out;
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
-		error = print_obj_verbose(&target_obj_desc, &dpni_ops);
-	}
-
-out:
-	return error;
-}
-
-static int info_dpni(int mc_fw_version)
+static int cmd_dpni_info(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -1087,8 +763,10 @@ static int info_dpni(int mc_fw_version)
 		"Display information about dpni.5:\n"
 		"   $ restool dpni info dpni.5\n"
 		"\n";
-
-	uint32_t obj_id;
+	struct dprc_obj_desc target_obj_desc;
+	uint32_t target_parent_dprc_id;
+	bool found = false;
+	uint32_t dpni_id;
 	int error;
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_HELP)) {
@@ -1105,24 +783,34 @@ static int info_dpni(int mc_fw_version)
 		goto out;
 	}
 
-	error = parse_object_name(restool.obj_name, "dpni", &obj_id);
+	error = parse_object_name(restool.obj_name, "dpni", &dpni_id);
 	if (error < 0)
 		goto out;
 
-	error = print_dpni_info(obj_id, mc_fw_version);
+	memset(&target_obj_desc, 0, sizeof(struct dprc_obj_desc));
+	error = find_target_obj_desc(restool.root_dprc_id,
+				restool.root_dprc_handle, 0, dpni_id,
+				"dpni", &target_obj_desc,
+				&target_parent_dprc_id, &found);
+	if (error < 0)
+		goto out;
+
+	if (strcmp(target_obj_desc.type, "dpni")) {
+		printf("dpni.%d does not exist\n", dpni_id);
+		return -EINVAL;
+	}
+
+	error = print_dpni_attr(dpni_id, &target_obj_desc);
+	if (error < 0)
+		goto out;
+
+	if (restool.cmd_option_mask & ONE_BIT_MASK(INFO_OPT_VERBOSE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(INFO_OPT_VERBOSE);
+		error = print_obj_verbose(&target_obj_desc, &dpni_ops);
+	}
 
 out:
 	return error;
-}
-
-static int cmd_dpni_info_v9(void)
-{
-	return info_dpni(MC_FW_VERSION_9);
-}
-
-static int cmd_dpni_info_v10(void)
-{
-	return info_dpni(MC_FW_VERSION_10);
 }
 
 static int parse_dpni_mac_addr(char *mac_addr_str, uint8_t *mac_addr)
@@ -1167,394 +855,9 @@ static int parse_dpni_mac_addr(char *mac_addr_str, uint8_t *mac_addr)
 	return 0;
 }
 
-static int parse_dpni_max_dist_per_tc_v9(char *max_dist_per_tc_str,
-	struct dpni_extended_cfg *dpni_extended_cfg, uint8_t max_tcs)
+static int create_dpni(const char *usage_msg)
 {
-	char *cursor = NULL;
-	char *endptr;
-	char *max_dist_str = strtok_r(max_dist_per_tc_str, ",", &cursor);
-	int i = 0;
-	long val;
-
-	while (max_dist_str != NULL) {
-		if (i >= DPNI_MAX_TC) {
-			ERROR_PRINTF("Invalid max-dist-per-tc\n");
-			ERROR_PRINTF("maximum number of traffic class <= %d\n",
-			     DPNI_MAX_TC);
-			return -EINVAL;
-		}
-
-		errno = 0;
-		val = strtol(max_dist_str, &endptr, 0);
-
-		if (STRTOL_ERROR(max_dist_str, endptr, val, errno) ||
-		    (val < 0 || val > MAX_DIST_SIZE)) {
-			ERROR_PRINTF("Invalid dist-size.\n");
-			return -EINVAL;
-		}
-
-		dpni_extended_cfg->tc_cfg[i].max_dist = (uint16_t)val;
-		max_dist_str = strtok_r(NULL, ",", &cursor);
-		++i;
-	}
-
-	if (max_tcs != i) {
-		ERROR_PRINTF(
-			"size of max_dist_per_tc does not match max_tcs: %u\n",
-			(unsigned int)max_tcs);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int parse_dpni_max_fs_entries_per_tc(char *max_fs_entries_per_tc_str,
-	struct dpni_extended_cfg *dpni_extended_cfg, uint8_t max_tcs)
-{
-	char *cursor = NULL;
-	char *endptr;
-	char *max_fs_entries_str =
-			strtok_r(max_fs_entries_per_tc_str, ",", &cursor);
-	int i = 0;
-	long val;
-
-	while (max_fs_entries_str != NULL) {
-		if (i >= DPNI_MAX_TC) {
-			ERROR_PRINTF("Invalid max-dist-per-tc\n");
-			ERROR_PRINTF("maximum number of traffic class <= %d\n",
-			     DPNI_MAX_TC);
-			return -EINVAL;
-		}
-
-		errno = 0;
-		val = strtol(max_fs_entries_str, &endptr, 0);
-
-		if (STRTOL_ERROR(max_fs_entries_str, endptr, val, errno) ||
-		    (val < 0 || val > MAX_DIST_SIZE)) {
-			ERROR_PRINTF("Invalid dist-size.\n");
-			return -EINVAL;
-		}
-
-		dpni_extended_cfg->tc_cfg[i].max_fs_entries = (uint16_t)val;
-		max_fs_entries_str = strtok_r(NULL, ",", &cursor);
-		++i;
-	}
-
-	if (max_tcs != i) {
-		ERROR_PRINTF(
-			"size of max_fs_entries_per_tc does not match max_tcs: %u\n",
-			(unsigned int)max_tcs);
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
-static int create_dpni_v9(const char *usage_msg)
-{
-	struct dpni_extended_cfg dpni_extended_cfg;
-	struct dpni_attr_v9 dpni_attr;
-	struct dpni_cfg_v9 dpni_cfg;
-	uint64_t dpni_cfg_options;
-	uint16_t dpni_handle;
-	int error;
-	long val;
-
-	memset(&dpni_cfg, 0, sizeof(dpni_cfg));
-	memset(&dpni_extended_cfg, 0, sizeof(dpni_extended_cfg));
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_HELP)) {
-		puts(usage_msg);
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_HELP);
-		return 0;
-	}
-
-	if (restool.obj_name != NULL) {
-		ERROR_PRINTF("Unexpected argument: \'%s\'\n\n",
-			     restool.obj_name);
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
-		error = parse_generic_create_options(
-				restool.cmd_option_args[CREATE_OPT_OPTIONS],
-				&dpni_cfg_options,
-				options_map_v9,
-				options_num_v9);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"parse_generic_create_options() failed with error %d, cannot get options-mask\n",
-				error);
-			return error;
-		}
-
-		dpni_cfg.adv.options = (uint32_t)dpni_cfg_options;
-		if (dpni_cfg_options > UINT32_MAX) {
-			DEBUG_PRINTF(
-				"parse_generic_create_options() produces overflow while getting options-mask\n");
-		}
-	} else {
-		dpni_cfg.adv.options = DPNI_OPT_UNICAST_FILTER |
-				       DPNI_OPT_MULTICAST_FILTER;
-	}
-
-	if (!(restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ADDR))) {
-		ERROR_PRINTF("--mac-addr option missing\n");
-		puts(usage_msg);
-		return -EINVAL;
-	}
-
-	restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAC_ADDR);
-	error  = parse_dpni_mac_addr(
-			restool.cmd_option_args[CREATE_OPT_MAC_ADDR],
-			dpni_cfg.mac_addr);
-	if (error < 0) {
-		DEBUG_PRINTF(
-			"parse_dpni_mac_addr() failed with error %d, cannot get mac address\n",
-			error);
-		return error;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_TCS)) {
-		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MAX_TCS);
-		error = get_option_value(CREATE_OPT_MAX_TCS, &val,
-					 "Invalid max tcs", 0, DPNI_MAX_TC);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_tcs = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_tcs = 1;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_PER_TC)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_PER_TC);
-		error = parse_dpni_max_dist_per_tc_v9(
-			restool.cmd_option_args[CREATE_OPT_MAX_DIST_PER_TC],
-			&dpni_extended_cfg,
-			dpni_cfg.adv.max_tcs);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"parse_dpni_max_dist_per_tc_v9() failed with error %d, cannot get maximum distribution's size per RX traffic-class\n",
-				error);
-			return error;
-		}
-	} else {
-		for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
-			dpni_extended_cfg.tc_cfg[i].max_dist = 1;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_FS_ENTRIES_PER_TC)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_FS_ENTRIES_PER_TC);
-		error = parse_dpni_max_fs_entries_per_tc(
-		restool.cmd_option_args[CREATE_OPT_MAX_FS_ENTRIES_PER_TC],
-			&dpni_extended_cfg,
-			dpni_cfg.adv.max_tcs);
-		if (error < 0) {
-			DEBUG_PRINTF(
-				"parse_dpni_max_fs_entries_per_tc() failed with error %d, cannot get max_fs_entries per RX traffic-class\n",
-				error);
-			return error;
-		}
-	} else {
-		for (int i = 0; i < dpni_cfg.adv.max_tcs; ++i)
-			dpni_extended_cfg.tc_cfg[i].max_fs_entries = 1;
-	}
-
-	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS)) {
-		restool.cmd_option_mask &=
-				~ONE_BIT_MASK(CREATE_OPT_MAX_SENDERS);
-		error = get_option_value(CREATE_OPT_MAX_SENDERS, &val,
-					 "Invalid max senders", 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_senders = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_senders = 1;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_UNICAST_FILTERS);
-		error = get_option_value(CREATE_OPT_MAX_UNICAST_FILTERS, &val,
-					 "Invalid max unicast filters", 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_unicast_filters = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_unicast_filters = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_MULTICAST_FILTERS);
-		error = get_option_value(CREATE_OPT_MAX_MULTICAST_FILTERS, &val,
-					 "Invalid max multicast filters",
-					 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_multicast_filters = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_multicast_filters = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_VLAN_FILTERS);
-		error = get_option_value(CREATE_OPT_MAX_VLAN_FILTERS, &val,
-					 "Invalid max vlan filters",
-					 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_vlan_filters = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_vlan_filters = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_ENTRIES);
-		error = get_option_value(CREATE_OPT_MAX_QOS_ENTRIES, &val,
-					 "Invalid max qos", 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_qos_entries = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_qos_entries = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_QOS_KEY_SIZE);
-		error = get_option_value(CREATE_OPT_MAX_QOS_KEY_SIZE, &val,
-					 "Invalid max qos key size", 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_qos_key_size = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_qos_key_size = 0;
-	}
-
-	if (restool.cmd_option_mask &
-	    ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE)) {
-		restool.cmd_option_mask &=
-			~ONE_BIT_MASK(CREATE_OPT_MAX_DIST_KEY_SIZE);
-		error = get_option_value(CREATE_OPT_MAX_DIST_KEY_SIZE, &val,
-					 "Invalid max dist key size",
-					 0, UINT8_MAX);
-		if (error)
-			return error;
-		dpni_cfg.adv.max_dist_key_size = (uint8_t)val;
-	} else {
-		dpni_cfg.adv.max_dist_key_size = 0;
-	}
-
-	/**
-	 * hack to get get 0.8.x flibs to work with mc
-	 */
-	error = dpni_create_v9(&restool.mc_io, 0, &dpni_cfg, &dpni_extended_cfg,
-			       &dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-
-
-	memset(&dpni_attr, 0, sizeof(struct dpni_attr_v9));
-	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle,
-				       &dpni_attr, &dpni_extended_cfg);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	print_new_obj("dpni", dpni_attr.id, NULL);
-
-	error = dpni_close(&restool.mc_io, 0, dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		return error;
-	}
-	return 0;
-}
-
-static int cmd_dpni_create_v9(void)
-{
-	static const char usage_msg[] =
-		"\n"
-		"Usage: restool dpni create --mac-addr=<addr> [OPTIONS]\n"
-		"   --mac-addr=<addr>\n"
-		"	String specifying primary MAC address (e.g. 00:00:05:00:00:05).\n"
-		"\n"
-		"OPTIONS:\n"
-		"--max-senders=<number>\n"
-		"	maximum number of different senders;\n"
-		"	will be used as the number of dedicated TX flows;\n"
-		"	If it is not a power of two it will be rounded up to the next\n"
-		"	power of two value.\n"
-		"--options=<options-mask>\n"
-		"   Where <options-mask> is a comma or space separated list of DPNI options:\n"
-		"	DPNI_OPT_ALLOW_DIST_KEY_PER_TC\n"
-		"	DPNI_OPT_TX_CONF_DISABLED\n"
-		"	DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED\n"
-		"	DPNI_OPT_DIST_HASH\n"
-		"	DPNI_OPT_DIST_FS\n"
-		"	DPNI_OPT_UNICAST_FILTER\n"
-		"	DPNI_OPT_MULTICAST_FILTER\n"
-		"	DPNI_OPT_VLAN_FILTER\n"
-		"	DPNI_OPT_QOS_MASK_SUPPORT\n"
-		"	DPNI_OPT_FS_MASK_SUPPORT\n"
-		"--max-tcs=<number>\n"
-		"	Specifies the maximum number of traffic-classes\n"
-		"	0 will be treated as 1\n"
-		"--max-dist-per-tc=<dist-size>,<dist-size>,...\n"
-		"	Comma separated list of counts specifying the\n"
-		"	maximum distribution's size per RX traffic-class\n"
-		"--max-fs-entries-per-tc=<fs-entries>,<fs-entries>,...\n"
-		"	Comma separated list of counts specifying the\n"
-		"	maximum fs-entries per RX traffic-class\n"
-		"--max-unicast-filters=<number>\n"
-		"	maximum number of unicast filters (0 will be treated as 16)\n"
-		"--max-multicast-filters=<number>\n"
-		"	maximum number of multicast filters (0 will be treated as 64)\n"
-		"--max-vlan-filters=<number>\n"
-		"	maximum number of vlan filters (0 will be treated as 16)\n"
-		"--max-qos-entries=<number>\n"
-		"	if max_tcs > 1, declares the maximum entries for\n"
-		"	the QoS table; '0' will be treated as '64'\n"
-		"--max-qos-key-size=<number>\n"
-		"	maximum key size for the QoS look-up;\n"
-		"	'0' will be treated as '24' which enough for IPv4 5-tuple\n"
-		"--max-dist-key-size=<number>\n"
-		"	maximum key size for the distribution;\n"
-		"	'0' will be treated as '24' which enough for IPv4 5-tuple\n"
-		"\n"
-		"EXAMPLE:\n"
-		"Create a DPNI object with all default options:\n"
-		"   $ restool dpni create --mac-addr=<addr>\n"
-		"\n";
-
-	return create_dpni_v9(usage_msg);
-}
-
-static int create_dpni_v10(const char *usage_msg)
-{
-	struct dpni_cfg_v10 dpni_cfg;
+	struct dpni_cfg dpni_cfg;
 	uint32_t dpni_id, dprc_id;
 	uint64_t dpni_cfg_options;
 	uint16_t dprc_handle;
@@ -1596,18 +899,10 @@ static int create_dpni_v10(const char *usage_msg)
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
 
-		if (restool.mc_fw_version.minor == 0)
-			error = parse_generic_create_options(
-					restool.cmd_option_args[CREATE_OPT_OPTIONS],
-					&dpni_cfg_options,
-					options_map_v10_0,
-					options_num_v10_0);
-		else
-			error = parse_generic_create_options(
-					restool.cmd_option_args[CREATE_OPT_OPTIONS],
-					&dpni_cfg_options,
-					options_map_v10_1,
-					options_num_v10_1);
+		error = parse_generic_create_options(
+				restool.cmd_option_args[CREATE_OPT_OPTIONS],
+				&dpni_cfg_options,
+				options_map, options_num);
 
 		dpni_cfg.options = (uint32_t)dpni_cfg_options;
 		if (dpni_cfg_options > UINT32_MAX)
@@ -1750,8 +1045,7 @@ static int create_dpni_v10(const char *usage_msg)
 		dpni_cfg.dist_key_size = (uint8_t)value;
 	}
 
-	error = dpni_create_v10(&restool.mc_io, dprc_handle, 0,
-				&dpni_cfg, &dpni_id);
+	error = dpni_create(&restool.mc_io, dprc_handle, 0, &dpni_cfg, &dpni_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1769,50 +1063,9 @@ static int create_dpni_v10(const char *usage_msg)
 
 	return 0;
 }
-static int cmd_dpni_create_v10(void)
+static int cmd_dpni_create(void)
 {
-	static const char usage_msg_v10_0[] =
-		"\n"
-		"Usage: restool dpni create [OPTIONS]\n"
-		"\n"
-		"OPTIONS:\n"
-		"--options=<options-mask>\n"
-		"   Where <options-mask> is a comma or space separated list of DPNI options:\n"
-		"	DPNI_OPT_TX_FRM_RELEASE\n"
-		"	DPNI_OPT_NO_MAC_FILTER\n"
-		"	DPNI_OPT_HAS_POLICING\n"
-		"	DPNI_OPT_SHARED_CONGESTION\n"
-		"	DPNI_OPT_HAS_KEY_MASKING\n"
-		"	DPNI_OPT_NO_FS\n"
-		"--num-queues=<number>\n"
-		"   Number of TX/RX queues use for traffic distribution.\n"
-		"   Used to distribute traffic to multiple GPP cores,\n"
-		"   Defaults to one queue. Maximim supported value is 32\n"
-		"--num-tcs=<number>\n"
-		"   Number of traffic classes (TCs), reserved for the DPNI.\n"
-		"   Defaults to one TC. Maximum supported value is 8\n"
-		"--mac-filter-entries=<number>\n"
-		"   Number of entries in the MAC address filtering table.\n"
-		"   Allows both unicast and multicast entries.\n"
-		"   By default, there are 80 entries.Maximum supported value is 80.\n"
-		"   This option is the former --mac-entries which can still be used.\n"
-		"   The change was made to align with the options passed through DPL.\n"
-		"--vlan-filter-entries=<number>\n"
-		"   Number of entries in the VLAN address filtering table\n"
-		"   By default, VLAN filtering is disabled. Maximum values is 16\n"
-		"   This option is the former --vlan-entries which can still be used.\n"
-		"   The change was made to align with the options passed through DPL.\n"
-		"--qos-entries=<number>\n"
-		"   Number of entries in the QoS classification table.\n"
-		"   Ignored of DPNI has a single TC. By default, set to 64.\n"
-		"--fs-entries=<number>\n"
-		"   Number of entries in the flow steering table.\n"
-		"   Defaults to 64. Maximum value is 1024\n"
-		"--container=<container-name>\n"
-		"   Specifies the parent container name. e.g. dprc.2, dprc.3 etc.\n"
-		"\n";
-
-	static const char usage_msg_v10_1[] =
+	static const char usage_msg[] =
 		"\n"
 		"Usage: restool dpni create [OPTIONS]\n"
 		"\n"
@@ -1878,61 +1131,10 @@ static int cmd_dpni_create_v10(void)
 		"   Defaults to num_tcs * num_queues.\n"
 		"\n";
 
-	if (restool.mc_fw_version.minor == 0)
-		return create_dpni_v10(usage_msg_v10_0);
-	else
-		return create_dpni_v10(usage_msg_v10_1);
-	return -EINVAL;
+	return create_dpni(usage_msg);
 }
 
-static int destroy_dpni_v9(uint32_t dpni_id)
-{
-	bool dpni_opened = false;
-	uint16_t dpni_handle;
-	int error, error2;
-
-	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpni_opened = true;
-	if (0 == dpni_handle) {
-		DEBUG_PRINTF(
-			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
-			dpni_id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	error = dpni_destroy(&restool.mc_io, 0, dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpni_opened = false;
-	printf("dpni.%u is destroyed\n", dpni_id);
-
-out:
-	if (dpni_opened) {
-		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int destroy_dpni_v10(uint32_t dpni_id)
+static int destroy_dpni(uint32_t dpni_id)
 {
 	uint16_t dprc_handle;
 	uint32_t dprc_id;
@@ -1954,8 +1156,7 @@ static int destroy_dpni_v10(uint32_t dpni_id)
 		}
 	}
 
-	error = dpni_destroy_v10(&restool.mc_io, dprc_handle,
-				 0, dpni_id);
+	error = dpni_destroy(&restool.mc_io, dprc_handle, 0, dpni_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1977,7 +1178,7 @@ out:
 	return error;
 }
 
-static int destroy_dpni(int mc_fw_version)
+static int cmd_dpni_destroy(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -2015,29 +1216,15 @@ static int destroy_dpni(int mc_fw_version)
 		goto out;
 	}
 
-	if (mc_fw_version == MC_FW_VERSION_9)
-		error = destroy_dpni_v9(dpni_id);
-	else if (mc_fw_version == MC_FW_VERSION_10)
-		error = destroy_dpni_v10(dpni_id);
-	else
-		return -EINVAL;
+	error = destroy_dpni(dpni_id);
 out:
 	return error;
+
 }
 
-static int cmd_dpni_destroy_v9(void)
+static int update_dpni(const char *usage_msg)
 {
-	return destroy_dpni(MC_FW_VERSION_9);
-}
-
-static int cmd_dpni_destroy_v10(void)
-{
-	return destroy_dpni(MC_FW_VERSION_10);
-}
-
-static int update_dpni_v10(const char *usage_msg)
-{
-	struct dpni_attr_v10 dpni_attr = {0};
+	struct dpni_attr dpni_attr = {0};
 	uint8_t mac_addr[6];
 	uint16_t dpni_handle;
 	uint32_t dpni_id;
@@ -2062,7 +1249,7 @@ static int update_dpni_v10(const char *usage_msg)
 		goto out;
 	}
 
-	error = dpni_open_v10(&restool.mc_io, 0, dpni_id, &dpni_handle);
+	error = dpni_open(&restool.mc_io, 0, dpni_id, &dpni_handle);
 	if (error) {
 		ERROR_PRINTF("Could not open specified object!\n");
 		puts(usage_msg);
@@ -2077,10 +1264,9 @@ static int update_dpni_v10(const char *usage_msg)
 
 		minimal_options = true;
 
-		error = dpni_get_attributes_v10(&restool.mc_io, 0,
-						dpni_handle, &dpni_attr);
+		error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle, &dpni_attr);
 		if (error < 0) {
-			ERROR_PRINTF("dpni_get_attributes_v10() = %d\n", error);
+			ERROR_PRINTF("dpni_get_attributes() = %d\n", error);
 			goto dpni_close;
 		}
 
@@ -2089,14 +1275,13 @@ static int update_dpni_v10(const char *usage_msg)
 			goto dpni_close;
 		}
 
-		error = dpni_set_primary_mac_addr_v10(&restool.mc_io, 0,
-						      dpni_handle, mac_addr);
+		error = dpni_set_primary_mac_addr(&restool.mc_io, 0, dpni_handle, mac_addr);
 		if (error)
-			ERROR_PRINTF("dpni_set_primary_mac_addr_v10() = %d\n", error);
+			ERROR_PRINTF("dpni_set_primary_mac_addr() = %d\n", error);
 	}
 
 dpni_close:
-	dpni_close_v10(&restool.mc_io, 0, dpni_handle);
+	dpni_close(&restool.mc_io, 0, dpni_handle);
 out:
 
 	if (!minimal_options && !error) {
@@ -2108,7 +1293,7 @@ out:
 }
 
 
-static int cmd_dpni_update_v10(void)
+static int cmd_dpni_update(void)
 {
 	static const char usage_msg[] =
 		"\n"
@@ -2119,50 +1304,29 @@ static int cmd_dpni_update_v10(void)
 		"	String specifying primary MAC address (e.g. 00:00:05:00:00:05).\n"
 		"\n";
 
-	return update_dpni_v10(usage_msg);
+	return update_dpni(usage_msg);
 }
 
-struct object_command dpni_commands_v9[] = {
+struct object_command dpni_commands_v10[] = {
 	{ .cmd_name = "--help",
 	  .options = NULL,
 	  .cmd_func = cmd_dpni_help },
 
 	{ .cmd_name = "info",
 	  .options = dpni_info_options,
-	  .cmd_func = cmd_dpni_info_v9 },
+	  .cmd_func = cmd_dpni_info },
 
 	{ .cmd_name = "create",
 	  .options = dpni_create_options,
-	  .cmd_func = cmd_dpni_create_v9 },
+	  .cmd_func = cmd_dpni_create },
 
 	{ .cmd_name = "destroy",
 	  .options = dpni_destroy_options,
-	  .cmd_func = cmd_dpni_destroy_v9 },
-
-	{ .cmd_name = NULL },
-};
-
-struct object_command dpni_commands_v10[] = {
-	{ .cmd_name = "--help",
-	  .options = NULL,
-	  .cmd_func = cmd_dpni_help_v10 },
-
-	{ .cmd_name = "info",
-	  .options = dpni_info_options,
-	  .cmd_func = cmd_dpni_info_v10 },
-
-	{ .cmd_name = "create",
-	  .options = dpni_create_options,
-	  .cmd_func = cmd_dpni_create_v10 },
-
-	{ .cmd_name = "destroy",
-	  .options = dpni_destroy_options,
-	  .cmd_func = cmd_dpni_destroy_v10 },
+	  .cmd_func = cmd_dpni_destroy },
 
 	{ .cmd_name = "update",
-	  .options = dpni_update_options_v10,
-	  .cmd_func = cmd_dpni_update_v10 },
+	  .options = dpni_update_options,
+	  .cmd_func = cmd_dpni_update },
 
 	{ .cmd_name = NULL },
 };
-

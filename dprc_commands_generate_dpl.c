@@ -43,7 +43,6 @@
 #include "dprc_commands_generate_dpl.h"
 #include "mc_v9/fsl_dprtc.h"
 #include "mc_v9/fsl_dpseci.h"
-#include "mc_v9/fsl_dpni.h"
 #include "mc_v9/fsl_dpsw.h"
 #include "mc_v10/fsl_dpni.h"
 #include "mc_v10/fsl_dpcon.h"
@@ -65,55 +64,6 @@
 	DPRC_CFG_OPT_TOPOLOGY_CHANGES_ALLOWED | \
 	DPRC_CFG_OPT_AIOP |                     \
 	DPRC_CFG_OPT_IRQ_CFG_ALLOWED)
-
-/* dpni stuff */
-/**
- * max_dist: Maximum distribution size for Rx traffic class;
- * supported values: 1,2,3,4,6,7,8,12,14,16,24,28,32,48,56,64,96,
- * 112,128,192,224,256,384,448,512,768,896,1024;
- */
-#define MAX_DIST_SIZE	1024
-#define ALL_DPNI_OPTS (					\
-	DPNI_OPT_ALLOW_DIST_KEY_PER_TC |		\
-	DPNI_OPT_TX_CONF_DISABLED |			\
-	DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED |	\
-	DPNI_OPT_DIST_HASH |				\
-	DPNI_OPT_DIST_FS |				\
-	DPNI_OPT_UNICAST_FILTER	|			\
-	DPNI_OPT_MULTICAST_FILTER |			\
-	DPNI_OPT_VLAN_FILTER |				\
-	DPNI_OPT_IPR |					\
-	DPNI_OPT_IPF |					\
-	DPNI_OPT_VLAN_MANIPULATION |			\
-	DPNI_OPT_QOS_MASK_SUPPORT |			\
-	DPNI_OPT_TX_FRM_RELEASE |			\
-	DPNI_OPT_NO_MAC_FILTER |			\
-	DPNI_OPT_HAS_POLICING |				\
-	DPNI_OPT_SHARED_CONGESTION |			\
-	DPNI_OPT_HAS_KEY_MASKING |			\
-	DPNI_OPT_NO_FS |				\
-	DPNI_OPT_HAS_OPR |				\
-	DPNI_OPT_OPR_PER_TC |				\
-	DPNI_OPT_SINGLE_SENDER |			\
-	DPNI_OPT_CUSTOM_CG |				\
-	DPNI_OPT_FS_MASK_SUPPORT |			\
-	DPNI_OPT_SHARED_FS	|			\
-	DPNI_OPT_SHARED_HASH_KEY |			\
-	DPNI_OPT_CUSTOM_OPR |				\
-	DPNI_OPT_STASHING_DIS)
-
-struct dpni_config {
-	struct dpni_extended_cfg dpni_extended_cfg;
-	struct dpni_cfg dpni_cfg;
-	struct dpni_attr dpni_attr;
-	uint16_t dpni_handle;
-};
-
-#define RESTOOL_DPNI_CREATE \
-	_IOWR(RESTOOL_IOCTL_TYPE, 0x5, struct dpni_config)
-
-#define RESTOOL_DPNI_GET_ATTRIBUTES \
-	_IOWR(RESTOOL_IOCTL_TYPE, 0x6, struct dpni_config)
 
 /* dpdmux stuff */
 #define ALL_DPDMUX_OPTS (		\
@@ -1375,92 +1325,6 @@ static void parse_dpni_options(FILE *fp, uint32_t options)
 
 	snprintf(buf, 14, "\t\t\toptions = ");
 
-	if (options & DPNI_OPT_ALLOW_DIST_KEY_PER_TC) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_ALLOW_DIST_KEY_PER_TC\", ");
-	}
-
-	if (options & DPNI_OPT_TX_CONF_DISABLED) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_TX_CONF_DISABLED\", ");
-	}
-
-	if (options & DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED) {
-		len = strlen(buf);
-		snprintf(buf+len, 50,
-			"\"DPNI_OPT_PRIVATE_TX_CONF_ERROR_DISABLED\", ");
-	}
-
-	if (options & DPNI_OPT_DIST_HASH) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_DIST_HASH\", ");
-	}
-
-	if (options & DPNI_OPT_DIST_FS) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_DIST_FS\", ");
-	}
-
-	if (options & DPNI_OPT_UNICAST_FILTER) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_UNICAST_FILTER\", ");
-	}
-
-	if (options & DPNI_OPT_MULTICAST_FILTER) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_MULTICAST_FILTER\", ");
-	}
-
-	if (options & DPNI_OPT_VLAN_FILTER) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_VLAN_FILTER\", ");
-	}
-
-	if (options & DPNI_OPT_IPR) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_IPR\", ");
-	}
-
-	if (options & DPNI_OPT_IPF) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_IPF\", ");
-	}
-
-	if (options & DPNI_OPT_VLAN_MANIPULATION) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_VLAN_MANIPULATION\", ");
-	}
-
-	if (options & DPNI_OPT_QOS_MASK_SUPPORT) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_QOS_MASK_SUPPORT\", ");
-	}
-
-	if (options & DPNI_OPT_FS_MASK_SUPPORT) {
-		len = strlen(buf);
-		snprintf(buf+len, 50, "\"DPNI_OPT_FS_MASK_SUPPORT\", ");
-	}
-
-	len = strlen(buf);
-	if (13 == len)
-		return;
-
-	buf[len-2] = ';';
-	buf[len-1] = '\0';
-
-	fprintf(fp, "%s\n", buf);
-}
-
-static void parse_dpni_options_v10(FILE *fp, uint32_t options)
-{
-	char buf[500];
-	int len;
-
-	if ((options & ~ALL_DPNI_OPTS) != 0)
-		fprintf(fp, "\t\t\t/* Unrecognized options found... */\n");
-
-	snprintf(buf, 14, "\t\t\toptions = ");
-
 	if (options & DPNI_OPT_TX_FRM_RELEASE) {
 		len = strlen(buf);
 		snprintf(buf+len, 50, "\"DPNI_OPT_TX_FRM_RELEASE\", ");
@@ -1659,17 +1523,13 @@ static int parse_endpoint_dpl(struct obj_list *curr_obj, uint16_t num_ifs)
 	return 0;
 }
 
-static int parse_dpni_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpni(FILE *fp, struct obj_list *curr)
 {
+	struct dpni_attr dpni_attr;
 	uint16_t dpni_handle;
-	int error;
-	struct dpni_attr_v9 dpni_attr;
-	uint8_t mac_addr[6];
 	bool dpni_opened = false;
-	struct dpni_extended_cfg dpni_extended_cfg;
-
-	memset(&dpni_extended_cfg, 0, sizeof(dpni_extended_cfg));
-	memset(&dpni_attr, 0, sizeof(dpni_attr));
+	int error = 0;
+	int error2;
 
 	error = dpni_open(&restool.mc_io, 0, curr->id, &dpni_handle);
 	if (error < 0) {
@@ -1687,143 +1547,8 @@ static int parse_dpni_v9(FILE *fp, struct obj_list *curr)
 		goto out;
 	}
 
-	error = dpni_get_attributes_v9(&restool.mc_io, 0, dpni_handle,
-				       &dpni_attr, &dpni_extended_cfg);
-
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	assert(curr->id == dpni_attr.id);
-	assert(DPNI_MAX_TC >= dpni_attr.max_tcs);
-
-	error = dpni_get_primary_mac_addr(&restool.mc_io, 0,
-					dpni_handle, mac_addr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	parse_endpoint_dpl(curr, 1000);
-
-	fprintf(fp, "\t\t\tmac_addr = <");
-	for (int j = 0; j < 5; ++j)
-		fprintf(fp, "%#02x ", mac_addr[j]);
-	fprintf(fp, "%#02x>;\n", mac_addr[5]);
-
-	fprintf(fp, "\t\t\tmax_senders = <%#x>;\n",
-		(uint32_t)dpni_attr.max_senders);
-
-	parse_dpni_options(fp, dpni_attr.options);
-
-	fprintf(fp, "\t\t\tmax_tcs = <%#x>;\n", (uint32_t)dpni_attr.max_tcs);
-
-	fprintf(fp, "\t\t\tmax_dist_per_tc = <");
-	for (int k = 0; k < dpni_attr.max_tcs - 1; ++k)
-		fprintf(fp, "%#x ",
-			(uint32_t)dpni_extended_cfg.tc_cfg[k].max_dist);
-	fprintf(fp, "%#x>;\n",
-		(uint32_t)dpni_extended_cfg.
-		tc_cfg[dpni_attr.max_tcs].max_dist);
-
-	fprintf(fp, "\t\t\tmax_fs_entries = <");
-	for (int m = 0; m < dpni_attr.max_tcs - 1; ++m)
-		fprintf(fp, "%#x",
-			(uint32_t)dpni_extended_cfg.tc_cfg[m].max_fs_entries);
-	fprintf(fp, "%#x>;\n",
-		(uint32_t)dpni_extended_cfg.
-		tc_cfg[dpni_attr.max_tcs].max_fs_entries);
-
-	fprintf(fp, "\t\t\tmax_unicast_filters = <%#x>;\n",
-	       (uint32_t)dpni_attr.max_unicast_filters);
-
-	fprintf(fp, "\t\t\tmax_multicast_filters = <%#x>;\n",
-	       (uint32_t)dpni_attr.max_multicast_filters);
-
-	fprintf(fp, "\t\t\tmax_vlan_filters = <%#x>;\n",
-		(uint32_t)dpni_attr.max_vlan_filters);
-
-	fprintf(fp, "\t\t\tmax_qos_entries = <%#x>;\n",
-		(uint32_t)dpni_attr.max_qos_entries);
-
-	fprintf(fp, "\t\t\tmax_qos_key_size = <%#x>;\n",
-		(uint32_t)dpni_attr.max_qos_key_size);
-
-	fprintf(fp, "\t\t\tmax_dist_key_size = <%#x>;\n",
-	       (uint32_t)dpni_attr.max_dist_key_size);
-
-	fprintf(fp, "\t\t\tmax_policers = <%#x>;\n",
-		(uint32_t)dpni_attr.max_policers);
-
-	fprintf(fp, "\t\t\tmax_congestion_ctrl = <%#x>;\n",
-		(uint32_t)dpni_attr.max_congestion_ctrl);
-
-	fprintf(fp, "\t\t\tmax_reass_frm_size = <%#x>;\n",
-		(uint32_t)dpni_extended_cfg.ipr_cfg.max_reass_frm_size);
-
-	fprintf(fp, "\t\t\tmin_frag_size_ipv4 = <%#x>;\n",
-		(uint32_t)dpni_extended_cfg.ipr_cfg.min_frag_size_ipv4);
-
-	fprintf(fp, "\t\t\tmin_frag_size_ipv6 = <%#x>;\n",
-		(uint32_t)dpni_extended_cfg.ipr_cfg.min_frag_size_ipv6);
-
-	fprintf(fp, "\t\t\tmax_open_frames_ipv4 = <%#x>;\n",
-		(uint32_t)dpni_extended_cfg.ipr_cfg.max_open_frames_ipv4);
-
-	fprintf(fp, "\t\t\tmax_open_frames_ipv6 = <%#x>;\n",
-		(uint32_t)dpni_extended_cfg.ipr_cfg.max_open_frames_ipv6);
-
-	error = 0;
-
-out:
-	if (dpni_opened) {
-		int error2;
-
-		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpni_attr_v10 dpni_attr;
-	uint16_t dpni_handle;
-	bool dpni_opened = false;
-	int error = 0;
-	int error2;
-
-	error = dpni_open_v10(&restool.mc_io, 0, curr->id, &dpni_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpni_opened = true;
-	if (0 == dpni_handle) {
-		DEBUG_PRINTF(
-			"dpni_open() returned invalid handle (auth 0) for dpni.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
 	memset(&dpni_attr, 0, sizeof(dpni_attr));
-	error = dpni_get_attributes_v10(&restool.mc_io, 0,
-					dpni_handle, &dpni_attr);
+	error = dpni_get_attributes(&restool.mc_io, 0, dpni_handle, &dpni_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1835,7 +1560,7 @@ static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
 
 	fprintf(fp, "\t\t\ttype = \"DPNI_TYPE_NIC\";\n");
 
-	parse_dpni_options_v10(fp, dpni_attr.options);
+	parse_dpni_options(fp, dpni_attr.options);
 
 	fprintf(fp, "\t\t\tnum_queues = <%u>;\n", dpni_attr.num_queues);
 	fprintf(fp, "\t\t\tnum_rx_tcs = <%u>;\n", dpni_attr.num_rx_tcs);
@@ -1852,7 +1577,7 @@ static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
 out:
 	if (dpni_opened) {
 
-		error2 = dpni_close_v10(&restool.mc_io, 0, dpni_handle);
+		error2 = dpni_close(&restool.mc_io, 0, dpni_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -2269,13 +1994,8 @@ static int write_objects(void)
 			parse_dpmac(fp, curr_obj);
 			/* dpmac do not need to be parsed now */
 
-		if (strcmp(curr_obj->type, "dpni") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpni_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpni_v10(fp, curr_obj);
-		}
-
+		if (strcmp(curr_obj->type, "dpni") == 0)
+			parse_dpni(fp, curr_obj);
 
 		/* following objects have possible connections and interface*/
 		if (strcmp(curr_obj->type, "dpdmux") == 0)
