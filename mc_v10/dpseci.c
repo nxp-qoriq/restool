@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -36,7 +36,7 @@
 #include "fsl_dpseci_cmd.h"
 
 /**
- * dpseci_open_v10() - Open a control session for the specified object
+ * dpseci_open() - Open a control session for the specified object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @dpseci_id:	DPSECI unique ID
@@ -52,35 +52,29 @@
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_open_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    int dpseci_id,
-		    uint16_t *token)
+int dpseci_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpseci_id, uint16_t *token)
 {
 	struct dpseci_cmd_open *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_OPEN,
 					  cmd_flags,
 					  0);
 	cmd_params = (struct dpseci_cmd_open *)cmd.params;
 	cmd_params->dpseci_id = cpu_to_le32(dpseci_id);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*token = mc_cmd_hdr_read_token(&cmd);
 
 	return 0;
 }
 
 /**
- * dpseci_close_v10() - Close the control session of the object
+ * dpseci_close() - Close the control session of the object
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSECI object
@@ -90,23 +84,19 @@ int dpseci_open_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_close_v10(struct fsl_mc_io *mc_io,
-		     uint32_t cmd_flags,
-		     uint16_t token)
+int dpseci_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
 {
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_CLOSE,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpseci_create_v10() - Create the DPSECI object
+ * dpseci_create() - Create the DPSECI object
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token:	Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -127,17 +117,13 @@ int dpseci_close_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_create_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      const struct dpseci_cfg_v10 *cfg,
-		      uint32_t *obj_id)
+int dpseci_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		      const struct dpseci_cfg *cfg, uint32_t *obj_id)
 {
 	struct dpseci_cmd_create *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err, i;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_CREATE,
 					  cmd_flags,
 					  dprc_token);
@@ -150,19 +136,17 @@ int dpseci_create_v10(struct fsl_mc_io *mc_io,
 	cmd_params->num_rx_queues = cfg->num_rx_queues;
 	cmd_params->options = cfg->options;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	*obj_id = mc_cmd_read_object_id(&cmd);
 
 	return 0;
 }
 
 /**
- * dpseci_destroy_v10() - Destroy the DPSECI object and release all its resources.
+ * dpseci_destroy() - Destroy the DPSECI object and release all its resources.
  * @mc_io:	Pointer to MC portal's I/O object
  * @dprc_token: Parent container token; '0' for default container
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
@@ -176,27 +160,23 @@ int dpseci_create_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; error code otherwise.
  */
-int dpseci_destroy_v10(struct fsl_mc_io *mc_io,
-		       uint16_t dprc_token,
-		       uint32_t cmd_flags,
-		       uint32_t object_id)
+int dpseci_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		   uint32_t object_id)
 {
 	struct dpseci_cmd_destroy *cmd_params;
 	struct mc_command cmd = { 0 };
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_DESTROY,
 					  cmd_flags,
 					  dprc_token);
 	cmd_params = (struct dpseci_cmd_destroy *)cmd.params;
 	cmd_params->dpseci_id = cpu_to_le32(object_id);
 
-	/* send command to mc*/
 	return mc_send_command(mc_io, &cmd);
 }
 
 /**
- * dpseci_get_irq_mask_v10() - Get interrupt mask.
+ * dpseci_get_irq_mask() - Get interrupt mask.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSECI object
@@ -208,30 +188,24 @@ int dpseci_destroy_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *mask)
+int dpseci_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *mask)
 {
 	struct dpseci_rsp_get_irq_mask *rsp_params;
 	struct dpseci_cmd_get_irq *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_GET_IRQ_MASK,
 					  cmd_flags,
 					  token);
 	cmd_params = (struct dpseci_cmd_get_irq *)cmd.params;
 	cmd_params->irq_index = irq_index;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpseci_rsp_get_irq_mask *)cmd.params;
 	*mask = le32_to_cpu(rsp_params->mask);
 
@@ -239,7 +213,7 @@ int dpseci_get_irq_mask_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpseci_get_irq_status_v10() - Get the current status of any pending interrupts
+ * dpseci_get_irq_status() - Get the current status of any pending interrupts
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSECI object
@@ -250,18 +224,14 @@ int dpseci_get_irq_mask_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      uint8_t irq_index,
-			      uint32_t *status)
+int dpseci_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  uint8_t irq_index, uint32_t *status)
 {
 	struct dpseci_rsp_get_irq_status *rsp_params;
 	struct dpseci_cmd_irq_status *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_GET_IRQ_STATUS,
 					  cmd_flags,
 					  token);
@@ -269,12 +239,10 @@ int dpseci_get_irq_status_v10(struct fsl_mc_io *mc_io,
 	cmd_params->irq_index = irq_index;
 	cmd_params->status = cpu_to_le32(*status);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpseci_rsp_get_irq_status *)cmd.params;
 	*status = le32_to_cpu(rsp_params->status);
 
@@ -282,7 +250,7 @@ int dpseci_get_irq_status_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpseci_get_attributes_v10() - Retrieve DPSECI attributes.
+ * dpseci_get_attributes() - Retrieve DPSECI attributes.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSECI object
@@ -290,26 +258,21 @@ int dpseci_get_irq_status_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_get_attributes_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t token,
-			      struct dpseci_attr_v10 *attr)
+int dpseci_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			  struct dpseci_attr *attr)
 {
 	struct dpseci_rsp_get_attr *rsp_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_GET_ATTR,
 					  cmd_flags,
 					  token);
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpseci_rsp_get_attr *)cmd.params;
 	attr->id = le32_to_cpu(rsp_params->id);
 	attr->options = rsp_params->options;
@@ -320,7 +283,7 @@ int dpseci_get_attributes_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpseci_get_tx_queue_v10() - Retrieve Tx queue attributes.
+ * dpseci_get_tx_queue() - Retrieve Tx queue attributes.
  * @mc_io:	Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @token:	Token of DPSECI object
@@ -330,30 +293,24 @@ int dpseci_get_attributes_v10(struct fsl_mc_io *mc_io,
  *
  * Return:	'0' on Success; Error code otherwise.
  */
-int dpseci_get_tx_queue_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t queue,
-			    struct dpseci_tx_queue_attr_v10 *attr)
+int dpseci_get_tx_queue(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t queue, struct dpseci_tx_queue_attr *attr)
 {
 	struct dpseci_rsp_get_tx_queue *rsp_params;
 	struct dpseci_cmd_get_queue *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	/* prepare command */
 	cmd.header = mc_encode_cmd_header(DPSECI_CMDID_GET_TX_QUEUE,
 					  cmd_flags,
 					  token);
 	cmd_params = (struct dpseci_cmd_get_queue *)cmd.params;
 	cmd_params->queue = queue;
 
-	/* send command to mc*/
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
 		return err;
 
-	/* retrieve response parameters */
 	rsp_params = (struct dpseci_rsp_get_tx_queue *)cmd.params;
 	attr->fqid = le32_to_cpu(rsp_params->fqid);
 	attr->priority = rsp_params->priority;
@@ -362,7 +319,7 @@ int dpseci_get_tx_queue_v10(struct fsl_mc_io *mc_io,
 }
 
 /**
- * dpseci_get_api_version_v10() - Get Data Path SEC Interface API version
+ * dpseci_get_api_version() - Get Data Path SEC Interface API version
  * @mc_io:  Pointer to MC portal's I/O object
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @major_ver:	Major version of data path sec API
@@ -370,10 +327,8 @@ int dpseci_get_tx_queue_v10(struct fsl_mc_io *mc_io,
  *
  * Return:  '0' on Success; Error code otherwise.
  */
-int dpseci_get_api_version_v10(struct fsl_mc_io *mc_io,
-			       uint32_t cmd_flags,
-			       uint16_t *major_ver,
-			       uint16_t *minor_ver)
+int dpseci_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			   uint16_t *major_ver, uint16_t *minor_ver)
 {
 	struct dpseci_rsp_get_api_version *rsp_params;
 	struct mc_command cmd = { 0 };
@@ -393,5 +348,3 @@ int dpseci_get_api_version_v10(struct fsl_mc_io *mc_io,
 
 	return 0;
 }
-
-

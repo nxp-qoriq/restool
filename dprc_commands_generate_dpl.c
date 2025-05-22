@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpseci.h"
 #include "mc_v9/fsl_dpsw.h"
 #include "mc_v10/fsl_dpni.h"
 #include "mc_v10/fsl_dpcon.h"
@@ -1054,14 +1053,14 @@ out:
 	return error;
 }
 
-static int parse_dpseci_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpseci(FILE *fp, struct obj_list *curr)
 {
-	int error;
-	uint16_t dpseci_handle;
-	bool dpseci_opened = false;
-	struct dpseci_attr dpseci_attr;
 	struct dpseci_tx_queue_attr tx_attr;
+	struct dpseci_attr dpseci_attr;
+	bool dpseci_opened = false;
+	uint16_t dpseci_handle;
 	char *priorities;
+	int error;
 
 	error = dpseci_open(&restool.mc_io, 0, curr->id, &dpseci_handle);
 	if (error < 0) {
@@ -1081,8 +1080,7 @@ static int parse_dpseci_v9(FILE *fp, struct obj_list *curr)
 	memset(&tx_attr, 0, sizeof(tx_attr));
 	memset(&dpseci_attr, 0, sizeof(dpseci_attr));
 
-	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle,
-					&dpseci_attr);
+	error = dpseci_get_attributes(&restool.mc_io, 0, dpseci_handle, &dpseci_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1098,8 +1096,7 @@ static int parse_dpseci_v9(FILE *fp, struct obj_list *curr)
 	}
 
 	for (int i = 0; i < dpseci_attr.num_tx_queues; i++) {
-		error = dpseci_get_tx_queue(&restool.mc_io, 0, dpseci_handle,
-					    i, &tx_attr);
+		error = dpseci_get_tx_queue(&restool.mc_io, 0, dpseci_handle, i, &tx_attr);
 
 		if (error < 0) {
 			mc_status = flib_error_to_mc_status(error);
@@ -1125,88 +1122,6 @@ out:
 		int error2;
 
 		error2 = dpseci_close(&restool.mc_io, 0, dpseci_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-	return 0;
-}
-
-static int parse_dpseci_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpseci_tx_queue_attr_v10 tx_attr;
-	struct dpseci_attr_v10 dpseci_attr;
-	bool dpseci_opened = false;
-	uint16_t dpseci_handle;
-	char *priorities;
-	int error;
-
-	error = dpseci_open_v10(&restool.mc_io, 0, curr->id, &dpseci_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpseci_opened = true;
-	if (0 == dpseci_handle) {
-		DEBUG_PRINTF(
-			"dpseci_open() returned invalid handle (auth 0) for dpseci.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-	memset(&tx_attr, 0, sizeof(tx_attr));
-	memset(&dpseci_attr, 0, sizeof(dpseci_attr));
-
-	error = dpseci_get_attributes_v10(&restool.mc_io, 0, dpseci_handle,
-					  &dpseci_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-
-	priorities = malloc(dpseci_attr.num_tx_queues * sizeof(*priorities));
-	if (priorities == NULL) {
-		ERROR_PRINTF("malloc failed\n");
-		error = -errno;
-		goto out;
-	}
-
-	for (int i = 0; i < dpseci_attr.num_tx_queues; i++) {
-		error = dpseci_get_tx_queue_v10(&restool.mc_io, 0, dpseci_handle,
-						i, &tx_attr);
-
-		if (error < 0) {
-			mc_status = flib_error_to_mc_status(error);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			free(priorities);
-			goto out;
-		}
-
-		priorities[i] = tx_attr.priority;
-	}
-	fprintf(fp, "\t\t\tpriorities = <");
-	for (int i = 0; i < dpseci_attr.num_tx_queues-1; i++)
-		fprintf(fp, "%d ", priorities[i]);
-
-	fprintf(fp, "%d>;\n", priorities[dpseci_attr.num_tx_queues-1]);
-
-	free(priorities);
-
-
-out:
-	if (dpseci_opened) {
-		int error2;
-
-		error2 = dpseci_close_v10(&restool.mc_io, 0, dpseci_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1978,12 +1893,8 @@ static int write_objects(void)
 		if (strcmp(curr_obj->type, "dpio") == 0)
 			parse_dpio(fp, curr_obj);
 
-		if (strcmp(curr_obj->type, "dpseci") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpseci_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpseci_v10(fp, curr_obj);
-		}
+		if (strcmp(curr_obj->type, "dpseci") == 0)
+			parse_dpseci(fp, curr_obj);
 
 		/* following objects have possible connections */
 		if (strcmp(curr_obj->type, "dpci") == 0)
