@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2018 NXP
+ * Copyright 2017-2018, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,8 +33,6 @@
 #ifndef __FSL_DPRTC_V10_H
 #define __FSL_DPRTC_V10_H
 
-#include "../mc_v9/fsl_dprtc.h"
-
 /* Data Path Real Time Counter API
  * Contains initialization APIs and runtime control APIs for RTC
  */
@@ -60,54 +58,42 @@ struct fsl_mc_io;
  */
 #define DPRTC_EVENT_PPS				0x08000000
 
-int dprtc_open_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   int dprtc_id,
-		   uint16_t *token);
+int dprtc_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dprtc_id, uint16_t *token);
 
-int dprtc_close_v10(struct fsl_mc_io *mc_io,
-		    uint32_t cmd_flags,
-		    uint16_t token);
-
-int dprtc_create_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     const struct dprtc_cfg *cfg,
-		     uint32_t *obj_id);
-
-int dprtc_destroy_v10(struct fsl_mc_io *mc_io,
-		      uint16_t dprc_token,
-		      uint32_t cmd_flags,
-		      uint32_t object_id);
-
-int dprtc_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			   uint32_t cmd_flags,
-			   uint16_t token,
-			   uint8_t irq_index,
-			   uint32_t *mask);
-
-int dprtc_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     uint8_t irq_index,
-			     uint32_t *status);
+int dprtc_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
- * struct dprtc_attr_v10 - Structure representing DPRTC attributes
+ * struct dprtc_cfg - Structure representing DPRTC configuration
+ * @options:	place holder
+ */
+struct dprtc_cfg {
+	uint32_t options;
+};
+
+int dprtc_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 const struct dprtc_cfg *cfg, uint32_t *obj_id);
+
+int dprtc_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		  uint32_t object_id);
+
+int dprtc_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		       uint8_t irq_index, uint32_t *mask);
+
+int dprtc_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 uint8_t irq_index, uint32_t *status);
+
+/**
+ * struct dprtc_attr - Structure representing DPRTC attributes
  * @id:		DPRTC object ID
  */
-struct dprtc_attr_v10 {
+struct dprtc_attr {
 	int id;
 };
 
-int dprtc_get_attributes_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t token,
-			     struct dprtc_attr_v10 *attr);
+int dprtc_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			 struct dprtc_attr *attr);
 
-int dprtc_get_api_version_v10(struct fsl_mc_io *mc_io,
-			      uint32_t cmd_flags,
-			      uint16_t *major_ver,
-			      uint16_t *minor_ver);
+int dprtc_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			  uint16_t *major_ver, uint16_t *minor_ver);
 
 #endif /* __FSL_DPRTC_H */
