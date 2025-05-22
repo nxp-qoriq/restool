@@ -41,7 +41,6 @@
 #include "restool.h"
 #include "utils.h"
 #include "dprc_commands_generate_dpl.h"
-#include "mc_v9/fsl_dpsw.h"
 #include "mc_v10/fsl_dpni.h"
 #include "mc_v10/fsl_dpcon.h"
 #include "mc_v10/fsl_dpio.h"
@@ -1690,12 +1689,12 @@ static void parse_dpsw_options(FILE *fp, uint64_t options)
 
 }
 
-static int parse_dpsw_v9(FILE *fp, struct obj_list *curr)
+static int parse_dpsw(FILE *fp, struct obj_list *curr)
 {
+	struct dpsw_attr dpsw_attr;
+	bool dpsw_opened = false;
 	uint16_t dpsw_handle;
 	int error;
-	struct dpsw_attr_v9 dpsw_attr;
-	bool dpsw_opened = false;
 
 	error = dpsw_open(&restool.mc_io, 0, curr->id, &dpsw_handle);
 	if (error < 0) {
@@ -1714,79 +1713,7 @@ static int parse_dpsw_v9(FILE *fp, struct obj_list *curr)
 	}
 
 	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
-	error = dpsw_get_attributes_v9(&restool.mc_io, 0, dpsw_handle,
-				       &dpsw_attr);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(curr->id == dpsw_attr.id);
-
-	parse_endpoint_dpl(curr, dpsw_attr.num_ifs);
-	parse_dpsw_options(fp, dpsw_attr.options);
-	fprintf(fp, "\t\t\tmax_vlans = <%#x>;\n",
-		(uint32_t)dpsw_attr.max_vlans);
-	fprintf(fp, "\t\t\tmax_fdbs = <%#x>;\n", (uint32_t)dpsw_attr.max_fdbs);
-	/* it should be num_fdb_entries,
-	 * but dpsw_attr {} call it max_fdb_entries (typo)
-	 */
-	fprintf(fp, "\t\t\tnum_fdb_entries = <%#x>;\n",
-		(uint32_t)dpsw_attr.max_fdb_entries);
-	fprintf(fp, "\t\t\tfdb_aging_time = <%#x>;\n",
-		(uint32_t)dpsw_attr.fdb_aging_time);
-	fprintf(fp, "\t\t\tnum_ifs = <%#x>;\n", (uint32_t)dpsw_attr.num_ifs);
-	fprintf(fp, "\t\t\tmax_fdb_mc_groups = <%#x>;\n",
-		(uint32_t)dpsw_attr.max_fdb_mc_groups);
-	fprintf(fp, "\t\t\tmax_meters_per_if = <%#x>;\n",
-		(uint32_t)dpsw_attr.max_meters_per_if);
-
-	error = 0;
-
-out:
-	if (dpsw_opened) {
-		int error2;
-
-		error2 = dpsw_close(&restool.mc_io, 0, dpsw_handle);
-		if (error2 < 0) {
-			mc_status = flib_error_to_mc_status(error2);
-			ERROR_PRINTF("MC error: %s (status %#x)\n",
-				     mc_status_to_string(mc_status), mc_status);
-			if (error == 0)
-				error = error2;
-		}
-	}
-
-	return error;
-}
-
-static int parse_dpsw_v10(FILE *fp, struct obj_list *curr)
-{
-	struct dpsw_attr_v10 dpsw_attr;
-	bool dpsw_opened = false;
-	uint16_t dpsw_handle;
-	int error;
-
-	error = dpsw_open_v10(&restool.mc_io, 0, curr->id, &dpsw_handle);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	dpsw_opened = true;
-	if (0 == dpsw_handle) {
-		DEBUG_PRINTF(
-			"dpsw_open() returned invalid handle (auth 0) for dpsw.%u\n",
-			curr->id);
-		error = -ENOENT;
-		goto out;
-	}
-
-	memset(&dpsw_attr, 0, sizeof(dpsw_attr));
-	error = dpsw_get_attributes_v10(&restool.mc_io, 0, dpsw_handle,
-				       &dpsw_attr);
+	error = dpsw_get_attributes(&restool.mc_io, 0, dpsw_handle, &dpsw_attr);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1825,7 +1752,7 @@ out:
 	if (dpsw_opened) {
 		int error2;
 
-		error2 = dpsw_close_v10(&restool.mc_io, 0, dpsw_handle);
+		error2 = dpsw_close(&restool.mc_io, 0, dpsw_handle);
 		if (error2 < 0) {
 			mc_status = flib_error_to_mc_status(error2);
 			ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1911,12 +1838,8 @@ static int write_objects(void)
 		if (strcmp(curr_obj->type, "dpdmux") == 0)
 			parse_dpdmux(fp, curr_obj);
 
-		if (strcmp(curr_obj->type, "dpsw") == 0) {
-			if (restool.mc_fw_version.major == 9)
-				parse_dpsw_v9(fp, curr_obj);
-			else if (restool.mc_fw_version.major == 10)
-				parse_dpsw_v10(fp, curr_obj);
-		}
+		if (strcmp(curr_obj->type, "dpsw") == 0)
+			parse_dpsw(fp, curr_obj);
 
 		fprintf(fp, "\t\t};\n");
 		curr_obj = curr_obj->next;

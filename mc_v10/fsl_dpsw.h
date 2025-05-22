@@ -1,5 +1,5 @@
 /* Copyright 2013-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2021 NXP
+ * Copyright 2017-2021, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -33,26 +33,34 @@
 #ifndef __FSL_DPSW_V10_H
 #define __FSL_DPSW_V10_H
 
-#include "../mc_v9/fsl_dpsw.h"
-
 /* Data Path L2-Switch API
  * Contains API for handling DPSW topology and functionality
  */
 
 struct fsl_mc_io;
 
-int dpsw_open_v10(struct fsl_mc_io *mc_io,
-		  uint32_t cmd_flags,
-		  int dpsw_id,
-		  uint16_t *token);
+int dpsw_open(struct fsl_mc_io *mc_io, uint32_t cmd_flags, int dpsw_id, uint16_t *token);
 
-int dpsw_close_v10(struct fsl_mc_io *mc_io,
-		   uint32_t cmd_flags,
-		   uint16_t token);
+int dpsw_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
 
 /**
  * DPSW options
  */
+
+/* Disable flooding */
+#define DPSW_OPT_FLOODING_DIS		0x0000000000000001ULL
+
+/* Disable Multicast */
+#define DPSW_OPT_MULTICAST_DIS		0x0000000000000004ULL
+
+/* Support control interface */
+#define DPSW_OPT_CTRL_IF_DIS		0x0000000000000010ULL
+
+/* Disable flooding metering */
+#define DPSW_OPT_FLOODING_METERING_DIS  0x0000000000000020ULL
+
+/* Enable metering */
+#define DPSW_OPT_METERING_EN            0x0000000000000040ULL
 
 /**
  * Disable link aggregation
@@ -92,6 +100,19 @@ enum dpsw_broadcast_cfg {
 	DPSW_BROADCAST_PER_FDB,
 };
 
+/**
+ * enum dpsw_component_type - component type of a bridge
+ * @DPSW_COMPONENT_TYPE_C_VLAN: A C-VLAN component of an
+ *   enterprise VLAN bridge or of a Provider Bridge used
+ *   to process C-tagged frames
+ * @DPSW_COMPONENT_TYPE_S_VLAN: An S-VLAN component of a
+ *   Provider Bridge
+ *
+ */
+enum dpsw_component_type {
+	DPSW_COMPONENT_TYPE_C_VLAN = 0,
+	DPSW_COMPONENT_TYPE_S_VLAN
+};
 
 /**
  * struct dpsw_cfg - DPSW configuration
@@ -99,7 +120,7 @@ enum dpsw_broadcast_cfg {
  * @adv: Advanced parameters; default is all zeros;
  *		 use this structure to change default settings
  */
-struct dpsw_cfg_v10 {
+struct dpsw_cfg {
 	uint16_t num_ifs;
 	/**
 	 * struct adv - Advanced parameters
@@ -133,31 +154,20 @@ struct dpsw_cfg_v10 {
 	} adv;
 };
 
-int dpsw_create_v10(struct fsl_mc_io *mc_io,
-		    uint16_t dprc_token,
-		    uint32_t cmd_flags,
-		    const struct dpsw_cfg_v10 *cfg,
-		    uint32_t *obj_id);
+int dpsw_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		const struct dpsw_cfg *cfg, uint32_t *obj_id);
 
-int dpsw_destroy_v10(struct fsl_mc_io *mc_io,
-		     uint16_t dprc_token,
-		     uint32_t cmd_flags,
-		     uint32_t object_id);
+int dpsw_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
+		 uint32_t object_id);
 
-int dpsw_get_irq_mask_v10(struct fsl_mc_io *mc_io,
-			  uint32_t cmd_flags,
-			  uint16_t token,
-			  uint8_t irq_index,
-			  uint32_t *mask);
+int dpsw_get_irq_mask(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+		      uint8_t irq_index, uint32_t *mask);
 
-int dpsw_get_irq_status_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    uint8_t irq_index,
-			    uint32_t *status);
+int dpsw_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			uint8_t irq_index, uint32_t *status);
 
 /**
- * struct dpsw_attr_v10 - Structure representing DPSW attributes
+ * struct dpsw_attr - Structure representing DPSW attributes
  * @id: DPSW object ID
  * @options: Enable/Disable DPSW features
  * @max_vlans: Maximum Number of VLANs
@@ -177,7 +187,7 @@ int dpsw_get_irq_status_v10(struct fsl_mc_io *mc_io,
  * @adv.flooding_cfg: Flooding configuration (PER_VLAN - default, PER_FDB)
  * @adv.broadcast_cfg: Broadcast configuration (PER_OBJECT - default, PER_FDB)
  */
-struct dpsw_attr_v10 {
+struct dpsw_attr {
 	int id;
 	uint64_t options;
 	uint16_t max_vlans;
@@ -195,15 +205,11 @@ struct dpsw_attr_v10 {
 	enum dpsw_broadcast_cfg broadcast_cfg;
 };
 
-int dpsw_get_attributes_v10(struct fsl_mc_io *mc_io,
-			    uint32_t cmd_flags,
-			    uint16_t token,
-			    struct dpsw_attr_v10 *attr);
+int dpsw_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
+			struct dpsw_attr *attr);
 
-int dpsw_get_api_version_v10(struct fsl_mc_io *mc_io,
-			     uint32_t cmd_flags,
-			     uint16_t *major_ver,
-			     uint16_t *minor_ver);
+int dpsw_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
+			 uint16_t *major_ver, uint16_t *minor_ver);
 
 enum dpsw_congestion_unit {
 	DPSW_TAILDROP_DROP_UNIT_BYTE = 0,
