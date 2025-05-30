@@ -78,4 +78,39 @@ do { \
 
 void diff_time(struct timespec *, struct timespec *, struct timespec *);
 
+struct mc_api_compatibility_info {
+	uint16_t major;
+	uint16_t minor;
+	uint16_t cmd_id;
+};
+
+static inline int cmp_ver(uint16_t ver_major_1, uint16_t ver_minor_1,
+			  uint16_t ver_major_2, uint16_t ver_minor_2)
+{
+	if (ver_major_1 == ver_major_2)
+		return ver_minor_1 - ver_minor_2;
+	return ver_major_1 - ver_major_2;
+}
+
+static inline uint16_t get_cmd_id(struct mc_api_compatibility_info compat_info[], int num,
+				  uint16_t obj_major, uint16_t obj_minor)
+{
+	int i;
+
+	for (i = 0; i < num; i++) {
+		/* If the current API version of the object is higher than a
+		 * compatibility info entry, then we found the compatible
+		 * command ID. This will only work if the array is sorted with
+		 * the latest API versions first.
+		 */
+		if (cmp_ver(obj_major, obj_minor,
+			    compat_info[i].major, compat_info[i].minor) >= 0) {
+			return compat_info[i].cmd_id;
+		}
+	}
+
+	/* The last entry in the array will be the default one */
+	return compat_info[num - 1].cmd_id;
+}
+
 #endif /* _UTILS_H */

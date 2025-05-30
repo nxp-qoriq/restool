@@ -281,6 +281,9 @@ int dpdmux_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t 
 	attr->num_ifs = le16_to_cpu(rsp_params->num_ifs);
 	attr->mem_size = le16_to_cpu(rsp_params->mem_size);
 	attr->default_if = le16_to_cpu(rsp_params->default_if);
+	attr->max_dmat_entries = le16_to_cpu(rsp_params->max_dmat_entries);
+	attr->max_mc_groups = le16_to_cpu(rsp_params->max_mc_groups);
+	attr->max_vlan_ids = le16_to_cpu(rsp_params->max_vlan_ids);
 
 	return 0;
 }

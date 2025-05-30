@@ -361,12 +361,27 @@ static void print_dpdmux_manip(enum dpdmux_manip manip)
 	}
 }
 
+struct mc_api_compatibility_info dpdmux_get_attr_compat_info[] = {
+	{
+		.major = 6,
+		.minor = 9,
+		.cmd_id = DPDMUX_CMDID_GET_ATTR_V3,
+	},{
+		.major = 6,
+		.minor = 5,
+		.cmd_id = DPDMUX_CMDID_GET_ATTR,
+	},
+};
+
+#define DPDMUX_GET_ATTR_NUM_VERSIONS	ARRAY_SIZE(dpdmux_get_attr_compat_info)
+
 static int print_dpdmux_attr(uint32_t dpdmux_id, struct dprc_obj_desc *target_obj_desc)
 {
 	struct dpdmux_attr dpdmux_attr;
 	uint16_t obj_major, obj_minor;
 	bool dpdmux_opened = false;
 	uint16_t dpdmux_handle;
+	uint16_t cmd_id;
 	int error;
 
 	error = dpdmux_open(&restool.mc_io, 0, dpdmux_id, &dpdmux_handle);
@@ -385,17 +400,6 @@ static int print_dpdmux_attr(uint32_t dpdmux_id, struct dprc_obj_desc *target_ob
 		goto out;
 	}
 
-	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle, &dpdmux_attr,
-				      DPDMUX_CMDID_GET_ATTR);
-	if (error < 0) {
-		mc_status = flib_error_to_mc_status(error);
-		ERROR_PRINTF("MC error: %s (status %#x)\n",
-			     mc_status_to_string(mc_status), mc_status);
-		goto out;
-	}
-	assert(dpdmux_id == (uint32_t)dpdmux_attr.id);
-
 	error = dpdmux_get_api_version(&restool.mc_io, 0, &obj_major, &obj_minor);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
@@ -403,6 +407,19 @@ static int print_dpdmux_attr(uint32_t dpdmux_id, struct dprc_obj_desc *target_ob
 			     mc_status_to_string(mc_status), mc_status);
 		goto out;
 	}
+
+	cmd_id = get_cmd_id(dpdmux_get_attr_compat_info, DPDMUX_GET_ATTR_NUM_VERSIONS,
+			    obj_major, obj_minor);
+
+	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
+	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle, &dpdmux_attr, cmd_id);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		goto out;
+	}
+	assert(dpdmux_id == (uint32_t)dpdmux_attr.id);
 
 	printf("dpdmux version: %u.%u\n", obj_major, obj_minor);
 	printf("dpdmux id: %d\n", dpdmux_attr.id);
@@ -421,6 +438,12 @@ static int print_dpdmux_attr(uint32_t dpdmux_id, struct dprc_obj_desc *target_ob
 	printf("frame storage memory size: %u\n",
 		(uint32_t)dpdmux_attr.mem_size);
 	print_obj_label(target_obj_desc);
+
+	if (cmd_id >= DPDMUX_CMDID_GET_ATTR_V3) {
+		printf("max_dmat_entries: %u\n", dpdmux_attr.max_dmat_entries);
+		printf("max_mc_groups: %u\n", dpdmux_attr.max_mc_groups);
+		printf("max_vlan_ids: %u\n", dpdmux_attr.max_vlan_ids);
+	}
 
 	error = 0;
 

@@ -171,6 +171,9 @@ int dpdmux_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t 
  * @num_ifs: Number of interfaces (excluding the uplink interface)
  * @mem_size: DPDMUX frame storage memory size
  * @default_if: Default interface number (different from uplink, maximum value num_ifs)
+ * @max_dmat_entries: Maximum number of destination matrix entries
+ * @max_mc_groups: Maximum number of multicast groups
+ * @max_vlan_ids: Maximum number of VLAN IDs
  */
 struct dpdmux_attr {
 	int id;
@@ -180,6 +183,9 @@ struct dpdmux_attr {
 	uint16_t num_ifs;
 	uint16_t mem_size;
 	uint16_t default_if;
+	uint16_t max_dmat_entries;
+	uint16_t max_mc_groups;
+	uint16_t max_vlan_ids;
 };
 
 int dpdmux_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,

@@ -56,6 +56,7 @@
 #define DPDMUX_CMDID_GET_API_VERSION		DPDMUX_CMD(0xa06)
 
 #define DPDMUX_CMDID_GET_ATTR			DPDMUX_CMD_V2(0x004)
+#define DPDMUX_CMDID_GET_ATTR_V3		DPDMUX_CMD_V3(0x004)
 
 #define DPDMUX_CMDID_GET_IRQ_MASK		DPDMUX_CMD(0x015)
 #define DPDMUX_CMDID_GET_IRQ_STATUS		DPDMUX_CMD(0x016)
@@ -138,6 +139,9 @@ struct dpdmux_rsp_get_attr {
 	uint32_t pad2;
 
 	uint64_t options;
+	uint16_t max_dmat_entries;
+	uint16_t max_mc_groups;
+	uint16_t max_vlan_ids;
 };
 
 struct dpdmux_rsp_get_api_version {
