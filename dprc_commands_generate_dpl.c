@@ -49,6 +49,7 @@
 #include "mc_v10/fsl_dpdmai.h"
 #include "mc_v10/fsl_dpseci.h"
 #include "mc_v10/fsl_dpdmux.h"
+#include "mc_v10/fsl_dpdmux_cmd.h"
 #include "mc_v10/fsl_dpsw.h"
 #include "mc_v10/fsl_dpmcp.h"
 #include "mc_v10/fsl_dprc.h"
@@ -1599,7 +1600,8 @@ static int parse_dpdmux(FILE *fp, struct obj_list *curr)
 	}
 
 	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle, &dpdmux_attr);
+	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle, &dpdmux_attr,
+				      DPDMUX_CMDID_GET_ATTR);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",

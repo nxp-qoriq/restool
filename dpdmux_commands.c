@@ -42,6 +42,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v10/fsl_dpdmux.h"
+#include "mc_v10/fsl_dpdmux_cmd.h"
 
 #define ALL_DPDMUX_OPTS (		\
 	DPDMUX_OPT_BRIDGE_EN |		\
@@ -385,7 +386,8 @@ static int print_dpdmux_attr(uint32_t dpdmux_id, struct dprc_obj_desc *target_ob
 	}
 
 	memset(&dpdmux_attr, 0, sizeof(dpdmux_attr));
-	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle, &dpdmux_attr);
+	error = dpdmux_get_attributes(&restool.mc_io, 0, dpdmux_handle, &dpdmux_attr,
+				      DPDMUX_CMDID_GET_ATTR);
 	if (error < 0) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",

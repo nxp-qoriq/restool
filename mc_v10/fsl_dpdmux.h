@@ -183,7 +183,7 @@ struct dpdmux_attr {
 };
 
 int dpdmux_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
-			  struct dpdmux_attr *attr);
+			  struct dpdmux_attr *attr, uint16_t cmd_id);
 
 int dpdmux_get_api_version(struct fsl_mc_io *mc_io, uint32_t cmd_flags,
 			   uint16_t *major_ver, uint16_t *minor_ver);

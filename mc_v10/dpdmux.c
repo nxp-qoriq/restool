@@ -261,15 +261,13 @@ int dpdmux_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t 
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
-			  struct dpdmux_attr *attr)
+			  struct dpdmux_attr *attr, uint16_t cmd_id)
 {
 	struct mc_command cmd = { 0 };
 	struct dpdmux_rsp_get_attr *rsp_params;
 	int err;
 
-	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_GET_ATTR,
-					  cmd_flags,
-					  token);
+	cmd.header = mc_encode_cmd_header(cmd_id, cmd_flags, token);
 
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
