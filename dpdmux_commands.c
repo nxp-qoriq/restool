@@ -708,14 +708,14 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.adv.max_mc_groups = 0;
 	}
 
-        if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MEM_SIZE)) {
-                restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MEM_SIZE);
-                error = get_option_value(CREATE_OPT_MEM_SIZE, &val,
-                                "Invalid mem_size value\n", 0, UINT16_MAX);
-                if (error)
-                        return error;
-                dpdmux_cfg.adv.mem_size = (uint16_t)val;
-        }
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MEM_SIZE)) {
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_MEM_SIZE);
+		error = get_option_value(CREATE_OPT_MEM_SIZE, &val,
+					 "Invalid mem_size value\n", 0, UINT16_MAX);
+		if (error)
+			return error;
+		dpdmux_cfg.adv.mem_size = (uint16_t)val;
+	}
 
 	dprc_handle = restool.root_dprc_handle;
 	dprc_opened = false;
