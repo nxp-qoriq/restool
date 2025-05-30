@@ -316,6 +316,8 @@ The options are:
 	-c, --container <dprc.X>			Specifies the parent container name. e.g. dprc.2, dprc.3 etc.
 	-s, --mem-size=<number>				Size of the memory used for internal buffers expressed as number of
 							256byte buffers.
+	-k, --custom-key-size				Maximum size of the custom classification key. Default is 24 bytes.
+							Only valid when DPDMUX_METHOD_CUSTOM is used.
 
 The arguments are:
 	-d, --num-ifs=NUM_IFS				Number of virtual interfaces (excluding the uplink
@@ -324,6 +326,9 @@ The arguments are:
 <endpoint> represents the uplink device:
 	dpmac.X 					X is the index of the dpmac object
 <endpoint> is mandatory
+
+Depending on the MC firmware used, some configuration options may be missing
+See manpage for detailed information.
 
 Usage examples:
 	#ls-addmux -d=2 dpmac.1				// Creates a MUX with 2 downlinks and uplink connected
@@ -355,6 +360,7 @@ create_dpdmux() {
 		--manip=DPDMUX_MANIP_NONE				\
 		--container="$container"				\
 		--mem-size="$mem_size"					\
+		--custom-key-size="$custom_key_size"			\
 	)
 
 	if [ -z "$dpdmux" ]; then
@@ -398,6 +404,7 @@ process_addmux() {
 	endpoint=
 	# default parent container is the root container
 	container=$root_c
+	custom_key_size=0
 
 	for i in "$@"
 	do
@@ -435,6 +442,9 @@ process_addmux() {
 				;;
 			-s=* | --mem-size=*)
 				mem_size="${i#*=}"
+				;;
+			-k=* | --custom-key-size=*)
+				custom_key_size="${i#*=}"
 				;;
 			*)
 				arg_dpmac="$(echo $i | grep -x -E "(dprc.[0-9]+/)*dpmac.[0-9]+" || true )"

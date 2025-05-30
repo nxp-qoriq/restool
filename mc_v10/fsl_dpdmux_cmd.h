@@ -41,22 +41,26 @@
 #define DPDMUX_CMD_VERSION_2		2
 #define DPDMUX_CMD_VERSION_3		3
 #define DPDMUX_CMD_VERSION_4		4
+#define DPDMUX_CMD_VERSION_5		5
 #define DPDMUX_CMD_ID_OFFSET		4
 
 #define DPDMUX_CMD(id)	((id << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_BASE_VERSION)
 #define DPDMUX_CMD_V2(id)	(((id) << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_VERSION_2)
 #define DPDMUX_CMD_V3(id)       (((id) << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_VERSION_3)
 #define DPDMUX_CMD_V4(id)       (((id) << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_VERSION_4)
+#define DPDMUX_CMD_V5(id)       (((id) << DPDMUX_CMD_ID_OFFSET) | DPDMUX_CMD_VERSION_5)
 
 /* Command IDs */
 #define DPDMUX_CMDID_CLOSE			DPDMUX_CMD(0x800)
 #define DPDMUX_CMDID_OPEN			DPDMUX_CMD(0x806)
 #define DPDMUX_CMDID_CREATE			DPDMUX_CMD_V4(0x906)
+#define DPDMUX_CMDID_CREATE_V5			DPDMUX_CMD_V5(0x906)
 #define DPDMUX_CMDID_DESTROY			DPDMUX_CMD(0x986)
 #define DPDMUX_CMDID_GET_API_VERSION		DPDMUX_CMD(0xa06)
 
 #define DPDMUX_CMDID_GET_ATTR			DPDMUX_CMD_V2(0x004)
 #define DPDMUX_CMDID_GET_ATTR_V3		DPDMUX_CMD_V3(0x004)
+#define DPDMUX_CMDID_GET_ATTR_V4		DPDMUX_CMD_V4(0x004)
 
 #define DPDMUX_CMDID_GET_IRQ_MASK		DPDMUX_CMD(0x015)
 #define DPDMUX_CMDID_GET_IRQ_STATUS		DPDMUX_CMD(0x016)
@@ -94,7 +98,8 @@ struct dpdmux_cmd_create {
 	uint8_t manip;
 	uint16_t num_ifs;
 	uint16_t default_if;
-	uint16_t pad;
+	uint8_t custom_key_size;
+	uint8_t pad;
 
 	uint16_t adv_max_dmat_entries;
 	uint16_t adv_max_mc_groups;
@@ -136,7 +141,8 @@ struct dpdmux_rsp_get_attr {
 	uint64_t pad1;
 
 	uint32_t id;
-	uint32_t pad2;
+	uint8_t custom_key_size;
+	uint8_t pad2[3];
 
 	uint64_t options;
 	uint16_t max_dmat_entries;

@@ -118,15 +118,13 @@ int dpdmux_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpdmux_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
-		  const struct dpdmux_cfg *cfg, uint32_t *obj_id)
+		  const struct dpdmux_cfg *cfg, uint32_t *obj_id, uint16_t cmd_id)
 {
 	struct mc_command cmd = { 0 };
 	struct dpdmux_cmd_create *cmd_params;
 	int err;
 
-	cmd.header = mc_encode_cmd_header(DPDMUX_CMDID_CREATE,
-					  cmd_flags,
-					  dprc_token);
+	cmd.header = mc_encode_cmd_header(cmd_id, cmd_flags, dprc_token);
 	cmd_params = (struct dpdmux_cmd_create *)cmd.params;
 	cmd_params->method = cfg->method;
 	cmd_params->manip = cfg->manip;
@@ -137,6 +135,7 @@ int dpdmux_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_fla
 	cmd_params->adv_max_vlan_ids = cpu_to_le16(cfg->adv.max_vlan_ids);
 	cmd_params->mem_size = cpu_to_le16(cfg->adv.mem_size);
 	cmd_params->options = cpu_to_le64(cfg->adv.options);
+	cmd_params->custom_key_size = cfg->adv.custom_key_size;
 
 	err = mc_send_command(mc_io, &cmd);
 	if (err)
@@ -284,6 +283,7 @@ int dpdmux_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t 
 	attr->max_dmat_entries = le16_to_cpu(rsp_params->max_dmat_entries);
 	attr->max_mc_groups = le16_to_cpu(rsp_params->max_mc_groups);
 	attr->max_vlan_ids = le16_to_cpu(rsp_params->max_vlan_ids);
+	attr->custom_key_size = rsp_params->custom_key_size;
 
 	return 0;
 }

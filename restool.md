@@ -901,6 +901,17 @@ Usage: restool dpdmux `<command> [--help] [ARGS...]`, where `<command>` can be:
 
 >>> If it is not specified, the new object will be created under the default dprc.
 
+>> `--mem-size=<number>`
+
+>>> Size of the memory used for internal buffers expressed as number of
+>>> 256byte buffers. Default is 32.
+
+>> `--custom-key-size=<number>`
+
+>>> Maximum size of the custom classification key. Default is 24 bytes.
+>>> Only valid when DPDMUX_METHOD_CUSTOM is used. The option is
+>>> available only starting with MC version 10.40.0
+
 **destroy**
 : destroys a child DPDMUX under the root DPRC.
 

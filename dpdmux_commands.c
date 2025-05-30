@@ -93,6 +93,7 @@ enum dpdmux_create_options {
 	CREATE_OPT_PARENT_DPRC,
 	CREATE_OPT_DEFAULT_IF,
 	CREATE_OPT_MEM_SIZE,
+	CREATE_OPT_CUSTOM_KEY_SIZE,
 };
 
 static struct option dpdmux_create_options[] = {
@@ -161,6 +162,13 @@ static struct option dpdmux_create_options[] = {
 
 	[CREATE_OPT_MEM_SIZE] = {
 		.name = "mem-size",
+		.has_arg = 1,
+		.flag = NULL,
+		.val = 0,
+	},
+
+	[CREATE_OPT_CUSTOM_KEY_SIZE] = {
+		.name = "custom-key-size",
 		.has_arg = 1,
 		.flag = NULL,
 		.val = 0,
@@ -364,6 +372,10 @@ static void print_dpdmux_manip(enum dpdmux_manip manip)
 struct mc_api_compatibility_info dpdmux_get_attr_compat_info[] = {
 	{
 		.major = 6,
+		.minor = 11,
+		.cmd_id = DPDMUX_CMDID_GET_ATTR_V4,
+	},{
+		.major = 6,
 		.minor = 9,
 		.cmd_id = DPDMUX_CMDID_GET_ATTR_V3,
 	},{
@@ -444,6 +456,9 @@ static int print_dpdmux_attr(uint32_t dpdmux_id, struct dprc_obj_desc *target_ob
 		printf("max_mc_groups: %u\n", dpdmux_attr.max_mc_groups);
 		printf("max_vlan_ids: %u\n", dpdmux_attr.max_vlan_ids);
 	}
+
+	if (cmd_id >= DPDMUX_CMDID_GET_ATTR_V4 && dpdmux_attr.method == DPDMUX_METHOD_CUSTOM)
+		printf("custom_key_size: %u\n", dpdmux_attr.custom_key_size);
 
 	error = 0;
 
@@ -583,8 +598,23 @@ static int parse_dpdmux_method(char *method_str, enum dpdmux_method *method)
 	return -EINVAL;
 }
 
+struct mc_api_compatibility_info dpdmux_create_compat_info[] = {
+	{
+		.major = 6,
+		.minor = 11,
+		.cmd_id = DPDMUX_CMDID_CREATE_V5,
+	},{
+		.major = 6,
+		.minor = 9,
+		.cmd_id = DPDMUX_CMDID_CREATE,
+	},
+};
+
+#define DPDMUX_CREATE_NUM_VERSIONS	ARRAY_SIZE(dpdmux_create_compat_info)
+
 static int create_dpdmux(const char *usage_msg)
 {
+	uint16_t obj_major, obj_minor, cmd_id;
 	struct dpdmux_cfg dpdmux_cfg = {0};
 	uint32_t dpdmux_id, dprc_id;
 	uint16_t dprc_handle;
@@ -604,6 +634,17 @@ static int create_dpdmux(const char *usage_msg)
 		puts(usage_msg);
 		return -EINVAL;
 	}
+
+	/* Determine the _create() MC API version which will be used */
+	error = dpdmux_get_api_version(&restool.mc_io, 0, &obj_major, &obj_minor);
+	if (error) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	cmd_id = get_cmd_id(dpdmux_create_compat_info, DPDMUX_CREATE_NUM_VERSIONS,
+			    obj_major, obj_minor);
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_OPTIONS)) {
 		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_OPTIONS);
@@ -717,6 +758,25 @@ static int create_dpdmux(const char *usage_msg)
 		dpdmux_cfg.adv.mem_size = (uint16_t)val;
 	}
 
+	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_CUSTOM_KEY_SIZE)) {
+		if (dpdmux_cfg.method != DPDMUX_METHOD_CUSTOM) {
+			ERROR_PRINTF("--custom-key-size is only valid when DPDMUX_METHOD_CUSTOM is used!\n");
+			return -EINVAL;
+		}
+
+		if (cmd_id < DPDMUX_CMDID_CREATE_V5) {
+			ERROR_PRINTF("--custom-key-size is not supported on the current MC firmware version!\n");
+			return -EOPNOTSUPP;
+		}
+
+		restool.cmd_option_mask &= ~ONE_BIT_MASK(CREATE_OPT_CUSTOM_KEY_SIZE);
+		error = get_option_value(CREATE_OPT_CUSTOM_KEY_SIZE, &val,
+					 "Invalid --custom-key-size value, accepted range [0-56]\n", 0, 56);
+		if (error)
+			return error;
+		dpdmux_cfg.adv.custom_key_size = (uint8_t)val;
+	}
+
 	dprc_handle = restool.root_dprc_handle;
 	dprc_opened = false;
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_PARENT_DPRC)) {
@@ -735,7 +795,7 @@ static int create_dpdmux(const char *usage_msg)
 		}
 	}
 
-	error = dpdmux_create(&restool.mc_io, dprc_handle, 0, &dpdmux_cfg, &dpdmux_id);
+	error = dpdmux_create(&restool.mc_io, dprc_handle, 0, &dpdmux_cfg, &dpdmux_id, cmd_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -762,6 +822,9 @@ static int cmd_dpdmux_create(void)
 		"Usage: restool dpdmux create --num-ifs=<number> [OPTIONS]\n"
 		"   --num-ifs=<number>\n"
 		"      Number of virtual interfaces (excluding the uplink interface)\n"
+		"\n"
+		"Depending on the MC firmware used, some configuration options may be missing.\n"
+		"See manpage for detailed information.\n"
 		"\n"
 		"OPTIONS:\n"
 		"--method=<dmat-method>\n"
@@ -796,6 +859,9 @@ static int cmd_dpdmux_create(void)
 		"--mem-size=<number>\n"
 		"   Size of the memory used for internal buffers expressed as number of 256byte buffers.\n"
 		"   Default is 32.\n"
+		"--custom-key-size=<number>\n"
+		"   Maximum size of the custom classification key. Default is 24 bytes.\n"
+		"   Only valid when DPDMUX_METHOD_CUSTOM is used.\n"
 		"\n";
 
 	return create_dpdmux(usage_msg);

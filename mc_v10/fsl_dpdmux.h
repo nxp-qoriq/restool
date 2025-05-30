@@ -140,6 +140,7 @@ struct dpdmux_cfg {
 	 *		0 - indicates default 16 vlan ids.
 	 * @mem_size: Size of the memory used for internal buffers expressed
 	 * 		as number of 256 byte buffer.
+	 * @custom_key_size: Maximum size of the custom classification key.
 	 */
 	struct {
 		uint64_t options;
@@ -147,11 +148,12 @@ struct dpdmux_cfg {
 		uint16_t max_mc_groups;
 		uint16_t max_vlan_ids;
 		uint16_t mem_size;
+		uint8_t custom_key_size;
 	} adv;
 };
 
 int dpdmux_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
-		  const struct dpdmux_cfg *cfg, uint32_t *obj_id);
+		  const struct dpdmux_cfg *cfg, uint32_t *obj_id, uint16_t cmd_id);
 
 int dpdmux_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
 		   uint32_t object_id);
@@ -174,6 +176,7 @@ int dpdmux_get_irq_status(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t 
  * @max_dmat_entries: Maximum number of destination matrix entries
  * @max_mc_groups: Maximum number of multicast groups
  * @max_vlan_ids: Maximum number of VLAN IDs
+ * @custom_key_size: Classification key size. Valid only when in DPDMUX_METHOD_CUSTOM.
  */
 struct dpdmux_attr {
 	int id;
@@ -186,6 +189,7 @@ struct dpdmux_attr {
 	uint16_t max_dmat_entries;
 	uint16_t max_mc_groups;
 	uint16_t max_vlan_ids;
+	uint8_t custom_key_size;
 };
 
 int dpdmux_get_attributes(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token,
