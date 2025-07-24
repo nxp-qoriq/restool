@@ -42,6 +42,7 @@
 #include "restool.h"
 #include "utils.h"
 #include "mc_v10/fsl_dpni.h"
+#include "mc_v10/fsl_dpni_cmd.h"
 
 static enum mc_cmd_status mc_status;
 
@@ -360,6 +361,7 @@ static struct option_entry options_map[] = {
 	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_HASH_KEY),
 	OPTION_MAP_ENTRY(DPNI_OPT_SHARED_FS),
 	OPTION_MAP_ENTRY(DPNI_OPT_STASHING_DIS),
+	OPTION_MAP_ENTRY(DPNI_OPT_HAS_REPLICATION),
 };
 static unsigned int options_num = ARRAY_SIZE(options_map);
 
@@ -476,6 +478,9 @@ static void print_dpni_options(uint32_t options)
 
 	if (options & DPNI_OPT_STASHING_DIS)
 		printf("\tDPNI_OPT_STASHING_DIS\n");
+
+	if (options & DPNI_OPT_HAS_REPLICATION)
+		printf("\tDPNI_OPT_HAS_REPLICATION\n");
 }
 
 static int print_dpni_endpoint(uint32_t target_id)
@@ -855,8 +860,23 @@ static int parse_dpni_mac_addr(char *mac_addr_str, uint8_t *mac_addr)
 	return 0;
 }
 
+struct mc_api_compatibility_info dpni_create_compat_info[] = {
+	{
+		.major = 8,
+		.minor = 6,
+		.cmd_id = DPNI_CMDID_CREATE_V8,
+	},{
+		.major = 8,
+		.minor = 3,
+		.cmd_id = DPNI_CMDID_CREATE,
+	},
+};
+
+#define DPNI_CREATE_NUM_VERSIONS	ARRAY_SIZE(dpni_create_compat_info)
+
 static int create_dpni(const char *usage_msg)
 {
+	uint16_t dpni_major, dpni_minor, cmd_id;
 	struct dpni_cfg dpni_cfg;
 	uint32_t dpni_id, dprc_id;
 	uint64_t dpni_cfg_options;
@@ -879,6 +899,17 @@ static int create_dpni(const char *usage_msg)
 		puts(usage_msg);
 		return -EINVAL;
 	}
+
+	/* Determine the _create() MC API version which will be used */
+	error = dpni_get_api_version(&restool.mc_io, 0, &dpni_major, &dpni_minor);
+	if (error < 0) {
+		mc_status = flib_error_to_mc_status(error);
+		ERROR_PRINTF("MC error: %s (status %#x)\n",
+			     mc_status_to_string(mc_status), mc_status);
+		return error;
+	}
+	cmd_id = get_cmd_id(dpni_create_compat_info, DPNI_CREATE_NUM_VERSIONS,
+			    dpni_major, dpni_minor);
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_ENTRIES) &&
 	    restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_MAC_FILTER_ENTRIES)) {
@@ -1045,7 +1076,7 @@ static int create_dpni(const char *usage_msg)
 		dpni_cfg.dist_key_size = (uint8_t)value;
 	}
 
-	error = dpni_create(&restool.mc_io, dprc_handle, 0, &dpni_cfg, &dpni_id);
+	error = dpni_create(&restool.mc_io, dprc_handle, 0, &dpni_cfg, &dpni_id, cmd_id);
 	if (error) {
 		mc_status = flib_error_to_mc_status(error);
 		ERROR_PRINTF("MC error: %s (status %#x)\n",
@@ -1069,6 +1100,9 @@ static int cmd_dpni_create(void)
 		"\n"
 		"Usage: restool dpni create [OPTIONS]\n"
 		"\n"
+		"Depending on the MC firmware used, some configuration options may be missing.\n"
+		"See manpage for detailed information.\n"
+		"\n"
 		"OPTIONS:\n"
 		"--options=<options-mask>\n"
 		"   Where <options-mask> is a comma or space separated list of DPNI options:\n"
@@ -1086,6 +1120,7 @@ static int cmd_dpni_create(void)
 		"	DPNI_OPT_SHARED_HASH_KEY\n"
 		"	DPNI_OPT_SHARED_FS\n"
 		"	DPNI_OPT_STASHING_DIS\n"
+		"	DPNI_OPT_HAS_REPLICATION\n"
 		"--num-queues=<number>\n"
 		"   Number of TX/RX queues use for traffic distribution.\n"
 		"   Used to distribute traffic to multiple GPP cores,\n"

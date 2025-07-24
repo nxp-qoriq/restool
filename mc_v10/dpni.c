@@ -104,6 +104,7 @@ int dpni_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
  * @cmd_flags:	Command flags; one or more of 'MC_CMD_FLAG_'
  * @cfg:	Configuration structure
  * @obj_id:	Returned object id
+ * @cmd_id:	The command ID to be used
  *
  * Create the DPNI object, allocate required resources and
  * perform required initialization.
@@ -120,15 +121,13 @@ int dpni_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token)
  * Return:	'0' on Success; Error code otherwise.
  */
 int dpni_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
-		const struct dpni_cfg *cfg, uint32_t *obj_id)
+		const struct dpni_cfg *cfg, uint32_t *obj_id, uint16_t cmd_id)
 {
 	struct dpni_cmd_create *cmd_params;
 	struct mc_command cmd = { 0 };
 	int err;
 
-	cmd.header = mc_encode_cmd_header(DPNI_CMDID_CREATE,
-					  cmd_flags,
-					  dprc_token);
+	cmd.header = mc_encode_cmd_header(cmd_id, cmd_flags, dprc_token);
 	cmd_params = (struct dpni_cmd_create *)cmd.params;
 	cmd_params->options = cpu_to_le32(cfg->options);
 	cmd_params->num_queues = cfg->num_queues;

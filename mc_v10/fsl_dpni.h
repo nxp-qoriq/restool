@@ -140,6 +140,11 @@ struct fsl_mc_io;
  */
 #define DPNI_OPT_STASHING_DIS				0x002000
 
+/* The DPNI will be able to use replication HW resources (RRIDs) to redirect
+ * traffic to multiple other DPNIs through flow-steering rules.
+ */
+#define DPNI_OPT_HAS_REPLICATION			0x004000
+
 #define ALL_DPNI_OPTS (					\
 	DPNI_OPT_TX_FRM_RELEASE |			\
 	DPNI_OPT_NO_MAC_FILTER |			\
@@ -154,7 +159,9 @@ struct fsl_mc_io;
 	DPNI_OPT_CUSTOM_OPR |				\
 	DPNI_OPT_SHARED_HASH_KEY |			\
 	DPNI_OPT_SHARED_FS |				\
-	DPNI_OPT_STASHING_DIS)
+	DPNI_OPT_STASHING_DIS |				\
+	DPNI_OPT_HAS_REPLICATION			\
+	)
 
 /**
  * struct dpni_cfg - Structure representing DPNI configuration
@@ -246,7 +253,7 @@ struct dpni_cfg {
 };
 
 int dpni_create(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
-		const struct dpni_cfg *cfg, uint32_t *obj_id);
+		const struct dpni_cfg *cfg, uint32_t *obj_id, uint16_t cmd_id);
 
 int dpni_destroy(struct fsl_mc_io *mc_io, uint16_t dprc_token, uint32_t cmd_flags,
 		 uint32_t object_id);
@@ -273,6 +280,7 @@ int dpni_close(struct fsl_mc_io *mc_io, uint32_t cmd_flags, uint16_t token);
  *		DPNI_OPT_SHARED_HASH_KEY
  *		DPNI_OPT_SHARED_FS
  *		DPNI_OPT_STASHING_DIS
+ *		DPNI_OPT_HAS_REPLICATION
  * @num_queues: Number of Tx and Rx queues used for traffic distribution.
  * @num_rx_tcs: Number of RX traffic classes (TCs), reserved for the DPNI.
  * @num_tx_tcs: Number of TX traffic classes (TCs), reserved for the DPNI.

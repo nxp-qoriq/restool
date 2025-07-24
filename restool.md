@@ -429,6 +429,8 @@ Usage: restool dpni `<command> [--help] [ARGS...]`, where `<command>` can be:
 
 >>>> DPNI_OPT_STASHING_DIS
 
+>>>> DPNI_OPT_HAS_REPLICATION - only available starting with MC 10.40.0
+
 >> `--num-queues=<number>`
 
 >>> Where `<number>` is the number of TX/RX queues use for traffic distribution.
