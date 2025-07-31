@@ -1,7 +1,7 @@
 #!/bin/sh
 
 # Copyright 2013-2016 Freescale Semiconductor Inc.
-# Copyright 2017-2022 NXP
+# Copyright 2017-2022, 2025 NXP
 
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are met:
@@ -760,7 +760,9 @@ The options are:
 	-nq, --num-queues=NUM_QUEUES			Number of TX/RX queues use for traffic distribution.
 							Valid range [1-32]. Default value is number of cores.
 	-t, --num-tcs=NUM_TCS				Number of traffic classes (TCs) reserved for the DPNI.
-							Valid range [1-8]. Default value is 1.
+							Valid range [1-16]. Default value is 1. There are a maximum of
+							16 TCs for Tx and 8 TCs for Rx. When num-tcs > 8, Tx will use this
+							value but Rx will have only 8 traffic classes.
 	-m, --mac-entries=MAC_ENTRIES			Number of entries in the MAC address filtering table.
 							Valid range [1-80]. Default value is 80.
 	-v, --vlan-entries=VLAN_ENTRIES			Number of entries in the VLAN address filtering table.
@@ -886,8 +888,8 @@ process_addni() {
 				;;
 			-t=* | --num-tcs=*)
 				num_tcs="${i#*=}"
-				if [ "$(($num_tcs))" -gt 8 ] || [ "$(($num_tcs))" -lt 1 ]; then
-					echo "Invalid num_tcs=$num_tcs. Valid range is [1-8]."
+				if [ "$(($num_tcs))" -gt 16 ] || [ "$(($num_tcs))" -lt 1 ]; then
+					echo "Invalid num_tcs=$num_tcs. Valid range is [1-16]."
 					exit 1
 				fi
 				dpni_args=$dpni_args" --num-tcs="$num_tcs
