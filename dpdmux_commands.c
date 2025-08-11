@@ -759,11 +759,6 @@ static int create_dpdmux(const char *usage_msg)
 	}
 
 	if (restool.cmd_option_mask & ONE_BIT_MASK(CREATE_OPT_CUSTOM_KEY_SIZE)) {
-		if (dpdmux_cfg.method != DPDMUX_METHOD_CUSTOM) {
-			ERROR_PRINTF("--custom-key-size is only valid when DPDMUX_METHOD_CUSTOM is used!\n");
-			return -EINVAL;
-		}
-
 		if (cmd_id < DPDMUX_CMDID_CREATE_V5) {
 			ERROR_PRINTF("--custom-key-size is not supported on the current MC firmware version!\n");
 			return -EOPNOTSUPP;
@@ -775,6 +770,11 @@ static int create_dpdmux(const char *usage_msg)
 		if (error)
 			return error;
 		dpdmux_cfg.adv.custom_key_size = (uint8_t)val;
+
+		if (dpdmux_cfg.method != DPDMUX_METHOD_CUSTOM && dpdmux_cfg.adv.custom_key_size) {
+			ERROR_PRINTF("--custom-key-size is only valid when DPDMUX_METHOD_CUSTOM is used!\n");
+			return -EINVAL;
+		}
 	}
 
 	dprc_handle = restool.root_dprc_handle;
