@@ -52,7 +52,7 @@
 #define le16_to_cpu	le16toh
 
 #ifndef BITS_PER_LONG
-#define BITS_PER_LONG __WORDSIZE
+#define BITS_PER_LONG (sizeof(void *) * 8)
 #endif
 
 #define GENMASK(h, l) \
