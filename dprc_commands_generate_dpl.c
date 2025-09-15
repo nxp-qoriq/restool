@@ -1,5 +1,5 @@
 /* Copyright 2014-2016 Freescale Semiconductor Inc.
- * Copyright 2017-2022 NXP
+ * Copyright 2017-2022, 2025 NXP
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -2188,7 +2188,8 @@ static int parse_dpni_v10(FILE *fp, struct obj_list *curr)
 	parse_dpni_options_v10(fp, dpni_attr.options);
 
 	fprintf(fp, "\t\t\tnum_queues = <%u>;\n", dpni_attr.num_queues);
-	fprintf(fp, "\t\t\tnum_tcs = <%u>;\n", dpni_attr.num_rx_tcs);
+	fprintf(fp, "\t\t\tnum_rx_tcs = <%u>;\n", dpni_attr.num_rx_tcs);
+	fprintf(fp, "\t\t\tnum_tcs = <%u>;\n", dpni_attr.num_tx_tcs);
 	fprintf(fp, "\t\t\tnum_cgs = <%u>;\n", dpni_attr.num_cgs);
 	fprintf(fp, "\t\t\tmac_filter_entries = <%u>;\n", dpni_attr.mac_filter_entries);
 	fprintf(fp, "\t\t\tvlan_filter_entries = <%u>;\n", dpni_attr.vlan_filter_entries);
