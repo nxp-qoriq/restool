@@ -2,7 +2,7 @@ ifeq ($(origin CC),default)
 	CC := $(CROSS_COMPILE)gcc
 endif
 
-SRC = $(shell find . -name "*.c")
+SRC = $(sort $(shell find . -name "*.c"))
 OBJ = $(patsubst %.c, %.o, $(SRC))
 MANPAGE ?= restool.1
 RESTOOL_SCRIPT_SYMLINKS = ls-addmux ls-addsw ls-addni ls-listni ls-listmac ls-delete
